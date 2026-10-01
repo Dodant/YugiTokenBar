@@ -4,6 +4,7 @@
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
 - 구현 계획: `docs/superpowers/plans/2026-10-01-yugitokenbar.md` (작업 1~10, 코드 포함, 2026-10-01 사전 검증됨)
+- 실행 방식: **Subagent-driven** (superpowers:subagent-driven-development) — 사용자가 선택함
 
 ## 규칙
 
