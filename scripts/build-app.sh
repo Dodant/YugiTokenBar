@@ -31,6 +31,7 @@ echo "built $APP"
 
 if [[ "${1:-}" == "--install" ]]; then
     pkill -x "$APP_NAME" || true
+    while pgrep -x "$APP_NAME" >/dev/null; do sleep 0.2; done
     rm -rf "/Applications/$APP_NAME.app"
     cp -R "$APP" /Applications/
     open "/Applications/$APP_NAME.app"

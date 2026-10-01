@@ -33,6 +33,7 @@ struct Game: Sendable {
             state.claimedByProvider = byProvider
             return []
         }
+        if let d = state.claimedDate, today < d { return [] }  // 시계/시간대가 과거로 가도 원장을 리셋하지 않는다.
         if state.claimedDate != today {
             state.claimedDate = today
             state.claimedByProvider = [:]

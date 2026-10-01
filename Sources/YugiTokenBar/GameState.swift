@@ -67,7 +67,8 @@ struct StateStore {
         let fm = FileManager.default
         try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let data = try JSONEncoder().encode(state)
-        if fm.fileExists(atPath: url.path) {
+        // 현재 파일이 멀쩡할 때만 백업을 갱신한다(손상본이 좋은 .bak을 덮어쓰지 않도록).
+        if Self.decode(url) != nil {
             try? fm.removeItem(at: backupURL)
             try fm.copyItem(at: url, to: backupURL)
         }

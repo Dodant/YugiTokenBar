@@ -11,7 +11,7 @@ final class ImageCache {
     }
 
     let dir: URL
-    private var memory: [String: NSImage] = [:]
+    private let memory = NSCache<NSString, NSImage>()
     private var inFlight: [String: Task<Data?, Never>] = [:]
 
     init(dir: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -21,7 +21,7 @@ final class ImageCache {
 
     func image(_ imageId: Int, size: Size) async -> NSImage? {
         let key = "\(size.rawValue)-\(imageId)"
-        if let image = memory[key] { return image }
+        if let image = memory.object(forKey: key as NSString) { return image }
         let file = dir.appendingPathComponent("\(key).jpg")
         let task = inFlight[key] ?? Task.detached { [dir] in await Self.fetch(imageId, size: size, file: dir.appendingPathComponent("\(key).jpg")) }
         inFlight[key] = task
@@ -32,7 +32,7 @@ final class ImageCache {
             try? FileManager.default.removeItem(at: file)
             return nil
         }
-        memory[key] = image
+        memory.setObject(image, forKey: key as NSString)
         return image
     }
 

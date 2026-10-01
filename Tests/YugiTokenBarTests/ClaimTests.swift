@@ -67,4 +67,15 @@ import Testing
         #expect(game.state.dropProgress == 0)
         #expect(game.state.coins == 500_000)
     }
+
+    @Test func clockMovingBackwardsIsIgnored() {
+        var game = Game(db: db, state: GameState())
+        var rng = SeededRNG(seed: 1)
+        _ = game.claim(today: "2026-10-02", byProvider: ["claude_code": 0], using: &rng)
+        _ = game.claim(today: "2026-10-02", byProvider: ["claude_code": 25_000], using: &rng)
+        let coins = game.state.coins
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 900_000], using: &rng)
+        #expect(game.state.coins == coins)
+        #expect(game.state.claimedDate == "2026-10-02")
+    }
 }

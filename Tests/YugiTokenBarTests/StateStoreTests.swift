@@ -44,4 +44,20 @@ import Testing
         let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
         #expect(names.contains { $0.hasPrefix("state.corrupt-") })
     }
+
+    @Test func saveAfterRecoveryKeepsGoodBackup() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        var first = GameState()
+        first.coins = 1
+        try store.save(first)
+        var second = GameState()
+        second.coins = 2
+        try store.save(second)  // .bak = first
+        try Data("{깨짐".utf8).write(to: store.url)
+
+        try store.save(store.load())  // 복구본(first) 저장: 손상된 원본으로 .bak을 덮으면 안 된다
+
+        let bak = try JSONDecoder().decode(GameState.self, from: Data(contentsOf: store.backupURL))
+        #expect(bak.coins == 1)
+    }
 }
