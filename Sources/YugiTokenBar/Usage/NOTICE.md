@@ -4,13 +4,13 @@
 로컬 브랜치 `graduation-carryover` 커밋 `de617e3`의 `Sources/PokeTokenBar/Core/`에서 `tools/import-usage.sh`로 복사했다.
 
 LocalUsageReader, AppLog, AppEnv, BinaryLocator, ClaudeAccountRoots, CustomScanRoots, Models, ModelPricing,
-UsageEnvironment, LogRepeatSuppressor, UsageCost
+UsageEnvironment, LogRepeatSuppressor, UsageCost, OAuthLimitsProvider, KeychainAccess, ProcessRunner, CodexRateLimitsProvider
 
 ## 변경점
 1. `UsageCost.swift`: UI 문자열 타입 `L`에 의존하는 `text(_:compact:)`, `explanation(_:)` 제거
 2. `CustomScanRoots.swift`: `curatedRoots(for:)`에서 복사하지 않은 리더(antigravity, opencode, aside, hermes, cursor, copilot, kiro) case 제거
 3. `AppLog.swift`: 로그 파일 `YugiTokenBar.log`, 큐 라벨 `yugitokenbar.log`
-4. `Shims.swift`(신규): `OAuthLimitsProvider.swift`의 `AccountIdentity`, `OAuthCredentialData.claudeKeychainService`만 발췌
+4. (삭제) `Shims.swift` — `OAuthLimitsProvider.swift`를 통째로 복사하면서 필요 없어짐
 5. `TodayUsage.swift`(신규): 이 앱 전용 오늘 provider별 누적 토큰·비용 집계
 
 ## MIT License
