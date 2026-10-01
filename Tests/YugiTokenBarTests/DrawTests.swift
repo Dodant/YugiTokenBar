@@ -49,14 +49,24 @@ import Testing
         #expect(opened[0].filter(\.isNew).count == Set(opened[0].map(\.cid)).count)
     }
 
+    @Test func noDuplicateCardWithinOnePack() {
+        var game = rich()
+        var rng = SeededRNG(seed: 1)
+        for _ in 0..<5 {
+            for pulls in game.buy(pack: 0, count: 1, using: &rng) {
+                #expect(Set(pulls.map(\.cid)).count == pulls.count)
+            }
+        }
+    }
+
     @Test func multiBuyStopsWhenPackCompletesAndKeepsCoins() {
-        // 팩2는 2종 × 2장 = 4장이면 완료 → 5팩 사도 1팩(최대 4장)만 열림
+        // 팩2는 2종 × 2장 = 4장이면 완료. 한 팩에 같은 카드가 안 나오므로 팩당 2장 → 5팩 사도 2팩만 열림
         var game = rich(unlocked: 3)
         var rng = SeededRNG(seed: 5)
         let opened = game.buy(pack: 2, count: 5, using: &rng)
-        #expect(opened.count == 1)
+        #expect(opened.count == 2)
         #expect(game.isComplete(2))
-        #expect(game.state.coins == 1_000_000 - Balance.packPrice)
+        #expect(game.state.coins == 1_000_000 - Balance.packPrice * 2)
         #expect(game.canBuy(2) == false)
         #expect(game.buy(pack: 2, count: 1, using: &rng).isEmpty)
     }

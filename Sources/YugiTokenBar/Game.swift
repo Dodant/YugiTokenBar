@@ -94,13 +94,13 @@ struct Game: Sendable {
         db.allCIDs.filter { copies($0) < Balance.maxCopies }.randomElement(using: &rng)
     }
 
-    /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, 2장 미만인 카드를 균등 선택.
-    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, using rng: inout R) -> PackCard? {
+    /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, 2장 미만이고 excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택.
+    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], using rng: inout R) -> PackCard? {
         let order = [tier]
             + Array(stride(from: tier - 1, through: 1, by: -1))
             + Array(stride(from: tier + 1, through: 5, by: 1))
         for t in order {
-            let candidates = db.packs[pack].cards.filter { $0.tier == t && copies($0.cid) < Balance.maxCopies }
+            let candidates = db.packs[pack].cards.filter { $0.tier == t && copies($0.cid) < Balance.maxCopies && !excluding.contains($0.cid) }
             if let card = candidates.randomElement(using: &rng) { return card }
         }
         return nil
@@ -124,7 +124,7 @@ struct Game: Sendable {
             let tiers = [1, 1, 1, 1, slot5Tier(using: &rng)]
             var pulls: [Pull] = []
             for tier in tiers {
-                guard let card = draw(pack: pack, tier: tier, using: &rng) else { continue }
+                guard let card = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), using: &rng) else { continue }
                 let isNew = copies(card.cid) == 0
                 give(card.cid, source: db.packs[pack].pid)
                 pulls.append(Pull(cid: card.cid, tier: card.tier, label: card.label, isNew: isNew))
