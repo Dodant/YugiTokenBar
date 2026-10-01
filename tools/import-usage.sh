@@ -6,7 +6,8 @@ SRC=${PTB_REPO:-$HOME/remote-claude-projects/code/PokeTokenBar-carryover}
 REV=de617e3
 DST=Sources/YugiTokenBar/Usage
 mkdir -p "$DST"
-for f in LocalUsageReader AppLog AppEnv BinaryLocator ClaudeAccountRoots CustomScanRoots Models ModelPricing UsageEnvironment LogRepeatSuppressor UsageCost; do
+for f in LocalUsageReader AppLog AppEnv BinaryLocator ClaudeAccountRoots CustomScanRoots Models ModelPricing UsageEnvironment LogRepeatSuppressor UsageCost \
+         OAuthLimitsProvider KeychainAccess ProcessRunner CodexRateLimitsProvider; do
   git -C "$SRC" show "$REV:Sources/PokeTokenBar/Core/$f.swift" > "$DST/$f.swift"
 done
 python3 - "$DST" <<'PY'
