@@ -20,6 +20,11 @@ struct YugiTokenBarApp: App {
             Text(menuTitle)
         }
         .menuBarExtraStyle(.window)
+
+        Window("팩 개봉", id: "pack") {
+            PackOpenView().environmentObject(model)
+        }
+        .windowResizability(.contentSize)
     }
 
     private var menuTitle: String {
