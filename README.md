@@ -1,0 +1,51 @@
+# YugiTokenBar
+
+Claude Code·Codex 토큰 사용량으로 **싱크로 이전 한국 정발 유희왕 카드 컬렉션**(정규 부스터 27팩, 2,270종)을 채우는 macOS 메뉴바 앱. 개인용 토이 프로젝트다.
+
+## 어떻게 돌아가나
+
+- 로컬 Claude Code·Codex 세션 로그에서 오늘 쓴 토큰(input + output + cache)을 읽는다. 설치 전 사용량은 적립하지 않는다.
+- 10,000 토큰 = 1코인. 1,000코인(= 1천만 토큰)으로 부스터 1팩(노멀 4 + 레어 이상 1)을 산다.
+- 1천만 토큰마다 무료 카드 1장이 전체 풀에서 무작위로 나온다.
+- 카드는 종류마다 최대 2장. 남는 카드는 레어도에 따라 코인으로 판다.
+- 하루 5천만 토큰을 쓰면 무료 5장 + 5팩. 다 모으는 데 약 75억 토큰이 든다.
+
+## 화면
+
+- **메뉴바**: 코인, 확인하지 않은 무료 카드 배지
+- **팝오버**: 코인, 다음 무료 카드 게이지, 최근 획득 카드, 바로 구매, 오늘 사용량·비용과 Claude/Codex 공식 한도(5시간·주간)
+- **상점**: 27팩 이미지 그리드(한글판 봉투), 마우스를 올리면 구매
+- **팩 개봉**: 카드를 한 장씩 뒤집어 확인
+- **컬렉션**: 팩별 진행도, 미보유 카드는 실루엣, 한국어 카드 정보, 판매
+
+## 요구 사항
+
+- macOS 26 이상, Swift 6.2 (Xcode 26)
+- 외부 의존성 없음
+
+## 실행
+
+```bash
+swift test                                            # 테스트
+YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행
+scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명)
+scripts/build-app.sh --install                        # /Applications 에 설치 후 실행
+```
+
+세이브는 `~/Library/Application Support/YugiTokenBar/`에 저장된다(`YTB_STATE_DIR`로 바꿀 수 있다). 공식 한도는 `~/.claude/.credentials.json`이나 키체인의 Claude 로그인 정보, `codex app-server`로 읽는다. `swift run`으로 개발 실행할 때는 `PTB_PARITY=1`을 붙여야 읽는다.
+
+## 데이터
+
+`Resources/cards.json`은 `python3 tools/build-cards.py`로 만든다.
+
+- 팩·카드 목록, 한국어 카드명·효과, 레어도: [Konami 공식 카드 DB](https://www.db.yugioh-card.com/yugiohdb/?request_locale=ko)
+- 카드 이미지: [YGOPRODeck](https://ygoprodeck.com/) (실행 중에 받아서 캐시)
+- 한글판 팩 이미지: [Yugipedia](https://yugipedia.com/)
+
+유희왕 카드의 이름·텍스트·이미지 저작권은 Konami에 있다. 이 프로젝트는 비공식 팬 프로젝트이며 Konami와 관계없다.
+
+## 출처
+
+`Sources/YugiTokenBar/Usage/`는 [PokeTokenBar](https://github.com/chattymin/PokeTokenBar)(MIT, © 2026 chattymin)에서 가져온 코드다. 출처와 변경점은 [`Usage/NOTICE.md`](Sources/YugiTokenBar/Usage/NOTICE.md)에 적었다.
+
+설계 문서: [`docs/superpowers/specs/2026-10-01-yugitokenbar-design.md`](docs/superpowers/specs/2026-10-01-yugitokenbar-design.md)
