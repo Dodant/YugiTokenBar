@@ -55,12 +55,13 @@ Claude Code/Codex 토큰 사용량을 보상으로 바꿔 **싱크로 이전 한
 
 ```
 Sources/YugiTokenBar/
-  App.swift            앱 진입, 60초 타이머로 사용량 갱신
-  Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader + 경로 탐색 의존 파일, NOTICE.md(출처·변경점)
+  App.swift            앱 진입, 메뉴바 라벨
+  AppModel.swift       60초마다 사용량 적립, 5분마다 공식 한도 갱신, 저장
+  Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·한도 provider + 의존 파일, TodayUsage(신규), NOTICE.md(출처·변경점)
   CardDB.swift         cards.json 로드, 조회
   Game.swift           상태·적립·뽑기 (밸런스 상수는 파일 상단)
-  ImageCache.swift     YGOPRODeck 이미지 디스크 캐시
-  UI/                  Popover, Shop, PackOpen, Dex
+  ImageCache.swift     카드(YGOPRODeck)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시
+  UI/                  Popover, Shop, PackOpen, Dex(컬렉션), Usage, CardImageView
 Tests/YugiTokenBarTests/
 tools/build-cards.py
 ```
@@ -130,7 +131,7 @@ tools/build-cards.py
 
 ## 6. 화면
 
-- **메뉴바**: `🃏 3,420`(코인), 미확인 무료 카드가 있으면 배지 표시.
+- **메뉴바**: 카드 아이콘(SF Symbol) + `3,420`(코인), 미확인 무료 카드가 있으면 배지 표시.
 - **팝오버 (요약형)**: 코인, 다음 무료 카드까지 남은 토큰 게이지, 최근 획득 5장 썸네일, 마지막으로 산 팩 바로 구매(산 적 없으면 첫 팩), [상점 전체 보기], [컬렉션 (n / 2270)], 사용량(Claude·Codex 줄마다 공식 한도 5시간/주간/모델별 주간 % 막대와 5시간 창 초기화까지 남은 시간, 오늘 토큰·비용. 한도는 PokeTokenBar의 `OAuthLimitsProvider`(Claude OAuth usage, `~/.claude/.credentials.json` → 없으면 실행당 한 번 키체인)와 `CodexRateLimitsProvider`(`codex app-server`)로 5분마다 읽고, 실패하면 직전 값을 유지한다. 칸을 누르면 바로 다시 읽는다. 비용은 기록 비용 우선, 없으면 모델 단가로 추정), [종료]. 팝오버를 열면 배지가 사라진다.
 - **상점** (팝오버 내 화면 전환): 27팩을 발매순 3열 그리드로, 평소엔 팩 이미지만 보여준다. 마우스를 올리면 이미지가 흐려지며 팩 이름, 발매년·컬렉션 진행도, [1,000 코인] 구매 버튼이 뜬다. 완료된 팩은 ✓ 배지.
 - **팩 개봉 창**: 카드 5장을 뒷면으로 놓고 클릭하면 한 장씩 뒤집는다. 레어 이상 슬롯은 뒷면부터 금색으로 빛나고, 처음 얻은 카드에는 NEW를 붙인다. [모두 뒤집기] 버튼이 있다.
