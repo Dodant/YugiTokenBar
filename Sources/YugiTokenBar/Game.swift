@@ -8,6 +8,8 @@ enum Balance {
     /// 팩 5번째 장의 티어 확률 (R / SR / UR / 최상위)
     static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.09), (5, 0.03)]
     static let logLimit = 50
+    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 230 < packPrice 라 사고팔기로 코인이 늘지 않는다.
+    static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300, 5: 500]
 }
 
 struct Pull: Sendable, Equatable {
@@ -82,6 +84,40 @@ struct Game: Sendable {
 
     func canBuy(_ pack: Int) -> Bool {
         !isComplete(pack) && state.coins >= Balance.packPrice
+    }
+
+    // MARK: 판매
+
+    /// 재수록 카드는 수록된 팩 중 가장 높은 티어 가격.
+    func sellPrice(_ cid: Int) -> Int {
+        let tier = db.packs.flatMap(\.cards).filter { $0.cid == cid }.map(\.tier).max() ?? 1
+        return Balance.sellPrice[tier] ?? 0
+    }
+
+    /// 1장 판매. 보유하지 않았으면 nil, 팔았으면 받은 코인.
+    mutating func sell(_ cid: Int) -> Int? {
+        guard copies(cid) > 0 else { return nil }
+        state.owned[cid] = copies(cid) == 1 ? nil : copies(cid) - 1
+        let price = sellPrice(cid)
+        state.coins += price
+        return price
+    }
+
+    /// 중복분(2장째 이상)을 팔면 받을 (장 수, 코인). 각 카드 1장은 남는다.
+    var duplicatesValue: (count: Int, coins: Int) {
+        state.owned.reduce((0, 0)) { acc, kv in
+            let extra = kv.value - 1
+            return extra > 0 ? (acc.0 + extra, acc.1 + extra * sellPrice(kv.key)) : acc
+        }
+    }
+
+    /// 중복분을 모두 판다. 반환: 받은 코인.
+    mutating func sellDuplicates() -> Int {
+        var total = 0
+        for (cid, n) in state.owned where n > 1 {
+            for _ in 1..<n { total += sell(cid) ?? 0 }
+        }
+        return total
     }
 
     // MARK: 뽑기

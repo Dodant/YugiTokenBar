@@ -15,7 +15,7 @@ struct PopoverView: View {
             .padding(16)
             .frame(width: 340)
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { n in
-                if n.object is NSPanel { model.markSeen() }  // MenuBarExtra(.window) 창은 NSPanel, 팩/도감 창은 일반 NSWindow
+                if n.object is NSPanel { model.markSeen() }  // MenuBarExtra(.window) 창은 NSPanel, 팩/컬렉션 창은 일반 NSWindow
             }
     }
 
@@ -48,7 +48,7 @@ struct PopoverView: View {
 
             VStack(spacing: 2) {
                 MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.showShop = true }
-                MenuRow(title: "도감", systemImage: "books.vertical",
+                MenuRow(title: "컬렉션", systemImage: "square.stack.3d.up",
                         trailing: "\(game.ownedDistinct) / \(game.db.allCIDs.count)", chevron: true) { show("dex") }
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
                 UsageView()
@@ -93,7 +93,7 @@ struct PopoverView: View {
         openWindow(id: id)
         // activate 는 다른 앱 뒤에 창을 둘 수 있어서 창을 직접 앞으로 꺼낸다
         NSApp.activate()
-        let title = id == "dex" ? "도감" : "팩 개봉"
+        let title = id == "dex" ? "컬렉션" : "팩 개봉"
         DispatchQueue.main.async {
             guard let window = NSApp.windows.first(where: { $0.title == title }) else { return }
             window.orderFrontRegardless()

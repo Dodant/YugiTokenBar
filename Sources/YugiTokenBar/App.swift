@@ -27,7 +27,7 @@ struct YugiTokenBarApp: App {
         }
         .windowResizability(.contentSize)
 
-        Window("도감", id: "dex") {
+        Window("컬렉션", id: "dex") {
             DexView().environmentObject(model)
         }
         .defaultSize(width: 980, height: 640)

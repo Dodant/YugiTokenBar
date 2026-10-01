@@ -6,6 +6,8 @@ struct DexView: View {
     @State private var selectedPack: Int? = 0
     @State private var selectedCard: Int?
     @State private var showInspector = true
+    @State private var confirmSellLast = false
+    @State private var confirmSellDuplicates = false
 
     var body: some View {
         let game = model.game
@@ -44,6 +46,17 @@ struct DexView: View {
                 detail.inspectorColumnWidth(min: 240, ideal: 260)
             }
             .toolbar {
+                let dup = model.game.duplicatesValue
+                Button { confirmSellDuplicates = true } label: {
+                    Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
+                }
+                .help("2장째 카드를 모두 팔아요 (\(dup.count)장 · +\(dup.coins.formatted()) 코인)")
+                .disabled(dup.count == 0)
+                .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirmSellDuplicates) {
+                    Button("+\(dup.coins.formatted()) 코인에 판매") { model.sellDuplicates() }
+                } message: {
+                    Text("카드마다 1장씩은 남아서 컬렉션은 그대로예요.")
+                }
                 Button { showInspector.toggle() } label: { Label("정보", systemImage: "sidebar.trailing") }
             }
         }
@@ -123,6 +136,21 @@ struct DexView: View {
                     if let type = card.type { LabeledContent("종류", value: type) }
                     if let atk = card.atk { LabeledContent("공격력 / 수비력", value: "\(atk) / \(card.def ?? "-")") }
                     LabeledContent("보유", value: "\(n) / \(Balance.maxCopies)")
+                    let price = model.game.sellPrice(cid)
+                    Button {
+                        if n == 1 { confirmSellLast = true } else { model.sell(cid) }
+                    } label: {
+                        Label("1장 판매 · +\(price.formatted()) 코인", systemImage: "dollarsign.circle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .disabled(n == 0)
+                    .confirmationDialog("마지막 1장을 팔까요?", isPresented: $confirmSellLast) {
+                        Button("+\(price.formatted()) 코인에 판매", role: .destructive) { model.sell(cid) }
+                    } message: {
+                        Text("컬렉션에서 빠지고 다시 모아야 해요.")
+                    }
                 }
                 Section("효과") {
                     Text(card.text).font(.callout).textSelection(.enabled)

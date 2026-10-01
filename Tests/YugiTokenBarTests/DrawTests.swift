@@ -112,3 +112,38 @@ import Testing
         #expect(game.state.log.count == Balance.logLimit)
     }
 }
+
+@Suite struct SellTests {
+    /// 카드 1: 팩0 노멀 / 팩1 울트라 재수록, 카드 2: 팩0 레어
+    let db = makeDB([[(1, 1), (2, 2)], [(1, 4)]])
+
+    @Test func sellGivesCoinsByHighestTierAndRemovesCopy() {
+        var state = GameState()
+        state.owned = [1: 2, 2: 1]
+        var game = Game(db: db, state: state)
+        #expect(game.sell(1) == Balance.sellPrice[4])
+        #expect(game.copies(1) == 1)
+        #expect(game.sell(2) == Balance.sellPrice[2])
+        #expect(game.copies(2) == 0)
+        #expect(game.state.owned[2] == nil)
+        #expect(game.sell(2) == nil)
+        #expect(game.state.coins == Balance.sellPrice[4]! + Balance.sellPrice[2]!)
+    }
+
+    @Test func sellDuplicatesKeepsOneOfEach() {
+        var state = GameState()
+        state.owned = [1: 2, 2: 2]
+        var game = Game(db: db, state: state)
+        let expected = Balance.sellPrice[4]! + Balance.sellPrice[2]!
+        #expect(game.duplicatesValue == (2, expected))
+        #expect(game.sellDuplicates() == expected)
+        #expect(game.state.owned == [1: 1, 2: 1])
+        #expect(game.state.coins == expected)
+        #expect(game.sellDuplicates() == 0)
+    }
+
+    @Test func packResaleValueIsBelowPackPrice() {
+        let w = Balance.slot5Weights.reduce(0.0) { $0 + $1.weight * Double(Balance.sellPrice[$1.tier]!) }
+        #expect(4.0 * Double(Balance.sellPrice[1]!) + w < Double(Balance.packPrice))
+    }
+}

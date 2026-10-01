@@ -95,6 +95,16 @@ final class AppModel: ObservableObject {
         return true
     }
 
+    func sell(_ cid: Int) {
+        guard game.sell(cid) != nil else { return }
+        save()
+    }
+
+    func sellDuplicates() {
+        guard game.sellDuplicates() > 0 else { return }
+        save()
+    }
+
     func markSeen() {
         guard game.state.unseenFree > 0 else { return }
         game.state.unseenFree = 0

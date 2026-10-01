@@ -1,6 +1,6 @@
 # YugiTokenBar
 
-토큰 사용량으로 싱크로 이전 한국 정발 유희왕 카드 도감(부스터 27팩, 2,270종)을 채우는 macOS 메뉴바 앱. 개인용이며 배포하지 않는다.
+토큰 사용량으로 싱크로 이전 한국 정발 유희왕 카드 컬렉션(부스터 27팩, 2,270종)을 채우는 macOS 메뉴바 앱. 개인용이며 배포하지 않는다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
 - 구현 계획: `docs/superpowers/plans/2026-10-01-yugitokenbar.md` (작업 1~10, 코드 포함, 2026-10-01 사전 검증됨)
@@ -20,6 +20,7 @@
 
 ```bash
 swift test                                            # 전체 테스트
-YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행
+YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (공식 한도는 안 읽음)
+PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도까지 실제로 읽기
 scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명)
 ```
