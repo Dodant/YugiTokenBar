@@ -50,7 +50,7 @@ Claude Code/Codex 토큰 사용량을 보상으로 바꿔 **싱크로 이전 한
 
 ## 4. 앱 구조
 
-- 위치 `~/Documents/YugiTokenBar`, Swift 6, macOS 14+, SwiftPM 실행 타깃, 외부 의존성 없음.
+- 위치 `~/Documents/YugiTokenBar`, Swift 6, macOS 26+ (Liquid Glass), SwiftPM 실행 타깃, 외부 의존성 없음.
 - `MenuBarExtra(.window)` + 도감 창·팩 개봉 창(`Window`).
 
 ```
