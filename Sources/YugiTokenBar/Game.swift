@@ -11,6 +11,13 @@ enum Balance {
     static let logLimit = 50
 }
 
+struct Pull: Sendable, Equatable {
+    let cid: Int
+    let tier: Int
+    let label: String
+    let isNew: Bool
+}
+
 struct Game: Sendable {
     let db: CardDB
     var state: GameState
@@ -71,11 +78,59 @@ struct Game: Sendable {
 
     func isUnlocked(_ pack: Int) -> Bool { pack < state.unlocked }
 
+    func isComplete(_ pack: Int) -> Bool {
+        db.packs[pack].cards.allSatisfy { copies($0.cid) >= Balance.maxCopies }
+    }
+
+    func canBuy(_ pack: Int, count: Int = 1) -> Bool {
+        isUnlocked(pack) && !isComplete(pack) && state.coins >= Balance.packPrice * count
+    }
+
     // MARK: 뽑기
 
     /// 전체 카드 중 2장 미만인 카드를 균등 선택(잠긴 팩 카드 포함).
     func drawFree<R: RandomNumberGenerator>(using rng: inout R) -> Int? {
         db.allCIDs.filter { copies($0) < Balance.maxCopies }.randomElement(using: &rng)
+    }
+
+    /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, 2장 미만인 카드를 균등 선택.
+    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, using rng: inout R) -> PackCard? {
+        let order = [tier]
+            + Array(stride(from: tier - 1, through: 1, by: -1))
+            + Array(stride(from: tier + 1, through: 5, by: 1))
+        for t in order {
+            let candidates = db.packs[pack].cards.filter { $0.tier == t && copies($0.cid) < Balance.maxCopies }
+            if let card = candidates.randomElement(using: &rng) { return card }
+        }
+        return nil
+    }
+
+    func slot5Tier<R: RandomNumberGenerator>(using rng: inout R) -> Int {
+        var r = Double.random(in: 0..<1, using: &rng)
+        for (tier, weight) in Balance.slot5Weights {
+            if r < weight { return tier }
+            r -= weight
+        }
+        return Balance.slot5Weights[Balance.slot5Weights.count - 1].tier
+    }
+
+    /// count 팩 구매. 도중에 팩이 완료되면 남은 팩은 사지 않는다(코인도 깎지 않음).
+    mutating func buy<R: RandomNumberGenerator>(pack: Int, count: Int, using rng: inout R) -> [[Pull]] {
+        guard count > 0, canBuy(pack, count: count) else { return [] }
+        var opened: [[Pull]] = []
+        for _ in 0..<count where !isComplete(pack) {
+            state.coins -= Balance.packPrice
+            let tiers = [1, 1, 1, 1, slot5Tier(using: &rng)]
+            var pulls: [Pull] = []
+            for tier in tiers {
+                guard let card = draw(pack: pack, tier: tier, using: &rng) else { continue }
+                let isNew = copies(card.cid) == 0
+                give(card.cid, source: db.packs[pack].pid)
+                pulls.append(Pull(cid: card.cid, tier: card.tier, label: card.label, isNew: isNew))
+            }
+            opened.append(pulls)
+        }
+        return opened
     }
 
     mutating func give(_ cid: Int, source: String, now: Date = Date()) {
