@@ -11,6 +11,7 @@ final class AppModel: ObservableObject {
     private let store: StateStore
     private var rng = SystemRandomNumberGenerator()
     private var timer: Timer?
+    private var refreshing = false
 
     init(db: CardDB, store: StateStore = .standard()) {
         self.store = store
@@ -27,7 +28,10 @@ final class AppModel: ObservableObject {
     }
 
     func refresh() {
+        guard !refreshing else { return }
+        refreshing = true
         Task {
+            defer { refreshing = false }
             let usage = await Task.detached { TodayUsage.read() }.value
             _ = game.claim(today: usage.date, byProvider: usage.byProvider, using: &rng)
             save()

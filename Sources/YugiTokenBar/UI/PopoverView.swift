@@ -15,7 +15,9 @@ struct PopoverView: View {
         }
         .padding(12)
         .frame(width: 340)
-        .onAppear { model.markSeen() }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { n in
+            if n.object is NSPanel { model.markSeen() }  // MenuBarExtra(.window) 창은 NSPanel, 팩/도감 창은 일반 NSWindow
+        }
     }
 
     private var header: some View {
