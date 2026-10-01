@@ -14,13 +14,13 @@ struct CardImageView: View {
                 Image(nsImage: image)
                     .resizable()
                     .grayscale(owned ? 0 : 1)
-                    .brightness(owned ? 0 : -0.45)
+                    .brightness(owned ? 0 : -0.25)
             } else {
                 CardBack(name: db.cards[cid]?.name ?? "")
             }
         }
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 3))
+        .clipShape(.rect(cornerRadius: 7))
         .task(id: cid) {
             image = nil
             if let imageId = db.cards[cid]?.imageId {
@@ -30,29 +30,37 @@ struct CardImageView: View {
     }
 }
 
+/// 카드 뒷면. YGOPRODeck 뒷면 이미지, 받기 전·실패 시엔 비슷한 갈색 그라데이션.
 struct CardBack: View {
     var name = ""
     var glow = false
+    @State private var image: NSImage?
 
     var body: some View {
         ZStack {
-            RadialGradient(colors: [Color(red: 0.35, green: 0.23, blue: 0.10), Color(red: 0.16, green: 0.09, blue: 0.03)],
-                           center: .center, startRadius: 0, endRadius: 90)
-            Text("遊")
-                .font(.system(size: 26, weight: .bold))
-                .foregroundStyle(Color(red: 0.85, green: 0.64, blue: 0.29))
+            if let image {
+                Image(nsImage: image).resizable()
+            } else {
+                RadialGradient(colors: [Color(red: 0.35, green: 0.23, blue: 0.10), Color(red: 0.16, green: 0.09, blue: 0.03)],
+                               center: .center, startRadius: 0, endRadius: 90)
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(red: 0.54, green: 0.35, blue: 0.17), lineWidth: 2))
+            }
             if !name.isEmpty {
                 Text(name)
-                    .font(.system(size: 9))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
-                    .padding(4)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 3)
+                    .frame(maxWidth: .infinity)
+                    .background(.black.opacity(0.55))
                     .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
-        .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color(red: 0.54, green: 0.35, blue: 0.17), lineWidth: 2))
+        .clipShape(.rect(cornerRadius: 7))
         .shadow(color: glow ? .yellow : .clear, radius: glow ? 10 : 0)
+        .task { image = await ImageCache.shared.cardBack() }
     }
 }
 
@@ -62,18 +70,20 @@ struct PackImageView: View {
     @State private var image: NSImage?
 
     var body: some View {
-        ZStack {
-            if let image {
-                Image(nsImage: image).resizable()
-            } else {
-                LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+        // 봉투 비율이 원본마다 0.52~0.56 이라 0.53 칸에 채우고 넘치는 가장자리만 자른다
+        Color.clear
+            .aspectRatio(0.53, contentMode: .fit)
+            .overlay {
+                if let image {
+                    Image(nsImage: image).resizable().scaledToFill()
+                } else {
+                    LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                }
             }
-        }
-        .aspectRatio(301.0 / 534.0, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 3))
+            .clipShape(.rect(cornerRadius: 6))
         .task(id: pack.pid) {
             image = nil
-            if let code = pack.setCode { image = await ImageCache.shared.packImage(code) }
+            image = await ImageCache.shared.packImage(pack)
         }
     }
 }

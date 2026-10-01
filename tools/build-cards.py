@@ -85,6 +85,19 @@ def parse_pack(page):
     return cards
 
 
+def korean_pack_image(set_code):
+    """Yugipedia 의 한글판 봉투 이미지 `<code>-BoosterKR.*` 를 폭 600px 썸네일로(원본이 더 작으면 원본). 없으면 None."""
+    api = "https://yugipedia.com/api.php?format=json&action=query&"
+    found = json.loads(get(api + f"list=allimages&aiprefix={set_code}-BoosterKR&ailimit=5"))["query"]["allimages"]
+    time.sleep(0.5)
+    if not found:
+        return None
+    pages = json.loads(get(api + f"prop=imageinfo&iiprop=url&iiurlwidth=600&titles={found[0]['title']}"))["query"]["pages"]
+    time.sleep(0.5)
+    info = next(iter(pages.values()))["imageinfo"][0]
+    return info.get("thumburl") or info["url"]
+
+
 def main():
     products = parse_products(get(BASE + "card_list.action?request_locale=ko"))
     packs, infos = [], {}
@@ -119,7 +132,8 @@ def main():
         best = max((s for s in count if sets.get(s, {}).get("set_image")),
                    key=lambda s: count[s] / max(len(p["cards"]), sets[s]["num_of_cards"]), default=None)
         p["setCode"] = sets[best]["set_code"] if best else None
-        print(f"{p['name']} → {best} ({p['setCode']})")
+        p["imageURL"] = korean_pack_image(p["setCode"]) or sets[best]["set_image"] if best else None
+        print(f"{p['name']} → {best} ({p['setCode']}) {p['imageURL']}")
     missing = []
     for cid, info in infos.items():
         info["imageId"] = by_konami.get(cid)
@@ -132,7 +146,7 @@ def main():
     print(f"packs={len(packs)} distinct={len(infos)} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
-    if len(packs) != 27 or any(not i["name"] for i in infos.values()) or any(not p["setCode"] for p in packs):
+    if len(packs) != 27 or any(not i["name"] for i in infos.values()) or any(not p["imageURL"] for p in packs):
         sys.exit("검증 실패: 팩 수가 27이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 

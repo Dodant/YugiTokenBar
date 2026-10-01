@@ -23,12 +23,14 @@ struct Pack: Codable, Sendable, Identifiable, Equatable {
     let name: String
     let date: String
     let cards: [PackCard]
-    /// YGOPRODeck 팩 이미지 코드 (images/sets/<code>.jpg). 대응하는 TCG 팩 기준.
+    /// 대응하는 TCG 팩 코드 (LOB 등)
     var setCode: String? = nil
+    /// 봉투 이미지: Yugipedia 한글판, 없으면 YGOPRODeck 영문판
+    var imageURL: String? = nil
     var id: String { pid }
 }
 
-/// cards.json (tools/build-cards.py 산출물). packs 는 발매일 오름차순 = 해금 순서.
+/// cards.json (tools/build-cards.py 산출물). packs 는 발매일 오름차순.
 struct CardDB: Sendable {
     let packs: [Pack]
     let cards: [Int: CardInfo]

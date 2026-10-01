@@ -11,7 +11,8 @@ import Testing
         #expect(db.packs.allSatisfy { $0.date < "2008-10-07" })
         #expect(db.packs.map(\.date) == db.packs.map(\.date).sorted())
         #expect(db.packs.first?.setCode == "LOB")
-        #expect(db.packs.allSatisfy { $0.setCode != nil })
+        #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
+        #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 27팩 모두 한글판
         #expect(db.allCIDs.count == 2270)
         for pack in db.packs {
             for card in pack.cards {
