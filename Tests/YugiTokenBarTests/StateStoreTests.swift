@@ -21,7 +21,6 @@ import Testing
         let state = store.load()
         #expect(state.coins == 7)
         #expect(state.owned == [4007: 2])
-        #expect(state.unlocked == 1)
     }
 
     @Test func missingFileGivesFreshState() {

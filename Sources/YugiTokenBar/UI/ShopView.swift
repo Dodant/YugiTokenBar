@@ -5,20 +5,80 @@ struct ShopView: View {
     let onOpen: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Button("← 돌아가기") { model.showShop = false }.buttonStyle(.link)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Button { model.showShop = false } label: {
+                    Image(systemName: "chevron.left").font(.body.weight(.semibold)).frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                Text("상점").font(.title3.weight(.semibold))
+                Spacer()
+                Text("\(model.game.state.coins.formatted()) 코인")
+                    .font(.callout).monospacedDigit().foregroundStyle(.secondary)
+            }
             ScrollView {
-                VStack(spacing: 6) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
                     ForEach(model.db.packs.indices, id: \.self) { i in
-                        PackRow(index: i, onOpen: onOpen)
+                        PackTile(index: i, onOpen: onOpen)
                     }
                 }
             }
-            .frame(height: 420)
+            .scrollIndicators(.never)
+            .frame(maxHeight: .infinity)
         }
     }
 }
 
+/// 상점 그리드 칸: 평소엔 팩 이미지만, 마우스를 올리면 흐려지며 이름·진행도·구매 버튼.
+struct PackTile: View {
+    @EnvironmentObject var model: AppModel
+    let index: Int
+    let onOpen: () -> Void
+    @State private var hover = false
+
+    var body: some View {
+        let game = model.game
+        let pack = game.db.packs[index]
+        let p = game.progress(index)
+        let complete = game.isComplete(index)
+        PackImageView(pack: pack)
+            .blur(radius: hover ? 6 : 0)
+            .overlay {
+                if hover {
+                    VStack(spacing: 6) {
+                        Text(pack.name)
+                            .font(.callout.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                        Text("\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
+                            .font(.caption2).monospacedDigit().opacity(0.85)
+                        if complete {
+                            Label("완료", systemImage: "checkmark.seal.fill").font(.caption)
+                        } else {
+                            BuyButton(index: index, onOpen: onOpen)
+                        }
+                    }
+                    .foregroundStyle(.white)
+                    .padding(6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black.opacity(0.35))
+                    .transition(.opacity)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if complete && !hover {
+                    Image(systemName: "checkmark.seal.fill").foregroundStyle(.white, .green).padding(5)
+                }
+            }
+            .clipShape(.rect(cornerRadius: 10))
+            .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
+            .onHover { h in withAnimation(.easeOut(duration: 0.15)) { hover = h } }
+            .help(pack.name)
+    }
+}
+
+/// 팝오버 바로 구매 줄: 팩 이미지 · 이름 · 진행도 · 구매 버튼.
 struct PackRow: View {
     @EnvironmentObject var model: AppModel
     let index: Int
@@ -27,40 +87,41 @@ struct PackRow: View {
     var body: some View {
         let game = model.game
         let pack = game.db.packs[index]
-        HStack(spacing: 8) {
-            PackImageView(pack: pack)
-                .frame(height: 48)
-                .grayscale(game.isUnlocked(index) ? 0 : 1)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(game.isUnlocked(index) ? pack.name : "🔒 \(pack.name)").lineLimit(1)
-                Text(subtitle(game)).font(.caption2).foregroundStyle(.secondary)
-            }
-            Spacer()
-            if game.isUnlocked(index) && !game.isComplete(index) {
-                buyButton(1)
-                buyButton(5)
-            }
-        }
-        .padding(6)
-        .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
-        .opacity(game.isUnlocked(index) ? 1 : 0.5)
-    }
-
-    private func subtitle(_ game: Game) -> String {
-        let pack = game.db.packs[index]
         let p = game.progress(index)
-        if game.isComplete(index) { return "완료 · \(p.owned)/\(p.total)" }
-        if !game.isUnlocked(index) {
-            return "\(game.db.packs[index - 1].name) 50% 달성 시 해금 · 보유 \(p.owned)"
+        HStack(spacing: 12) {
+            PackImageView(pack: pack)
+                .frame(height: 50)
+                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(pack.name).font(.callout.weight(.medium)).lineLimit(1)
+                Text(game.isComplete(index) ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
+                    .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
+                    .tint(game.isComplete(index) ? .green : .accentColor)
+            }
+            Spacer(minLength: 4)
+            if game.isComplete(index) {
+                Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
+            } else {
+                BuyButton(index: index, onOpen: onOpen)
+            }
         }
-        return "\(pack.date.prefix(4)) · 도감 \(p.owned)/\(p.total)"
     }
+}
 
-    private func buyButton(_ n: Int) -> some View {
-        Button("\(n)팩") {
-            if model.buy(pack: index, count: n) { onOpen() }
+/// 1팩 구매 버튼. 가격(코인)을 그대로 보여준다.
+struct BuyButton: View {
+    @EnvironmentObject var model: AppModel
+    let index: Int
+    let onOpen: () -> Void
+
+    var body: some View {
+        Button("\(Balance.packPrice.formatted()) 코인") {
+            if model.buy(pack: index) { onOpen() }
         }
-        .disabled(!model.game.canBuy(index, count: n))
-        .help("\((Balance.packPrice * n).formatted())코인")
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .monospacedDigit()
+        .disabled(!model.game.canBuy(index))
     }
 }

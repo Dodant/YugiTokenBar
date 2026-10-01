@@ -5,45 +5,75 @@ struct DexView: View {
     /// -1 = 전체
     @State private var selectedPack: Int? = 0
     @State private var selectedCard: Int?
+    @State private var showInspector = true
 
     var body: some View {
         let game = model.game
-        HStack(spacing: 0) {
+        NavigationSplitView {
             List(selection: $selectedPack) {
-                Text("전체 · \(game.ownedDistinct) / \(game.db.allCIDs.count)").tag(-1)
-                ForEach(game.db.packs.indices, id: \.self) { i in
-                    packItem(game, i).tag(i)
+                Label {
+                    HStack {
+                        Text("전체")
+                        Spacer()
+                        Text("\(game.ownedDistinct) / \(game.db.allCIDs.count)").foregroundStyle(.secondary).monospacedDigit()
+                    }
+                } icon: {
+                    Image(systemName: "square.grid.2x2")
+                }
+                .tag(-1)
+                Section("부스터 팩") {
+                    ForEach(game.db.packs.indices, id: \.self) { i in
+                        packItem(game, i).tag(i)
+                    }
                 }
             }
-            .frame(width: 210)
-
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 220, ideal: 250)
+        } detail: {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 78), spacing: 6)], spacing: 6) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { n, entry in
                         cell(number: n + 1, cid: entry.cid, label: entry.label)
                     }
                 }
-                .padding(10)
+                .padding(16)
             }
-
-            Divider()
-            detail.frame(width: 230)
+            .navigationTitle(title)
+            .navigationSubtitle(subtitle)
+            .inspector(isPresented: $showInspector) {
+                detail.inspectorColumnWidth(min: 240, ideal: 260)
+            }
+            .toolbar {
+                Button { showInspector.toggle() } label: { Label("정보", systemImage: "sidebar.trailing") }
+            }
         }
+    }
+
+    private var title: String {
+        guard let i = selectedPack, i >= 0 else { return "전체" }
+        return model.db.packs[i].name
+    }
+
+    private var subtitle: String {
+        let owned = entries.filter { model.game.copies($0.cid) > 0 }.count
+        return "\(owned) / \(entries.count)장 보유"
     }
 
     private func packItem(_ game: Game, _ i: Int) -> some View {
         let pack = game.db.packs[i]
         let p = game.progress(i)
-        return HStack(spacing: 6) {
+        return HStack(spacing: 8) {
             PackImageView(pack: pack)
-                .frame(height: 40)
-                .grayscale(game.isUnlocked(i) ? 0 : 1)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(game.isUnlocked(i) ? pack.name : "🔒 \(pack.name)")
-                Text("\(p.owned) / \(p.total) · \(pack.date.prefix(4))").font(.caption2).foregroundStyle(.secondary)
-                ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
+                .frame(height: 36)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(pack.name).lineLimit(1)
+                HStack {
+                    ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
+                    Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                }
             }
         }
+        .padding(.vertical, 2)
     }
 
     private var entries: [(cid: Int, label: String)] {
@@ -56,51 +86,63 @@ struct DexView: View {
 
     private func cell(number: Int, cid: Int, label: String) -> some View {
         let n = model.game.copies(cid)
-        return CardImageView(db: model.db, cid: cid, owned: n > 0)
-            .overlay(alignment: .topLeading) {
-                Text(String(format: "%03d", number))
-                    .font(.system(size: 9)).foregroundStyle(.white)
-                    .padding(2).background(.black.opacity(0.5))
+        let selected = selectedCard == cid
+        return VStack(spacing: 4) {
+            CardImageView(db: model.db, cid: cid, owned: n > 0)
+                .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
+            HStack(spacing: 4) {
+                Text(String(format: "%03d", number)).foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+                Text(label).foregroundStyle(.secondary)
+                if n > 0 { Text("×\(n)").fontWeight(.semibold) }
             }
-            .overlay(alignment: .bottomTrailing) {
-                if n > 0 {
-                    Text("\(label) ×\(n)")
-                        .font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
-                        .padding(.horizontal, 3).background(.black.opacity(0.7))
-                }
-            }
-            .help(model.db.cards[cid]?.name ?? "")
-            .onTapGesture { selectedCard = cid }
+            .font(.caption2)
+            .monospacedDigit()
+        }
+        .contentShape(Rectangle())
+        .help(model.db.cards[cid]?.name ?? "")
+        .onTapGesture {
+            selectedCard = cid
+            showInspector = true
+        }
     }
 
     @ViewBuilder private var detail: some View {
         if let cid = selectedCard, let card = model.db.cards[cid] {
             let n = model.game.copies(cid)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 6) {
-                    CardImageView(db: model.db, cid: cid, size: .full, owned: n > 0)
-                    Text(card.name).font(.headline)
-                    Text([card.attr, card.level.map { "★\($0)" }, card.type].compactMap { $0 }.joined(separator: " · "))
-                        .font(.caption)
-                    if let atk = card.atk {
-                        Text("공격력 \(atk) / 수비력 \(card.def ?? "-")").font(.caption)
-                    }
-                    Text(card.text).font(.caption).foregroundStyle(.secondary)
-                    Text("\(packsText(cid)) · 보유 \(n)/\(Balance.maxCopies)")
-                        .font(.caption2).foregroundStyle(.tertiary)
+            Form {
+                CardImageView(db: model.db, cid: cid, size: .full, owned: n > 0)
+                    .frame(maxWidth: .infinity)
+                    .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
+                    .listRowSeparator(.hidden)
+                Section {
+                    Text(card.name).font(.title3.weight(.semibold))
+                    if let attr = card.attr { LabeledContent("속성", value: attr) }
+                    if let level = card.level { LabeledContent("레벨", value: "★\(level)") }
+                    if let type = card.type { LabeledContent("종류", value: type) }
+                    if let atk = card.atk { LabeledContent("공격력 / 수비력", value: "\(atk) / \(card.def ?? "-")") }
+                    LabeledContent("보유", value: "\(n) / \(Balance.maxCopies)")
                 }
-                .padding(10)
+                Section("효과") {
+                    Text(card.text).font(.callout).textSelection(.enabled)
+                }
+                Section("수록 팩") {
+                    ForEach(packs(cid), id: \.name) { item in
+                        LabeledContent(item.name, value: item.label)
+                    }
+                }
             }
+            .formStyle(.grouped)
         } else {
-            Text("카드를 눌러 자세히 보기")
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ContentUnavailableView("카드를 선택하세요", systemImage: "rectangle.portrait.on.rectangle.portrait",
+                                   description: Text("카드를 누르면 자세한 정보가 여기 나와요"))
         }
     }
 
-    private func packsText(_ cid: Int) -> String {
+    private func packs(_ cid: Int) -> [(name: String, label: String)] {
         model.db.packs.compactMap { pack in
-            pack.cards.first { $0.cid == cid }.map { "\(pack.name) \($0.label)" }
-        }.joined(separator: ", ")
+            pack.cards.first { $0.cid == cid }.map { (pack.name, $0.label) }
+        }
     }
 }

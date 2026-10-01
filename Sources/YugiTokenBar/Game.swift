@@ -5,7 +5,6 @@ enum Balance {
     static let packPrice = 1_000
     static let tokensPerFreeCard = 10_000_000
     static let maxCopies = 2
-    static let unlockRatio = 0.5
     /// 팩 5번째 장의 티어 확률 (R / SR / UR / 최상위)
     static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.09), (5, 0.03)]
     static let logLimit = 50
@@ -77,19 +76,17 @@ struct Game: Sendable {
         return (cards.filter { copies($0.cid) > 0 }.count, cards.count)
     }
 
-    func isUnlocked(_ pack: Int) -> Bool { pack < state.unlocked }
-
     func isComplete(_ pack: Int) -> Bool {
         db.packs[pack].cards.allSatisfy { copies($0.cid) >= Balance.maxCopies }
     }
 
-    func canBuy(_ pack: Int, count: Int = 1) -> Bool {
-        isUnlocked(pack) && !isComplete(pack) && state.coins >= Balance.packPrice * count
+    func canBuy(_ pack: Int) -> Bool {
+        !isComplete(pack) && state.coins >= Balance.packPrice
     }
 
     // MARK: 뽑기
 
-    /// 전체 카드 중 2장 미만인 카드를 균등 선택(잠긴 팩 카드 포함).
+    /// 전체 카드 중 2장 미만인 카드를 균등 선택.
     func drawFree<R: RandomNumberGenerator>(using rng: inout R) -> Int? {
         db.allCIDs.filter { copies($0) < Balance.maxCopies }.randomElement(using: &rng)
     }
@@ -115,23 +112,19 @@ struct Game: Sendable {
         return Balance.slot5Weights[Balance.slot5Weights.count - 1].tier
     }
 
-    /// count 팩 구매. 도중에 팩이 완료되면 남은 팩은 사지 않는다(코인도 깎지 않음).
-    mutating func buy<R: RandomNumberGenerator>(pack: Int, count: Int, using rng: inout R) -> [[Pull]] {
-        guard count > 0, canBuy(pack, count: count) else { return [] }
-        var opened: [[Pull]] = []
-        for _ in 0..<count where !isComplete(pack) {
-            state.coins -= Balance.packPrice
-            let tiers = [1, 1, 1, 1, slot5Tier(using: &rng)]
-            var pulls: [Pull] = []
-            for tier in tiers {
-                guard let card = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), using: &rng) else { continue }
-                let isNew = copies(card.cid) == 0
-                give(card.cid, source: db.packs[pack].pid)
-                pulls.append(Pull(cid: card.cid, tier: card.tier, label: card.label, isNew: isNew))
-            }
-            opened.append(pulls)
+    /// 1팩 구매. 살 수 없으면(완료·코인 부족) 빈 배열.
+    mutating func buy<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
+        guard canBuy(pack) else { return [] }
+        state.coins -= Balance.packPrice
+        let tiers = [1, 1, 1, 1, slot5Tier(using: &rng)]
+        var pulls: [Pull] = []
+        for tier in tiers {
+            guard let card = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), using: &rng) else { continue }
+            let isNew = copies(card.cid) == 0
+            give(card.cid, source: db.packs[pack].pid)
+            pulls.append(Pull(cid: card.cid, tier: card.tier, label: card.label, isNew: isNew))
         }
-        return opened
+        return pulls
     }
 
     mutating func give(_ cid: Int, source: String, now: Date = Date()) {
@@ -140,11 +133,13 @@ struct Game: Sendable {
         if state.log.count > Balance.logLimit {
             state.log.removeLast(state.log.count - Balance.logLimit)
         }
-        // 팩 k 가 50% 이상이면 팩 k+1 해금 (연쇄)
-        while state.unlocked < db.packs.count {
-            let p = progress(state.unlocked - 1)
-            guard Double(p.owned) >= Double(p.total) * Balance.unlockRatio else { break }
-            state.unlocked += 1
+    }
+
+    /// 마지막으로 산 팩 (팝오버 바로 구매용). 산 적이 없으면 첫 팩.
+    var lastBoughtPack: Int {
+        for entry in state.log {
+            if let i = db.packs.firstIndex(where: { $0.pid == entry.source }) { return i }
         }
+        return 0
     }
 }

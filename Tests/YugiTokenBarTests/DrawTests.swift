@@ -9,18 +9,17 @@ import Testing
         [(21, 1), (22, 1)],
     ])
 
-    func rich(_ owned: [Int: Int] = [:], unlocked: Int = 1) -> Game {
+    func rich(_ owned: [Int: Int] = [:]) -> Game {
         var state = GameState()
         state.coins = 1_000_000
         state.owned = owned
-        state.unlocked = unlocked
         return Game(db: db, state: state)
     }
 
     @Test func neverGivesThirdCopy() {
         var game = rich()
         var rng = SeededRNG(seed: 7)
-        for _ in 0..<50 { _ = game.buy(pack: 0, count: 1, using: &rng) }
+        for _ in 0..<50 { _ = game.buy(pack: 0, using: &rng) }
         #expect(game.state.owned.values.allSatisfy { $0 <= Balance.maxCopies })
         #expect(game.isComplete(0))
     }
@@ -40,63 +39,56 @@ import Testing
     @Test func packHasFourNormalsAndOneRareSlot() {
         var game = rich()
         var rng = SeededRNG(seed: 11)
-        let opened = game.buy(pack: 0, count: 1, using: &rng)
-        #expect(opened.count == 1)
-        #expect(opened[0].count == 5)
-        #expect(opened[0].prefix(4).allSatisfy { $0.tier == 1 })
-        #expect(opened[0][4].tier >= 2)
+        let opened = game.buy(pack: 0, using: &rng)
+        #expect(opened.count == 5)
+        #expect(opened.prefix(4).allSatisfy { $0.tier == 1 })
+        #expect(opened[4].tier >= 2)
         #expect(game.state.coins == 1_000_000 - Balance.packPrice)
-        #expect(opened[0].filter(\.isNew).count == Set(opened[0].map(\.cid)).count)
+        #expect(opened.filter(\.isNew).count == Set(opened.map(\.cid)).count)
     }
 
     @Test func noDuplicateCardWithinOnePack() {
         var game = rich()
         var rng = SeededRNG(seed: 1)
         for _ in 0..<5 {
-            for pulls in game.buy(pack: 0, count: 1, using: &rng) {
-                #expect(Set(pulls.map(\.cid)).count == pulls.count)
-            }
+            let pulls = game.buy(pack: 0, using: &rng)
+            #expect(Set(pulls.map(\.cid)).count == pulls.count)
         }
     }
 
-    @Test func multiBuyStopsWhenPackCompletesAndKeepsCoins() {
-        // 팩2는 2종 × 2장 = 4장이면 완료. 한 팩에 같은 카드가 안 나오므로 팩당 2장 → 5팩 사도 2팩만 열림
-        var game = rich(unlocked: 3)
+    @Test func completedPackCannotBeBought() {
+        // 팩2는 2종 × 2장 = 4장이면 완료. 한 팩에 같은 카드가 안 나오므로 팩당 2장 → 2팩이면 완료
+        var game = rich()
         var rng = SeededRNG(seed: 5)
-        let opened = game.buy(pack: 2, count: 5, using: &rng)
-        #expect(opened.count == 2)
+        #expect(game.buy(pack: 2, using: &rng).count == 2)
+        #expect(game.buy(pack: 2, using: &rng).count == 2)
         #expect(game.isComplete(2))
-        #expect(game.state.coins == 1_000_000 - Balance.packPrice * 2)
         #expect(game.canBuy(2) == false)
-        #expect(game.buy(pack: 2, count: 1, using: &rng).isEmpty)
+        #expect(game.buy(pack: 2, using: &rng).isEmpty)
+        #expect(game.state.coins == 1_000_000 - Balance.packPrice * 2)
     }
 
-    @Test func cannotBuyLockedOrUnaffordable() {
+    @Test func anyPackBuyableButNotWhenUnaffordable() {
         var rng = SeededRNG(seed: 1)
-        var locked = rich()
-        #expect(locked.buy(pack: 1, count: 1, using: &rng).isEmpty)
+        var any = rich()
+        #expect(!any.buy(pack: 2, using: &rng).isEmpty)  // 해금 없이 아무 팩이나
         var poor = Game(db: db, state: GameState())
         #expect(poor.canBuy(0) == false)
-        #expect(poor.buy(pack: 0, count: 1, using: &rng).isEmpty)
+        #expect(poor.buy(pack: 0, using: &rng).isEmpty)
         var almost = rich()
-        almost.state.coins = Balance.packPrice * 4
-        #expect(almost.canBuy(0, count: 5) == false)
-        #expect(almost.canBuy(0, count: 4))
+        almost.state.coins = Balance.packPrice - 1
+        #expect(almost.canBuy(0) == false)
+        almost.state.coins = Balance.packPrice
+        #expect(almost.canBuy(0))
     }
 
-    @Test func unlockAtExactlyHalfAndChains() {
+    @Test func lastBoughtPackSkipsFreeCards() {
         var game = rich()
-        game.give(1, source: "test")
-        game.give(2, source: "test")
-        #expect(game.state.unlocked == 1)  // 2/6
-        game.give(3, source: "test")
-        #expect(game.state.unlocked == 2)  // 3/6 = 50%
-        // 잠긴 팩1 을 무료 카드로 미리 50% 채워두면 팩0 해금 순간 연쇄로 열린다
-        var chain = rich([11: 1, 12: 1])
-        chain.give(1, source: "free")
-        chain.give(2, source: "free")
-        chain.give(3, source: "free")
-        #expect(chain.state.unlocked == 3)
+        var rng = SeededRNG(seed: 2)
+        #expect(game.lastBoughtPack == 0)
+        _ = game.buy(pack: 1, using: &rng)
+        game.give(21, source: "free")
+        #expect(game.lastBoughtPack == 1)
     }
 
     @Test func freeCardsComeFromWholePoolAndRespectCap() {
@@ -108,7 +100,7 @@ import Testing
             game.give(cid, source: "free")
             seenPacks.insert(cid / 10)
         }
-        #expect(seenPacks.count > 1)  // 잠긴 팩 카드도 나온다
+        #expect(seenPacks.count > 1)  // 모든 팩에서 나온다
         #expect(game.state.owned.values.allSatisfy { $0 <= 2 })
         let full = rich(Dictionary(uniqueKeysWithValues: db.allCIDs.map { ($0, 2) }))
         #expect(full.drawFree(using: &rng) == nil)

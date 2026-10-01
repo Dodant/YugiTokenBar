@@ -17,7 +17,8 @@ struct YugiTokenBarApp: App {
         MenuBarExtra {
             PopoverView().environmentObject(model)
         } label: {
-            Text(menuTitle)
+            Label(menuTitle, systemImage: "rectangle.portrait.on.rectangle.portrait.fill")
+                .labelStyle(.titleAndIcon)
         }
         .menuBarExtraStyle(.window)
 
@@ -35,6 +36,6 @@ struct YugiTokenBarApp: App {
     private var menuTitle: String {
         let state = model.game.state
         let coins = state.coins.formatted()
-        return state.unseenFree > 0 ? "🃏 \(coins) ·\(state.unseenFree)" : "🃏 \(coins)"
+        return state.unseenFree > 0 ? "\(coins) ·\(state.unseenFree)" : coins
     }
 }

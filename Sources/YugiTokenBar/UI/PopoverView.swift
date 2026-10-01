@@ -5,63 +5,128 @@ struct PopoverView: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            header
-            if model.showShop {
-                ShopView(onOpen: { show("pack") })
-            } else {
-                summary
+        // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점은 요약 크기 안에 겹쳐 그려 높이를 고정
+        summary
+            .opacity(model.showShop ? 0 : 1)
+            .allowsHitTesting(!model.showShop)
+            .overlay {
+                if model.showShop { ShopView(onOpen: { show("pack") }) }
             }
-        }
-        .padding(12)
-        .frame(width: 340)
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { n in
-            if n.object is NSPanel { model.markSeen() }  // MenuBarExtra(.window) 창은 NSPanel, 팩/도감 창은 일반 NSWindow
-        }
+            .padding(16)
+            .frame(width: 340)
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { n in
+                if n.object is NSPanel { model.markSeen() }  // MenuBarExtra(.window) 창은 NSPanel, 팩/도감 창은 일반 NSWindow
+            }
     }
 
-    private var header: some View {
-        let state = model.game.state
-        return VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("YugiTokenBar").font(.headline)
-                Spacer()
-                Text("🪙 \(state.coins.formatted())").font(.headline).foregroundStyle(.yellow)
-            }
-            Text("다음 무료 카드까지 \(shortTokens(Balance.tokensPerFreeCard - state.dropProgress))")
-                .font(.caption)
-            ProgressView(value: Double(state.dropProgress), total: Double(Balance.tokensPerFreeCard))
-        }
-    }
-
+    // 패널 자체가 Liquid Glass 라서 내용에는 유리를 겹치지 않는다(겹치면 뒤 배경 색이 번져 탁해짐).
     private var summary: some View {
         let game = model.game
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("최근 획득").font(.caption).foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                ForEach(Array(game.state.log.prefix(5).enumerated()), id: \.offset) { _, entry in
-                    CardImageView(db: game.db, cid: entry.cid)
-                        .frame(width: 56)
-                        .help(game.db.cards[entry.cid]?.name ?? "")
+        let state = game.state
+        return VStack(alignment: .leading, spacing: 16) {
+            header(state)
+
+            VStack(alignment: .leading, spacing: 8) {
+                caption("최근 획득")
+                HStack(spacing: 9) {
+                    ForEach(Array(state.log.prefix(5).enumerated()), id: \.offset) { _, entry in
+                        CardImageView(db: game.db, cid: entry.cid)
+                            .frame(width: 54)
+                            .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+                            .help(game.db.cards[entry.cid]?.name ?? "")
+                    }
+                    if state.log.isEmpty {
+                        Text("아직 카드가 없어요").font(.callout).foregroundStyle(.secondary)
+                    }
                 }
-                if game.state.log.isEmpty {
-                    Text("아직 카드가 없어요").font(.caption).foregroundStyle(.secondary)
-                }
+                .frame(height: 79)
             }
-            Text("팩 구매").font(.caption).foregroundStyle(.secondary)
-            PackRow(index: game.state.unlocked - 1, onOpen: { show("pack") })
-            Button("상점 전체 보기") { model.showShop = true }
-                .frame(maxWidth: .infinity)
-            Button("📖 도감 열기 (\(game.ownedDistinct) / \(game.db.allCIDs.count))") { show("dex") }
-                .frame(maxWidth: .infinity)
-            Divider()
-            Button("종료") { NSApp.terminate(nil) }.font(.caption)
+
+            PackRow(index: game.lastBoughtPack, onOpen: { show("pack") })
+                .padding(12)
+                .background(.fill.quinary, in: .rect(cornerRadius: 16))
+
+            VStack(spacing: 2) {
+                MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.showShop = true }
+                MenuRow(title: "도감", systemImage: "books.vertical",
+                        trailing: "\(game.ownedDistinct) / \(game.db.allCIDs.count)", chevron: true) { show("dex") }
+                Divider().padding(.horizontal, 10).padding(.vertical, 4)
+                UsageView()
+                Divider().padding(.horizontal, 10).padding(.vertical, 4)
+                MenuRow(title: "종료", systemImage: "power", trailing: "⌘Q", chevron: false) { NSApp.terminate(nil) }
+                    .keyboardShortcut("q")
+            }
+            .padding(.horizontal, -8)
         }
+    }
+
+    private func header(_ state: GameState) -> some View {
+        let left = Balance.tokensPerFreeCard - state.dropProgress
+        return HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(state.coins.formatted())
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                caption("코인")
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 1) {
+                caption("다음 무료 카드")
+                Text(shortTokens(left)).font(.callout.weight(.medium)).monospacedDigit()
+            }
+            Gauge(value: Double(state.dropProgress), in: 0...Double(Balance.tokensPerFreeCard)) {
+                Image(systemName: "gift.fill")
+            }
+            .gaugeStyle(.accessoryCircularCapacity)
+            .tint(.accentColor)
+            .scaleEffect(0.75)
+            .frame(width: 44, height: 44)
+        }
+    }
+
+    private func caption(_ text: String) -> some View {
+        Text(text).font(.caption.weight(.medium)).foregroundStyle(.secondary)
     }
 
     private func show(_ id: String) {
         openWindow(id: id)
-        NSApp.activate(ignoringOtherApps: true)
+        // activate 는 다른 앱 뒤에 창을 둘 수 있어서 창을 직접 앞으로 꺼낸다
+        NSApp.activate()
+        let title = id == "dex" ? "도감" : "팩 개봉"
+        DispatchQueue.main.async {
+            guard let window = NSApp.windows.first(where: { $0.title == title }) else { return }
+            window.orderFrontRegardless()
+            window.makeKey()
+        }
+    }
+}
+
+/// 제어 센터·Wi-Fi 메뉴 같은 한 줄 버튼. 마우스를 올리면 배경이 생긴다.
+private struct MenuRow: View {
+    let title: String
+    let systemImage: String
+    let trailing: String?
+    let chevron: Bool
+    let action: () -> Void
+    @State private var hover = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage).frame(width: 20).foregroundStyle(.secondary)
+                Text(title)
+                Spacer()
+                if let trailing { Text(trailing).foregroundStyle(.secondary).monospacedDigit() }
+                if chevron { Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary) }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .contentShape(Rectangle())
+            .background(hover ? AnyShapeStyle(.fill.tertiary) : AnyShapeStyle(.clear), in: .rect(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .onHover { hover = $0 }
     }
 }
 

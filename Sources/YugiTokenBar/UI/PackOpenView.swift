@@ -5,31 +5,30 @@ struct PackOpenView: View {
     @State private var flipped: Set<Int> = []
 
     var body: some View {
-        let packs = model.opening
+        let pulls = model.opening
         VStack(spacing: 14) {
-            if packs.count == 1 {
+            if !pulls.isEmpty {
                 HStack(spacing: 10) {
-                    ForEach(Array(packs[0].enumerated()), id: \.offset) { i, pull in
+                    ForEach(Array(pulls.enumerated()), id: \.offset) { i, pull in
                         FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
                             .frame(width: 140)
                             .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
                     }
                 }
                 Button("모두 뒤집기") {
-                    withAnimation(.easeInOut(duration: 0.4)) { flipped = Set(packs[0].indices) }
+                    withAnimation(.easeInOut(duration: 0.4)) { flipped = Set(pulls.indices) }
                 }
-            } else if !packs.isEmpty {
-                Text("\(packs.count)팩 결과").font(.headline)
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(90)), count: 5), spacing: 8) {
-                    ForEach(Array(packs.joined().enumerated()), id: \.offset) { _, pull in
-                        FlipCard(pull: pull, db: model.db, flipped: true).frame(width: 90)
-                    }
-                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .keyboardShortcut(.defaultAction)
+                .disabled(flipped.count == pulls.count)
             } else {
-                Text("상점에서 팩을 사면 여기서 열려요").foregroundStyle(.secondary)
+                ContentUnavailableView("열 팩이 없어요", systemImage: "shippingbox",
+                                       description: Text("상점에서 팩을 사면 여기서 열려요"))
             }
         }
-        .padding(20)
+        .padding(24)
+        .background(.background)
         .onChange(of: model.openingID) { flipped = [] }
     }
 }
@@ -59,9 +58,9 @@ struct FlipCard: View {
         Text(text)
             .font(.system(size: 10, weight: .bold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 1)
-            .background(color, in: RoundedRectangle(cornerRadius: 3))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(color, in: Capsule())
             .padding(4)
     }
 }

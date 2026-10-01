@@ -12,7 +12,6 @@ struct GameState: Codable, Sendable, Equatable {
     var coinRemainder = 0
     var dropProgress = 0
     var owned: [Int: Int] = [:]
-    var unlocked = 1
     var claimedDate: String?
     var claimedByProvider: [String: Int] = [:]
     var unseenFree = 0
@@ -28,7 +27,6 @@ struct GameState: Codable, Sendable, Equatable {
         coinRemainder = try c.decodeIfPresent(Int.self, forKey: .coinRemainder) ?? d.coinRemainder
         dropProgress = try c.decodeIfPresent(Int.self, forKey: .dropProgress) ?? d.dropProgress
         owned = try c.decodeIfPresent([Int: Int].self, forKey: .owned) ?? d.owned
-        unlocked = try c.decodeIfPresent(Int.self, forKey: .unlocked) ?? d.unlocked
         claimedDate = try c.decodeIfPresent(String.self, forKey: .claimedDate)
         claimedByProvider = try c.decodeIfPresent([String: Int].self, forKey: .claimedByProvider) ?? d.claimedByProvider
         unseenFree = try c.decodeIfPresent(Int.self, forKey: .unseenFree) ?? d.unseenFree

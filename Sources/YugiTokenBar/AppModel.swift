@@ -4,7 +4,7 @@ import SwiftUI
 final class AppModel: ObservableObject {
     @Published private(set) var game: Game
     /// 마지막 구매 결과 (팩 개봉 창이 보여줌)
-    @Published private(set) var opening: [[Pull]] = []
+    @Published private(set) var opening: [Pull] = []
     @Published private(set) var openingID = UUID()
     @Published var showShop = false
     /// 오늘 provider별 토큰·비용 (팝오버 사용량 표시)
@@ -86,8 +86,8 @@ final class AppModel: ObservableObject {
     }
 
     @discardableResult
-    func buy(pack: Int, count: Int) -> Bool {
-        let opened = game.buy(pack: pack, count: count, using: &rng)
+    func buy(pack: Int) -> Bool {
+        let opened = game.buy(pack: pack, using: &rng)
         guard !opened.isEmpty else { return false }
         opening = opened
         openingID = UUID()
