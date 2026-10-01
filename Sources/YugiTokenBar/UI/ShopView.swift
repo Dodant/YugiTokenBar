@@ -28,9 +28,9 @@ struct PackRow: View {
         let game = model.game
         let pack = game.db.packs[index]
         HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: 26, height: 38)
+            PackImageView(pack: pack)
+                .frame(height: 48)
+                .grayscale(game.isUnlocked(index) ? 0 : 1)
             VStack(alignment: .leading, spacing: 2) {
                 Text(game.isUnlocked(index) ? pack.name : "🔒 \(pack.name)").lineLimit(1)
                 Text(subtitle(game)).font(.caption2).foregroundStyle(.secondary)

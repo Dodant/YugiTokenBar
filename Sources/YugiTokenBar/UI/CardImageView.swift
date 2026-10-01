@@ -55,3 +55,25 @@ struct CardBack: View {
         .shadow(color: glow ? .yellow : .clear, radius: glow ? 10 : 0)
     }
 }
+
+/// 팩 봉투 이미지. 없거나 로딩 중이면 그라데이션.
+struct PackImageView: View {
+    let pack: Pack
+    @State private var image: NSImage?
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(nsImage: image).resizable()
+            } else {
+                LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+            }
+        }
+        .aspectRatio(301.0 / 534.0, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 3))
+        .task(id: pack.pid) {
+            image = nil
+            if let code = pack.setCode { image = await ImageCache.shared.packImage(code) }
+        }
+    }
+}

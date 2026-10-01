@@ -34,10 +34,15 @@ struct DexView: View {
     private func packItem(_ game: Game, _ i: Int) -> some View {
         let pack = game.db.packs[i]
         let p = game.progress(i)
-        return VStack(alignment: .leading, spacing: 2) {
-            Text(game.isUnlocked(i) ? pack.name : "🔒 \(pack.name)")
-            Text("\(p.owned) / \(p.total) · \(pack.date.prefix(4))").font(.caption2).foregroundStyle(.secondary)
-            ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
+        return HStack(spacing: 6) {
+            PackImageView(pack: pack)
+                .frame(height: 40)
+                .grayscale(game.isUnlocked(i) ? 0 : 1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(game.isUnlocked(i) ? pack.name : "🔒 \(pack.name)")
+                Text("\(p.owned) / \(p.total) · \(pack.date.prefix(4))").font(.caption2).foregroundStyle(.secondary)
+                ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
+            }
         }
     }
 

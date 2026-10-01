@@ -35,10 +35,10 @@ Claude Code/Codex 토큰 사용량을 보상으로 바꿔 **싱크로 이전 한
 
 1. Konami 한국 DB 상품 목록(`card_list.action?request_locale=ko`)에서 `【정규 부스터 팩】` 그리고 발매일 < 2008-10-07 인 상품을 고른다.
 2. 각 팩 페이지(`card_search.action?ope=1&sess=1&pid=<pid>&rp=99999&request_locale=ko`)에서 카드별 `cid`, 한국어 이름, 속성, 레벨, 종족/타입(마법·함정은 장착/지속/속공 등, 없으면 "일반"), ATK/DEF, 효과 텍스트, 레어도 라벨을 추출한다. `cid`로 중복을 없앤다. 팩 페이지에는 카드 번호(LOB-K001 등)가 없어서 화면의 번호는 팩 안에서의 순서를 쓴다.
-3. YGOPRODeck `cardinfo.php?misc=yes` 전체를 한 번 받아 `misc_info.konami_id == cid`로 이미지 ID(passcode)를 연결한다.
+3. YGOPRODeck `cardinfo.php?misc=yes` 전체를 한 번 받아 `misc_info.konami_id == cid`로 이미지 ID(passcode)를 연결한다. 팩 이미지는 `cardsets.php`의 TCG 팩 중 카드가 가장 많이 겹치는 팩(겹친 수 ÷ 두 팩 중 큰 쪽 카드 수)의 `set_code`를 `setCode`로 넣고, 런타임에 `images/sets/<setCode>.jpg`를 캐시한다(영문판 봉투).
 4. 출력 `Resources/cards.json` (저장소 루트. SwiftPM 리소스가 아니며, `.app`에서는 `Contents/Resources/`로 복사한다):
    ```json
-   { "packs": [ { "pid": "71101000", "name": "푸른 눈의 백룡의 전설", "date": "2003-12-09",
+   { "packs": [ { "pid": "71101000", "name": "푸른 눈의 백룡의 전설", "date": "2003-12-09", "setCode": "LOB",
                   "cards": [ { "cid": 4007, "tier": 4, "label": "UR" } ] } ],
      "cards": { "4007": { "name": "푸른 눈의 백룡", "attr": "빛", "level": 8,
                           "type": "드래곤족/일반", "atk": 3000, "def": 2500,

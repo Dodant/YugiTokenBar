@@ -102,11 +102,24 @@ def main():
         time.sleep(1)
 
     ygo = json.loads(get("https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes"))["data"]
-    by_konami = {}
+    by_konami, sets_of = {}, {}
     for c in ygo:
         for m in c.get("misc_info", []):
             if m.get("konami_id"):
                 by_konami.setdefault(int(m["konami_id"]), c["card_images"][0]["id"])
+                sets_of.setdefault(int(m["konami_id"]), set()).update(s["set_name"] for s in c.get("card_sets", []))
+
+    # 팩 이미지: 카드가 가장 많이 겹치는 TCG 팩(겹친 수 / 두 팩 중 큰 쪽 크기 → 재록 모음집은 밀려남)
+    sets = {s["set_name"]: s for s in json.loads(get("https://db.ygoprodeck.com/api/v7/cardsets.php"))}
+    for p in packs:
+        count = {}
+        for c in p["cards"]:
+            for s in sets_of.get(c["cid"], ()):
+                count[s] = count.get(s, 0) + 1
+        best = max((s for s in count if sets.get(s, {}).get("set_image")),
+                   key=lambda s: count[s] / max(len(p["cards"]), sets[s]["num_of_cards"]), default=None)
+        p["setCode"] = sets[best]["set_code"] if best else None
+        print(f"{p['name']} → {best} ({p['setCode']})")
     missing = []
     for cid, info in infos.items():
         info["imageId"] = by_konami.get(cid)
@@ -119,8 +132,8 @@ def main():
     print(f"packs={len(packs)} distinct={len(infos)} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
-    if len(packs) != 27 or any(not i["name"] for i in infos.values()):
-        sys.exit("검증 실패: 팩 수가 27이 아니거나 이름이 빈 카드가 있음")
+    if len(packs) != 27 or any(not i["name"] for i in infos.values()) or any(not p["setCode"] for p in packs):
+        sys.exit("검증 실패: 팩 수가 27이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 
 if __name__ == "__main__":

@@ -23,6 +23,8 @@ struct Pack: Codable, Sendable, Identifiable, Equatable {
     let name: String
     let date: String
     let cards: [PackCard]
+    /// YGOPRODeck 팩 이미지 코드 (images/sets/<code>.jpg). 대응하는 TCG 팩 기준.
+    var setCode: String? = nil
     var id: String { pid }
 }
 
