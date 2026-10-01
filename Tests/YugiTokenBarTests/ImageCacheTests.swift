@@ -13,4 +13,14 @@ import Testing
         let image = await cache.image(123, size: .small)
         #expect(image != nil)
     }
+
+    @MainActor @Test func removesGarbageCacheFileAndRetriesNextCall() async throws {
+        let dir = tempDir()
+        let cacheFile = dir.appendingPathComponent("cards_small-456.jpg")
+        try "garbage data".data(using: .utf8)!.write(to: cacheFile)
+        let cache = ImageCache(dir: dir)
+        let image = await cache.image(456, size: .small)
+        #expect(image == nil)
+        #expect(!FileManager.default.fileExists(atPath: cacheFile.path))
+    }
 }

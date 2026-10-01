@@ -22,11 +22,16 @@ final class ImageCache {
     func image(_ imageId: Int, size: Size) async -> NSImage? {
         let key = "\(size.rawValue)-\(imageId)"
         if let image = memory[key] { return image }
+        let file = dir.appendingPathComponent("\(key).jpg")
         let task = inFlight[key] ?? Task.detached { [dir] in await Self.fetch(imageId, size: size, file: dir.appendingPathComponent("\(key).jpg")) }
         inFlight[key] = task
         let data = await task.value
         inFlight[key] = nil
-        guard let data, let image = NSImage(data: data) else { return nil }
+        guard let data else { return nil }
+        guard let image = NSImage(data: data) else {
+            try? FileManager.default.removeItem(at: file)
+            return nil
+        }
         memory[key] = image
         return image
     }
