@@ -25,6 +25,11 @@ struct YugiTokenBarApp: App {
             PackOpenView().environmentObject(model)
         }
         .windowResizability(.contentSize)
+
+        Window("도감", id: "dex") {
+            DexView().environmentObject(model)
+        }
+        .defaultSize(width: 980, height: 640)
     }
 
     private var menuTitle: String {
