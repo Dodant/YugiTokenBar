@@ -30,7 +30,6 @@ struct ShopView: View {
                     }
                 }
             }
-            .scrollIndicators(.never)
             .frame(maxHeight: .infinity)
             .scrollPosition($position)
             .onScrollGeometryChange(for: Double.self) { $0.contentOffset.y } action: { _, y in
@@ -93,7 +92,7 @@ private struct EraSection: View {
     }
 }
 
-/// 상점 그리드 칸: 평소엔 팩 이미지만, 마우스를 올리면 흐려지며 이름·진행도·구매 버튼.
+/// 상점 그리드 칸: 팩 이미지와 그 아래 이름 한 줄, 마우스를 올리면 이미지가 흐려지며 전체 이름·진행도·구매 버튼.
 struct PackTile: View {
     @EnvironmentObject var model: AppModel
     let index: Int
@@ -102,9 +101,19 @@ struct PackTile: View {
     var body: some View {
         let game = model.game
         let pack = game.db.packs[index]
+        VStack(spacing: 4) {
+            image(pack, game)
+            Text(pack.name)
+                .font(.caption2).lineLimit(1).truncationMode(.tail)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func image(_ pack: Pack, _ game: Game) -> some View {
         let p = game.progress(index)
         let complete = game.isComplete(index)
-        PackImageView(pack: pack)
+        return PackImageView(pack: pack)
             .blur(radius: hover ? 6 : 0)
             .overlay {
                 if hover {
