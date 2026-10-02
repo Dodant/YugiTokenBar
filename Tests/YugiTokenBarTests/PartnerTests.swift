@@ -158,12 +158,12 @@ import Testing
 
     @Test func unlockIsPermanent() {
         var game = Game(db: makeDB([[(CardDB.partnerCard, 3)]]), state: GameState())
-        var result1 = game.unlockPartnerIfOwned()
+        let result1 = game.unlockPartnerIfOwned()
         #expect(!result1)  // 없으면 잠김
         game.state.owned[CardDB.partnerCard] = 1
-        var result2 = game.unlockPartnerIfOwned()
+        let result2 = game.unlockPartnerIfOwned()
         #expect(result2)   // 새로 해금
-        var result3 = game.unlockPartnerIfOwned()
+        let result3 = game.unlockPartnerIfOwned()
         #expect(!result3)  // 이미 해금
         let sellResult = game.sell(CardDB.partnerCard)
         #expect(sellResult != nil)
@@ -212,6 +212,18 @@ import Testing
         let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store)
         #expect(!model.game.state.partnerUnlocked)
         #expect(model.openFree())  // 풀에 날개 크리보 1종뿐
+        #expect(model.game.state.partnerUnlocked)
+        #expect(store.load().partnerUnlocked)
+    }
+
+    @MainActor @Test func unlocksOnLaunch() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        var state = GameState()
+        state.owned[CardDB.partnerCard] = 1
+        try store.save(state)
+        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store)
+        #expect(!model.game.state.partnerUnlocked)
+        model.unlockOnLaunch()
         #expect(model.game.state.partnerUnlocked)
         #expect(store.load().partnerUnlocked)
     }

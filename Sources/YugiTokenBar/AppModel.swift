@@ -45,7 +45,13 @@ final class AppModel: ObservableObject {
 
     var db: CardDB { game.db }
 
+    /// 앱 시작 시 해금 검사 (저장 전 검사와 함께 스펙 §2).
+    func unlockOnLaunch() {
+        if game.unlockPartnerIfOwned() { save() }
+    }
+
     func start() {
+        unlockOnLaunch()
         updatePartner()
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in

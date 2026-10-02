@@ -11,6 +11,7 @@ import SwiftUI
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
+        panel.hidesOnDeactivate = false  // 기본 true: 앱이 비활성화되면 사라짐
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.isReleasedWhenClosed = false
@@ -60,7 +61,7 @@ struct PartnerView: View {
     }
 }
 
-/// 마우스: 4pt 넘게 끌면 창 이동, 아니면 클릭(갸웃). Ctrl 클릭·우클릭은 우클릭은 [숨기기] 메뉴.
+/// 마우스: 4pt 넘게 끌면 창 이동, 아니면 클릭(갸웃). Ctrl 클릭·우클릭은 [숨기기] 메뉴.
 final class PartnerHostingView: NSHostingView<PartnerView> {
     var onClick: () -> Void = {}
     var onHide: () -> Void = {}
