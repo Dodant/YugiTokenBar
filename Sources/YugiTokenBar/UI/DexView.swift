@@ -180,8 +180,9 @@ struct DexView: View {
     }
 
     private var subtitle: String {
-        if case .deck(let id)? = scope {
-            return "\(model.game.deck(id)?.count ?? 0)장 · 메인 덱 \(Balance.deckSize.lowerBound)~\(Balance.deckSize.upperBound)장"
+        if case .deck(let id)? = scope, let deck = model.game.deck(id) {
+            let p = model.game.deckProgress(deck)
+            return "\(p.owned) / \(p.total)장 보유 · 메인 덱 \(Balance.deckSize.lowerBound)~\(Balance.deckSize.upperBound)장"
         }
         let all = tierEntries
         let owned = all.filter { model.game.copies($0.cid) > 0 }.count
@@ -356,7 +357,10 @@ struct DexView: View {
                 Button("새 덱에 추가\(many)") { add(model.addDeck().id, cids) }
             } else {
                 Menu("덱에 추가\(many)") {
-                    ForEach(decks) { d in Button("\(d.name) · \(d.count)장") { add(d.id, cids) } }
+                    ForEach(decks) { d in
+                        let p = model.game.deckProgress(d)
+                        Button("\(d.name) · \(p.owned)/\(p.total)") { add(d.id, cids) }
+                    }
                 }
             }
         }
@@ -517,19 +521,24 @@ private struct DexEraSection<Item: View>: View {
     }
 }
 
-/// 사이드바 덱 한 줄. 카드를 끌어다 놓으면 그 덱에 1장 넣는다(못 넣으면 비프).
+/// 사이드바 덱 한 줄: 팩 줄처럼 이름·진행 바·보유/덱 장 수. 카드를 끌어다 놓으면 그 덱에 1장 넣는다(못 넣으면 비프).
 private struct DeckRow: View {
     @EnvironmentObject var model: AppModel
     let deck: Deck
     @State private var targeted = false
 
     var body: some View {
+        let p = model.game.deckProgress(deck)
         Label {
-            HStack {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(deck.name).lineLimit(1)
-                Spacer()
-                Text("\(deck.count)").foregroundStyle(.secondary).monospacedDigit()
+                HStack {
+                    ProgressView(value: Double(p.owned), total: Double(max(p.total, 1))).controlSize(.mini)
+                        .tint(p.total > 0 && p.owned == p.total ? .green : .accentColor)
+                    Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                }
             }
+            .padding(.vertical, 2)
         } icon: {
             Image(systemName: "rectangle.stack")
         }

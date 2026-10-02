@@ -166,6 +166,11 @@ struct Game: Sendable {
 
     func deck(_ id: UUID) -> Deck? { state.decks.first { $0.id == id } }
 
+    /// 덱의 (보유한 장 수, 덱 장 수). 카드마다 덱에 넣은 수와 보유 수 중 작은 쪽을 센다.
+    func deckProgress(_ deck: Deck) -> (owned: Int, total: Int) {
+        (deck.cards.reduce(0) { $0 + min(copies($1.key), $1.value) }, deck.count)
+    }
+
     /// 새 덱 "새 덱 N".
     @discardableResult
     mutating func addDeck() -> Deck {

@@ -15,6 +15,9 @@ import Testing
         #expect(unowned)  // 미보유
         #expect(game.deck(deck.id)?.cards == [1: 3, 2: 1])
         #expect(game.deck(deck.id)?.count == 4)
+        // 보유: 카드 1은 3장 넣었지만 1장만 가졌고, 카드 2는 미보유 → 1 / 4
+        let p = game.deckProgress(game.deck(deck.id)!)
+        #expect(p.owned == 1 && p.total == 4)
     }
 
     @Test func removeRenameDelete() {
