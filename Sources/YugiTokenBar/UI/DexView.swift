@@ -191,6 +191,16 @@ struct DexView: View {
         .background(.bar)
     }
 
+    /// "어둠 · ★7 · 드래곤족/융합/효과" (랭크·링크는 "랭크 4"·"링크 4", 펜듈럼은 "P스케일 2" 추가). 없는 칸은 뺀다.
+    private func summary(_ card: CardInfo) -> String {
+        var parts: [String] = []
+        if let attr = card.attr { parts.append(attr) }
+        if let level = card.level { parts.append(card.levelName == "레벨" ? "★\(level)" : "\(card.levelName) \(level)") }
+        if let scale = card.scale { parts.append("P스케일 \(scale)") }
+        if let type = card.type { parts.append(type) }
+        return parts.joined(separator: " · ")
+    }
+
     private var title: String {
         switch scope {
         case .favorites?: "즐겨찾기"
@@ -450,33 +460,44 @@ struct DexView: View {
                     .listRowSeparator(.hidden)
                 Section {
                     Text(card.name).font(.title3.weight(.semibold))
-                    if let attr = card.attr { LabeledContent("속성", value: attr) }
-                    if let level = card.level { LabeledContent(card.levelName, value: card.levelName == "레벨" ? "★\(level)" : "\(level)") }
-                    if let scale = card.scale { LabeledContent("P스케일", value: "\(scale)") }
-                    if let type = card.type { LabeledContent("종류", value: type) }
-                    if let atk = card.atk { LabeledContent("공격력 / 수비력", value: "\(atk) / \(card.def ?? "-")") }
-                    LabeledContent("보유", value: "\(n)장")
-                    let price = model.game.sellPrice(cid)
-                    Button {
-                        if n == 1 { confirmSellLast = true } else { model.sell(cid) }
-                    } label: {
-                        Label("1장 판매 · +\(coinText(price))", systemImage: "dollarsign.circle")
-                            .frame(maxWidth: .infinity)
+                    // 속성·레벨·종류 한 줄, ATK/DEF 한 줄로 짧게
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(summary(card))
+                        if let atk = card.atk {
+                            Text(card.def.map { "ATK \(atk) / DEF \($0)" } ?? "ATK \(atk)").monospacedDigit()
+                        }
                     }
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.capsule)
-                    .disabled(n == 0)
-                    .confirmationDialog("마지막 1장을 팔까요?", isPresented: $confirmSellLast) {
-                        Button("+\(coinText(price))에 판매", role: .destructive) { model.sell(cid) }
-                    } message: {
-                        Text("컬렉션에서 빠지고 다시 모아야 해요.")
-                    }
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
                 }
                 if let pendulum = card.pendulum {
                     Section("펜듈럼 효과") { Text(pendulum).font(.callout).textSelection(.enabled) }
                 }
-                Section("효과") {
+                Section {
                     Text(card.text).font(.callout).textSelection(.enabled)
+                }
+                // 보유와 판매는 한 줄로 묶는다
+                Section {
+                    let price = model.game.sellPrice(cid)
+                    HStack {
+                        Text("보유 \(n)장").monospacedDigit()
+                        Spacer()
+                        Button {
+                            if n == 1 { confirmSellLast = true } else { model.sell(cid) }
+                        } label: {
+                            Label("1장 판매 · +\(coinText(price))", systemImage: "dollarsign.circle")
+                        }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.capsule)
+                        .controlSize(.small)
+                        .disabled(n == 0)
+                        .confirmationDialog("마지막 1장을 팔까요?", isPresented: $confirmSellLast) {
+                            Button("+\(coinText(price))에 판매", role: .destructive) { model.sell(cid) }
+                        } message: {
+                            Text("컬렉션에서 빠지고 다시 모아야 해요.")
+                        }
+                    }
                 }
                 Section("수록 팩") {
                     ForEach(packs(cid), id: \.name) { item in
