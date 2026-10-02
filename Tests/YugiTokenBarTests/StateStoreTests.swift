@@ -10,6 +10,7 @@ import Testing
         state.owned = [4007: 2, 4009: 1]
         state.claimedDate = "2026-10-01"
         state.claimedByProvider = ["codex": 5]
+        state.favorites = [4007, 4100]
         state.log = [LogEntry(cid: 4007, source: "free", date: Date(timeIntervalSince1970: 1_000))]
         try store.save(state)
         #expect(store.load() == state)

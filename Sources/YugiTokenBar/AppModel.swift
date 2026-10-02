@@ -117,6 +117,11 @@ final class AppModel: ObservableObject {
         set { game.state.autoSellDuplicates = newValue; save() }
     }
 
+    func toggleFavorite(_ cid: Int) {
+        if game.state.favorites.remove(cid) == nil { game.state.favorites.insert(cid) }
+        save()
+    }
+
     func sell(_ cid: Int) {
         guard game.sell(cid) != nil else { return }
         save()

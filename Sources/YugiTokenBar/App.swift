@@ -11,6 +11,8 @@ struct YugiTokenBarApp: App {
         let model = AppModel(db: db)
         _model = StateObject(wrappedValue: model)
         model.start()
+        // swift run 바이너리엔 Info.plist(LSUIElement)가 없어 창이 키보드 입력을 못 받는다 → .app 과 같은 정책을 직접 건다
+        NSApplication.shared.setActivationPolicy(.accessory)
     }
 
     var body: some Scene {

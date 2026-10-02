@@ -9,6 +9,9 @@ struct CardInfo: Codable, Sendable, Equatable {
     let def: String?
     let text: String
     let imageId: Int?
+
+    /// 몬스터 / 마법 / 함정. 마법·함정은 attr 칸에 "마법"·"함정"이 들어 있다.
+    var kind: String { attr == "마법" || attr == "함정" ? attr! : "몬스터" }
 }
 
 struct PackCard: Codable, Sendable, Equatable {

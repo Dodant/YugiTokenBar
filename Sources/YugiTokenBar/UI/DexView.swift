@@ -2,14 +2,18 @@ import SwiftUI
 
 struct DexView: View {
     @EnvironmentObject var model: AppModel
-    /// -1 = 전체
+    /// -1 = 전체, -2 = 즐겨찾기
     @State private var selectedPack: Int? = 0
     @State private var selectedCard: Int?
+    @State private var hoveredCard: Int?
     @State private var showInspector = true
     @State private var confirmSellLast = false
     @State private var confirmSellDuplicates = false
     /// 0 = 모든 등급, 1~4 = PackCard.tier
     @State private var tierFilter = 0
+    /// "" = 모든 종류, 아니면 CardInfo.kind
+    @State private var kindFilter = ""
+    @State private var search = ""
     @AppStorage("dex.showUnowned") private var showUnowned = true
     @AppStorage("dex.sort") private var sort = DexSort.pack
 
@@ -27,6 +31,16 @@ struct DexView: View {
                     Image(systemName: "square.grid.2x2")
                 }
                 .tag(-1)
+                Label {
+                    HStack {
+                        Text("즐겨찾기")
+                        Spacer()
+                        Text("\(game.state.favorites.count)").foregroundStyle(.secondary).monospacedDigit()
+                    }
+                } icon: {
+                    Image(systemName: "star.fill").foregroundStyle(.yellow)
+                }
+                .tag(-2)
                 ForEach(game.db.eras, id: \.name) { era in
                     DexEraSection(name: era.name, packs: era.packs) { i in packItem(game, i) }
                 }
@@ -45,14 +59,18 @@ struct DexView: View {
             // ponytail: macOS 26 툴바 유리 그룹 안에선 메뉴 Picker 글자가 안 그려지고 체크박스가 뭉개져서 그리드 위 막대에 둔다
             .safeAreaInset(edge: .top, spacing: 0) { filterBar }
             .overlay {
-                if entries.isEmpty {
-                    ContentUnavailableView(showUnowned ? "이 등급 카드가 없어요" : "보유한 카드가 없어요",
+                if entries.isEmpty, selectedPack == -2, model.game.state.favorites.isEmpty {
+                    ContentUnavailableView("즐겨찾기한 카드가 없어요", systemImage: "star",
+                                           description: Text("카드에 마우스를 올리고 오른쪽 위 ☆를 눌러 보세요"))
+                } else if entries.isEmpty {
+                    ContentUnavailableView(showUnowned ? "조건에 맞는 카드가 없어요" : "보유한 카드가 없어요",
                                            systemImage: "line.3.horizontal.decrease.circle",
-                                           description: Text(showUnowned ? "다른 팩이나 등급을 골라 보세요" : "미보유 카드 포함을 켜면 전부 보여요"))
+                                           description: Text(showUnowned ? "다른 팩이나 종류·등급을 골라 보세요" : "미보유 카드 포함을 켜면 전부 보여요"))
                 }
             }
             .navigationTitle(title)
             .navigationSubtitle(subtitle)
+            .searchable(text: $search, placement: .toolbar, prompt: "카드 이름")
             .inspector(isPresented: $showInspector) {
                 detail.inspectorColumnWidth(min: 240, ideal: 260)
             }
@@ -75,6 +93,12 @@ struct DexView: View {
 
     private var filterBar: some View {
         HStack(spacing: 14) {
+            Picker("종류", selection: $kindFilter) {
+                Text("모든 종류").tag("")
+                Divider()
+                ForEach(["몬스터", "마법", "함정"], id: \.self) { Text($0).tag($0) }
+            }
+            .fixedSize()
             Picker("등급", selection: $tierFilter) {
                 Text("모든 등급").tag(0)
                 Divider()
@@ -101,6 +125,7 @@ struct DexView: View {
     }
 
     private var title: String {
+        if selectedPack == -2 { return "즐겨찾기" }
         guard let i = selectedPack, i >= 0 else { return "전체" }
         return model.db.packs[i].name
     }
@@ -149,6 +174,9 @@ struct DexView: View {
     }
 
     /// number 는 등급 필터·정렬과 상관없이 팩(또는 전체) 안 순번.
+    /// 띄어쓰기는 무시한다 ("푸른눈" 으로도 "푸른 눈의 백룡" 이 찾아진다)
+    private var query: String { search.replacingOccurrences(of: " ", with: "") }
+
     private var tierEntries: [(number: Int, cid: Int, label: String)] {
         let db = model.db
         let cards: [PackCard]
@@ -158,9 +186,12 @@ struct DexView: View {
             // 전체: 팩 순서대로, 재수록은 처음 나온 팩 기준 한 번만
             var seen = Set<Int>()
             cards = db.packs.flatMap(\.cards).filter { seen.insert($0.cid).inserted }
+                .filter { selectedPack != -2 || model.game.state.favorites.contains($0.cid) }
         }
         return cards.enumerated()
             .filter { tierFilter == 0 || $0.element.tier == tierFilter }
+            .filter { kindFilter.isEmpty || db.cards[$0.element.cid]?.kind == kindFilter }
+            .filter { query.isEmpty || (db.cards[$0.element.cid]?.name ?? "").replacingOccurrences(of: " ", with: "").localizedStandardContains(query) }
             .map { ($0.offset + 1, $0.element.cid, $0.element.label) }
     }
 
@@ -171,6 +202,7 @@ struct DexView: View {
             CardImageView(db: model.db, cid: cid, owned: n > 0)
                 .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
                 .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
+                .overlay(alignment: .topTrailing) { star(cid) }
             HStack(spacing: 4) {
                 Text(String(format: "%03d", number)).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
@@ -181,10 +213,28 @@ struct DexView: View {
             .monospacedDigit()
         }
         .contentShape(Rectangle())
+        .onHover { hoveredCard = $0 ? cid : (hoveredCard == cid ? nil : hoveredCard) }
         .help(model.db.cards[cid]?.name ?? "")
         .onTapGesture {
             selectedCard = cid
             showInspector = true
+        }
+    }
+
+    /// 즐겨찾기 별: 체크된 카드는 항상, 아니면 마우스를 올렸을 때만.
+    @ViewBuilder private func star(_ cid: Int) -> some View {
+        let on = model.game.state.favorites.contains(cid)
+        if on || hoveredCard == cid {
+            Button { model.toggleFavorite(cid) } label: {
+                Image(systemName: on ? "star.fill" : "star")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(on ? .yellow : .white)
+                    .frame(width: 22, height: 22)
+                    .background(.black.opacity(0.45), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(3)
+            .help(on ? "즐겨찾기 해제" : "즐겨찾기")
         }
     }
 

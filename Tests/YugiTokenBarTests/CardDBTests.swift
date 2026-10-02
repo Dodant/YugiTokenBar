@@ -12,6 +12,8 @@ import Testing
         #expect(db.packs.map(\.date) == db.packs.map(\.date).sorted())
         #expect(db.packs.first?.setCode == "LOB")
         #expect(db.eras.map(\.name) == ["DM", "GX"])
+        let kinds = Dictionary(grouping: db.cards.values, by: \.kind).mapValues(\.count)
+        #expect(kinds == ["몬스터": 1341, "마법": 511, "함정": 418])
         #expect(db.eras.map(\.packs) == [0..<11, 11..<27])  // 천공의 성역까지 DM, 듀얼리스트의 투혼부터 GX
         #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
         #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 27팩 모두 한글판

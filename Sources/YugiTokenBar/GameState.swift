@@ -20,6 +20,8 @@ struct GameState: Codable, Sendable, Equatable {
     var packStamp = 0
     /// 아직 쓰지 않은 무료 팩
     var freePacks = 0
+    /// 컬렉션 즐겨찾기 (미보유 카드도 가능)
+    var favorites: Set<Int> = []
     /// 설정: 이미 가진 카드가 나오면 바로 판다
     var autoSellDuplicates = false
     var log: [LogEntry] = []
@@ -39,6 +41,7 @@ struct GameState: Codable, Sendable, Equatable {
         pendingFree = try c.decodeIfPresent(Int.self, forKey: .pendingFree) ?? d.pendingFree
         packStamp = try c.decodeIfPresent(Int.self, forKey: .packStamp) ?? d.packStamp
         freePacks = try c.decodeIfPresent(Int.self, forKey: .freePacks) ?? d.freePacks
+        favorites = try c.decodeIfPresent(Set<Int>.self, forKey: .favorites) ?? d.favorites
         autoSellDuplicates = try c.decodeIfPresent(Bool.self, forKey: .autoSellDuplicates) ?? d.autoSellDuplicates
         log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log
     }

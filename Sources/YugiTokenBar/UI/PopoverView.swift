@@ -84,7 +84,7 @@ struct PopoverView: View {
                 .contentTransition(.numericText())
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
-                caption("다음 무료 카드")
+                caption("다음 무료 카드 · 팩")
                 Text("\(shortTokens(left)) · \(state.packStamp)/\(Balance.packsPerFreePack)")
                     .font(.callout.weight(.medium)).monospacedDigit()
                     .help("다음 무료 카드까지 토큰 · 무료 팩까지 산 팩 수")
@@ -107,9 +107,9 @@ struct PopoverView: View {
         openWindow(id: id)
         // activate 는 다른 앱 뒤에 창을 둘 수 있어서 창을 직접 앞으로 꺼낸다
         NSApp.activate()
-        let title = ["dex": "컬렉션", "changelog": "패치노트", "license": "라이선스"][id]
+        // 컬렉션은 navigationTitle 로 제목이 팩 이름으로 바뀌므로 제목 대신 Scene id(NSWindow.identifier)로 찾는다
         DispatchQueue.main.async {
-            guard let window = NSApp.windows.first(where: { $0.title == title }) else { return }
+            guard let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix(id) == true }) else { return }
             window.orderFrontRegardless()
             window.makeKey()
         }
