@@ -134,7 +134,7 @@ struct DexView: View {
                 Text(String(format: "%03d", number)).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
                 RarityPill(label: label, owned: n > 0)
-                if n > 0 { Text("×\(n)").fontWeight(.semibold) }
+                if n > 1 { Text("×\(n)").fontWeight(.semibold) }
             }
             .font(.caption2)
             .monospacedDigit()
