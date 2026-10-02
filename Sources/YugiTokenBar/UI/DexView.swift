@@ -68,7 +68,7 @@ struct DexView: View {
                 Button { confirmSellDuplicates = true } label: {
                     Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
                 }
-                .help("2장째 카드를 모두 팔아요 (\(dup.count)장 · +\(dup.coins.formatted()) 코인)")
+                .help("카드마다 1장만 남기고 모두 팔아요 (\(dup.count)장 · +\(dup.coins.formatted()) 코인)")
                 .disabled(dup.count == 0)
                 .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirmSellDuplicates) {
                     Button("+\(dup.coins.formatted()) 코인에 판매") { model.sellDuplicates() }
@@ -161,7 +161,7 @@ struct DexView: View {
                     if let level = card.level { LabeledContent("레벨", value: "★\(level)") }
                     if let type = card.type { LabeledContent("종류", value: type) }
                     if let atk = card.atk { LabeledContent("공격력 / 수비력", value: "\(atk) / \(card.def ?? "-")") }
-                    LabeledContent("보유", value: "\(n) / \(Balance.maxCopies)")
+                    LabeledContent("보유", value: "\(n)장")
                     let price = model.game.sellPrice(cid)
                     Button {
                         if n == 1 { confirmSellLast = true } else { model.sell(cid) }

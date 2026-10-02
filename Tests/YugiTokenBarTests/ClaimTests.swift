@@ -58,14 +58,11 @@ import Testing
         #expect(game.state.coinRemainder == 0)
     }
 
-    @Test func hugeCreditWithFullCollectionDoesNotHang() {
-        var state = GameState()
-        state.owned = [1: 2, 2: 2]
-        var game = Game(db: db, state: state)
-        var rng = SeededRNG(seed: 1)
+    @Test func hugeCreditJustStacksFreeCards() {
+        var game = Game(db: db, state: GameState())
         let got = game.credit(5_000_000_000)  // 무료 카드 500장분
-        #expect(got == 0)
-        #expect(game.state.pendingFree == 0)
+        #expect(got == 500)
+        #expect(game.state.pendingFree == 500)
         #expect(game.state.dropProgress == 0)
         #expect(game.state.coins == 500_000)
     }
@@ -95,11 +92,11 @@ import Testing
         #expect(game.state.log.allSatisfy { $0.source == "free" })
     }
 
-    @Test func openFreeDropsPendingWhenCollectionFills() {
-        var game = Game(db: db, state: GameState())  // 2종 → 최대 4장
+    @Test func openFreeHasNoCopyCap() {
+        var game = Game(db: db, state: GameState())  // 2종뿐
         var rng = SeededRNG(seed: 1)
         game.credit(5 * Balance.tokensPerFreeCard)
-        #expect(game.openFree(using: &rng).count == 4)
-        #expect(game.state.pendingFree == 0)
+        #expect(game.openFree(using: &rng).count == 5)
+        #expect(game.state.owned.values.reduce(0, +) == 5)
     }
 }

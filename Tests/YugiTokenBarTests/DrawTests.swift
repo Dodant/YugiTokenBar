@@ -16,22 +16,21 @@ import Testing
         return Game(db: db, state: state)
     }
 
-    @Test func neverGivesThirdCopy() {
+    @Test func noCopyCapAndCompletePackStillBuyable() {
         var game = rich()
         var rng = SeededRNG(seed: 7)
         for _ in 0..<50 { _ = game.buy(pack: 0, using: &rng) }
-        #expect(game.state.owned.values.allSatisfy { $0 <= Balance.maxCopies })
+        #expect(game.state.owned.values.contains { $0 > 2 })  // 상한 없음
         #expect(game.isComplete(0))
+        #expect(game.buy(pack: 0, using: &rng).count == 5)  // 완료 팩도 계속 산다
     }
 
     @Test func emptyTierFallsDownThenUp() {
         var rng = SeededRNG(seed: 3)
-        // 레어(2) 전부 2장 → 노멀로 내려감
-        let down = rich([5: 2])
-        #expect(down.draw(pack: 0, tier: 2, using: &rng)?.tier == 1)
-        // 노멀·레어 전부 2장 → 위로 올라가 울트라
-        let up = rich([1: 2, 2: 2, 3: 2, 4: 2, 5: 2])
-        #expect(up.draw(pack: 0, tier: 2, using: &rng)?.cid == 6)
+        // 팩0에 SR(3) 없음 → 아래로 내려가 레어
+        #expect(rich().draw(pack: 0, tier: 3, using: &rng)?.cid == 5)
+        // 노멀·레어가 이미 봉투에 나왔으면 → 위로 올라가 울트라
+        #expect(rich().draw(pack: 0, tier: 2, excluding: [1, 2, 3, 4, 5], using: &rng)?.cid == 6)
         // 최상위 티어 요청도 범위 밖 크래시 없이 아래로
         #expect(rich().draw(pack: 0, tier: 5, using: &rng)?.cid == 6)
     }
@@ -56,16 +55,13 @@ import Testing
         }
     }
 
-    @Test func completedPackCannotBeBought() {
-        // 팩2는 2종 × 2장 = 4장이면 완료. 한 팩에 같은 카드가 안 나오므로 팩당 2장 → 2팩이면 완료
+    @Test func smallPackGivesEachCardOnce() {
+        // 팩2는 2종뿐 → 한 봉투에 같은 카드가 안 나오므로 2장, 한 번에 완료
         var game = rich()
         var rng = SeededRNG(seed: 5)
         #expect(game.buy(pack: 2, using: &rng).count == 2)
-        #expect(game.buy(pack: 2, using: &rng).count == 2)
         #expect(game.isComplete(2))
-        #expect(game.canBuy(2) == false)
-        #expect(game.buy(pack: 2, using: &rng).isEmpty)
-        #expect(game.state.coins == 1_000_000 - Balance.packPrice * 2)
+        #expect(game.state.coins == 1_000_000 - Balance.packPrice)
     }
 
     @Test func anyPackBuyableButNotWhenUnaffordable() {
@@ -91,7 +87,7 @@ import Testing
         #expect(game.lastBoughtPack == 1)
     }
 
-    @Test func freeCardsComeFromWholePoolAndRespectCap() {
+    @Test func freeCardsComeFromWholePool() {
         var game = rich()
         var rng = SeededRNG(seed: 9)
         var seenPacks = Set<Int>()
@@ -101,9 +97,8 @@ import Testing
             seenPacks.insert(cid / 10)
         }
         #expect(seenPacks.count > 1)  // 모든 팩에서 나온다
-        #expect(game.state.owned.values.allSatisfy { $0 <= 2 })
         let full = rich(Dictionary(uniqueKeysWithValues: db.allCIDs.map { ($0, 2) }))
-        #expect(full.drawFree(using: &rng) == nil)
+        #expect(full.drawFree(using: &rng) != nil)  // 다 가져도 계속 나온다
     }
 
     @Test func freeCardsFollowTierWeights() {

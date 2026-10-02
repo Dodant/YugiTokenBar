@@ -102,11 +102,7 @@ struct PackTile: View {
                             .multilineTextAlignment(.center)
                         Text("\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                             .font(.caption2).monospacedDigit().opacity(0.85)
-                        if complete {
-                            Label("완료", systemImage: "checkmark.seal.fill").font(.caption)
-                        } else {
-                            BuyButton(index: index, onOpen: onOpen)
-                        }
+                        BuyButton(index: index, onOpen: onOpen)
                     }
                     .foregroundStyle(.white)
                     .padding(6)
@@ -149,11 +145,7 @@ struct PackRow: View {
                     .tint(game.isComplete(index) ? .green : .accentColor)
             }
             Spacer(minLength: 4)
-            if game.isComplete(index) {
-                Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
-            } else {
-                BuyButton(index: index, onOpen: onOpen)
-            }
+            BuyButton(index: index, onOpen: onOpen)
         }
     }
 }

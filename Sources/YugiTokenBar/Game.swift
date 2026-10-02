@@ -4,7 +4,6 @@ enum Balance {
     static let tokensPerCoin = 10_000
     static let packPrice = 1_000
     static let tokensPerFreeCard = 10_000_000
-    static let maxCopies = 2
     /// 팩 5번째 장의 티어 확률 (R / SR / UR)
     static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.12)]
     /// 무료 카드의 티어 확률 (N / R / SR / UR). 티어 안에서는 균등.
@@ -65,12 +64,11 @@ struct Game: Sendable {
         state.dropProgress += tokens
         let n = state.dropProgress / Balance.tokensPerFreeCard
         state.dropProgress %= Balance.tokensPerFreeCard
-        guard db.allCIDs.contains(where: { copies($0) < Balance.maxCopies }) else { return 0 }  // 전부 2장이면 게이지만 소모
         state.pendingFree += n
         return n
     }
 
-    /// 쌓인 무료 카드를 최대 `freeOpenBatch`장 연다. 뽑을 카드가 없으면 남은 것도 버린다.
+    /// 쌓인 무료 카드를 최대 `freeOpenBatch`장 연다.
     mutating func openFree<R: RandomNumberGenerator>(using rng: inout R) -> [Pull] {
         var pulls: [Pull] = []
         while state.pendingFree > 0, pulls.count < Balance.freeOpenBatch {
@@ -94,12 +92,13 @@ struct Game: Sendable {
         return (cards.filter { copies($0.cid) > 0 }.count, cards.count)
     }
 
+    /// 팩의 모든 카드를 1장 이상 가졌으면 완료(✓ 표시만, 구매는 계속 가능).
     func isComplete(_ pack: Int) -> Bool {
-        db.packs[pack].cards.allSatisfy { copies($0.cid) >= Balance.maxCopies }
+        db.packs[pack].cards.allSatisfy { copies($0.cid) > 0 }
     }
 
     func canBuy(_ pack: Int) -> Bool {
-        !isComplete(pack) && state.coins >= Balance.packPrice
+        state.coins >= Balance.packPrice
     }
 
     // MARK: 판매
@@ -141,12 +140,12 @@ struct Game: Sendable {
 
     // MARK: 뽑기
 
-    /// 전체 카드 중 2장 미만인 카드에서 `freeWeights`로 티어를 고르고 그 안에서 균등 선택.
+    /// 전체 카드에서 `freeWeights`로 티어를 고르고 그 안에서 균등 선택.
     /// 그 티어가 비었으면 팩과 같이 아래 → 위 티어 순으로 찾는다.
     func drawFree<R: RandomNumberGenerator>(using rng: inout R) -> Int? {
         let tiers = Dictionary(db.packs.flatMap(\.cards).map { ($0.cid, $0.tier) }, uniquingKeysWith: max)
         var byTier: [Int: [Int]] = [:]
-        for cid in db.allCIDs where copies(cid) < Balance.maxCopies {
+        for cid in db.allCIDs {
             byTier[tiers[cid] ?? 1, default: []].append(cid)
         }
         for t in Self.fallbackOrder(pickTier(Balance.freeWeights, using: &rng)) {
@@ -159,10 +158,10 @@ struct Game: Sendable {
         [tier] + Array(stride(from: tier - 1, through: 1, by: -1)) + Array(stride(from: tier + 1, through: 4, by: 1))
     }
 
-    /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, 2장 미만이고 excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택.
+    /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택. 보유 수 상한은 없다.
     func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], using rng: inout R) -> PackCard? {
         for t in Self.fallbackOrder(tier) {
-            let candidates = db.packs[pack].cards.filter { $0.tier == t && copies($0.cid) < Balance.maxCopies && !excluding.contains($0.cid) }
+            let candidates = db.packs[pack].cards.filter { $0.tier == t && !excluding.contains($0.cid) }
             if let card = candidates.randomElement(using: &rng) { return card }
         }
         return nil
@@ -181,7 +180,7 @@ struct Game: Sendable {
         return weights[weights.count - 1].tier
     }
 
-    /// 1팩 구매. 살 수 없으면(완료·코인 부족) 빈 배열.
+    /// 1팩 구매. 코인이 부족하면 빈 배열.
     mutating func buy<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         guard canBuy(pack) else { return [] }
         state.coins -= Balance.packPrice
