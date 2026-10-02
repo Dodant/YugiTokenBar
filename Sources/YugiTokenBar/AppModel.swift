@@ -96,6 +96,13 @@ final class AppModel: ObservableObject {
         return true
     }
 
+    @discardableResult
+    func openFreePack() -> Bool {
+        guard let (pack, pulls) = game.openFreePack(using: &rng) else { return false }
+        show(pulls, title: "무료 팩 · \(db.packs[pack].name)")
+        return true
+    }
+
     /// 팝오버 안 개봉 화면으로 보여준다.
     private func show(_ pulls: [Pull], title: String) {
         opening = pulls

@@ -42,8 +42,16 @@ struct PopoverView: View {
                 .frame(height: 79)
             }
 
+            if state.freePacks > 0 {
+                FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",
+                        hint: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩", button: "열기") { model.openFreePack() }
+                    .padding(12)
+                    .background(.fill.quinary, in: .rect(cornerRadius: 16))
+            }
+
             if state.pendingFree > 0 {
-                FreeRow(count: state.pendingFree) { model.openFree() }
+                FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: "토큰으로 모은 카드예요",
+                        button: state.pendingFree > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기") { model.openFree() }
                     .padding(12)
                     .background(.fill.quinary, in: .rect(cornerRadius: 16))
             }
@@ -77,7 +85,9 @@ struct PopoverView: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
                 caption("다음 무료 카드")
-                Text(shortTokens(left)).font(.callout.weight(.medium)).monospacedDigit()
+                Text("\(shortTokens(left)) · \(state.packStamp)/\(Balance.packsPerFreePack)")
+                    .font(.callout.weight(.medium)).monospacedDigit()
+                    .help("다음 무료 카드까지 토큰 · 무료 팩까지 산 팩 수")
             }
             Gauge(value: Double(state.dropProgress), in: 0...Double(Balance.tokensPerFreeCard)) {
                 Image(systemName: "gift.fill")
@@ -106,20 +116,23 @@ struct PopoverView: View {
     }
 }
 
-/// 쌓인 무료 카드. 누르면 최대 5장씩 연다.
+/// 쌓인 무료 카드·무료 팩 한 줄.
 private struct FreeRow: View {
-    let count: Int
+    let systemImage: String
+    let title: String
+    let hint: String
+    let button: String
     let action: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "gift.fill").font(.title2).foregroundStyle(.tint).frame(width: 36)
+            Image(systemName: systemImage).font(.title2).foregroundStyle(.tint).frame(width: 36)
             VStack(alignment: .leading, spacing: 2) {
-                Text("무료 카드 \(count)장").font(.callout.weight(.medium)).monospacedDigit()
-                Text("토큰으로 모은 카드예요").font(.caption).foregroundStyle(.secondary)
+                Text(title).font(.callout.weight(.medium)).monospacedDigit()
+                Text(hint).font(.caption).foregroundStyle(.secondary)
             }
             Spacer(minLength: 4)
-            Button(count > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기", action: action)
+            Button(button, action: action)
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
         }

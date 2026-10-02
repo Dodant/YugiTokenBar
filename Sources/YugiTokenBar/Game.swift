@@ -3,6 +3,8 @@ import Foundation
 enum Balance {
     static let tokensPerCoin = 10_000
     static let packPrice = 1_000
+    /// 코인으로 이만큼 사면 무료 팩 1장 (무료 팩으로 깐 건 세지 않는다)
+    static let packsPerFreePack = 10
     static let tokensPerFreeCard = 10_000_000
     /// 팩 5번째 장의 티어 확률 (R / SR / UR)
     static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.12)]
@@ -183,10 +185,28 @@ struct Game: Sendable {
         return weights[weights.count - 1].tier
     }
 
-    /// 1팩 구매. 코인이 부족하면 빈 배열.
+    /// 1팩 구매. 코인으로 산 팩 `packsPerFreePack`개마다 무료 팩 1장이 쌓인다. 코인이 부족하면 빈 배열.
     mutating func buy<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         guard canBuy(pack) else { return [] }
         state.coins -= Balance.packPrice
+        state.packStamp += 1
+        if state.packStamp >= Balance.packsPerFreePack {
+            state.packStamp = 0
+            state.freePacks += 1
+        }
+        return open(pack: pack, using: &rng)
+    }
+
+    /// 쌓인 무료 팩 1개를 연다. 정규 부스터 27팩 중 하나를 무작위로 고른다. 없으면 nil.
+    mutating func openFreePack<R: RandomNumberGenerator>(using rng: inout R) -> (pack: Int, pulls: [Pull])? {
+        guard state.freePacks > 0, !db.packs.isEmpty else { return nil }
+        state.freePacks -= 1
+        let pack = Int.random(in: db.packs.indices, using: &rng)
+        return (pack, open(pack: pack, using: &rng))
+    }
+
+    /// 봉투 하나 열기: 노멀 4 + 슬롯5.
+    private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         let tiers = [1, 1, 1, 1, slot5Tier(using: &rng)]
         var pulls: [Pull] = []
         for tier in tiers {

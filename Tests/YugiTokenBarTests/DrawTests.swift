@@ -169,4 +169,28 @@ import Testing
         _ = game.buy(pack: 0, using: &rng)
         #expect(game.state.owned == [1: 2, 2: 2])
     }
+
+    @Test func everyTenPaidPacksGiveOneFreePack() {
+        let db = makeDB([[(1, 1), (2, 1), (3, 1), (4, 1), (5, 2)], [(11, 1), (12, 1), (13, 1), (14, 1)]])
+        var game = Game(db: db, state: GameState())
+        game.state.coins = 1_000_000
+        var rng = SeededRNG(seed: 4)
+        for _ in 0..<9 { _ = game.buy(pack: 0, using: &rng) }
+        #expect(game.state.packStamp == 9)
+        #expect(game.state.freePacks == 0)
+        _ = game.buy(pack: 0, using: &rng)
+        #expect(game.state.packStamp == 0)
+        #expect(game.state.freePacks == 1)
+        let coins = game.state.coins
+        let free = game.openFreePack(using: &rng)
+        #expect(free != nil && !free!.pulls.isEmpty)  // 랜덤 부스터 1팩
+        #expect(game.state.coins == coins)
+        #expect(game.state.freePacks == 0)
+        #expect(game.state.packStamp == 0)  // 무료로 깐 건 세지 않는다
+        #expect(game.openFreePack(using: &rng) == nil)
+        // 여러 번 열면 여러 팩에서 나온다
+        game.state.freePacks = 20
+        let packs = Set((0..<20).compactMap { _ in game.openFreePack(using: &rng)?.pack })
+        #expect(packs.count == 2)
+    }
 }
