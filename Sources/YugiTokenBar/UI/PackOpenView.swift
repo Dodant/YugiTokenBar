@@ -29,7 +29,7 @@ struct OpeningView: View {
             Spacer(minLength: 0)
             HStack(spacing: 8) {
                 if allFlipped, let again {
-                    Button("확인") { model.showOpening = false }.buttonStyle(.bordered)
+                    Button("확인") { model.showOpening = false }.buttonStyle(.glass)
                     Button(again.title, action: again.action)
                         .disabled(!again.enabled)
                         .keyboardShortcut(.defaultAction)
@@ -41,7 +41,7 @@ struct OpeningView: View {
                     .keyboardShortcut(.defaultAction)
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .buttonBorderShape(.capsule)
             .controlSize(.large)
         }

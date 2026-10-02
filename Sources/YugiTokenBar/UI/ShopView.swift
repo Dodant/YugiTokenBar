@@ -155,7 +155,7 @@ struct BuyButton: View {
         Button(coinText(Balance.packPrice)) {
             model.buy(pack: index)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .monospacedDigit()
         .disabled(!model.game.canBuy(index))

@@ -33,6 +33,7 @@ struct SettingsView: View {
                     transferSection
                     aboutSection
                 }
+                .buttonStyle(.glass)
             }
             .scrollIndicators(.never)
             .frame(maxHeight: .infinity)

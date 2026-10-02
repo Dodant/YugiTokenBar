@@ -134,7 +134,7 @@ private struct FreeRow: View {
             }
             Spacer(minLength: 4)
             Button(button, action: action)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .buttonBorderShape(.capsule)
         }
     }
