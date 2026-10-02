@@ -66,13 +66,10 @@ struct PopoverView: View {
     private func header(_ state: GameState) -> some View {
         let left = Balance.tokensPerFreeCard - state.dropProgress
         return HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(state.coins.formatted())
-                    .font(.system(size: 30, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                caption("코인")
-            }
+            Text(coinText(state.coins))
+                .font(.system(size: 30, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .contentTransition(.numericText())
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
                 caption("다음 무료 카드")
@@ -152,6 +149,9 @@ private struct MenuRow: View {
         .onHover { hover = $0 }
     }
 }
+
+/// 코인 표기: ⓒ 1,000
+func coinText(_ n: Int) -> String { "ⓒ \(n.formatted())" }
 
 func shortTokens(_ n: Int) -> String {
     n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1e6) : String(format: "%.0fK", Double(n) / 1e3)

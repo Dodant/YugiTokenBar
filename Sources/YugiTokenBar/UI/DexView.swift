@@ -68,10 +68,10 @@ struct DexView: View {
                 Button { confirmSellDuplicates = true } label: {
                     Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
                 }
-                .help("카드마다 1장만 남기고 모두 팔아요 (\(dup.count)장 · +\(dup.coins.formatted()) 코인)")
+                .help("카드마다 1장만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
                 .disabled(dup.count == 0)
                 .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirmSellDuplicates) {
-                    Button("+\(dup.coins.formatted()) 코인에 판매") { model.sellDuplicates() }
+                    Button("+\(coinText(dup.coins))에 판매") { model.sellDuplicates() }
                 } message: {
                     Text("카드마다 1장씩은 남아서 컬렉션은 그대로예요.")
                 }
@@ -166,14 +166,14 @@ struct DexView: View {
                     Button {
                         if n == 1 { confirmSellLast = true } else { model.sell(cid) }
                     } label: {
-                        Label("1장 판매 · +\(price.formatted()) 코인", systemImage: "dollarsign.circle")
+                        Label("1장 판매 · +\(coinText(price))", systemImage: "dollarsign.circle")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
                     .disabled(n == 0)
                     .confirmationDialog("마지막 1장을 팔까요?", isPresented: $confirmSellLast) {
-                        Button("+\(price.formatted()) 코인에 판매", role: .destructive) { model.sell(cid) }
+                        Button("+\(coinText(price))에 판매", role: .destructive) { model.sell(cid) }
                     } message: {
                         Text("컬렉션에서 빠지고 다시 모아야 해요.")
                     }

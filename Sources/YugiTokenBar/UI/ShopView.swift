@@ -15,7 +15,7 @@ struct ShopView: View {
                 .foregroundStyle(.secondary)
                 Text("상점").font(.title3.weight(.semibold))
                 Spacer()
-                Text("\(model.game.state.coins.formatted()) 코인")
+                Text(coinText(model.game.state.coins))
                     .font(.callout).monospacedDigit().foregroundStyle(.secondary)
             }
             ScrollView {
@@ -157,7 +157,7 @@ struct BuyButton: View {
     let onOpen: () -> Void
 
     var body: some View {
-        Button("\(Balance.packPrice.formatted()) 코인") {
+        Button(coinText(Balance.packPrice)) {
             if model.buy(pack: index) { onOpen() }
         }
         .buttonStyle(.borderedProminent)
