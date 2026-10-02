@@ -70,6 +70,17 @@ struct SettingsView: View {
                     .toggleStyle(.switch)
                     .controlSize(.small)
             }
+            row {
+                let db = model.game.fullDB
+                labeled("시대 범위", hint: "상점·컬렉션·무료 카드에 이 시대까지 나와요 · \(model.db.packs.count)팩 \(model.db.allCIDs.count.formatted())종")
+                Spacer()
+                Picker("시대 범위", selection: $model.eraLimit) {
+                    ForEach(db.eras, id: \.name) { era in Text("\(era.name)(\(CardDB.eraSummons[era.name] ?? ""))까지").tag(era.name) }
+                }
+                .labelsHidden()
+                .fixedSize()
+                .controlSize(.small)
+            }
         }
     }
 

@@ -49,9 +49,9 @@ struct Pack: Codable, Sendable, Identifiable, Equatable {
 
 /// cards.json (tools/build-cards.py 산출물). packs 는 발매일 오름차순.
 struct CardDB: Sendable {
-    let packs: [Pack]
+    private(set) var packs: [Pack]
     let cards: [Int: CardInfo]
-    let allCIDs: [Int]
+    private(set) var allCIDs: [Int]
 
     init(packs: [Pack], cards: [Int: CardInfo]) {
         self.packs = packs
@@ -59,10 +59,20 @@ struct CardDB: Sendable {
         self.allCIDs = cards.keys.sorted()
     }
 
+    /// 앞 n 팩만 쓰는 DB (설정의 "시대 범위"). cards 는 그대로 두어 범위 밖 보유·기록 카드도 이름·이미지를 찾는다.
+    func prefix(packs n: Int) -> CardDB {
+        var db = self
+        db.packs = Array(packs.prefix(n))
+        db.allCIDs = Set(db.packs.flatMap(\.cards).map(\.cid)).sorted()
+        return db
+    }
+
     /// 시대별 첫 팩(발매순 인덱스): DM 푸른 눈의 백룡의 전설, GX 듀얼리스트의 투혼, 5D's 듀얼리스트의 태동(싱크로),
     /// ZEXAL 리턴 오브 더 듀얼리스트(엑시즈), ARC-V 더 듀얼리스트 어드벤트(펜듈럼), VRAINS 코드 오브 더 듀얼리스트(링크).
     // ponytail: 팩 목록이 고정(cards.json)이라 인덱스로 나눈다. 팩을 더 넣으면 여기도 고친다.
     static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63)]
+    /// 시대를 대표하는 소환법 (설정의 시대 범위 메뉴 표시용)
+    static let eraSummons = ["DM": "의식", "GX": "융합", "5D's": "싱크로", "ZEXAL": "엑시즈", "ARC-V": "펜듈럼", "VRAINS": "링크"]
 
     /// (시대 이름, 팩 인덱스 범위). 테스트용 작은 DB 에선 빈 시대를 뺀다.
     var eras: [(name: String, packs: Range<Int>)] {

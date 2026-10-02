@@ -112,6 +112,8 @@ struct DexView: View {
                 }
             }
             .onChange(of: scope) { selectedCards = []; anchor = nil }
+            // 설정에서 시대 범위를 줄여 보던 팩이 사라지면 "전체"로
+            .onChange(of: model.db.packs.count) { if case .pack(let i)? = scope, i >= model.db.packs.count { scope = .all } }
             .navigationTitle(title)
             .navigationSubtitle(subtitle)
             .searchable(text: $search, placement: .toolbar, prompt: "카드 이름")
@@ -171,7 +173,7 @@ struct DexView: View {
     private var title: String {
         switch scope {
         case .favorites?: "즐겨찾기"
-        case .pack(let i)?: model.db.packs[i].name
+        case .pack(let i)? where model.db.packs.indices.contains(i): model.db.packs[i].name
         case .deck(let id)?: model.game.deck(id)?.name ?? "덱"
         default: "전체"
         }
@@ -233,7 +235,7 @@ struct DexView: View {
         var seen = Set<Int>()
         let all = { db.packs.flatMap(\.cards).filter { seen.insert($0.cid).inserted } }
         let cards: [PackCard] = switch scope {
-        case .pack(let i)?: db.packs[i].cards
+        case .pack(let i)? where db.packs.indices.contains(i): db.packs[i].cards
         case .favorites?: all().filter { model.game.state.favorites.contains($0.cid) }
         case .deck(let id)?:
             { let inDeck = model.game.deck(id)?.cards ?? [:]; return all().filter { inDeck[$0.cid] != nil } }()

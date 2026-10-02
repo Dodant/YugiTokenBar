@@ -33,8 +33,20 @@ struct Pull: Sendable, Equatable {
 }
 
 struct Game: Sendable {
-    let db: CardDB
+    /// 75팩 전체
+    let fullDB: CardDB
     var state: GameState
+    /// 시대 이름 → 그 시대까지 자른 DB (미리 만들어 두고 고르기만 한다)
+    private let byEra: [String: CardDB]
+
+    init(db: CardDB, state: GameState) {
+        fullDB = db
+        self.state = state
+        byEra = Dictionary(uniqueKeysWithValues: db.eras.map { ($0.name, db.prefix(packs: $0.packs.upperBound)) })
+    }
+
+    /// 지금 시대 범위의 DB. 상점·컬렉션·뽑기 모두 이것만 본다.
+    var db: CardDB { byEra[state.eraLimit] ?? fullDB }  // 모르는 이름이면 전체
 
     // MARK: 토큰 적립
 
@@ -96,7 +108,8 @@ struct Game: Sendable {
 
     func copies(_ cid: Int) -> Int { state.owned[cid] ?? 0 }
 
-    var ownedDistinct: Int { state.distinctOwned }
+    /// 시대 범위 안에서 1장 이상 가진 종류 수
+    var ownedDistinct: Int { db.allCIDs.filter { copies($0) > 0 }.count }
 
     func progress(_ pack: Int) -> (owned: Int, total: Int) {
         let cards = db.packs[pack].cards

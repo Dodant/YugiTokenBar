@@ -120,6 +120,11 @@ final class AppModel: ObservableObject {
         set { game.state.autoSellDuplicates = newValue; save() }
     }
 
+    var eraLimit: String {
+        get { game.state.eraLimit }
+        set { game.state.eraLimit = newValue; save() }
+    }
+
     // MARK: 덱
 
     @discardableResult
