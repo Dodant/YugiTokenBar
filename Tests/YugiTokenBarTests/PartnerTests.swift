@@ -19,4 +19,97 @@ import Testing
     @Test func sheetRejectsNonImage() {
         #expect(PartnerSheet(url: CardDB.repoCardsURL) == nil)
     }
+
+    // MARK: 상태 판정
+
+    @Test func baseMoodPriority() {
+        #expect(PartnerMood.base(tokensPerMinute: 500_000, limitPercent: 80) == .sad)  // 한도가 사용량보다 먼저
+        #expect(PartnerMood.base(tokensPerMinute: 0, limitPercent: 79.9) == .idle)
+        #expect(PartnerMood.base(tokensPerMinute: 100_000, limitPercent: 0) == .fly)
+        #expect(PartnerMood.base(tokensPerMinute: 99_999, limitPercent: 0) == .flap)
+        #expect(PartnerMood.base(tokensPerMinute: 1_000, limitPercent: 0) == .flap)
+        #expect(PartnerMood.base(tokensPerMinute: 999, limitPercent: 0) == .idle)
+    }
+
+    @Test func tokensPerMinuteFromSamples() {
+        let t0 = Date(timeIntervalSince1970: 1_000_000)
+        let a = UsageSample(date: "2026-10-02", total: 1_000, at: t0)
+        #expect(PartnerMood.tokensPerMinute(from: nil, to: a) == 0)  // 첫 갱신
+        let b = UsageSample(date: "2026-10-02", total: 201_000, at: t0.addingTimeInterval(120))
+        #expect(PartnerMood.tokensPerMinute(from: a, to: b) == 100_000)
+    }
+
+    @Test func tokensPerMinuteIgnoresResetAndShortGaps() {
+        let t0 = Date(timeIntervalSince1970: 1_000_000)
+        let a = UsageSample(date: "2026-10-02", total: 50_000, at: t0)
+        let nextDay = UsageSample(date: "2026-10-03", total: 60_000, at: t0.addingTimeInterval(60))
+        #expect(PartnerMood.tokensPerMinute(from: a, to: nextDay) == 0)  // 자정
+        let lower = UsageSample(date: "2026-10-02", total: 10_000, at: t0.addingTimeInterval(60))
+        #expect(PartnerMood.tokensPerMinute(from: a, to: lower) == 0)  // 일시적으로 작게 읽힘
+        let soon = UsageSample(date: "2026-10-02", total: 55_000, at: t0.addingTimeInterval(1))
+        #expect(PartnerMood.tokensPerMinute(from: a, to: soon) == 5_000)  // 1분 미만은 1분으로
+    }
+
+    // MARK: 애니메이션 진행
+
+    private func run(_ p: inout PartnerPlayer, _ n: Int) { for _ in 0..<n { p.tick() } }
+
+    @Test func oneShotReturnsToBase() {
+        var p = PartnerPlayer()
+        p.setMood(.flap)
+        p.interrupt(.excited)
+        #expect(p.anim == .excited && p.frame == 0)
+        run(&p, PartnerAnim.excited.frameCount)
+        #expect(p.anim == .flap && p.frame == 0)
+    }
+
+    @Test func queueDedupesAndInterruptClears() {
+        var p = PartnerPlayer()
+        p.setMood(.sad)
+        p.play(.wave)
+        p.play(.wave)
+        #expect(p.queue == [.wave])
+        p.play(.excited)
+        p.interrupt(.puzzled)
+        #expect(p.queue.isEmpty && p.anim == .puzzled)
+    }
+
+    @Test func idleHoldBreaksForOneShotAndMood() {
+        var p = PartnerPlayer()
+        run(&p, PartnerAnim.idle.frameCount)  // 첫 깜빡임이 끝나면 첫 프레임으로 멈춘다
+        #expect(p.anim == .idle && p.frame == 0)
+        p.play(.wave)
+        #expect(p.anim == .wave && p.queue.isEmpty)  // 멈춰 있던 대기는 바로 끊는다
+
+        var q = PartnerPlayer()
+        run(&q, PartnerAnim.idle.frameCount)
+        q.setMood(.sad)
+        #expect(q.anim == .sad)
+    }
+
+    @Test func flyAlternatesDirection() {
+        var p = PartnerPlayer()
+        p.setMood(.fly)
+        run(&p, PartnerAnim.idle.frameCount)
+        #expect(p.anim == .flyRight)
+        run(&p, PartnerAnim.flyRight.frameCount * PartnerTuning.flyLoops)
+        #expect(p.anim == .flyLeft)
+    }
+
+    @Test func idleLooksAroundEventually() {
+        var p = PartnerPlayer()
+        var seen = false
+        for _ in 0..<(PartnerTuning.lookAroundTicks + 60) {
+            p.tick()
+            seen = seen || p.anim == .lookAround
+        }
+        #expect(seen)
+    }
+
+    @Test func menuBlinksPeriodically() {
+        #expect((0..<6).map { PartnerPlayer.menuFrame(tick: $0) } == [0, 1, 2, 3, 4, 5])
+        #expect(PartnerPlayer.menuFrame(tick: 6) == 0)
+        #expect(PartnerPlayer.menuFrame(tick: PartnerTuning.menuBlinkTicks - 1) == 0)
+        #expect(PartnerPlayer.menuFrame(tick: PartnerTuning.menuBlinkTicks + 1) == 1)
+    }
 }
