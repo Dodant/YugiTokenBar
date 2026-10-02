@@ -105,8 +105,37 @@ def korean_pack_image(set_code):
     return info.get("thumburl") or info["url"]
 
 
+def split_materials(cards):
+    """융합 몬스터의 효과 텍스트 첫 줄(소재 줄)을 materials 로 뗀다. 이미 뗀 파일(--reformat)은 그대로.
+    "이름" 은 75팩 카드면 {"cid"}, 아니면 {"name"}, 그 밖("전사족 몬스터")은 {"rule"}, 뒤의 "× N" 은 count.
+    NEX 로만 소환하는 2종은 소재 줄이 없다(첫 줄이 '.' 로 끝나는 효과문)."""
+    names = {v["name"]: int(k) for k, v in cards.items()}
+    nospace = {n.replace(" ", ""): c for n, c in names.items()}
+
+    def material(part):
+        m = re.fullmatch(r"(.+?)\s*×\s*(\d+)", part)
+        part, count = (m.group(1), int(m.group(2))) if m else (part, None)
+        if q := re.fullmatch(r'"(.+)"', part):
+            cid = names.get(q.group(1)) or nospace.get(q.group(1).replace(" ", ""))
+            out = {"cid": cid} if cid else {"name": q.group(1)}
+        else:
+            out = {"rule": part}
+        return out | {"count": count} if count else out
+
+    for info in cards.values():
+        if "융합" not in info["type"].split("/") or "materials" in info:
+            continue
+        first, _, rest = info["text"].partition("\n")
+        if first.endswith("."):
+            continue
+        assert "＋" in first or "×" in first or "합계" in first, (info["name"], first)
+        info["materials"] = [material(p.strip()) for p in first.split("＋")]
+        info["text"] = rest.strip()
+
+
 def write(out):
-    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게"""
+    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게. 융합 소재 분리도 여기서 한다."""
+    split_materials(out["cards"])
     dump = lambda x: json.dumps(x, ensure_ascii=False, separators=(",", ":"))
     with open(OUT, "w", encoding="utf-8") as f:
         f.write('{"packs":[\n' + ",\n".join(dump(p) for p in out["packs"]) + '\n],"cards":{\n'

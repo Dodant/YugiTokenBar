@@ -207,6 +207,30 @@ struct Game: Sendable {
         state.decks[i].cards[cid] = n > 1 ? n - 1 : nil
     }
 
+    // MARK: 융합
+
+    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 75팩 카드인 융합 몬스터만, 아니면 nil.
+    func fusionMaterials(_ cid: Int) -> [Int: Int]? {
+        guard let materials = db.cards[cid]?.materials, materials.allSatisfy({ $0.cid != nil }) else { return nil }
+        return materials.reduce(into: [:]) { $0[$1.cid!, default: 0] += $1.count ?? 1 }
+    }
+
+    /// 설정이 켜져 있으면 소재를 아는 융합 몬스터는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
+    func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && fusionMaterials(cid) != nil }
+
+    func canFuse(_ cid: Int) -> Bool {
+        fusionMaterials(cid)?.allSatisfy { copies($0.key) >= $0.value } == true
+    }
+
+    /// 소재를 소비해 1장 만든다 (중복 자동 판매는 적용하지 않는다). 소재가 모자라면 false.
+    @discardableResult
+    mutating func fuse(_ cid: Int) -> Bool {
+        guard let materials = fusionMaterials(cid), canFuse(cid) else { return false }
+        for (m, n) in materials { state.owned[m] = copies(m) > n ? copies(m) - n : nil }
+        give(cid, source: "융합")
+        return true
+    }
+
     // MARK: 뽑기
 
     /// 전체 카드에서 `freeWeights`로 티어를 고르고 그 안에서 균등 선택.
@@ -214,7 +238,7 @@ struct Game: Sendable {
     func drawFree<R: RandomNumberGenerator>(using rng: inout R) -> Int? {
         let tiers = Dictionary(db.packs.flatMap(\.cards).map { ($0.cid, $0.tier) }, uniquingKeysWith: max)
         var byTier: [Int: [Int]] = [:]
-        for cid in db.allCIDs {
+        for cid in db.allCIDs where !isFusionOnly(cid) {
             byTier[tiers[cid] ?? 1, default: []].append(cid)
         }
         for t in Self.fallbackOrder(pickTier(Balance.freeWeights, using: &rng)) {
@@ -232,7 +256,7 @@ struct Game: Sendable {
     func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], kind: String? = nil, using rng: inout R) -> PackCard? {
         for t in Self.fallbackOrder(tier) {
             let candidates = db.packs[pack].cards.filter {
-                $0.tier == t && !excluding.contains($0.cid) && (kind == nil || db.cards[$0.cid]?.kind == kind)
+                $0.tier == t && !excluding.contains($0.cid) && !isFusionOnly($0.cid) && (kind == nil || db.cards[$0.cid]?.kind == kind)
             }
             if let card = candidates.randomElement(using: &rng) { return card }
         }

@@ -15,8 +15,12 @@ struct DexView: View {
     @State private var frames = FrameStore()
     @State private var hoveredCard: Int?
     @State private var showInspector = true
+    /// 융합 소재 링크로 이동 중인 카드: 범위를 바꾸면 onChange 가 선택을 비우므로 그 뒤에 고른다
+    @State private var jumpTarget: Int?
+    @State private var scrollTarget: Int?
     @State private var confirmSellLast = false
     @State private var confirmSellDuplicates = false
+    @State private var confirmFuse = false
     /// 0 = 모든 등급, 1~4 = PackCard.tier
     @State private var tierFilter = 0
     /// "" = 모든 종류, 아니면 CardInfo.kind 또는 소환법 (CardInfo.matches)
@@ -78,6 +82,7 @@ struct DexView: View {
                         cell(number: entry.number, cid: entry.cid, label: entry.label)
                     }
                 }
+                .scrollTargetLayout()
                 .padding(16)
                 // 빈 곳: 클릭하면 선택 해제, 끌면 러버밴드 선택
                 .background {
@@ -96,6 +101,7 @@ struct DexView: View {
                 }
                 .coordinateSpace(.named("grid"))
             }
+            .scrollPosition(id: $scrollTarget, anchor: .center)
             // ponytail: macOS 26 툴바 유리 그룹 안에선 메뉴 Picker 글자가 안 그려지고 체크박스가 뭉개져서 그리드 위 막대에 둔다
             .safeAreaInset(edge: .top, spacing: 0) { filterBar }
             .overlay {
@@ -120,7 +126,7 @@ struct DexView: View {
                                            description: Text(showUnowned ? "다른 팩이나 종류·등급을 골라 보세요" : "미보유 카드 포함을 켜면 전부 보여요"))
                 }
             }
-            .onChange(of: scope) { selectedCards = []; anchor = nil }
+            .onChange(of: scope) { selectedCards = jumpTarget.map { [$0] } ?? []; anchor = jumpTarget; jumpTarget = nil }
             // 설정에서 시대 범위를 줄여 보던 팩이 사라지면 "전체"로
             .onChange(of: model.db.packs.count) { if case .pack(let i)? = scope, i >= model.db.packs.count { scope = .all } }
             .navigationTitle(title)
@@ -282,6 +288,30 @@ struct DexView: View {
 
     /// 보고 있는 덱 (덱 화면이 아니면 nil)
     private var deckID: UUID? { if case .deck(let id)? = scope { id } else { nil } }
+
+    /// 같은 소재가 반복되면 한 줄로 ("사이버 드래곤 × 3"). "× N" 조건의 count 도 곱한다
+    private func grouped(_ materials: [Material]) -> [(material: Material, n: Int)] {
+        materials.reduce(into: []) { acc, m in
+            if acc.last?.material == m { acc[acc.count - 1].n += m.count ?? 1 } else { acc.append((m, m.count ?? 1)) }
+        }
+    }
+
+    /// 융합 확인창: "사이버 드래곤 3장, 커스 오브 드래곤 1장"
+    private func consumed(_ materials: [Material]) -> String {
+        grouped(materials).compactMap { g in g.material.cid.flatMap { model.db.cards[$0]?.name }.map { "\($0) \(g.n)장" } }
+            .joined(separator: ", ")
+    }
+
+    /// 융합 소재 링크: 필터·검색을 풀고, 지금 범위에 없으면 "전체"로 옮겨 그 카드를 고르고 보이게 스크롤한다
+    private func jump(to cid: Int) {
+        kindFilter = ""; tierFilter = 0; search = ""; showUnowned = true
+        if entries.contains(where: { $0.cid == cid }) {
+            selectedCards = [cid]; anchor = cid
+        } else {
+            jumpTarget = cid; scope = .all
+        }
+        scrollTarget = entries.first { $0.cid == cid }?.number
+    }
 
     /// 끌기·우클릭이 적용되는 카드들: 선택된 카드면 선택 전체, 아니면 그 카드만.
     private func targets(_ cid: Int) -> Set<Int> { selectedCards.contains(cid) ? selectedCards : [cid] }
@@ -474,8 +504,43 @@ struct DexView: View {
                 if let pendulum = card.pendulum {
                     Section("펜듈럼 효과") { Text(pendulum).font(.callout).textSelection(.enabled) }
                 }
-                Section {
-                    Text(card.text).font(.callout).textSelection(.enabled)
+                if let materials = card.materials {
+                    Section("융합 소재") {
+                        ForEach(Array(grouped(materials).enumerated()), id: \.offset) { _, g in
+                            let suffix = g.n > 1 ? " × \(g.n)" : ""
+                            if let mcid = g.material.cid, let name = model.db.cards[mcid]?.name {
+                                HStack {
+                                    Button(name + suffix) { jump(to: mcid) }.buttonStyle(.link)
+                                    Spacer()
+                                    Text("보유 \(model.game.copies(mcid))").foregroundStyle(.secondary).monospacedDigit()
+                                }
+                            } else if let name = g.material.name {
+                                Text(name + suffix).foregroundStyle(.secondary).help("정규 부스터 75팩에 없는 카드예요")
+                            } else {
+                                Text((g.material.rule ?? "") + suffix).foregroundStyle(.secondary)
+                            }
+                        }
+                        // 설정이 켜져 있고 소재를 다 아는 융합이면 여기서 만든다
+                        if model.game.state.fusionOnly, model.game.fusionMaterials(cid) != nil {
+                            let can = model.game.canFuse(cid)
+                            Button { confirmFuse = true } label: { Label("융합", systemImage: "arrow.triangle.merge") }
+                                .buttonStyle(.glass)
+                                .buttonBorderShape(.capsule)
+                                .controlSize(.small)
+                                .disabled(!can)
+                                .help(can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요")
+                                .confirmationDialog("\(card.name) 융합", isPresented: $confirmFuse) {
+                                    Button("융합") { model.fuse(cid) }
+                                } message: {
+                                    Text("\(consumed(materials))을 소비해요. 0장이 되는 소재는 컬렉션에서 빠져요.")
+                                }
+                        }
+                    }
+                }
+                if !card.text.isEmpty {  // 바닐라 융합은 소재 줄을 떼면 효과가 없다
+                    Section {
+                        Text(card.text).font(.callout).textSelection(.enabled)
+                    }
                 }
                 // 보유와 판매는 한 줄로 묶는다
                 Section {

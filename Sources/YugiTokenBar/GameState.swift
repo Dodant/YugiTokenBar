@@ -32,6 +32,8 @@ struct GameState: Codable, Sendable, Equatable {
     var favorites: Set<Int> = []
     /// 설정: 이미 가진 카드가 나오면 바로 판다
     var autoSellDuplicates = false
+    /// 설정: 소재를 다 아는 융합 몬스터는 팩·무료 카드에서 안 나오고 융합으로만 얻는다
+    var fusionOnly = false
     /// 설정: 이 시대(`CardDB.eraStarts` 이름)까지만 상점·컬렉션·무료 카드에 쓴다. 기본 GX(싱크로 이전 27팩)
     var eraLimit = "GX"
     /// 컬렉션 창에서 만든 덱들
@@ -55,6 +57,7 @@ struct GameState: Codable, Sendable, Equatable {
         freePacks = try c.decodeIfPresent(Int.self, forKey: .freePacks) ?? d.freePacks
         favorites = try c.decodeIfPresent(Set<Int>.self, forKey: .favorites) ?? d.favorites
         autoSellDuplicates = try c.decodeIfPresent(Bool.self, forKey: .autoSellDuplicates) ?? d.autoSellDuplicates
+        fusionOnly = try c.decodeIfPresent(Bool.self, forKey: .fusionOnly) ?? d.fusionOnly
         eraLimit = try c.decodeIfPresent(String.self, forKey: .eraLimit) ?? d.eraLimit
         decks = try c.decodeIfPresent([Deck].self, forKey: .decks) ?? d.decks
         log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log

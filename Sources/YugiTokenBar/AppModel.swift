@@ -125,6 +125,16 @@ final class AppModel: ObservableObject {
         set { game.state.eraLimit = newValue; save() }
     }
 
+    var fusionOnly: Bool {
+        get { game.state.fusionOnly }
+        set { game.state.fusionOnly = newValue; save() }
+    }
+
+    func fuse(_ cid: Int) {
+        guard game.fuse(cid) else { return }
+        save()
+    }
+
     // MARK: 덱
 
     @discardableResult

@@ -12,6 +12,8 @@ struct CardInfo: Codable, Sendable, Equatable {
     /// 펜듈럼 몬스터만: P스케일과 펜듈럼 효과
     var scale: Int? = nil
     var pendulum: String? = nil
+    /// 융합 몬스터만: 효과 첫 줄(소재 줄)을 build-cards.py 가 떼어 둔 것. NEX 로만 소환하는 2종은 없다.
+    var materials: [Material]? = nil
 
     /// level 칸의 이름: 엑시즈는 랭크, 링크는 링크 수
     var levelName: String { type?.contains("엑시즈") == true ? "랭크" : type?.contains("링크") == true ? "링크" : "레벨" }
@@ -25,6 +27,14 @@ struct CardInfo: Codable, Sendable, Equatable {
     func matches(kind filter: String) -> Bool {
         kind == filter || (kind == "몬스터" && type?.components(separatedBy: "/").contains(filter) == true)
     }
+}
+
+/// 융합 소재 하나: cid 는 75팩의 카드, name 은 75팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
+struct Material: Codable, Sendable, Equatable {
+    var cid: Int? = nil
+    var name: String? = nil
+    var rule: String? = nil
+    var count: Int? = nil
 }
 
 struct PackCard: Codable, Sendable, Equatable {

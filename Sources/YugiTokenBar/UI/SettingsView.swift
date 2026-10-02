@@ -72,6 +72,15 @@ struct SettingsView: View {
                     .controlSize(.small)
             }
             row {
+                let n = model.db.allCIDs.filter { model.game.fusionMaterials($0) != nil }.count
+                labeled("융합 몬스터는 융합으로만", hint: "소재를 다 아는 융합 몬스터 \(n)종은 팩·무료 카드에서 안 나와요. 컬렉션에서 소재를 모아 융합하세요")
+                Spacer()
+                Toggle("융합 몬스터는 융합으로만", isOn: $model.fusionOnly)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+            }
+            row {
                 let db = model.game.fullDB
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 4) {

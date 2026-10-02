@@ -40,5 +40,20 @@ import Testing
         #expect(db.cards[4682]?.matches(kind: "의식") == false && db.cards[4682]?.matches(kind: "마법") == true)
         #expect(["몬스터", "엑시즈", "펜듈럼"].allSatisfy { db.cards[11835]?.matches(kind: $0) == true })
         #expect(db.cards.values.filter { $0.matches(kind: "융합") }.count == 169)
+        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): NEX 2종 빼고 167종, 전부 75팩 카드인 건 81종
+        let fusions = db.cards.values.filter { $0.matches(kind: "융합") }
+        #expect(fusions.filter { $0.materials != nil }.count == 167)
+        #expect(fusions.filter { $0.materials?.allSatisfy { $0.cid != nil } == true }.count == 81)
+        #expect(db.cards[4043]?.materials == [Material(cid: 4044), Material(cid: 4045)] && db.cards[4043]?.text == "")  // 용기사 가이아: 바닐라라 효과가 빈다
+        #expect(db.cards[4098]?.materials?.first == Material(name: "미노타우로스"))  // 미노켄타우로스: 스타터 덱 카드라 75팩에 없다
+        #expect(fusions.allSatisfy { !$0.text.contains("＋") })
+        // 소재를 다 아는 융합(융합 전용 후보)의 소재는 어느 시대 범위에서도 그 융합과 같은 범위 안에 있다 → Game.isFusionOnly 가 범위 검사를 안 한다
+        for era in db.eras {
+            let sub = db.prefix(packs: era.packs.upperBound)
+            #expect(sub.allCIDs.allSatisfy { cid in
+                let mats = sub.cards[cid]?.materials ?? []
+                return !mats.allSatisfy { $0.cid != nil } || mats.allSatisfy { sub.cidSet.contains($0.cid!) }
+            }, "\(era.name)까지: 소재가 범위 밖인 융합 전용 카드가 있음")
+        }
     }
 }
