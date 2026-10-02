@@ -71,25 +71,6 @@ struct DexView: View {
                 Text("카드는 컬렉션에 그대로 있어요.")
             }
             .navigationSplitViewColumnWidth(min: 220, ideal: 250)
-            // 왜 어떤 시대가 안 보이는지 창 안에서 알 수 있게, 설정과 같은 시대 범위 메뉴를 사이드바 아래에 둔다
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Picker("시대 범위", selection: $model.eraLimit) {
-                        ForEach(model.game.fullDB.eras, id: \.name) { era in
-                            Text("\(era.name)(\(CardDB.eraSummons[era.name] ?? ""))까지").tag(era.name)
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.menu)
-                    .controlSize(.small)
-                    .fixedSize()
-                    Text("시대는 늘리고 줄일 수 있어요").font(.caption2).foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(.bar)
-            }
         } detail: {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
