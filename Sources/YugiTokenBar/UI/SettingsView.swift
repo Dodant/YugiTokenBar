@@ -38,6 +38,7 @@ struct SettingsView: View {
             }
             .scrollIndicators(.never)
             .frame(maxHeight: .infinity)
+            .panelScrollBottom()
         }
     }
 

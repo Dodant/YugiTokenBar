@@ -32,6 +32,7 @@ struct ShopView: View {
             }
             .frame(maxHeight: .infinity)
             .scrollPosition($position)
+            .panelScrollBottom()
             .onScrollGeometryChange(for: Double.self) { $0.contentOffset.y } action: { _, y in
                 if restored { savedY = max(0, y) }
             }

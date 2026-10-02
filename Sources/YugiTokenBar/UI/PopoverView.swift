@@ -188,6 +188,20 @@ private struct HoverHint: ViewModifier {
 
 extension View {
     func hoverHint(_ text: String) -> some View { modifier(HoverHint(text: text)) }
+
+    /// 패널 안 스크롤의 아래 끝. 살짝 흐려지며(재질 띠) 투명해져서 글자가 반 토막으로 잘려 보이지 않는다.
+    /// 끝까지 내리면 마지막 줄이 띠 위에 오도록 내용 아래에 띠 높이만큼 여백을 둔다.
+    func panelScrollBottom(_ height: CGFloat = 16) -> some View {
+        let fade = LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+        return contentMargins(.bottom, height, for: .scrollContent)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(.ultraThinMaterial)
+                    .mask(LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom))
+                    .frame(height: height)
+                    .allowsHitTesting(false)
+            }
+            .mask { VStack(spacing: 0) { Color.black; fade.frame(height: height) } }
+    }
 }
 
 /// 코인 표기: ⓒ 1,000

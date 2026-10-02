@@ -52,7 +52,7 @@ Claude Code/Codex 토큰 사용량을 보상으로 바꿔 **한국 정발 유희
 
 - 위치 `~/Documents/YugiTokenBar`, Swift 6, macOS 26+ (Liquid Glass), SwiftPM 실행 타깃, 외부 의존성 없음.
 - 버튼은 Liquid Glass 스타일: 주요 동작(구매·열기·모두 뒤집기)은 `.glassProminent`, 나머지(설정·판매 등)는 `.glass`. 패널·카드 배경에는 유리를 겹치지 않는다(`.fill.quinary`).
-- `MenuBarExtra(.window)` + 컬렉션 창(`Window`). 상점·개봉·설정은 패널 안 화면 전환(요약 위에 겹쳐 그려 패널 높이 고정).
+- `MenuBarExtra(.window)` + 컬렉션 창(`Window`). 상점·개봉·설정은 패널 안 화면 전환(요약 위에 겹쳐 그려 패널 높이 고정). 패널 안 스크롤(상점·설정)의 아래 끝은 재질 띠로 흐려지며 사라져(`panelScrollBottom`) 글자가 반 토막으로 잘려 보이지 않는다.
 
 ```
 Sources/YugiTokenBar/
