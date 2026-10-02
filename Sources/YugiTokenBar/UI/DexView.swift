@@ -8,6 +8,8 @@ struct DexView: View {
     @State private var showInspector = true
     @State private var confirmSellLast = false
     @State private var confirmSellDuplicates = false
+    /// 0 = 모든 등급, 1~4 = PackCard.tier
+    @State private var tierFilter = 0
 
     var body: some View {
         let game = model.game
@@ -34,11 +36,17 @@ struct DexView: View {
         } detail: {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
-                    ForEach(Array(entries.enumerated()), id: \.offset) { n, entry in
-                        cell(number: n + 1, cid: entry.cid, label: entry.label)
+                    ForEach(entries, id: \.number) { entry in
+                        cell(number: entry.number, cid: entry.cid, label: entry.label)
                     }
                 }
                 .padding(16)
+            }
+            .overlay {
+                if entries.isEmpty {
+                    ContentUnavailableView("이 등급 카드가 없어요", systemImage: "line.3.horizontal.decrease.circle",
+                                           description: Text("다른 팩이나 등급을 골라 보세요"))
+                }
             }
             .navigationTitle(title)
             .navigationSubtitle(subtitle)
@@ -46,6 +54,16 @@ struct DexView: View {
                 detail.inspectorColumnWidth(min: 240, ideal: 260)
             }
             .toolbar {
+                Picker("등급", selection: $tierFilter) {
+                    Text("모든 등급").tag(0)
+                    Divider()
+                    Text("N 노멀").tag(1)
+                    Text("R 레어").tag(2)
+                    Text("SR 슈퍼").tag(3)
+                    Text("UR 울트라").tag(4)
+                }
+                .pickerStyle(.menu)
+                .help("등급별로 보기")
                 let dup = model.game.duplicatesValue
                 Button { confirmSellDuplicates = true } label: {
                     Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
@@ -89,12 +107,20 @@ struct DexView: View {
         .padding(.vertical, 2)
     }
 
-    private var entries: [(cid: Int, label: String)] {
+    /// number 는 등급 필터와 상관없이 팩(또는 전체) 안 순번.
+    private var entries: [(number: Int, cid: Int, label: String)] {
         let db = model.db
-        if let i = selectedPack, i >= 0 { return db.packs[i].cards.map { ($0.cid, $0.label) } }
-        // 전체: 팩 순서대로, 재수록은 처음 나온 팩 기준 한 번만
-        var seen = Set<Int>()
-        return db.packs.flatMap(\.cards).filter { seen.insert($0.cid).inserted }.map { ($0.cid, $0.label) }
+        let cards: [PackCard]
+        if let i = selectedPack, i >= 0 {
+            cards = db.packs[i].cards
+        } else {
+            // 전체: 팩 순서대로, 재수록은 처음 나온 팩 기준 한 번만
+            var seen = Set<Int>()
+            cards = db.packs.flatMap(\.cards).filter { seen.insert($0.cid).inserted }
+        }
+        return cards.enumerated()
+            .filter { tierFilter == 0 || $0.element.tier == tierFilter }
+            .map { ($0.offset + 1, $0.element.cid, $0.element.label) }
     }
 
     private func cell(number: Int, cid: Int, label: String) -> some View {

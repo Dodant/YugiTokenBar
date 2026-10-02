@@ -7,7 +7,7 @@ import Testing
     @Test func firstRunSeedsLedgerWithoutCredit() {
         var game = Game(db: db, state: GameState())
         var rng = SeededRNG(seed: 1)
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 50_000_000], using: &rng)
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 50_000_000])
         #expect(game.state.coins == 0)
         #expect(game.state.dropProgress == 0)
         #expect(game.state.claimedByProvider == ["claude_code": 50_000_000])
@@ -16,9 +16,9 @@ import Testing
     @Test func sameTotalsTwiceCreditOnce() {
         var game = Game(db: db, state: GameState())
         var rng = SeededRNG(seed: 1)
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0], using: &rng)
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 25_000, "codex": 5_000], using: &rng)
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 25_000, "codex": 5_000], using: &rng)
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0])
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 25_000, "codex": 5_000])
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 25_000, "codex": 5_000])
         #expect(game.state.coins == 3)
         #expect(game.state.dropProgress == 30_000)
     }
@@ -26,10 +26,10 @@ import Testing
     @Test func transientLowReadingNeverDoubleCredits() {
         var game = Game(db: db, state: GameState())
         var rng = SeededRNG(seed: 1)
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0], using: &rng)
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 100_000], using: &rng)
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0], using: &rng)  // 로그 읽기 일시 실패
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 120_000], using: &rng)
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0])
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 100_000])
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0])  // 로그 읽기 일시 실패
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 120_000])
         #expect(game.state.dropProgress == 120_000)
         #expect(game.state.claimedByProvider["claude_code"] == 120_000)
     }
@@ -37,8 +37,8 @@ import Testing
     @Test func newDayStartsLedgerFromZero() {
         var game = Game(db: db, state: GameState())
         var rng = SeededRNG(seed: 1)
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 900_000], using: &rng)
-        _ = game.claim(today: "2026-10-04", byProvider: ["claude_code": 40_000], using: &rng)  // 며칠 꺼져 있다 켜짐
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 900_000])
+        _ = game.claim(today: "2026-10-04", byProvider: ["claude_code": 40_000])  // 며칠 꺼져 있다 켜짐
         #expect(game.state.dropProgress == 40_000)
         #expect(game.state.claimedDate == "2026-10-04")
     }
@@ -46,13 +46,14 @@ import Testing
     @Test func coinsAndFreeCardsCarryRemainders() {
         var game = Game(db: db, state: GameState())
         var rng = SeededRNG(seed: 1)
-        let got = game.credit(10_005_000, using: &rng)
+        let got = game.credit(10_005_000)
         #expect(game.state.coins == 1_000)
         #expect(game.state.coinRemainder == 5_000)
-        #expect(got.count == 1)
+        #expect(got == 1)
         #expect(game.state.dropProgress == 5_000)
-        #expect(game.state.unseenFree == 1)
-        _ = game.credit(5_000, using: &rng)
+        #expect(game.state.pendingFree == 1)
+        #expect(game.state.owned.isEmpty)  // 직접 열기 전에는 뽑지 않는다
+        _ = game.credit(5_000)
         #expect(game.state.coins == 1_001)
         #expect(game.state.coinRemainder == 0)
     }
@@ -62,8 +63,9 @@ import Testing
         state.owned = [1: 2, 2: 2]
         var game = Game(db: db, state: state)
         var rng = SeededRNG(seed: 1)
-        let got = game.credit(5_000_000_000, using: &rng)  // 무료 카드 500장분
-        #expect(got.isEmpty)
+        let got = game.credit(5_000_000_000)  // 무료 카드 500장분
+        #expect(got == 0)
+        #expect(game.state.pendingFree == 0)
         #expect(game.state.dropProgress == 0)
         #expect(game.state.coins == 500_000)
     }
@@ -71,11 +73,33 @@ import Testing
     @Test func clockMovingBackwardsIsIgnored() {
         var game = Game(db: db, state: GameState())
         var rng = SeededRNG(seed: 1)
-        _ = game.claim(today: "2026-10-02", byProvider: ["claude_code": 0], using: &rng)
-        _ = game.claim(today: "2026-10-02", byProvider: ["claude_code": 25_000], using: &rng)
+        _ = game.claim(today: "2026-10-02", byProvider: ["claude_code": 0])
+        _ = game.claim(today: "2026-10-02", byProvider: ["claude_code": 25_000])
         let coins = game.state.coins
-        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 900_000], using: &rng)
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 900_000])
         #expect(game.state.coins == coins)
         #expect(game.state.claimedDate == "2026-10-02")
+    }
+
+    @Test func openFreeDrawsPendingInBatches() {
+        var game = Game(db: makeDB([(1...10).map { ($0, 1) }]), state: GameState())
+        var rng = SeededRNG(seed: 1)
+        game.credit(7 * Balance.tokensPerFreeCard)
+        let first = game.openFree(using: &rng)
+        #expect(first.count == Balance.freeOpenBatch)
+        #expect(game.state.pendingFree == 2)
+        #expect(game.openFree(using: &rng).count == 2)
+        #expect(game.state.pendingFree == 0)
+        #expect(game.openFree(using: &rng).isEmpty)
+        #expect(game.state.owned.values.reduce(0, +) == 7)
+        #expect(game.state.log.allSatisfy { $0.source == "free" })
+    }
+
+    @Test func openFreeDropsPendingWhenCollectionFills() {
+        var game = Game(db: db, state: GameState())  // 2종 → 최대 4장
+        var rng = SeededRNG(seed: 1)
+        game.credit(5 * Balance.tokensPerFreeCard)
+        #expect(game.openFree(using: &rng).count == 4)
+        #expect(game.state.pendingFree == 0)
     }
 }

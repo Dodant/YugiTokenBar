@@ -11,7 +11,7 @@ import sys
 import time
 import urllib.request
 
-TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽) = 5
+TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽) = 5 — 앱(CardDB.load)이 UR(4)로 합친다
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
 CUTOFF = "2008/10/07"
 OUT = sys.argv[1] if len(sys.argv) > 1 else "Resources/cards.json"

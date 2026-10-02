@@ -5,11 +5,15 @@ enum Balance {
     static let packPrice = 1_000
     static let tokensPerFreeCard = 10_000_000
     static let maxCopies = 2
-    /// 팩 5번째 장의 티어 확률 (R / SR / UR / 최상위)
-    static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.09), (5, 0.03)]
+    /// 팩 5번째 장의 티어 확률 (R / SR / UR)
+    static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.12)]
+    /// 무료 카드의 티어 확률 (N / R / SR / UR). 티어 안에서는 균등.
+    static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.60), (2, 0.25), (3, 0.10), (4, 0.05)]
     static let logLimit = 50
-    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 230 < packPrice 라 사고팔기로 코인이 늘지 않는다.
-    static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300, 5: 500]
+    /// 무료 카드를 한 번에 여는 최대 장 수 (팩 개봉 창 한 줄)
+    static let freeOpenBatch = 5
+    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 225 < packPrice 라 사고팔기로 코인이 늘지 않는다.
+    static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300]
 }
 
 struct Pull: Sendable, Equatable {
@@ -26,15 +30,16 @@ struct Game: Sendable {
     // MARK: 토큰 적립
 
     /// 오늘의 provider별 누적 토큰을 받아 늘어난 만큼만 적립한다. 원장은 같은 날 안에서 절대 내려가지 않는다
-    /// (일시적으로 0이나 작은 값이 읽혀도 나중에 같은 토큰을 두 번 적립하지 않도록). 반환: 이번에 받은 무료 카드 cid.
-    mutating func claim<R: RandomNumberGenerator>(today: String, byProvider: [String: Int], using rng: inout R) -> [Int] {
+    /// (일시적으로 0이나 작은 값이 읽혀도 나중에 같은 토큰을 두 번 적립하지 않도록). 반환: 이번에 쌓인 무료 카드 장 수.
+    @discardableResult
+    mutating func claim(today: String, byProvider: [String: Int]) -> Int {
         guard state.claimedDate != nil else {
             // 첫 실행: 설치 전 사용량은 적립하지 않는다.
             state.claimedDate = today
             state.claimedByProvider = byProvider
-            return []
+            return 0
         }
-        if let d = state.claimedDate, today < d { return [] }  // 시계/시간대가 과거로 가도 원장을 리셋하지 않는다.
+        if let d = state.claimedDate, today < d { return 0 }  // 시계/시간대가 과거로 가도 원장을 리셋하지 않는다.
         if state.claimedDate != today {
             state.claimedDate = today
             state.claimedByProvider = [:]
@@ -47,24 +52,35 @@ struct Game: Sendable {
                 state.claimedByProvider[provider] = current
             }
         }
-        return credit(delta, using: &rng)
+        return credit(delta)
     }
 
-    mutating func credit<R: RandomNumberGenerator>(_ tokens: Int, using rng: inout R) -> [Int] {
-        guard tokens > 0 else { return [] }
+    /// 무료 카드는 바로 뽑지 않고 `pendingFree`에 쌓는다(사용자가 직접 연다). 반환: 이번에 쌓인 장 수.
+    @discardableResult
+    mutating func credit(_ tokens: Int) -> Int {
+        guard tokens > 0 else { return 0 }
         state.coinRemainder += tokens
         state.coins += state.coinRemainder / Balance.tokensPerCoin
         state.coinRemainder %= Balance.tokensPerCoin
         state.dropProgress += tokens
-        var got: [Int] = []
-        while state.dropProgress >= Balance.tokensPerFreeCard {
-            state.dropProgress -= Balance.tokensPerFreeCard
-            guard let cid = drawFree(using: &rng) else { continue }  // 전부 2장이면 게이지만 소모
+        let n = state.dropProgress / Balance.tokensPerFreeCard
+        state.dropProgress %= Balance.tokensPerFreeCard
+        guard db.allCIDs.contains(where: { copies($0) < Balance.maxCopies }) else { return 0 }  // 전부 2장이면 게이지만 소모
+        state.pendingFree += n
+        return n
+    }
+
+    /// 쌓인 무료 카드를 최대 `freeOpenBatch`장 연다. 뽑을 카드가 없으면 남은 것도 버린다.
+    mutating func openFree<R: RandomNumberGenerator>(using rng: inout R) -> [Pull] {
+        var pulls: [Pull] = []
+        while state.pendingFree > 0, pulls.count < Balance.freeOpenBatch {
+            state.pendingFree -= 1
+            guard let cid = drawFree(using: &rng) else { state.pendingFree = 0; break }
+            let card = topCard(cid)
+            pulls.append(Pull(cid: cid, tier: card?.tier ?? 1, label: card?.label ?? "", isNew: copies(cid) == 0))
             give(cid, source: "free")
-            state.unseenFree += 1
-            got.append(cid)
         }
-        return got
+        return pulls
     }
 
     // MARK: 조회
@@ -88,10 +104,13 @@ struct Game: Sendable {
 
     // MARK: 판매
 
-    /// 재수록 카드는 수록된 팩 중 가장 높은 티어 가격.
+    /// 재수록 카드는 수록된 팩 중 가장 높은 티어로 친다(판매가·무료 카드 공통).
+    func topCard(_ cid: Int) -> PackCard? {
+        db.packs.flatMap(\.cards).filter { $0.cid == cid }.max { $0.tier < $1.tier }
+    }
+
     func sellPrice(_ cid: Int) -> Int {
-        let tier = db.packs.flatMap(\.cards).filter { $0.cid == cid }.map(\.tier).max() ?? 1
-        return Balance.sellPrice[tier] ?? 0
+        Balance.sellPrice[topCard(cid)?.tier ?? 1] ?? 0
     }
 
     /// 1장 판매. 보유하지 않았으면 nil, 팔았으면 받은 코인.
@@ -122,17 +141,27 @@ struct Game: Sendable {
 
     // MARK: 뽑기
 
-    /// 전체 카드 중 2장 미만인 카드를 균등 선택.
+    /// 전체 카드 중 2장 미만인 카드에서 `freeWeights`로 티어를 고르고 그 안에서 균등 선택.
+    /// 그 티어가 비었으면 팩과 같이 아래 → 위 티어 순으로 찾는다.
     func drawFree<R: RandomNumberGenerator>(using rng: inout R) -> Int? {
-        db.allCIDs.filter { copies($0) < Balance.maxCopies }.randomElement(using: &rng)
+        let tiers = Dictionary(db.packs.flatMap(\.cards).map { ($0.cid, $0.tier) }, uniquingKeysWith: max)
+        var byTier: [Int: [Int]] = [:]
+        for cid in db.allCIDs where copies(cid) < Balance.maxCopies {
+            byTier[tiers[cid] ?? 1, default: []].append(cid)
+        }
+        for t in Self.fallbackOrder(pickTier(Balance.freeWeights, using: &rng)) {
+            if let cid = byTier[t]?.randomElement(using: &rng) { return cid }
+        }
+        return nil
+    }
+
+    static func fallbackOrder(_ tier: Int) -> [Int] {
+        [tier] + Array(stride(from: tier - 1, through: 1, by: -1)) + Array(stride(from: tier + 1, through: 4, by: 1))
     }
 
     /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, 2장 미만이고 excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택.
     func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], using rng: inout R) -> PackCard? {
-        let order = [tier]
-            + Array(stride(from: tier - 1, through: 1, by: -1))
-            + Array(stride(from: tier + 1, through: 5, by: 1))
-        for t in order {
+        for t in Self.fallbackOrder(tier) {
             let candidates = db.packs[pack].cards.filter { $0.tier == t && copies($0.cid) < Balance.maxCopies && !excluding.contains($0.cid) }
             if let card = candidates.randomElement(using: &rng) { return card }
         }
@@ -140,12 +169,16 @@ struct Game: Sendable {
     }
 
     func slot5Tier<R: RandomNumberGenerator>(using rng: inout R) -> Int {
+        pickTier(Balance.slot5Weights, using: &rng)
+    }
+
+    func pickTier<R: RandomNumberGenerator>(_ weights: [(tier: Int, weight: Double)], using rng: inout R) -> Int {
         var r = Double.random(in: 0..<1, using: &rng)
-        for (tier, weight) in Balance.slot5Weights {
+        for (tier, weight) in weights {
             if r < weight { return tier }
             r -= weight
         }
-        return Balance.slot5Weights[Balance.slot5Weights.count - 1].tier
+        return weights[weights.count - 1].tier
     }
 
     /// 1팩 구매. 살 수 없으면(완료·코인 부족) 빈 배열.

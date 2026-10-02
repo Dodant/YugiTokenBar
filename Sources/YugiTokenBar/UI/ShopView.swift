@@ -19,14 +19,63 @@ struct ShopView: View {
                     .font(.callout).monospacedDigit().foregroundStyle(.secondary)
             }
             ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                    ForEach(model.db.packs.indices, id: \.self) { i in
-                        PackTile(index: i, onOpen: onOpen)
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(model.db.eras, id: \.name) { era in
+                        EraSection(name: era.name, packs: era.packs, onOpen: onOpen)
                     }
                 }
             }
             .scrollIndicators(.never)
             .frame(maxHeight: .infinity)
+        }
+    }
+}
+
+/// 시대(DM/GX)별 접고 펴는 팩 묶음. 접힘 상태는 다음 실행에도 기억한다.
+private struct EraSection: View {
+    @EnvironmentObject var model: AppModel
+    let name: String
+    let packs: Range<Int>
+    let onOpen: () -> Void
+    @AppStorage private var expanded: Bool
+
+    init(name: String, packs: Range<Int>, onOpen: @escaping () -> Void) {
+        self.name = name
+        self.packs = packs
+        self.onOpen = onOpen
+        _expanded = AppStorage(wrappedValue: true, "shop.era.\(name).expanded")
+    }
+
+    var body: some View {
+        let game = model.game
+        let owned = packs.reduce(0) { $0 + game.progress($1).owned }
+        let total = packs.reduce(0) { $0 + game.progress($1).total }
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                    Text(name).font(.headline)
+                    Text("\(packs.count)팩").font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(owned) / \(total)").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                }
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if expanded {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                    ForEach(packs, id: \.self) { i in
+                        PackTile(index: i, onOpen: onOpen)
+                    }
+                }
+                .transition(.opacity)
+            }
         }
     }
 }

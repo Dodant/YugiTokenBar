@@ -11,13 +11,15 @@ import Testing
         #expect(db.packs.allSatisfy { $0.date < "2008-10-07" })
         #expect(db.packs.map(\.date) == db.packs.map(\.date).sorted())
         #expect(db.packs.first?.setCode == "LOB")
+        #expect(db.eras.map(\.name) == ["DM", "GX"])
+        #expect(db.eras.map(\.packs) == [0..<11, 11..<27])  // 천공의 성역까지 DM, 듀얼리스트의 투혼부터 GX
         #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
         #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 27팩 모두 한글판
         #expect(db.allCIDs.count == 2270)
         for pack in db.packs {
             for card in pack.cards {
                 #expect(db.cards[card.cid] != nil, "팩 \(pack.name) 의 cid \(card.cid) 가 cards 에 없음")
-                #expect((1...5).contains(card.tier))
+                #expect((1...4).contains(card.tier))
             }
         }
         #expect(db.cards.values.allSatisfy { !$0.name.isEmpty && $0.imageId != nil })

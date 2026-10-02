@@ -14,7 +14,8 @@ struct GameState: Codable, Sendable, Equatable {
     var owned: [Int: Int] = [:]
     var claimedDate: String?
     var claimedByProvider: [String: Int] = [:]
-    var unseenFree = 0
+    /// 아직 열지 않은 무료 카드 장 수
+    var pendingFree = 0
     var log: [LogEntry] = []
 
     init() {}
@@ -29,7 +30,7 @@ struct GameState: Codable, Sendable, Equatable {
         owned = try c.decodeIfPresent([Int: Int].self, forKey: .owned) ?? d.owned
         claimedDate = try c.decodeIfPresent(String.self, forKey: .claimedDate)
         claimedByProvider = try c.decodeIfPresent([String: Int].self, forKey: .claimedByProvider) ?? d.claimedByProvider
-        unseenFree = try c.decodeIfPresent(Int.self, forKey: .unseenFree) ?? d.unseenFree
+        pendingFree = try c.decodeIfPresent(Int.self, forKey: .pendingFree) ?? d.pendingFree
         log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log
     }
 }

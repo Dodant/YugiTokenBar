@@ -14,9 +14,6 @@ struct PopoverView: View {
             }
             .padding(16)
             .frame(width: 340)
-            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { n in
-                if n.object is NSPanel { model.markSeen() }  // MenuBarExtra(.window) 창은 NSPanel, 팩/컬렉션 창은 일반 NSWindow
-            }
     }
 
     // 패널 자체가 Liquid Glass 라서 내용에는 유리를 겹치지 않는다(겹치면 뒤 배경 색이 번져 탁해짐).
@@ -40,6 +37,12 @@ struct PopoverView: View {
                     }
                 }
                 .frame(height: 79)
+            }
+
+            if state.pendingFree > 0 {
+                FreeRow(count: state.pendingFree) { if model.openFree() { show("pack") } }
+                    .padding(12)
+                    .background(.fill.quinary, in: .rect(cornerRadius: 16))
             }
 
             PackRow(index: game.lastBoughtPack, onOpen: { show("pack") })
@@ -98,6 +101,26 @@ struct PopoverView: View {
             guard let window = NSApp.windows.first(where: { $0.title == title }) else { return }
             window.orderFrontRegardless()
             window.makeKey()
+        }
+    }
+}
+
+/// 쌓인 무료 카드. 누르면 최대 5장씩 연다.
+private struct FreeRow: View {
+    let count: Int
+    let action: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "gift.fill").font(.title2).foregroundStyle(.tint).frame(width: 36)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("무료 카드 \(count)장").font(.callout.weight(.medium)).monospacedDigit()
+                Text("토큰으로 모은 카드예요").font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 4)
+            Button(count > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기", action: action)
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
         }
     }
 }

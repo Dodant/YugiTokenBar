@@ -36,6 +36,6 @@ struct YugiTokenBarApp: App {
     private var menuTitle: String {
         let state = model.game.state
         let coins = state.coins.formatted()
-        return state.unseenFree > 0 ? "\(coins) ·\(state.unseenFree)" : coins
+        return state.pendingFree > 0 ? "\(coins) ·\(state.pendingFree)" : coins
     }
 }

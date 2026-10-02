@@ -80,7 +80,7 @@ final class AppModel: ObservableObject {
             let usage = await Task.detached { TodayUsage.read() }.value
             todayTokens = usage.byProvider
             todayCost = usage.cost
-            _ = game.claim(today: usage.date, byProvider: usage.byProvider, using: &rng)
+            game.claim(today: usage.date, byProvider: usage.byProvider)
             save()
         }
     }
@@ -105,10 +105,14 @@ final class AppModel: ObservableObject {
         save()
     }
 
-    func markSeen() {
-        guard game.state.unseenFree > 0 else { return }
-        game.state.unseenFree = 0
+    @discardableResult
+    func openFree() -> Bool {
+        let opened = game.openFree(using: &rng)
+        guard !opened.isEmpty else { return false }
+        opening = opened
+        openingID = UUID()
         save()
+        return true
     }
 
     private func save() {
