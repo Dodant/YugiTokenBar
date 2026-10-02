@@ -69,7 +69,7 @@ PokeTokenBar의 바탕화면 동료처럼, 토큰 사용 상태에 반응하는 
 ## 5. 바탕화면 파트너 (`UI/PartnerPanel.swift`)
 
 - 테두리 없는 투명 `NSPanel`(`.nonactivatingPanel`, 레벨 `.floating`, `.canJoinAllSpaces`·`.fullScreenAuxiliary`, 그림자 없음), 내용은 SwiftUI `PartnerView`(현재 프레임 이미지)를 `NSHostingView` 하위 클래스에 담는다.
-- 마우스: 누른 뒤 4pt 넘게 움직이면 창 드래그, 아니면 클릭. 클릭은 갸웃 재생 후 팝오버를 연다(`NSApp.windows`에서 상태바 창의 버튼을 찾아 `performClick`. 못 찾으면 갸웃만 하고 로그). 우클릭은 메뉴 [숨기기] → `partnerEnabled = false`.
+- 마우스: 누른 뒤 4pt 넘게 움직이면 창 드래그, 아니면 클릭. 클릭은 갸웃만 재생한다(MenuBarExtra(macOS 26)에는 창을 코드로 여는 API가 없고 상태바 버튼에 target/action이 없어 팝오버는 못 연다). 우클릭·Ctrl 클릭은 메뉴 [숨기기] → `partnerEnabled = false`.
 - 위치는 드래그가 끝날 때 `GameState.partnerOrigin`에 저장. 저장 위치가 어느 화면에도 없으면(모니터 분리 등) 주 화면 오른쪽 아래(여백 24pt)로.
 - 크기 `partnerSize`는 창 높이(pt), 폭은 192:208 비율.
 

@@ -61,7 +61,7 @@ struct SettingsView: View {
             Divider()
             let unlocked = model.game.state.partnerUnlocked
             row {
-                labeled("바탕화면 파트너", hint: unlocked ? "날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고 누르면 이 패널이 열려요"
+                labeled("바탕화면 파트너", hint: unlocked ? "날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요"
                                                     : "「날개 크리보」 카드를 얻으면 파트너로 함께해요")
                 Spacer()
                 Toggle("바탕화면 파트너", isOn: $model.partnerEnabled)

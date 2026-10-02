@@ -241,10 +241,7 @@ final class AppModel: ObservableObject {
         guard game.state.partnerEnabled else { partnerPanel?.hide(); return }
         let panel = partnerPanel ?? PartnerPanel(
             frame: partner.desktop,
-            onClick: { [weak self] in
-                self?.partner.interrupt(.puzzled)
-                PartnerPanel.openPopover()
-            },
+            onClick: { [weak self] in self?.partner.interrupt(.puzzled) },
             onHide: { [weak self] in self?.partnerEnabled = false },
             onMoved: { [weak self] origin in
                 self?.game.state.partnerOrigin = origin

@@ -27,7 +27,7 @@ import SwiftUI
         let start = panel.isVisible ? panel.frame.origin : Self.place(
             origin: origin, size: windowSize,
             screens: NSScreen.screens.map(\.visibleFrame),
-            main: NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900))
+            main: NSScreen.screens.first?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900))
         panel.setFrame(CGRect(origin: start, size: windowSize), display: true)
         panel.orderFrontRegardless()
     }
@@ -45,22 +45,6 @@ import SwiftUI
         if let origin, screens.contains(where: { $0.intersects(CGRect(origin: origin, size: size)) }) { return origin }
         return CGPoint(x: main.maxX - size.width - margin, y: main.minY + margin)
     }
-
-    /// 메뉴바 상태 아이템 버튼을 눌러 팝오버를 연다. MenuBarExtra 에 여는 API 가 없어서 상태바 창의 버튼을 찾는다.
-    static func openPopover() {
-        // ponytail: 비공개 클래스 이름(NSStatusBarWindow)에 기댄다. macOS 가 바꾸면 갸웃만 하고 팝오버는 안 열린다.
-        for window in NSApp.windows where window.className.contains("NSStatusBarWindow") {
-            if let button = findButton(in: window.contentView) { button.performClick(nil); return }
-        }
-        AppLog.write("파트너: 메뉴바 버튼을 찾지 못함")
-    }
-
-    private static func findButton(in view: NSView?) -> NSButton? {
-        guard let view else { return nil }
-        if let button = view as? NSButton { return button }
-        for sub in view.subviews { if let found = findButton(in: sub) { return found } }
-        return nil
-    }
 }
 
 /// 지금 프레임 하나를 창 크기에 맞춰 그린다.
@@ -76,7 +60,7 @@ struct PartnerView: View {
     }
 }
 
-/// 마우스: 4pt 넘게 끌면 창 이동, 아니면 클릭. 우클릭은 [숨기기] 메뉴.
+/// 마우스: 4pt 넘게 끌면 창 이동, 아니면 클릭(갸웃). Ctrl 클릭·우클릭은 우클릭은 [숨기기] 메뉴.
 final class PartnerHostingView: NSHostingView<PartnerView> {
     var onClick: () -> Void = {}
     var onHide: () -> Void = {}
@@ -88,6 +72,7 @@ final class PartnerHostingView: NSHostingView<PartnerView> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.control) { downAt = nil; rightMouseDown(with: event); return }
         downAt = NSEvent.mouseLocation
         startOrigin = window?.frame.origin ?? .zero
         dragging = false
@@ -103,12 +88,14 @@ final class PartnerHostingView: NSHostingView<PartnerView> {
     }
 
     override func mouseUp(with event: NSEvent) {
+        guard downAt != nil else { return }
         defer { downAt = nil }
         if dragging, let origin = window?.frame.origin { onMoved(origin) } else { onClick() }
     }
 
     override func rightMouseDown(with event: NSEvent) {
         let menu = NSMenu()
+        menu.autoenablesItems = false  // NSHostingView 의 검증이 사용자 액션을 꺼 버린다
         let item = NSMenuItem(title: "숨기기", action: #selector(hidePartner), keyEquivalent: "")
         item.target = self
         menu.addItem(item)
