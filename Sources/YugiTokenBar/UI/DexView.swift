@@ -10,6 +10,8 @@ struct DexView: View {
     @State private var confirmSellDuplicates = false
     /// 0 = 모든 등급, 1~4 = PackCard.tier
     @State private var tierFilter = 0
+    @AppStorage("dex.showUnowned") private var showUnowned = true
+    @AppStorage("dex.sort") private var sort = DexSort.pack
 
     var body: some View {
         let game = model.game
@@ -40,10 +42,13 @@ struct DexView: View {
                 }
                 .padding(16)
             }
+            // ponytail: macOS 26 툴바 유리 그룹 안에선 메뉴 Picker 글자가 안 그려지고 체크박스가 뭉개져서 그리드 위 막대에 둔다
+            .safeAreaInset(edge: .top, spacing: 0) { filterBar }
             .overlay {
                 if entries.isEmpty {
-                    ContentUnavailableView("이 등급 카드가 없어요", systemImage: "line.3.horizontal.decrease.circle",
-                                           description: Text("다른 팩이나 등급을 골라 보세요"))
+                    ContentUnavailableView(showUnowned ? "이 등급 카드가 없어요" : "보유한 카드가 없어요",
+                                           systemImage: "line.3.horizontal.decrease.circle",
+                                           description: Text(showUnowned ? "다른 팩이나 등급을 골라 보세요" : "미보유 카드 포함을 켜면 전부 보여요"))
                 }
             }
             .navigationTitle(title)
@@ -52,16 +57,6 @@ struct DexView: View {
                 detail.inspectorColumnWidth(min: 240, ideal: 260)
             }
             .toolbar {
-                Picker("등급", selection: $tierFilter) {
-                    Text("모든 등급").tag(0)
-                    Divider()
-                    Text("N 노멀").tag(1)
-                    Text("R 레어").tag(2)
-                    Text("SR 슈퍼").tag(3)
-                    Text("UR 울트라").tag(4)
-                }
-                .pickerStyle(.menu)
-                .help("등급별로 보기")
                 let dup = model.game.duplicatesValue
                 Button { confirmSellDuplicates = true } label: {
                     Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
@@ -78,14 +73,42 @@ struct DexView: View {
         }
     }
 
+    private var filterBar: some View {
+        HStack(spacing: 14) {
+            Picker("등급", selection: $tierFilter) {
+                Text("모든 등급").tag(0)
+                Divider()
+                Text("N 노멀").tag(1)
+                Text("R 레어").tag(2)
+                Text("SR 슈퍼").tag(3)
+                Text("UR 울트라").tag(4)
+            }
+            .fixedSize()
+            Picker("정렬", selection: $sort) {
+                ForEach(DexSort.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .fixedSize()
+            Spacer()
+            Toggle("미보유 카드 포함", isOn: $showUnowned)
+                .toggleStyle(.checkbox)
+                .help("끄면 가진 카드만 보여요")
+        }
+        .pickerStyle(.menu)
+        .controlSize(.small)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(.bar)
+    }
+
     private var title: String {
         guard let i = selectedPack, i >= 0 else { return "전체" }
         return model.db.packs[i].name
     }
 
     private var subtitle: String {
-        let owned = entries.filter { model.game.copies($0.cid) > 0 }.count
-        return "\(owned) / \(entries.count)장 보유"
+        let all = tierEntries
+        let owned = all.filter { model.game.copies($0.cid) > 0 }.count
+        return "\(owned) / \(all.count)장 보유"
     }
 
     private func packItem(_ game: Game, _ i: Int) -> some View {
@@ -105,8 +128,28 @@ struct DexView: View {
         .padding(.vertical, 2)
     }
 
-    /// number 는 등급 필터와 상관없이 팩(또는 전체) 안 순번.
+    /// 화면에 보일 카드: 등급 필터 → 미보유 숨기기 → 정렬. 같은 값이면 팩 순번 순.
     private var entries: [(number: Int, cid: Int, label: String)] {
+        let game = model.game
+        let list = tierEntries.filter { showUnowned || game.copies($0.cid) > 0 }
+        let tier = { (e: (number: Int, cid: Int, label: String)) in (PackCard.labels.firstIndex(of: e.label) ?? 0) }
+        let name = { (cid: Int) in model.db.cards[cid]?.name ?? "" }
+        return list.sorted { a, b in
+            switch sort {
+            case .pack: break
+            case .tierDesc: if tier(a) != tier(b) { return tier(a) > tier(b) }
+            case .tierAsc: if tier(a) != tier(b) { return tier(a) < tier(b) }
+            case .name:
+                let c = name(a.cid).localizedStandardCompare(name(b.cid))
+                if c != .orderedSame { return c == .orderedAscending }
+            case .copies: if game.copies(a.cid) != game.copies(b.cid) { return game.copies(a.cid) > game.copies(b.cid) }
+            }
+            return a.number < b.number
+        }
+    }
+
+    /// number 는 등급 필터·정렬과 상관없이 팩(또는 전체) 안 순번.
+    private var tierEntries: [(number: Int, cid: Int, label: String)] {
         let db = model.db
         let cards: [PackCard]
         if let i = selectedPack, i >= 0 {
@@ -240,6 +283,20 @@ private struct DexEraSection<Item: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+        }
+    }
+}
+
+enum DexSort: String, CaseIterable {
+    case pack, tierDesc, tierAsc, name, copies
+
+    var title: String {
+        switch self {
+        case .pack: "팩 순서"
+        case .tierDesc: "높은 등급순"
+        case .tierAsc: "낮은 등급순"
+        case .name: "이름순"
+        case .copies: "보유 많은 순"
         }
     }
 }
