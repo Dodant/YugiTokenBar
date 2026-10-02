@@ -534,6 +534,8 @@ private struct DexEraSection<Item: View>: View {
 
     var body: some View {
         let game = model.game
+        // 시대 범위를 줄이면 부모가 이 섹션을 없애기 전에 몸체가 먼저 다시 그려질 수 있다 → 범위를 지금 DB 에 맞춰 자른다
+        let packs = packs.clamped(to: game.db.packs.indices)
         let owned = packs.reduce(0) { $0 + game.progress($1).owned }
         let total = packs.reduce(0) { $0 + game.progress($1).total }
         // ponytail: 기본 사이드바 꺾쇠는 마우스를 올려야 보여서, 상점처럼 항상 보이는 꺾쇠를 직접 그린다

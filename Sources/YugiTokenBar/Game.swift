@@ -254,7 +254,8 @@ struct Game: Sendable {
 
     /// 1팩 구매. 코인으로 산 팩 `packsPerFreePack`개마다 무료 팩 1장이 쌓인다. 코인이 부족하면 빈 배열.
     mutating func buy<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
-        guard canBuy(pack) else { return [] }
+        // 시대 범위를 줄인 뒤 남아 있는 옛 인덱스(개봉 화면의 [한 팩 더] 등)는 거절
+        guard db.packs.indices.contains(pack), canBuy(pack) else { return [] }
         state.coins -= Balance.packPrice
         state.packStamp += 1
         if state.packStamp >= Balance.packsPerFreePack {
