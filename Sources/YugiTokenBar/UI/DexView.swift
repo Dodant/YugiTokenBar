@@ -19,7 +19,7 @@ struct DexView: View {
     @State private var confirmSellDuplicates = false
     /// 0 = 모든 등급, 1~4 = PackCard.tier
     @State private var tierFilter = 0
-    /// "" = 모든 종류, 아니면 CardInfo.kind
+    /// "" = 모든 종류, 아니면 CardInfo.kind 또는 소환법 (CardInfo.matches)
     @State private var kindFilter = ""
     @State private var search = ""
     @State private var showUnowned = true  // 기억하지 않고 창을 열 때마다 켠다
@@ -162,6 +162,8 @@ struct DexView: View {
                 Text("모든 종류").tag("")
                 Divider()
                 ForEach(["몬스터", "마법", "함정"], id: \.self) { Text($0).tag($0) }
+                Divider()
+                ForEach(CardInfo.summons, id: \.self) { Text($0).tag($0) }
             }
             .fixedSize()
             Picker("등급", selection: $tierFilter) {
@@ -263,7 +265,7 @@ struct DexView: View {
         }
         return cards.enumerated()
             .filter { tierFilter == 0 || $0.element.tier == tierFilter }
-            .filter { kindFilter.isEmpty || db.cards[$0.element.cid]?.kind == kindFilter }
+            .filter { kindFilter.isEmpty || db.cards[$0.element.cid]?.matches(kind: kindFilter) == true }
             .filter { query.isEmpty || (db.cards[$0.element.cid]?.name ?? "").replacingOccurrences(of: " ", with: "").localizedStandardContains(query) }
             .map { ($0.offset + 1, $0.element.cid, $0.element.label) }
     }

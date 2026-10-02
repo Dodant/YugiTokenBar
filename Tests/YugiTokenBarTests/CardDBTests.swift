@@ -36,5 +36,9 @@ import Testing
         #expect(db.cards.values.first { $0.name == "파이어월 드래곤" }?.def == nil)
         #expect(db.cards[11786]?.scale == 2 && db.cards[11786]?.pendulum?.isEmpty == false)  // 소환사 라이즈벨트
         #expect(db.cards.values.allSatisfy { $0.pendulum?.isEmpty != true && !$0.text.contains("<br>") })
+        // 종류 메뉴의 소환법: 의식 마법(댄스의 유혹)은 "의식"에 안 잡히고, 엑시즈 펜듈럼(패왕흑룡)은 둘 다
+        #expect(db.cards[4682]?.matches(kind: "의식") == false && db.cards[4682]?.matches(kind: "마법") == true)
+        #expect(["몬스터", "엑시즈", "펜듈럼"].allSatisfy { db.cards[11835]?.matches(kind: $0) == true })
+        #expect(db.cards.values.filter { $0.matches(kind: "융합") }.count == 169)
     }
 }

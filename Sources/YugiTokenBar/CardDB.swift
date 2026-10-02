@@ -18,6 +18,13 @@ struct CardInfo: Codable, Sendable, Equatable {
 
     /// 몬스터 / 마법 / 함정. 마법·함정은 attr 칸에 "마법"·"함정"이 들어 있다.
     var kind: String { attr == "마법" || attr == "함정" ? attr! : "몬스터" }
+
+    /// 컬렉션 종류 메뉴의 소환법 (시대 순)
+    static let summons = ["의식", "융합", "싱크로", "엑시즈", "펜듈럼", "링크"]
+    /// 종류 메뉴 값과 맞는지: 몬스터·마법·함정은 kind, 소환법은 몬스터의 type 칸 (의식 마법은 아님, 엑시즈 펜듈럼은 둘 다)
+    func matches(kind filter: String) -> Bool {
+        kind == filter || (kind == "몬스터" && type?.components(separatedBy: "/").contains(filter) == true)
+    }
 }
 
 struct PackCard: Codable, Sendable, Equatable {
