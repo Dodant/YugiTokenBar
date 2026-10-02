@@ -149,4 +149,40 @@ import Testing
         #expect(PartnerPlayer.menuFrame(tick: PartnerTuning.menuBlinkTicks - 1) == 0)
         #expect(PartnerPlayer.menuFrame(tick: PartnerTuning.menuBlinkTicks + 1) == 1)
     }
+
+    // MARK: 해금·저장
+
+    @Test func partnerCardIsWingedKuriboh() throws {
+        #expect(try CardDB.bundled().cards[CardDB.partnerCard]?.name == "날개 크리보")
+    }
+
+    @Test func unlockIsPermanent() {
+        var game = Game(db: makeDB([[(CardDB.partnerCard, 3)]]), state: GameState())
+        var result1 = game.unlockPartnerIfOwned()
+        #expect(!result1)  // 없으면 잠김
+        game.state.owned[CardDB.partnerCard] = 1
+        var result2 = game.unlockPartnerIfOwned()
+        #expect(result2)   // 새로 해금
+        var result3 = game.unlockPartnerIfOwned()
+        #expect(!result3)  // 이미 해금
+        let sellResult = game.sell(CardDB.partnerCard)
+        #expect(sellResult != nil)
+        #expect(game.state.partnerUnlocked)    // 팔아도 유지
+    }
+
+    @Test func oldSaveDecodesPartnerDefaults() throws {
+        let state = try JSONDecoder().decode(GameState.self, from: Data(#"{"coins":5,"owned":{"6314":1}}"#.utf8))
+        #expect(state.coins == 5 && !state.partnerUnlocked && state.partnerEnabled)
+        #expect(state.partnerSize == 128 && state.partnerOrigin == nil)
+    }
+
+    @Test func partnerFieldsRoundTrip() throws {
+        var state = GameState()
+        state.partnerUnlocked = true
+        state.partnerEnabled = false
+        state.partnerSize = 96
+        state.partnerOrigin = CGPoint(x: 120, y: 40)
+        let back = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(state))
+        #expect(back == state)
+    }
 }

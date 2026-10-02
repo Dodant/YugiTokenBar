@@ -36,6 +36,14 @@ struct GameState: Codable, Sendable, Equatable {
     var fusionOnly = false
     /// 설정: 이 시대(`CardDB.eraStarts` 이름)까지만 상점·컬렉션·무료 카드에 쓴다. 기본 GX(싱크로 이전 27팩)
     var eraLimit = "GX"
+    /// 파트너 「날개 크리보」 해금. 한 번 가지면 팔아도 유지 (`Game.unlockPartnerIfOwned`)
+    var partnerUnlocked = false
+    /// 설정: 바탕화면 파트너 보이기
+    var partnerEnabled = true
+    /// 설정: 바탕화면 파트너 높이(pt), `PartnerTuning.sizes`
+    var partnerSize = 128.0
+    /// 바탕화면 파트너 창 위치 (nil = 주 화면 오른쪽 아래)
+    var partnerOrigin: CGPoint?
     /// 컬렉션 창에서 만든 덱들
     var decks: [Deck] = []
     var log: [LogEntry] = []
@@ -59,6 +67,10 @@ struct GameState: Codable, Sendable, Equatable {
         autoSellDuplicates = try c.decodeIfPresent(Bool.self, forKey: .autoSellDuplicates) ?? d.autoSellDuplicates
         fusionOnly = try c.decodeIfPresent(Bool.self, forKey: .fusionOnly) ?? d.fusionOnly
         eraLimit = try c.decodeIfPresent(String.self, forKey: .eraLimit) ?? d.eraLimit
+        partnerUnlocked = try c.decodeIfPresent(Bool.self, forKey: .partnerUnlocked) ?? d.partnerUnlocked
+        partnerEnabled = try c.decodeIfPresent(Bool.self, forKey: .partnerEnabled) ?? d.partnerEnabled
+        partnerSize = try c.decodeIfPresent(Double.self, forKey: .partnerSize) ?? d.partnerSize
+        partnerOrigin = try c.decodeIfPresent(CGPoint.self, forKey: .partnerOrigin)
         decks = try c.decodeIfPresent([Deck].self, forKey: .decks) ?? d.decks
         log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log
     }

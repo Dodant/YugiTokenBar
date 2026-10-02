@@ -165,6 +165,16 @@ struct Game: Sendable {
         return total
     }
 
+    // MARK: 파트너
+
+    /// 「날개 크리보」를 가지고 있으면 파트너를 해금한다. 새로 해금했으면 true. 해금은 팔아도 유지된다.
+    @discardableResult
+    mutating func unlockPartnerIfOwned() -> Bool {
+        guard !state.partnerUnlocked, copies(CardDB.partnerCard) > 0 else { return false }
+        state.partnerUnlocked = true
+        return true
+    }
+
     // MARK: 덱
 
     func deck(_ id: UUID) -> Deck? { state.decks.first { $0.id == id } }
