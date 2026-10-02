@@ -21,6 +21,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .keyboardShortcut(.cancelAction)
                 Text("설정").font(.title3.weight(.semibold))
                 Spacer()
             }

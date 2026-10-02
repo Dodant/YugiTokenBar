@@ -59,7 +59,7 @@ struct RarityPill: View {
         let color = Rarity.color(label: label, owned: owned)
         Text(label)
             .font(.system(size: size, weight: .bold))
-            .foregroundStyle(owned && label == "SR" ? .black : .white)  // 금색 배경엔 흰 글자가 안 읽힌다
+            .foregroundStyle(!owned || label == "SR" ? .black : .white)  // 밝은 배경(SR 금색·미획득 회색)엔 흰 글자가 안 읽힌다
             .padding(.horizontal, size * 0.6)
             .padding(.vertical, size * 0.15)
             .background(color, in: Capsule())

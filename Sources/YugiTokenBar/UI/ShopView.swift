@@ -12,6 +12,7 @@ struct ShopView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .keyboardShortcut(.cancelAction)
                 Text("상점").font(.title3.weight(.semibold))
                 Spacer()
                 Text(coinText(model.game.state.coins))

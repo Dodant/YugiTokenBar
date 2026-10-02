@@ -16,6 +16,7 @@ struct OpeningView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .keyboardShortcut(.cancelAction)
                 Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
                 Spacer()
             }

@@ -82,6 +82,7 @@ struct PopoverView: View {
                 .font(.system(size: 30, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
+                .help("토큰 \(Balance.tokensPerCoin.formatted()) = \(coinText(1))")
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
                 caption("다음 무료 카드 · 팩")
