@@ -13,8 +13,8 @@ struct CardImageView: View {
             if let image {
                 Image(nsImage: image)
                     .resizable()
-                    .grayscale(owned ? 0 : 1)
-                    .brightness(owned ? 0 : -0.25)
+                    .grayscale(owned ? 0 : 0.8)  // 미보유: 색이 살짝 남는 흑백
+                    .brightness(owned ? 0 : -0.20)
             } else {
                 CardBack(name: db.cards[cid]?.name ?? "")
             }
