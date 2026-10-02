@@ -120,6 +120,21 @@ final class AppModel: ObservableObject {
         set { game.state.autoSellDuplicates = newValue; save() }
     }
 
+    // MARK: 덱
+
+    @discardableResult
+    func addDeck() -> Deck { let deck = game.addDeck(); save(); return deck }
+    func renameDeck(_ id: UUID, to name: String) { game.renameDeck(id, to: name); save() }
+    func deleteDeck(_ id: UUID) { game.deleteDeck(id); save() }
+    func removeFromDeck(_ id: UUID, _ cid: Int) { game.removeFromDeck(id, cid); save() }
+
+    @discardableResult
+    func addToDeck(_ id: UUID, _ cid: Int) -> Bool {
+        guard game.addToDeck(id, cid) else { return false }
+        save()
+        return true
+    }
+
     func toggleFavorite(_ cid: Int) {
         if game.state.favorites.remove(cid) == nil { game.state.favorites.insert(cid) }
         save()

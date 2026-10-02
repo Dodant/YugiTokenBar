@@ -11,6 +11,7 @@ import Testing
         state.claimedDate = "2026-10-01"
         state.claimedByProvider = ["codex": 5]
         state.favorites = [4007, 4100]
+        state.decks = [Deck(name: "드래곤", cards: [4007: 2])]
         state.log = [LogEntry(cid: 4007, source: "free", date: Date(timeIntervalSince1970: 1_000))]
         try store.save(state)
         #expect(store.load() == state)

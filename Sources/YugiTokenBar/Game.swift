@@ -17,6 +17,10 @@ enum Balance {
     static let monstersPerPack = 2
     /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 225 < packPrice 라 사고팔기로 코인이 늘지 않는다.
     static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300]
+    /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
+    static let maxCopiesInDeck = 3
+    /// 메인 덱 권장 장 수. 표시만 하고 강제하지 않는다.
+    static let deckSize = 40...60
 }
 
 struct Pull: Sendable, Equatable {
@@ -143,6 +147,42 @@ struct Game: Sendable {
             for _ in 1..<n { total += sell(cid) ?? 0 }
         }
         return total
+    }
+
+    // MARK: 덱
+
+    func deck(_ id: UUID) -> Deck? { state.decks.first { $0.id == id } }
+
+    /// 새 덱 "새 덱 N".
+    @discardableResult
+    mutating func addDeck() -> Deck {
+        let deck = Deck(name: "새 덱 \(state.decks.count + 1)")
+        state.decks.append(deck)
+        return deck
+    }
+
+    /// 앞뒤 공백을 지운 이름으로 바꾼다. 비면 그대로 둔다.
+    mutating func renameDeck(_ id: UUID, to name: String) {
+        let name = name.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, let i = state.decks.firstIndex(where: { $0.id == id }) else { return }
+        state.decks[i].name = name
+    }
+
+    mutating func deleteDeck(_ id: UUID) { state.decks.removeAll { $0.id == id } }
+
+    /// 덱에 1장 넣는다. 미보유 카드도 되고(목표 덱), 카드마다 `maxCopiesInDeck` 장까지. 넣었으면 true.
+    mutating func addToDeck(_ id: UUID, _ cid: Int) -> Bool {
+        guard let i = state.decks.firstIndex(where: { $0.id == id }) else { return false }
+        let n = state.decks[i].cards[cid] ?? 0
+        guard n < Balance.maxCopiesInDeck else { return false }
+        state.decks[i].cards[cid] = n + 1
+        return true
+    }
+
+    /// 덱에서 1장 뺀다. 0장이 되면 항목을 지운다.
+    mutating func removeFromDeck(_ id: UUID, _ cid: Int) {
+        guard let i = state.decks.firstIndex(where: { $0.id == id }), let n = state.decks[i].cards[cid] else { return }
+        state.decks[i].cards[cid] = n > 1 ? n - 1 : nil
     }
 
     // MARK: 뽑기

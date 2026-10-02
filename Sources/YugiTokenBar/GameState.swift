@@ -7,6 +7,14 @@ struct LogEntry: Codable, Sendable, Equatable {
     let date: Date
 }
 
+/// 사용자가 만든 덱. cards 는 cid → 장 수.
+struct Deck: Codable, Sendable, Equatable, Identifiable {
+    var id = UUID()
+    var name: String
+    var cards: [Int: Int] = [:]
+    var count: Int { cards.values.reduce(0, +) }
+}
+
 struct GameState: Codable, Sendable, Equatable {
     var coins = 0
     var coinRemainder = 0
@@ -24,6 +32,8 @@ struct GameState: Codable, Sendable, Equatable {
     var favorites: Set<Int> = []
     /// 설정: 이미 가진 카드가 나오면 바로 판다
     var autoSellDuplicates = false
+    /// 컬렉션 창에서 만든 덱들
+    var decks: [Deck] = []
     var log: [LogEntry] = []
 
     init() {}
@@ -43,6 +53,7 @@ struct GameState: Codable, Sendable, Equatable {
         freePacks = try c.decodeIfPresent(Int.self, forKey: .freePacks) ?? d.freePacks
         favorites = try c.decodeIfPresent(Set<Int>.self, forKey: .favorites) ?? d.favorites
         autoSellDuplicates = try c.decodeIfPresent(Bool.self, forKey: .autoSellDuplicates) ?? d.autoSellDuplicates
+        decks = try c.decodeIfPresent([Deck].self, forKey: .decks) ?? d.decks
         log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log
     }
 }
