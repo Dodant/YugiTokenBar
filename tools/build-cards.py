@@ -14,7 +14,10 @@ import urllib.request
 TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽) = 5 — 앱(CardDB.load)이 UR(4)로 합친다
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
 CUTOFF = "2020/07/25"  # 『라이즈 오브 더 듀얼리스트』(VRAINS 이후 첫 팩) 직전까지
-OUT = sys.argv[1] if len(sys.argv) > 1 else "Resources/cards.json"
+# --reformat: 받아 오지 않고 기존 파일을 지금 형식으로만 다시 쓴다
+REFORMAT = "--reformat" in sys.argv
+ARGS = [a for a in sys.argv[1:] if a != "--reformat"]
+OUT = ARGS[0] if ARGS else "Resources/cards.json"
 
 
 def get(url):
@@ -102,6 +105,14 @@ def korean_pack_image(set_code):
     return info.get("thumburl") or info["url"]
 
 
+def write(out):
+    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게"""
+    dump = lambda x: json.dumps(x, ensure_ascii=False, separators=(",", ":"))
+    with open(OUT, "w", encoding="utf-8") as f:
+        f.write('{"packs":[\n' + ",\n".join(dump(p) for p in out["packs"]) + '\n],"cards":{\n'
+                + ",\n".join(f"{dump(k)}:{dump(v)}" for k, v in out["cards"].items()) + "\n}}\n")
+
+
 def main():
     products = parse_products(get(BASE + "card_list.action?request_locale=ko"))
     packs, infos = [], {}
@@ -146,8 +157,7 @@ def main():
 
     # 빈 칸(None)은 빼서 용량을 줄인다 — 앱은 없는 키를 nil 로 읽는다
     out = {"packs": packs, "cards": {str(k): {f: x for f, x in v.items() if x is not None} for k, v in sorted(infos.items())}}
-    with open(OUT, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
+    write(out)
     print(f"packs={len(packs)} distinct={len(infos)} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
@@ -156,4 +166,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if REFORMAT:
+        with open(OUT, encoding="utf-8") as f:
+            write(json.load(f))
+    else:
+        main()
