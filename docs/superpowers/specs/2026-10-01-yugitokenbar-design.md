@@ -66,8 +66,10 @@ Sources/YugiTokenBar/
   ImageCache.swift     카드(YGOPRODeck)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
-  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션), Usage, CardImageView
+  Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기
+  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션), Usage, CardImageView, PartnerPanel(바탕화면 파트너)
 CHANGELOG.md           패치노트 겸 버전 원본
+Resources/partner.png  파트너 스프라이트 시트(192×208 셀, 8열 × 9행)
 Tests/YugiTokenBarTests/
 tools/build-cards.py
 ```
@@ -177,7 +179,7 @@ tools/build-cards.py
   - 업데이트: 현재 버전(Info.plist `CFBundleShortVersionString (CFBundleVersion)`, `swift run`이면 "개발 빌드"), [확인]을 누르면 `raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md`의 맨 위 버전과 숫자로 비교한다. 릴리스 없이 main 기준이다. 새 버전이면 GitHub 링크와 `git pull && scripts/build-app.sh --install`을 보여준다. 자동 확인·자동 업데이트는 없다.
   - 백업 & 이전: [내보내기], [가져오기](4절 내보내기·가져오기), 세이브 폴더 [Finder].
   - 정보 & 지원: [패치노트](`CHANGELOG.md` 창), GitHub 링크, PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
-- **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다. `scripts/build-app.sh`가 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣고, `CHANGELOG.md`와 `Usage/NOTICE.md`를 Resources에 복사한다.
+- **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다. `scripts/build-app.sh`가 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣고, `cards.json`·`partner.png`·`CHANGELOG.md`·`Usage/NOTICE.md`를 Resources에 복사한다.
 
 ## 7. 오류 처리
 
@@ -212,3 +214,4 @@ tools/build-cards.py
 
 - `Usage/` 코드는 PokeTokenBar(MIT, © 2026 chattymin)에서 복사하고 NOTICE.md에 고지한다.
 - 카드 이미지와 텍스트는 Konami 저작물이다. 개인용 앱으로만 쓰고 배포하지 않는다. 이미지는 번들에 넣지 않고 런타임에 캐시한다.
+- 파트너 스프라이트 시트(`Resources/partner.png`)는 사용자가 제공한 「날개 크리보」 팬 이미지다. 개인용으로만 쓴다.
