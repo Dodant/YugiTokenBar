@@ -156,3 +156,70 @@ struct PartnerPlayer: Sendable {
         return t < PartnerAnim.idle.frameCount ? t : 0
     }
 }
+
+extension PartnerAnim {
+    /// 세이브가 바뀔 때 한 번 재생할 동작: 새로 해금·무료 카드나 무료 팩이 늘어남 → 설렘, 코인이 팩 가격을 넘어섬 → 손짓.
+    static func reactions(from old: GameState, to new: GameState, newlyUnlocked: Bool) -> [PartnerAnim] {
+        var result: [PartnerAnim] = []
+        if newlyUnlocked || new.pendingFree > old.pendingFree || new.freePacks > old.freePacks { result.append(.excited) }
+        if old.coins < Balance.packPrice, new.coins >= Balance.packPrice { result.append(.wave) }
+        return result
+    }
+}
+
+/// 화면에 그릴 프레임 하나. 메뉴바와 바탕화면이 따로 가져서, 바탕화면이 8fps로 바뀌어도 메뉴바 라벨은 깜빡일 때만 다시 그린다.
+@MainActor final class FrameBox: ObservableObject {
+    @Published var image: NSImage?
+}
+
+/// 파트너 애니메이션을 타이머로 돌리고 프레임을 내보낸다. 시트를 못 읽으면 아무것도 하지 않는다(메뉴바는 카드 아이콘).
+@MainActor final class PartnerModel {
+    let desktop = FrameBox()
+    let menu = FrameBox()
+    private var player = PartnerPlayer()
+    private let frames: [PartnerAnim: [NSImage]]
+    private let menuFrames: [NSImage]
+    private var timer: Timer?
+    private var ticks = 0
+
+    init(sheet: PartnerSheet? = .bundled()) {
+        if sheet == nil { AppLog.write("partner.png 를 읽지 못해 파트너를 끕니다") }
+        let images = sheet?.frames ?? [:]
+        frames = images.mapValues { $0.map { NSImage(cgImage: $0, size: PartnerSheet.cell) } }
+        let height = 18.0
+        let menuSize = NSSize(width: height * PartnerSheet.cell.width / PartnerSheet.cell.height, height: height)
+        menuFrames = (images[.idle] ?? []).map { NSImage(cgImage: $0, size: menuSize) }
+    }
+
+    var isReady: Bool { !menuFrames.isEmpty }
+
+    /// 해금되면 부른다. 여러 번 불러도 타이머는 하나.
+    func start() {
+        guard isReady, timer == nil else { return }
+        render()
+        let timer = Timer(timeInterval: 1 / PartnerTuning.fps, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
+        }
+        RunLoop.main.add(timer, forMode: .common)  // 메뉴·팝오버가 열려 있어도 돈다
+        self.timer = timer
+    }
+
+    func setMood(_ mood: PartnerMood) { player.setMood(mood); render() }
+    func play(_ anim: PartnerAnim) { player.play(anim); render() }
+    func interrupt(_ anim: PartnerAnim) { player.interrupt(anim); render() }
+
+    private func tick() {
+        player.tick()
+        ticks += 1
+        render()
+    }
+
+    /// 바뀐 프레임만 내보낸다 (같은 이미지면 @Published 를 건드리지 않는다).
+    private func render() {
+        guard isReady else { return }
+        let image = frames[player.anim]?[player.frame]
+        if desktop.image !== image { desktop.image = image }
+        let icon = menuFrames[PartnerPlayer.menuFrame(tick: ticks)]
+        if menu.image !== icon { menu.image = icon }
+    }
+}

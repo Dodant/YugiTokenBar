@@ -27,15 +27,24 @@ final class AppModel: ObservableObject {
     private var fetchingLimits = false
     /// 키체인 암호 창을 이번 실행에서 이미 띄웠으면(거절 포함) 자동 갱신은 다시 띄우지 않는다.
     private var keychainPrompted = false
+    /// 파트너 「날개 크리보」. 해금 전에는 멈춰 있다.
+    let partner = PartnerModel()
+    private var lastUsage: UsageSample?
+    private var tokensPerMinute = 0
+    /// 마지막으로 파트너 반응을 계산한 상태
+    private var partnerSeen: GameState
 
     init(db: CardDB, store: StateStore = .standard()) {
         self.store = store
-        self.game = Game(db: db, state: store.load())
+        let state = store.load()
+        self.game = Game(db: db, state: state)
+        self.partnerSeen = state
     }
 
     var db: CardDB { game.db }
 
     func start() {
+        updatePartner()
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
@@ -56,6 +65,7 @@ final class AppModel: ObservableObject {
             async let codex = try? CodexRateLimitsProvider().fetch()
             claudeLimits = await fetchClaude(allowPrompt: userInitiated) ?? claudeLimits
             if let codex = await codex { codexLimits = codex.visibleSnapshots.first }
+            updatePartnerMood()
         }
     }
 
@@ -85,6 +95,10 @@ final class AppModel: ObservableObject {
             let usage = await Task.detached { TodayUsage.read() }.value
             todayTokens = usage.byProvider
             todayCost = usage.cost
+            let sample = UsageSample(date: usage.date, total: usage.byProvider.values.reduce(0, +), at: Date())
+            tokensPerMinute = PartnerMood.tokensPerMinute(from: lastUsage, to: sample)
+            lastUsage = sample
+            updatePartnerMood()
             game.claim(today: usage.date, byProvider: usage.byProvider)
             save()
         }
@@ -112,6 +126,7 @@ final class AppModel: ObservableObject {
         openingPack = pack
         openingID = UUID()
         showOpening = true
+        if pulls.contains(where: { $0.tier >= 3 }) { partner.play(.excited) }
         save()
     }
 
@@ -128,6 +143,16 @@ final class AppModel: ObservableObject {
     var fusionOnly: Bool {
         get { game.state.fusionOnly }
         set { game.state.fusionOnly = newValue; save() }
+    }
+
+    var partnerEnabled: Bool {
+        get { game.state.partnerEnabled }
+        set { game.state.partnerEnabled = newValue; save(); updatePartner() }
+    }
+
+    var partnerSize: Double {
+        get { game.state.partnerSize }
+        set { game.state.partnerSize = newValue; save(); updatePartner() }
     }
 
     func fuse(_ cid: Int) {
@@ -186,10 +211,30 @@ final class AppModel: ObservableObject {
         let next = envelope.state.withLedger(of: game.state)
         try store.save(next)
         game.state = next
+        partnerSeen = next
+        save()  // 가져온 세이브에 날개 크리보가 있으면 여기서 해금
+        updatePartner()
         return backup
     }
 
     private func save() {
+        let unlocked = game.unlockPartnerIfOwned()
         do { try store.save(game.state) } catch { AppLog.write("state 저장 실패: \(error)") }
+        for anim in PartnerAnim.reactions(from: partnerSeen, to: game.state, newlyUnlocked: unlocked) { partner.play(anim) }
+        partnerSeen = game.state
+        if unlocked { updatePartner() }
+    }
+
+    // MARK: 파트너
+
+    private func updatePartnerMood() {
+        let meters = (claudeLimits.map(UsageView.claudeMeters) ?? []) + (codexLimits.map(UsageView.codexMeters) ?? [])
+        partner.setMood(.base(tokensPerMinute: tokensPerMinute, limitPercent: meters.map(\.percent).max() ?? 0))
+    }
+
+    /// 해금·설정에 맞춰 파트너를 돌리고 바탕화면 창을 보이거나 숨긴다.
+    func updatePartner() {
+        guard game.state.partnerUnlocked, partner.isReady else { return }
+        partner.start()
     }
 }

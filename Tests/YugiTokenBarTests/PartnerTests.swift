@@ -185,4 +185,45 @@ import Testing
         let back = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(state))
         #expect(back == state)
     }
+
+    // MARK: 반응
+
+    @Test func reactionsOnUnlockAndCoins() {
+        var old = GameState()
+        old.coins = Balance.packPrice - 1
+        var new = old
+        #expect(PartnerAnim.reactions(from: old, to: new, newlyUnlocked: false).isEmpty)
+        #expect(PartnerAnim.reactions(from: old, to: new, newlyUnlocked: true) == [.excited])
+        new.coins = Balance.packPrice
+        #expect(PartnerAnim.reactions(from: old, to: new, newlyUnlocked: false) == [.wave])
+        new.pendingFree = 1
+        #expect(PartnerAnim.reactions(from: old, to: new, newlyUnlocked: false) == [.excited, .wave])
+        old.coins = Balance.packPrice  // 이미 넘어 있으면 손짓 없음
+        old.pendingFree = 1
+        new.freePacks = 1
+        #expect(PartnerAnim.reactions(from: old, to: new, newlyUnlocked: false) == [.excited])
+    }
+
+    @MainActor @Test func saveUnlocksPartner() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        var state = GameState()
+        state.pendingFree = 1
+        try store.save(state)
+        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store)
+        #expect(!model.game.state.partnerUnlocked)
+        #expect(model.openFree())  // 풀에 날개 크리보 1종뿐
+        #expect(model.game.state.partnerUnlocked)
+        #expect(store.load().partnerUnlocked)
+    }
+
+    @MainActor @Test func importLockedSaveHidesPartner() throws {
+        let dir = tempDir()
+        let store = StateStore(url: dir.appendingPathComponent("state.json"))
+        var state = GameState()
+        state.partnerUnlocked = true
+        try store.save(state)
+        let model = AppModel(db: makeDB([[(1, 1)]]), store: store)
+        _ = try model.importSave(SaveEnvelope(appVersion: "0", exportedAt: Date(), state: GameState()))
+        #expect(!model.game.state.partnerUnlocked)  // 해금은 세이브 단위
+    }
 }
