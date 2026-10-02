@@ -13,6 +13,8 @@ enum Balance {
     static let logLimit = 50
     /// 무료 카드를 한 번에 여는 최대 장 수 (팩 1봉투와 같은 5장)
     static let freeOpenBatch = 5
+    /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
+    static let monstersPerPack = 2
     /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 225 < packPrice 라 사고팔기로 코인이 늘지 않는다.
     static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300]
 }
@@ -163,10 +165,13 @@ struct Game: Sendable {
         [tier] + Array(stride(from: tier - 1, through: 1, by: -1)) + Array(stride(from: tier + 1, through: 4, by: 1))
     }
 
-    /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택. 보유 수 상한은 없다.
-    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], using rng: inout R) -> PackCard? {
+    /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택.
+    /// kind(몬스터·마법·함정)가 있으면 그 종류만. 보유 수 상한은 없다.
+    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], kind: String? = nil, using rng: inout R) -> PackCard? {
         for t in Self.fallbackOrder(tier) {
-            let candidates = db.packs[pack].cards.filter { $0.tier == t && !excluding.contains($0.cid) }
+            let candidates = db.packs[pack].cards.filter {
+                $0.tier == t && !excluding.contains($0.cid) && (kind == nil || db.cards[$0.cid]?.kind == kind)
+            }
             if let card = candidates.randomElement(using: &rng) { return card }
         }
         return nil
@@ -205,12 +210,13 @@ struct Game: Sendable {
         return (pack, open(pack: pack, using: &rng))
     }
 
-    /// 봉투 하나 열기: 노멀 4 + 슬롯5.
+    /// 봉투 하나 열기: 노멀 4 + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
     private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         let tiers = [1, 1, 1, 1, slot5Tier(using: &rng)]
         var pulls: [Pull] = []
-        for tier in tiers {
-            guard let card = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), using: &rng) else { continue }
+        for (i, tier) in tiers.enumerated() {
+            let kind = i < Balance.monstersPerPack ? "몬스터" : nil
+            guard let card = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), kind: kind, using: &rng) else { continue }
             let isNew = copies(card.cid) == 0
             give(card.cid, source: db.packs[pack].pid)
             pulls.append(Pull(cid: card.cid, tier: card.tier, label: card.label, isNew: isNew, soldFor: autoSell(card.cid)))
