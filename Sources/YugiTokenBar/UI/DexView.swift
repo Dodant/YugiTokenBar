@@ -22,7 +22,7 @@ struct DexView: View {
     /// "" = 모든 종류, 아니면 CardInfo.kind
     @State private var kindFilter = ""
     @State private var search = ""
-    @AppStorage("dex.showUnowned") private var showUnowned = true
+    @State private var showUnowned = true  // 기억하지 않고 창을 열 때마다 켠다
     @AppStorage("dex.sort") private var sort = DexSort.pack
 
     var body: some View {
