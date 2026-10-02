@@ -22,8 +22,16 @@ struct OpeningView: View {
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
                 ForEach(Array(pulls.enumerated()), id: \.offset) { i, pull in
-                    FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
-                        .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
+                    VStack(spacing: 4) {
+                        FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
+                            .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
+                        // 상점 팩 칸처럼 아래 이름 한 줄. 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
+                        Text(model.db.cards[pull.cid]?.name ?? " ")
+                            .font(.caption2).lineLimit(1).truncationMode(.tail)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .opacity(flipped.contains(i) ? 1 : 0)
+                    }
                 }
             }
             Spacer(minLength: 0)
