@@ -158,7 +158,7 @@ private struct MenuRow: View {
                 Spacer()
                 if let trailing { Text(trailing).foregroundStyle(.secondary).monospacedDigit() }
                 if chevron { Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary) }
-                if opensWindow { Image(systemName: "arrow.up.right.square").font(.caption.weight(.semibold)).foregroundStyle(.tertiary).hoverHint("새 창으로 열려요") }
+                if opensWindow { Image(systemName: "arrow.up.right.square").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)}
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
