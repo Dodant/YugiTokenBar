@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Konami 한국 DB + YGOPRODeck → Resources/cards.json
 
-한국 정발 정규 부스터 팩 중 『듀얼리스트의 태동』(2008-10-07, 첫 싱크로 팩) 이전만 수집한다.
+한국 정발 정규 부스터 팩 중 『이터니티 코드』(2020-04-14, VRAINS 마지막 팩)까지 75팩을 수집한다.
 사용: python3 tools/build-cards.py [출력경로]
 """
 import html
@@ -13,7 +13,7 @@ import urllib.request
 
 TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽) = 5 — 앱(CardDB.load)이 UR(4)로 합친다
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
-CUTOFF = "2008/10/07"
+CUTOFF = "2020/07/25"  # 『라이즈 오브 더 듀얼리스트』(VRAINS 이후 첫 팩) 직전까지
 OUT = sys.argv[1] if len(sys.argv) > 1 else "Resources/cards.json"
 
 
@@ -28,6 +28,7 @@ def clean(s):
     s = re.sub(r"<br\s*/?>", "\n", s)
     s = re.sub(r"<[^>]+>", "", s)
     s = html.unescape(s)
+    s = re.sub(r"<br\s*/?>", "\n", s)  # 링크 소재 줄처럼 &lt;br&gt; 로 이스케이프된 줄바꿈
     return "\n".join(" ".join(line.split()) for line in s.split("\n")).strip()
 
 
@@ -65,7 +66,8 @@ def parse_pack(page):
             kind = kind.strip("[] \n").replace("\n", "").replace("／", "/")
         else:
             kind = first(r'box_card_effect">.*?<span>([^<]*)</span>', row, "일반")
-        level = first(r'box_card_level_rank[^>]*>.*?<span>([^<]*)</span>', row)
+        level = first(r'box_card_(?:level_rank|linkmarker)[^>]*>.*?<span>([^<]*)</span>', row)  # 레벨·랭크·링크 수
+        scale = first(r'box_card_pen_scale">.*?P스케일\s*(\d+)', row)
         atk = first(r'class="atk_power">\s*<span>([^<]*)</span>', row)
         dfn = first(r'class="def_power"><span>(.*?)</span>', row)
         cards.append({
@@ -78,8 +80,10 @@ def parse_pack(page):
                 "level": int(re.sub(r"\D", "", level)) if level else None,
                 "type": kind,
                 "atk": re.sub(r"[^\d?]", "", atk) if atk else None,
-                "def": re.sub(r"[^\d?]", "", dfn) if dfn else None,
+                "def": (re.sub(r"[^\d?]", "", dfn) or None) if dfn else None,  # 링크는 "-" → None
                 "text": first(r'box_card_text[^"]*">(.*?)</dd>', row, ""),
+                "scale": int(scale) if scale else None,
+                "pendulum": first(r'box_card_pen_effect[^"]*">(.*?)</span>', row) or None,  # 펜듈럼 효과 없는 일반 펜듈럼은 ""
             },
         })
     return cards
@@ -140,14 +144,15 @@ def main():
         if info["imageId"] is None:
             missing.append(f"{cid} {info['name']}")
 
-    out = {"packs": packs, "cards": {str(k): v for k, v in sorted(infos.items())}}
+    # 빈 칸(None)은 빼서 용량을 줄인다 — 앱은 없는 키를 nil 로 읽는다
+    out = {"packs": packs, "cards": {str(k): {f: x for f, x in v.items() if x is not None} for k, v in sorted(infos.items())}}
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
     print(f"packs={len(packs)} distinct={len(infos)} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
-    if len(packs) != 27 or any(not i["name"] for i in infos.values()) or any(not p["imageURL"] for p in packs):
-        sys.exit("검증 실패: 팩 수가 27이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
+    if len(packs) != 75 or any(not i["name"] for i in infos.values()) or any(not p["imageURL"] for p in packs):
+        sys.exit("검증 실패: 팩 수가 75가 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 
 if __name__ == "__main__":

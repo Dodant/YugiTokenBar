@@ -9,6 +9,12 @@ struct CardInfo: Codable, Sendable, Equatable {
     let def: String?
     let text: String
     let imageId: Int?
+    /// 펜듈럼 몬스터만: P스케일과 펜듈럼 효과
+    var scale: Int? = nil
+    var pendulum: String? = nil
+
+    /// level 칸의 이름: 엑시즈는 랭크, 링크는 링크 수
+    var levelName: String { type?.contains("엑시즈") == true ? "랭크" : type?.contains("링크") == true ? "링크" : "레벨" }
 
     /// 몬스터 / 마법 / 함정. 마법·함정은 attr 칸에 "마법"·"함정"이 들어 있다.
     var kind: String { attr == "마법" || attr == "함정" ? attr! : "몬스터" }
@@ -53,13 +59,18 @@ struct CardDB: Sendable {
         self.allCIDs = cards.keys.sorted()
     }
 
-    /// OCG Series 1~3 = 듀얼몬스터즈(DM), Series 4 부터(첫 팩 Soul of the Duelist) = GX 방영기 (Yugipedia 기준).
-    static let firstGXSetCode = "SOD"
+    /// 시대별 첫 팩(발매순 인덱스): DM 푸른 눈의 백룡의 전설, GX 듀얼리스트의 투혼, 5D's 듀얼리스트의 태동(싱크로),
+    /// ZEXAL 리턴 오브 더 듀얼리스트(엑시즈), ARC-V 더 듀얼리스트 어드벤트(펜듈럼), VRAINS 코드 오브 더 듀얼리스트(링크).
+    // ponytail: 팩 목록이 고정(cards.json)이라 인덱스로 나눈다. 팩을 더 넣으면 여기도 고친다.
+    static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63)]
 
-    /// (시대 이름, 팩 인덱스 범위) — 발매순이라 SOD 앞은 DM, 뒤는 GX.
+    /// (시대 이름, 팩 인덱스 범위). 테스트용 작은 DB 에선 빈 시대를 뺀다.
     var eras: [(name: String, packs: Range<Int>)] {
-        let gx = packs.firstIndex { $0.setCode == Self.firstGXSetCode } ?? packs.count
-        return [("DM", 0..<gx), ("GX", gx..<packs.count)].filter { !$0.packs.isEmpty }
+        Self.eraStarts.indices.map { i in
+            let start = min(Self.eraStarts[i].1, packs.count)
+            let end = i + 1 < Self.eraStarts.count ? min(Self.eraStarts[i + 1].1, packs.count) : packs.count
+            return (Self.eraStarts[i].0, start..<end)
+        }.filter { !$0.packs.isEmpty }
     }
 
     static func load(from url: URL) throws -> CardDB {

@@ -423,7 +423,8 @@ struct DexView: View {
                 Section {
                     Text(card.name).font(.title3.weight(.semibold))
                     if let attr = card.attr { LabeledContent("속성", value: attr) }
-                    if let level = card.level { LabeledContent("레벨", value: "★\(level)") }
+                    if let level = card.level { LabeledContent(card.levelName, value: card.levelName == "레벨" ? "★\(level)" : "\(level)") }
+                    if let scale = card.scale { LabeledContent("P스케일", value: "\(scale)") }
                     if let type = card.type { LabeledContent("종류", value: type) }
                     if let atk = card.atk { LabeledContent("공격력 / 수비력", value: "\(atk) / \(card.def ?? "-")") }
                     LabeledContent("보유", value: "\(n)장")
@@ -442,6 +443,9 @@ struct DexView: View {
                     } message: {
                         Text("컬렉션에서 빠지고 다시 모아야 해요.")
                     }
+                }
+                if let pendulum = card.pendulum {
+                    Section("펜듈럼 효과") { Text(pendulum).font(.callout).textSelection(.enabled) }
                 }
                 Section("효과") {
                     Text(card.text).font(.callout).textSelection(.enabled)

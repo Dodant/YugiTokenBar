@@ -242,7 +242,7 @@ struct Game: Sendable {
         return open(pack: pack, using: &rng)
     }
 
-    /// 쌓인 무료 팩 1개를 연다. 정규 부스터 27팩 중 하나를 무작위로 고른다. 없으면 nil.
+    /// 쌓인 무료 팩 1개를 연다. 정규 부스터 팩 중 하나를 무작위로 고른다. 없으면 nil.
     mutating func openFreePack<R: RandomNumberGenerator>(using rng: inout R) -> (pack: Int, pulls: [Pull])? {
         guard state.freePacks > 0, !db.packs.isEmpty else { return nil }
         state.freePacks -= 1
