@@ -52,18 +52,22 @@ struct CardDB: Sendable {
     private(set) var packs: [Pack]
     let cards: [Int: CardInfo]
     private(set) var allCIDs: [Int]
+    /// allCIDs 를 빠르게 찾기 위한 집합 (시대 범위 안인지)
+    private(set) var cidSet: Set<Int>
 
     init(packs: [Pack], cards: [Int: CardInfo]) {
         self.packs = packs
         self.cards = cards
         self.allCIDs = cards.keys.sorted()
+        self.cidSet = Set(cards.keys)
     }
 
     /// 앞 n 팩만 쓰는 DB (설정의 "시대 범위"). cards 는 그대로 두어 범위 밖 보유·기록 카드도 이름·이미지를 찾는다.
     func prefix(packs n: Int) -> CardDB {
         var db = self
         db.packs = Array(packs.prefix(n))
-        db.allCIDs = Set(db.packs.flatMap(\.cards).map(\.cid)).sorted()
+        db.cidSet = Set(db.packs.flatMap(\.cards).map(\.cid))
+        db.allCIDs = db.cidSet.sorted()
         return db
     }
 

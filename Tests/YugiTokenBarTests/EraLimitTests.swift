@@ -26,4 +26,20 @@ import Testing
         #expect(game.db.packs.count == 12)
         #expect(game.ownedDistinct == 12)
     }
+
+    @Test func hiddenCardsAreNotSoldOrCounted() {
+        var state = GameState()
+        state.eraLimit = "DM"
+        state.owned = [1: 3, 12: 4]  // 12 = 범위 밖(GX)
+        state.favorites = [1, 12]
+        state.decks = [Deck(name: "덱", cards: [1: 2, 12: 3])]
+        var game = Game(db: db, state: state)
+        #expect(game.favoritesInRange == 1)
+        let p = game.deckProgress(game.state.decks[0])
+        #expect(p.owned == 2 && p.total == 2)
+        let dup = game.duplicatesValue  // 카드 1의 2장만 (카드 12의 3장은 숨겨져 있어 제외)
+        #expect(dup.count == 2 && dup.coins == 2 * Balance.sellPrice[1]!)
+        #expect(game.sellDuplicates() == dup.coins)
+        #expect(game.state.owned == [1: 1, 12: 4])
+    }
 }

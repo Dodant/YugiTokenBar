@@ -108,6 +108,9 @@ struct Game: Sendable {
 
     func copies(_ cid: Int) -> Int { state.owned[cid] ?? 0 }
 
+    /// 시대 범위 안의 즐겨찾기 수 (사이드바 숫자 = 즐겨찾기 목록 장 수)
+    var favoritesInRange: Int { state.favorites.filter { db.cidSet.contains($0) }.count }
+
     /// 시대 범위 안에서 1장 이상 가진 종류 수
     var ownedDistinct: Int { db.allCIDs.filter { copies($0) > 0 }.count }
 
@@ -147,16 +150,16 @@ struct Game: Sendable {
 
     /// 중복분(2장째 이상)을 팔면 받을 (장 수, 코인). 각 카드 1장은 남는다.
     var duplicatesValue: (count: Int, coins: Int) {
-        state.owned.reduce((0, 0)) { acc, kv in
+        state.owned.filter { db.cidSet.contains($0.key) }.reduce((0, 0)) { acc, kv in
             let extra = kv.value - 1
             return extra > 0 ? (acc.0 + extra, acc.1 + extra * sellPrice(kv.key)) : acc
         }
     }
 
-    /// 중복분을 모두 판다. 반환: 받은 코인.
+    /// 시대 범위 안 카드의 중복분을 모두 판다(범위 밖은 숨겨져 있으니 건드리지 않는다). 반환: 받은 코인.
     mutating func sellDuplicates() -> Int {
         var total = 0
-        for (cid, n) in state.owned where n > 1 {
+        for (cid, n) in state.owned where n > 1 && db.cidSet.contains(cid) {
             for _ in 1..<n { total += sell(cid) ?? 0 }
         }
         return total
@@ -168,7 +171,8 @@ struct Game: Sendable {
 
     /// 덱의 (보유한 장 수, 덱 장 수). 카드마다 덱에 넣은 수와 보유 수 중 작은 쪽을 센다.
     func deckProgress(_ deck: Deck) -> (owned: Int, total: Int) {
-        (deck.cards.reduce(0) { $0 + min(copies($1.key), $1.value) }, deck.count)
+        let cards = deck.cards.filter { db.cidSet.contains($0.key) }  // 시대 범위 밖 카드는 그리드처럼 세지 않는다
+        return (cards.reduce(0) { $0 + min(copies($1.key), $1.value) }, cards.values.reduce(0, +))
     }
 
     /// 새 덱 "새 덱 N".

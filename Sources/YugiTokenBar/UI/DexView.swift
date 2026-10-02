@@ -43,7 +43,7 @@ struct DexView: View {
                     HStack {
                         Text("즐겨찾기")
                         Spacer()
-                        Text("\(game.state.favorites.count)").foregroundStyle(.secondary).monospacedDigit()
+                        Text("\(game.favoritesInRange)").foregroundStyle(.secondary).monospacedDigit()
                     }
                 } icon: {
                     Image(systemName: "star.fill").foregroundStyle(.yellow)
