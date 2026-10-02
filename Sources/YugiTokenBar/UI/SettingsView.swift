@@ -34,6 +34,7 @@ struct SettingsView: View {
                     aboutSection
                 }
                 .buttonStyle(.glass)
+                .buttonBorderShape(.capsule)
             }
             .scrollIndicators(.never)
             .frame(maxHeight: .infinity)
