@@ -428,6 +428,7 @@ struct DexView: View {
                     .buttonStyle(.plain)
                     .help("새 덱")
             }
+            .padding(.leading, 3).padding(.trailing, 6)  // 시대 헤더와 같은 여백
         }
     }
 
@@ -552,6 +553,7 @@ private struct DexEraSection<Item: View>: View {
                     Spacer()
                     Text("\(owned) / \(total)").monospacedDigit()
                 }
+                .padding(.leading, 3).padding(.trailing, 6)  // 사이드바 헤더는 행보다 안쪽 여백이 적어서 전체·즐겨찾기 행의 아이콘·숫자 끝에 맞춘다
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
