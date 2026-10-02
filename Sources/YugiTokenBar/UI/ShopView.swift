@@ -2,6 +2,11 @@ import SwiftUI
 
 struct ShopView: View {
     @EnvironmentObject var model: AppModel
+    /// 스크롤 위치(위에서부터 pt). 상점을 닫았다 열거나 앱을 다시 켜도 그 자리로.
+    @AppStorage("shop.scrollY") private var savedY = 0.0
+    @State private var position = ScrollPosition()
+    /// 복원 전에 들어오는 0 으로 저장값을 덮지 않게
+    @State private var restored = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -27,11 +32,21 @@ struct ShopView: View {
             }
             .scrollIndicators(.never)
             .frame(maxHeight: .infinity)
+            .scrollPosition($position)
+            .onScrollGeometryChange(for: Double.self) { $0.contentOffset.y } action: { _, y in
+                if restored { savedY = max(0, y) }
+            }
+            .task {
+                // 첫 레이아웃이 끝난 뒤 옮겨야 적용된다
+                await Task.yield()
+                position.scrollTo(y: savedY)
+                restored = true
+            }
         }
     }
 }
 
-/// 시대(DM/GX)별 접고 펴는 팩 묶음. 접힘 상태는 다음 실행에도 기억한다.
+/// 시대별 접고 펴는 팩 묶음. 접힘 상태는 다음 실행에도 기억한다.
 private struct EraSection: View {
     @EnvironmentObject var model: AppModel
     let name: String

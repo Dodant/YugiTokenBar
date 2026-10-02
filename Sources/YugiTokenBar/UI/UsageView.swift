@@ -23,7 +23,6 @@ struct UsageView: View {
         .padding(.vertical, 4)
         .contentShape(Rectangle())
         .onTapGesture { model.refreshLimits(userInitiated: true) }
-        .help("눌러서 한도 새로고침")
     }
 
     static func claudeMeters(_ s: LimitStatus) -> [Meter] {

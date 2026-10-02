@@ -33,7 +33,7 @@ struct PopoverView: View {
                         CardImageView(db: game.db, cid: entry.cid)
                             .frame(width: 54)
                             .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-                            .help(game.db.cards[entry.cid]?.name ?? "")
+                            .hoverHint(game.db.cards[entry.cid]?.name ?? "")
                     }
                     if state.log.isEmpty {
                         Text("아직 카드가 없어요").font(.callout).foregroundStyle(.secondary)
@@ -63,7 +63,7 @@ struct PopoverView: View {
             VStack(spacing: 2) {
                 MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.showShop = true }
                 MenuRow(title: "컬렉션", systemImage: "square.stack.3d.up",
-                        trailing: "\(game.ownedDistinct) / \(game.db.allCIDs.count)", chevron: true) { show("dex") }
+                        trailing: "\(game.ownedDistinct) / \(game.db.allCIDs.count)", chevron: false, opensWindow: true) { show("dex") }
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
                 UsageView()
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
@@ -82,13 +82,12 @@ struct PopoverView: View {
                 .font(.system(size: 30, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
-                .help("토큰 \(Balance.tokensPerCoin.formatted()) = \(coinText(1))")
+                .hoverHint("토큰 \(Balance.tokensPerCoin.formatted()) = \(coinText(1))")
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
                 caption("다음 무료 카드 · 팩")
                 Text("\(shortTokens(left)) · \(state.packStamp)/\(Balance.packsPerFreePack)")
                     .font(.callout.weight(.medium)).monospacedDigit()
-                    .help("다음 무료 카드까지 토큰 · 무료 팩까지 산 팩 수")
             }
             Gauge(value: Double(state.dropProgress), in: 0...Double(Balance.tokensPerFreeCard)) {
                 Image(systemName: "gift.fill")
@@ -146,6 +145,8 @@ private struct MenuRow: View {
     let systemImage: String
     let trailing: String?
     let chevron: Bool
+    /// 패널 안 화면이 아니라 새 창으로 열리면 꺾쇠 대신 창 아이콘
+    var opensWindow = false
     let action: () -> Void
     @State private var hover = false
 
@@ -157,6 +158,7 @@ private struct MenuRow: View {
                 Spacer()
                 if let trailing { Text(trailing).foregroundStyle(.secondary).monospacedDigit() }
                 if chevron { Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary) }
+                if opensWindow { Image(systemName: "arrow.up.right.square").font(.caption.weight(.semibold)).foregroundStyle(.tertiary).hoverHint("새 창으로 열려요") }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
@@ -166,6 +168,26 @@ private struct MenuRow: View {
         .buttonStyle(.plain)
         .onHover { hover = $0 }
     }
+}
+
+/// 마우스를 올리면 말풍선으로 설명을 띄운다.
+// ponytail: 메뉴바 패널(.window)에서는 .help 툴팁이 뜨지 않아 hover + popover 로 대신한다. 일반 창(컬렉션)은 .help 그대로.
+private struct HoverHint: ViewModifier {
+    let text: String
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .onHover { shown = $0 }
+            .popover(isPresented: $shown, arrowEdge: .top) {
+                Text(text).font(.callout).padding(10).fixedSize()
+                    .presentationBackground(.thickMaterial)  // 기본 유리보다 덜 비치게
+            }
+    }
+}
+
+extension View {
+    func hoverHint(_ text: String) -> some View { modifier(HoverHint(text: text)) }
 }
 
 /// 코인 표기: ⓒ 1,000
