@@ -71,6 +71,25 @@ struct DexView: View {
                 Text("카드는 컬렉션에 그대로 있어요.")
             }
             .navigationSplitViewColumnWidth(min: 220, ideal: 250)
+            // 왜 어떤 시대가 안 보이는지 창 안에서 알 수 있게, 설정과 같은 시대 범위 메뉴를 사이드바 아래에 둔다
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Picker("시대 범위", selection: $model.eraLimit) {
+                        ForEach(model.game.fullDB.eras, id: \.name) { era in
+                            Text("\(era.name)(\(CardDB.eraSummons[era.name] ?? ""))까지").tag(era.name)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .controlSize(.small)
+                    .fixedSize()
+                    Text("시대는 늘리고 줄일 수 있어요").font(.caption2).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.bar)
+            }
         } detail: {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
@@ -105,6 +124,15 @@ struct DexView: View {
                 } else if entries.isEmpty, scope == .favorites, model.game.state.favorites.isEmpty {
                     ContentUnavailableView("즐겨찾기한 카드가 없어요", systemImage: "star",
                                            description: Text("카드에 마우스를 올리고 오른쪽 위 ☆를 눌러 보세요"))
+                } else if entries.isEmpty, !query.isEmpty, scope != .all {
+                    // 팩 안에서 검색해 없을 때: 같은 검색어로 전체에서 다시
+                    ContentUnavailableView {
+                        Label("'\(search)' 카드가 여기엔 없어요", systemImage: "magnifyingglass")
+                    } description: {
+                        Text("다른 팩에 있을 수 있어요")
+                    } actions: {
+                        Button("전체에서 찾기") { scope = .all }
+                    }
                 } else if entries.isEmpty {
                     ContentUnavailableView(showUnowned ? "조건에 맞는 카드가 없어요" : "보유한 카드가 없어요",
                                            systemImage: "line.3.horizontal.decrease.circle",
@@ -132,6 +160,16 @@ struct DexView: View {
                 } message: {
                     Text("카드마다 1장씩은 남아서 컬렉션은 그대로예요.")
                 }
+                // 러버밴드는 보이는 셀만 잡으니, 필터된 목록 전체는 이걸로
+                Button {
+                    selectedCards = Set(entries.map(\.cid))
+                    showInspector = true
+                } label: {
+                    Label("전체 선택", systemImage: "checklist")
+                }
+                .keyboardShortcut("a")
+                .help("지금 보이는 카드 모두 선택 (⌘A)")
+                .disabled(entries.isEmpty)
                 Button { showInspector.toggle() } label: { Label("정보", systemImage: "sidebar.trailing") }
             }
         }
