@@ -22,11 +22,6 @@ struct YugiTokenBarApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("팩 개봉", id: "pack") {
-            PackOpenView().environmentObject(model)
-        }
-        .windowResizability(.contentSize)
-
         Window("컬렉션", id: "dex") {
             DexView().environmentObject(model)
         }

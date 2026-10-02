@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ShopView: View {
     @EnvironmentObject var model: AppModel
-    let onOpen: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -21,7 +20,7 @@ struct ShopView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(model.db.eras, id: \.name) { era in
-                        EraSection(name: era.name, packs: era.packs, onOpen: onOpen)
+                        EraSection(name: era.name, packs: era.packs)
                     }
                 }
             }
@@ -36,13 +35,11 @@ private struct EraSection: View {
     @EnvironmentObject var model: AppModel
     let name: String
     let packs: Range<Int>
-    let onOpen: () -> Void
     @AppStorage private var expanded: Bool
 
-    init(name: String, packs: Range<Int>, onOpen: @escaping () -> Void) {
+    init(name: String, packs: Range<Int>) {
         self.name = name
         self.packs = packs
-        self.onOpen = onOpen
         _expanded = AppStorage(wrappedValue: true, "shop.era.\(name).expanded")
     }
 
@@ -71,7 +68,7 @@ private struct EraSection: View {
             if expanded {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
                     ForEach(packs, id: \.self) { i in
-                        PackTile(index: i, onOpen: onOpen)
+                        PackTile(index: i)
                     }
                 }
                 .transition(.opacity)
@@ -84,7 +81,6 @@ private struct EraSection: View {
 struct PackTile: View {
     @EnvironmentObject var model: AppModel
     let index: Int
-    let onOpen: () -> Void
     @State private var hover = false
 
     var body: some View {
@@ -102,7 +98,7 @@ struct PackTile: View {
                             .multilineTextAlignment(.center)
                         Text("\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                             .font(.caption2).monospacedDigit().opacity(0.85)
-                        BuyButton(index: index, onOpen: onOpen)
+                        BuyButton(index: index)
                     }
                     .foregroundStyle(.white)
                     .padding(6)
@@ -127,7 +123,6 @@ struct PackTile: View {
 struct PackRow: View {
     @EnvironmentObject var model: AppModel
     let index: Int
-    let onOpen: () -> Void
 
     var body: some View {
         let game = model.game
@@ -145,7 +140,7 @@ struct PackRow: View {
                     .tint(game.isComplete(index) ? .green : .accentColor)
             }
             Spacer(minLength: 4)
-            BuyButton(index: index, onOpen: onOpen)
+            BuyButton(index: index)
         }
     }
 }
@@ -154,11 +149,10 @@ struct PackRow: View {
 struct BuyButton: View {
     @EnvironmentObject var model: AppModel
     let index: Int
-    let onOpen: () -> Void
 
     var body: some View {
         Button(coinText(Balance.packPrice)) {
-            if model.buy(pack: index) { onOpen() }
+            model.buy(pack: index)
         }
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.capsule)

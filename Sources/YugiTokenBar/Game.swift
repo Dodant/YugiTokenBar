@@ -9,7 +9,7 @@ enum Balance {
     /// 무료 카드의 티어 확률 (N / R / SR / UR). 티어 안에서는 균등.
     static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.60), (2, 0.25), (3, 0.10), (4, 0.05)]
     static let logLimit = 50
-    /// 무료 카드를 한 번에 여는 최대 장 수 (팩 개봉 창 한 줄)
+    /// 무료 카드를 한 번에 여는 최대 장 수 (팩 1봉투와 같은 5장)
     static let freeOpenBatch = 5
     /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 225 < packPrice 라 사고팔기로 코인이 늘지 않는다.
     static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300]

@@ -3,8 +3,10 @@ import SwiftUI
 @MainActor
 final class AppModel: ObservableObject {
     @Published private(set) var game: Game
-    /// 마지막 구매 결과 (팩 개봉 창이 보여줌)
+    /// 마지막 구매·무료 카드 결과 (팝오버 안 개봉 화면이 보여줌)
     @Published private(set) var opening: [Pull] = []
+    @Published private(set) var openingTitle = ""
+    @Published var showOpening = false
     @Published private(set) var openingID = UUID()
     @Published var showShop = false
     @Published var showSettings = false
@@ -90,10 +92,17 @@ final class AppModel: ObservableObject {
     func buy(pack: Int) -> Bool {
         let opened = game.buy(pack: pack, using: &rng)
         guard !opened.isEmpty else { return false }
-        opening = opened
-        openingID = UUID()
-        save()
+        show(opened, title: db.packs[pack].name)
         return true
+    }
+
+    /// 팝오버 안 개봉 화면으로 보여준다.
+    private func show(_ pulls: [Pull], title: String) {
+        opening = pulls
+        openingTitle = title
+        openingID = UUID()
+        showOpening = true
+        save()
     }
 
     func sell(_ cid: Int) {
@@ -110,9 +119,7 @@ final class AppModel: ObservableObject {
     func openFree() -> Bool {
         let opened = game.openFree(using: &rng)
         guard !opened.isEmpty else { return false }
-        opening = opened
-        openingID = UUID()
-        save()
+        show(opened, title: "무료 카드")
         return true
     }
 

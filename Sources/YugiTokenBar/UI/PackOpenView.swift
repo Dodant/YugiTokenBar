@@ -1,34 +1,43 @@
 import SwiftUI
 
-struct PackOpenView: View {
+/// 팝오버 안 팩·무료 카드 개봉 화면. 상점처럼 요약 화면 위에 겹쳐 그린다(패널 높이 고정).
+struct OpeningView: View {
     @EnvironmentObject var model: AppModel
     @State private var flipped: Set<Int> = []
 
     var body: some View {
         let pulls = model.opening
-        VStack(spacing: 14) {
-            if !pulls.isEmpty {
-                HStack(spacing: 10) {
-                    ForEach(Array(pulls.enumerated()), id: \.offset) { i, pull in
-                        FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
-                            .frame(width: 140)
-                            .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
-                    }
+        let allFlipped = flipped.count == pulls.count
+        VStack(spacing: 12) {
+            HStack(spacing: 6) {
+                Button { model.showOpening = false } label: {
+                    Image(systemName: "chevron.left").font(.body.weight(.semibold)).frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
                 }
-                Button("모두 뒤집기") {
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
+                Spacer()
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                ForEach(Array(pulls.enumerated()), id: \.offset) { i, pull in
+                    FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
+                        .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
+                }
+            }
+            Spacer(minLength: 0)
+            Button(allFlipped ? "확인" : "모두 뒤집기") {
+                if allFlipped {
+                    model.showOpening = false
+                } else {
                     withAnimation(.easeInOut(duration: 0.4)) { flipped = Set(pulls.indices) }
                 }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
-                .keyboardShortcut(.defaultAction)
-                .disabled(flipped.count == pulls.count)
-            } else {
-                ContentUnavailableView("열 팩이 없어요", systemImage: "shippingbox",
-                                       description: Text("상점에서 팩을 사면 여기서 열려요"))
             }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+            .keyboardShortcut(.defaultAction)
         }
-        .padding(24)
-        .background(.background)
         .onChange(of: model.openingID) { flipped = [] }
     }
 }

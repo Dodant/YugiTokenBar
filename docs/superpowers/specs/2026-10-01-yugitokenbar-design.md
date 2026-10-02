@@ -50,7 +50,7 @@ Claude Code/Codex 토큰 사용량을 보상으로 바꿔 **싱크로 이전 한
 ## 4. 앱 구조
 
 - 위치 `~/Documents/YugiTokenBar`, Swift 6, macOS 26+ (Liquid Glass), SwiftPM 실행 타깃, 외부 의존성 없음.
-- `MenuBarExtra(.window)` + 컬렉션 창·팩 개봉 창(`Window`).
+- `MenuBarExtra(.window)` + 컬렉션 창(`Window`). 상점·개봉·설정은 패널 안 화면 전환(요약 위에 겹쳐 그려 패널 높이 고정).
 
 ```
 Sources/YugiTokenBar/
@@ -62,7 +62,7 @@ Sources/YugiTokenBar/
   ImageCache.swift     카드(YGOPRODeck)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
-  UI/                  Popover, Shop, Settings(+DocView), PackOpen, Dex(컬렉션), Usage, CardImageView
+  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션), Usage, CardImageView
 CHANGELOG.md           패치노트 겸 버전 원본
 Tests/YugiTokenBarTests/
 tools/build-cards.py
@@ -117,7 +117,7 @@ tools/build-cards.py
 
 ### 무료 카드
 
-`dropProgress`가 10M을 넘을 때마다 1장이 `pendingFree`에 **쌓이기만 한다**(자동으로 뽑지 않는다). 팝오버의 [무료 카드 N장 · 열기]를 누르면 최대 `freeOpenBatch`(5)장씩 **전체 2,270종에서 `freeWeights`로 티어를 고르고 그 티어 안에서 균등 무작위**로(티어가 비면 팩처럼 아래 → 위 티어로, 재수록 카드는 가장 높은 티어로 친다) 뽑아 팩 개봉 창에서 보여준다. 보유 수 상한이 없어 이미 가진 카드도 나온다.
+`dropProgress`가 10M을 넘을 때마다 1장이 `pendingFree`에 **쌓이기만 한다**(자동으로 뽑지 않는다). 팝오버의 [무료 카드 N장 · 열기]를 누르면 최대 `freeOpenBatch`(5)장씩 **전체 2,270종에서 `freeWeights`로 티어를 고르고 그 티어 안에서 균등 무작위**로(티어가 비면 팩처럼 아래 → 위 티어로, 재수록 카드는 가장 높은 티어로 친다) 뽑아 패널 안 개봉 화면에서 보여준다. 보유 수 상한이 없어 이미 가진 카드도 나온다.
 
 ### 팩 구매
 
@@ -145,7 +145,7 @@ tools/build-cards.py
 - **메뉴바**: 카드 아이콘(SF Symbol) + `3,420`(코인), 열지 않은 무료 카드가 있으면 `·N` 배지 표시.
 - **팝오버 (요약형)**: 코인, 다음 무료 카드까지 남은 토큰 게이지, 최근 획득 5장 썸네일, 마지막으로 산 팩 바로 구매(산 적 없으면 첫 팩), [상점 전체 보기], [컬렉션 (n / 2270)], 사용량(Claude·Codex 줄마다 공식 한도 5시간/주간/모델별 주간 % 막대와 5시간 창 초기화까지 남은 시간, 오늘 토큰·비용. 한도는 PokeTokenBar의 `OAuthLimitsProvider`(Claude OAuth usage, `~/.claude/.credentials.json` → 없으면 실행당 한 번 키체인)와 `CodexRateLimitsProvider`(`codex app-server`)로 5분마다 읽고, 실패하면 직전 값을 유지한다. 칸을 누르면 바로 다시 읽는다. 비용은 기록 비용 우선, 없으면 모델 단가로 추정), [설정], [종료]. 무료 카드가 쌓여 있으면 코인 아래에 [무료 카드 N장 · 열기] 줄이 생기고, 다 열면 배지와 줄이 사라진다.
 - **상점** (팝오버 내 화면 전환): 27팩을 **DM**(OCG Series 1~3, 푸른 눈의 백룡의 전설~천공의 성역 11팩)과 **GX**(Series 4~, 듀얼리스트의 투혼~파괴의 빛 16팩)로 나눠 접고 펼 수 있게 보여준다(헤더에 팩 수·보유/전체, 접힘 상태 기억). 각 묶음은 발매순 3열 그리드이고, 평소엔 팩 이미지만 보여준다. 마우스를 올리면 이미지가 흐려지며 팩 이름, 발매년·컬렉션 진행도, [ⓒ 1,000] 구매 버튼이 뜬다. 완료된 팩(모든 카드 1장 이상)은 ✓ 배지, 계속 살 수 있다.
-- **팩 개봉 창**: 카드 5장을 뒷면으로 놓고 클릭하면 한 장씩 뒤집는다. 레어 이상 슬롯은 뒷면부터 금색으로 빛나고, 처음 얻은 카드에는 NEW를 붙인다. [모두 뒤집기] 버튼이 있다.
+- **개봉 화면** (팝오버 내 화면 전환, 별도 창 없음): 팩을 사거나 무료 카드를 열면 바로 바뀐다. 제목은 팩 이름 또는 "무료 카드". 카드를 3열(3 + 2)로 뒷면으로 놓고 클릭하면 한 장씩 뒤집는다. 레어 이상은 뒷면부터 등급 색으로 빛나고, 처음 얻은 카드에는 NEW를 붙인다. [모두 뒤집기] → 다 뒤집으면 [확인]으로 바뀌어 이전 화면(요약 또는 상점)으로 돌아간다. ‹ 로도 돌아간다.
 - **컬렉션 창**: 왼쪽에 팩 목록(팩 이미지, 진행도 바, "전체" 항목 포함), 가운데에 카드 그리드(툴바의 등급 메뉴로 모든 등급/N/R/SR/UR만 보기, 순번은 필터와 무관하게 팩 안 순번, 레어도, 2장 이상일 때만 ×2 표시, 이미지는 `cards_small`), 오른쪽에 상세 정보(큰 이미지, 한국어 이름, 속성, 레벨, 종족, 공/수, 효과, 수록 팩과 레어도, 보유 수, [1장 판매 · +ⓒ N]. 마지막 1장을 팔 때는 확인을 받는다). **미보유 카드는 흑백 실루엣**(grayscale 0.8, 밝기 -0.20)으로 보여주고, 마우스를 올리면 이름을 표시한다.
 - **설정** (팝오버 내 화면 전환, 상점과 같은 방식):
   - 업데이트: 현재 버전(Info.plist `CFBundleShortVersionString (CFBundleVersion)`, `swift run`이면 "개발 빌드"), [확인]을 누르면 `raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md`의 맨 위 버전과 숫자로 비교한다. 릴리스 없이 main 기준이다. 새 버전이면 GitHub 링크와 `git pull && scripts/build-app.sh --install`을 보여준다. 자동 확인·자동 업데이트는 없다.
