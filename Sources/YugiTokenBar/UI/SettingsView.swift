@@ -1,3 +1,4 @@
+import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -9,6 +10,7 @@ struct SettingsView: View {
     @State private var checking = false
     @State private var latest: String?
     @State private var checkFailed = false
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -24,6 +26,7 @@ struct SettingsView: View {
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    generalSection
                     cardSection
                     updateSection
                     transferSection
@@ -36,6 +39,23 @@ struct SettingsView: View {
     }
 
     // MARK: 섹션
+
+    private var generalSection: some View {
+        // swift run 바이너리는 .app 이 아니라 로그인 항목으로 등록할 수 없다
+        let installed = AppInfo.bundleVersion != nil
+        return section("일반") {
+            row {
+                labeled("로그인 시 자동 실행", hint: installed ? "Mac에 로그인하면 메뉴바에 바로 떠요" : "설치한 앱(.app)에서만 켤 수 있어요")
+                Spacer()
+                Toggle("로그인 시 자동 실행", isOn: $launchAtLogin)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .disabled(!installed)
+                    .onChange(of: launchAtLogin) { setLaunchAtLogin() }
+            }
+        }
+    }
 
     private var cardSection: some View {
         section("카드") {
@@ -136,6 +156,19 @@ struct SettingsView: View {
     }
 
     // MARK: 동작
+
+    private func setLaunchAtLogin() {
+        let service = SMAppService.mainApp
+        guard launchAtLogin != (service.status == .enabled) else { return }
+        do {
+            try launchAtLogin ? service.register() : service.unregister()
+            // 시스템이 승인을 요구하면 로그인 항목 설정을 열어 준다
+            if service.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
+        } catch {
+            launchAtLogin = service.status == .enabled
+            alert("로그인 항목을 바꾸지 못했어요", error.localizedDescription, .warning)
+        }
+    }
 
     private func checkUpdate() {
         checking = true

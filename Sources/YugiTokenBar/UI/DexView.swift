@@ -203,6 +203,10 @@ struct DexView: View {
                 .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
                 .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
                 .overlay(alignment: .topTrailing) { star(cid) }
+            Text(model.db.cards[cid]?.name ?? "")
+                .font(.caption2).lineLimit(1).truncationMode(.tail)
+                .foregroundStyle(n > 0 ? .primary : .secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 4) {
                 Text(String(format: "%03d", number)).foregroundStyle(.secondary)
                 Spacer(minLength: 0)

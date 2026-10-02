@@ -26,19 +26,34 @@ struct OpeningView: View {
                 }
             }
             Spacer(minLength: 0)
-            Button(allFlipped ? "확인" : "모두 뒤집기") {
-                if allFlipped {
-                    model.showOpening = false
+            HStack(spacing: 8) {
+                if allFlipped, let again {
+                    Button("확인") { model.showOpening = false }.buttonStyle(.bordered)
+                    Button(again.title, action: again.action)
+                        .disabled(!again.enabled)
+                        .keyboardShortcut(.defaultAction)
                 } else {
-                    withAnimation(.easeInOut(duration: 0.4)) { flipped = Set(pulls.indices) }
+                    Button(allFlipped ? "확인" : "모두 뒤집기") {
+                        if allFlipped { model.showOpening = false }
+                        else { withAnimation(.easeInOut(duration: 0.4)) { flipped = Set(pulls.indices) } }
+                    }
+                    .keyboardShortcut(.defaultAction)
                 }
             }
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .controlSize(.large)
-            .keyboardShortcut(.defaultAction)
         }
         .onChange(of: model.openingID) { flipped = [] }
+    }
+
+    /// 다 뒤집은 뒤 한 번 더: 팩(무료 팩 포함)이면 같은 팩을 코인으로, 무료 카드면 남은 장을. 둘 다 아니면 nil.
+    private var again: (title: String, enabled: Bool, action: () -> Void)? {
+        if let pack = model.openingPack {
+            return ("한 팩 더 · \(coinText(Balance.packPrice))", model.game.canBuy(pack), { model.buy(pack: pack) })
+        }
+        let left = model.game.state.pendingFree
+        return left > 0 ? ("다음 \(min(left, Balance.freeOpenBatch))장 열기", true, { model.openFree() }) : nil
     }
 }
 

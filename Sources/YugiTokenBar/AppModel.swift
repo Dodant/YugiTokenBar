@@ -6,6 +6,8 @@ final class AppModel: ObservableObject {
     /// 마지막 구매·무료 카드 결과 (팝오버 안 개봉 화면이 보여줌)
     @Published private(set) var opening: [Pull] = []
     @Published private(set) var openingTitle = ""
+    /// 지금 개봉 화면의 팩 (무료 카드면 nil). 개봉 화면의 [한 팩 더] 가 쓴다.
+    @Published private(set) var openingPack: Int?
     @Published var showOpening = false
     @Published private(set) var openingID = UUID()
     @Published var showShop = false
@@ -92,21 +94,22 @@ final class AppModel: ObservableObject {
     func buy(pack: Int) -> Bool {
         let opened = game.buy(pack: pack, using: &rng)
         guard !opened.isEmpty else { return false }
-        show(opened, title: db.packs[pack].name)
+        show(opened, title: db.packs[pack].name, pack: pack)
         return true
     }
 
     @discardableResult
     func openFreePack() -> Bool {
         guard let (pack, pulls) = game.openFreePack(using: &rng) else { return false }
-        show(pulls, title: "무료 팩 · \(db.packs[pack].name)")
+        show(pulls, title: "무료 팩 · \(db.packs[pack].name)", pack: pack)
         return true
     }
 
     /// 팝오버 안 개봉 화면으로 보여준다.
-    private func show(_ pulls: [Pull], title: String) {
+    private func show(_ pulls: [Pull], title: String, pack: Int? = nil) {
         opening = pulls
         openingTitle = title
+        openingPack = pack
         openingID = UUID()
         showOpening = true
         save()
