@@ -7,6 +7,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var opening: [Pull] = []
     @Published private(set) var openingID = UUID()
     @Published var showShop = false
+    @Published var showSettings = false
     /// 오늘 provider별 토큰·비용 (팝오버 사용량 표시)
     @Published private(set) var todayTokens: [String: Int] = [:]
     @Published private(set) var todayCost: [String: Double] = [:]
@@ -113,6 +114,22 @@ final class AppModel: ObservableObject {
         openingID = UUID()
         save()
         return true
+    }
+
+    /// 세이브 폴더 (YTB_STATE_DIR 를 따른다)
+    var saveFolder: URL { store.url.deletingLastPathComponent() }
+
+    func exportedSave() throws -> Data {
+        try SaveEnvelope(appVersion: AppInfo.currentVersion, exportedAt: Date(), state: game.state).encoded()
+    }
+
+    /// 현재 세이브를 백업한 뒤 바꾼다. 백업 파일 URL 을 돌려준다.
+    func importSave(_ envelope: SaveEnvelope) throws -> URL {
+        let backup = try store.backupBeforeImport(game.state, appVersion: AppInfo.currentVersion)
+        let next = envelope.state.withLedger(of: game.state)
+        try store.save(next)
+        game.state = next
+        return backup
     }
 
     private func save() {

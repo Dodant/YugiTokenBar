@@ -60,7 +60,10 @@ Sources/YugiTokenBar/
   CardDB.swift         cards.json 로드, 조회
   Game.swift           상태·적립·뽑기 (밸런스 상수는 파일 상단)
   ImageCache.swift     카드(YGOPRODeck)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시
-  UI/                  Popover, Shop, PackOpen, Dex(컬렉션), Usage, CardImageView
+  SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
+  AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
+  UI/                  Popover, Shop, Settings(+DocView), PackOpen, Dex(컬렉션), Usage, CardImageView
+CHANGELOG.md           패치노트 겸 버전 원본
 Tests/YugiTokenBarTests/
 tools/build-cards.py
 ```
@@ -88,6 +91,12 @@ tools/build-cards.py
 - 빠진 키는 기본값으로 읽는다(필드를 추가해도 옛 세이브가 초기화되지 않게). `owned`는 JSON에서 `{"4007":2}` 형태다.
 - 디코딩에 실패하면 원본을 `state.corrupt-<epoch>.json`으로 보관하고 `.bak`에서 복구한다. 둘 다 실패하면 새 상태로 시작한다.
 - 환경변수 `YTB_STATE_DIR`가 있으면 그 폴더를 쓴다(개발·QA 때 실제 세이브와 분리).
+
+### 내보내기·가져오기
+
+- 내보내기 파일 `YugiTokenBar-Save-YYYYMMDD.json` = 봉투 `{ format: "yugitokenbar.save", schema: 1, appVersion, exportedAt, state }`. 상태 디코딩이 빠진 키를 기본값으로 채워 아무 JSON이나 읽히므로, 기본값이 없는 `format`/`schema`로 먼저 가린다. 8MB 초과, 다른 format, 더 높은 schema는 거부한다.
+- 가져오기는 들어올 세이브와 지금 세이브의 수치(보유 종류 수, 코인)를 보여주고 확인을 받는다(Return = 취소). 바꾸기 전에 지금 세이브를 같은 봉투 형식으로 세이브 폴더(`YTB_STATE_DIR`를 따름)에 `state.import-backup-YYYYMMDD-HHmmss.json`으로 남긴다. 이 파일도 [가져오기]로 되돌릴 수 있다. 백업은 지우지 않는다.
+- 적립 원장(`claimedDate`, `claimedByProvider`)은 이 Mac의 값을 유지한다. 다른 Mac의 원장을 쓰면 오늘 토큰을 다시 적립한다.
 
 ## 5. 경제·뽑기 규칙
 
@@ -134,10 +143,15 @@ tools/build-cards.py
 화면의 코인 금액은 "코인" 글자 없이 `ⓒ 1,000`처럼 표시한다(`coinText`).
 
 - **메뉴바**: 카드 아이콘(SF Symbol) + `3,420`(코인), 열지 않은 무료 카드가 있으면 `·N` 배지 표시.
-- **팝오버 (요약형)**: 코인, 다음 무료 카드까지 남은 토큰 게이지, 최근 획득 5장 썸네일, 마지막으로 산 팩 바로 구매(산 적 없으면 첫 팩), [상점 전체 보기], [컬렉션 (n / 2270)], 사용량(Claude·Codex 줄마다 공식 한도 5시간/주간/모델별 주간 % 막대와 5시간 창 초기화까지 남은 시간, 오늘 토큰·비용. 한도는 PokeTokenBar의 `OAuthLimitsProvider`(Claude OAuth usage, `~/.claude/.credentials.json` → 없으면 실행당 한 번 키체인)와 `CodexRateLimitsProvider`(`codex app-server`)로 5분마다 읽고, 실패하면 직전 값을 유지한다. 칸을 누르면 바로 다시 읽는다. 비용은 기록 비용 우선, 없으면 모델 단가로 추정), [종료]. 무료 카드가 쌓여 있으면 코인 아래에 [무료 카드 N장 · 열기] 줄이 생기고, 다 열면 배지와 줄이 사라진다.
+- **팝오버 (요약형)**: 코인, 다음 무료 카드까지 남은 토큰 게이지, 최근 획득 5장 썸네일, 마지막으로 산 팩 바로 구매(산 적 없으면 첫 팩), [상점 전체 보기], [컬렉션 (n / 2270)], 사용량(Claude·Codex 줄마다 공식 한도 5시간/주간/모델별 주간 % 막대와 5시간 창 초기화까지 남은 시간, 오늘 토큰·비용. 한도는 PokeTokenBar의 `OAuthLimitsProvider`(Claude OAuth usage, `~/.claude/.credentials.json` → 없으면 실행당 한 번 키체인)와 `CodexRateLimitsProvider`(`codex app-server`)로 5분마다 읽고, 실패하면 직전 값을 유지한다. 칸을 누르면 바로 다시 읽는다. 비용은 기록 비용 우선, 없으면 모델 단가로 추정), [설정], [종료]. 무료 카드가 쌓여 있으면 코인 아래에 [무료 카드 N장 · 열기] 줄이 생기고, 다 열면 배지와 줄이 사라진다.
 - **상점** (팝오버 내 화면 전환): 27팩을 **DM**(OCG Series 1~3, 푸른 눈의 백룡의 전설~천공의 성역 11팩)과 **GX**(Series 4~, 듀얼리스트의 투혼~파괴의 빛 16팩)로 나눠 접고 펼 수 있게 보여준다(헤더에 팩 수·보유/전체, 접힘 상태 기억). 각 묶음은 발매순 3열 그리드이고, 평소엔 팩 이미지만 보여준다. 마우스를 올리면 이미지가 흐려지며 팩 이름, 발매년·컬렉션 진행도, [ⓒ 1,000] 구매 버튼이 뜬다. 완료된 팩(모든 카드 1장 이상)은 ✓ 배지, 계속 살 수 있다.
 - **팩 개봉 창**: 카드 5장을 뒷면으로 놓고 클릭하면 한 장씩 뒤집는다. 레어 이상 슬롯은 뒷면부터 금색으로 빛나고, 처음 얻은 카드에는 NEW를 붙인다. [모두 뒤집기] 버튼이 있다.
 - **컬렉션 창**: 왼쪽에 팩 목록(팩 이미지, 진행도 바, "전체" 항목 포함), 가운데에 카드 그리드(툴바의 등급 메뉴로 모든 등급/N/R/SR/UR만 보기, 순번은 필터와 무관하게 팩 안 순번, 레어도, 2장 이상일 때만 ×2 표시, 이미지는 `cards_small`), 오른쪽에 상세 정보(큰 이미지, 한국어 이름, 속성, 레벨, 종족, 공/수, 효과, 수록 팩과 레어도, 보유 수, [1장 판매 · +ⓒ N]. 마지막 1장을 팔 때는 확인을 받는다). **미보유 카드는 흑백 실루엣**(grayscale 0.8, 밝기 -0.20)으로 보여주고, 마우스를 올리면 이름을 표시한다.
+- **설정** (팝오버 내 화면 전환, 상점과 같은 방식):
+  - 업데이트: 현재 버전(Info.plist `CFBundleShortVersionString (CFBundleVersion)`, `swift run`이면 "개발 빌드"), [확인]을 누르면 `raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md`의 맨 위 버전과 숫자로 비교한다. 릴리스 없이 main 기준이다. 새 버전이면 GitHub 링크와 `git pull && scripts/build-app.sh --install`을 보여준다. 자동 확인·자동 업데이트는 없다.
+  - 백업 & 이전: [내보내기], [가져오기](4절 내보내기·가져오기), 세이브 폴더 [Finder].
+  - 정보 & 지원: [패치노트](`CHANGELOG.md` 창), GitHub 링크, PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
+- **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다. `scripts/build-app.sh`가 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣고, `CHANGELOG.md`와 `Usage/NOTICE.md`를 Resources에 복사한다.
 
 ## 7. 오류 처리
 
@@ -162,7 +176,7 @@ tools/build-cards.py
 
 ## 9. 범위 밖 (YAGNI)
 
-원격 서버 세션 적립, 다중 계정, 세이브 내보내기/가져오기, 자동 업데이트, 덱/대결, 레어도별 버전 수집, 스타터/스트럭처/프로모, 업적.
+원격 서버 세션 적립, 다중 계정, 자동 업데이트(설정은 확인과 링크만), 업데이트 알림, 덱/대결, 레어도별 버전 수집, 스타터/스트럭처/프로모, 업적.
 
 ## 10. 라이선스 메모
 

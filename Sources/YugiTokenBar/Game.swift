@@ -85,7 +85,7 @@ struct Game: Sendable {
 
     func copies(_ cid: Int) -> Int { state.owned[cid] ?? 0 }
 
-    var ownedDistinct: Int { state.owned.values.filter { $0 > 0 }.count }
+    var ownedDistinct: Int { state.distinctOwned }
 
     func progress(_ pack: Int) -> (owned: Int, total: Int) {
         let cards = db.packs[pack].cards

@@ -6,11 +6,13 @@ struct PopoverView: View {
 
     var body: some View {
         // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점은 요약 크기 안에 겹쳐 그려 높이를 고정
-        summary
-            .opacity(model.showShop ? 0 : 1)
-            .allowsHitTesting(!model.showShop)
+        let covered = model.showShop || model.showSettings
+        return summary
+            .opacity(covered ? 0 : 1)
+            .allowsHitTesting(!covered)
             .overlay {
                 if model.showShop { ShopView(onOpen: { show("pack") }) }
+                else if model.showSettings { SettingsView(open: show) }
             }
             .padding(16)
             .frame(width: 340)
@@ -56,6 +58,7 @@ struct PopoverView: View {
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
                 UsageView()
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
+                MenuRow(title: "설정", systemImage: "gearshape", trailing: nil, chevron: true) { model.showSettings = true }
                 MenuRow(title: "종료", systemImage: "power", trailing: "⌘Q", chevron: false) { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
@@ -93,7 +96,7 @@ struct PopoverView: View {
         openWindow(id: id)
         // activate 는 다른 앱 뒤에 창을 둘 수 있어서 창을 직접 앞으로 꺼낸다
         NSApp.activate()
-        let title = id == "dex" ? "컬렉션" : "팩 개봉"
+        let title = ["dex": "컬렉션", "pack": "팩 개봉", "changelog": "패치노트", "license": "라이선스"][id]
         DispatchQueue.main.async {
             guard let window = NSApp.windows.first(where: { $0.title == title }) else { return }
             window.orderFrontRegardless()
