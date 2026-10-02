@@ -140,12 +140,12 @@ struct DexView: View {
                 Button { confirmSellDuplicates = true } label: {
                     Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
                 }
-                .help("카드마다 1장만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
+                .help("카드마다 1장\(model.game.state.fusionOnly ? ", 융합 소재는 필요한 장 수" : "")만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
                 .disabled(dup.count == 0)
                 .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirmSellDuplicates) {
                     Button("+\(coinText(dup.coins))에 판매") { model.sellDuplicates() }
                 } message: {
-                    Text("카드마다 1장씩은 남아서 컬렉션은 그대로예요.")
+                    Text(model.game.state.fusionOnly ? "카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남아서 컬렉션은 그대로예요." : "카드마다 1장씩은 남아서 컬렉션은 그대로예요.")
                 }
                 // 러버밴드는 보이는 셀만 잡으니, 필터된 목록 전체는 이걸로
                 Button {
@@ -523,17 +523,22 @@ struct DexView: View {
                         // 설정이 켜져 있고 소재를 다 아는 융합이면 여기서 만든다
                         if model.game.state.fusionOnly, model.game.fusionMaterials(cid) != nil {
                             let can = model.game.canFuse(cid)
+                            let why = !model.game.hasFusionSpell ? "「융합」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
                             Button { confirmFuse = true } label: { Label("융합", systemImage: "arrow.triangle.merge") }
                                 .buttonStyle(.glass)
                                 .buttonBorderShape(.capsule)
                                 .controlSize(.small)
                                 .disabled(!can)
-                                .help(can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요")
+                                .help(why)
                                 .confirmationDialog("\(card.name) 융합", isPresented: $confirmFuse) {
                                     Button("융합") { model.fuse(cid) }
                                 } message: {
                                     Text("\(consumed(materials))을 소비해요. 0장이 되는 소재는 컬렉션에서 빠져요.")
                                 }
+                            if !model.game.hasFusionSpell {
+                                Button("「융합」 마법 카드가 1장 있어야 해요 (소비되지 않아요)") { jump(to: CardDB.fusionSpell) }
+                                    .buttonStyle(.link).font(.caption)
+                            }
                         }
                     }
                 }

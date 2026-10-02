@@ -148,10 +148,10 @@ struct Game: Sendable {
         return price
     }
 
-    /// 중복분(2장째 이상)을 팔면 받을 (장 수, 코인). 각 카드 1장은 남는다.
+    /// 중복분(`keep` 장 넘는 것)을 팔면 받을 (장 수, 코인). 각 카드 `keep` 장은 남는다.
     var duplicatesValue: (count: Int, coins: Int) {
         state.owned.filter { db.cidSet.contains($0.key) }.reduce((0, 0)) { acc, kv in
-            let extra = kv.value - 1
+            let extra = kv.value - keep(kv.key)
             return extra > 0 ? (acc.0 + extra, acc.1 + extra * sellPrice(kv.key)) : acc
         }
     }
@@ -159,8 +159,8 @@ struct Game: Sendable {
     /// 시대 범위 안 카드의 중복분을 모두 판다(범위 밖은 숨겨져 있으니 건드리지 않는다). 반환: 받은 코인.
     mutating func sellDuplicates() -> Int {
         var total = 0
-        for (cid, n) in state.owned where n > 1 && db.cidSet.contains(cid) {
-            for _ in 1..<n { total += sell(cid) ?? 0 }
+        for (cid, n) in state.owned where n > keep(cid) && db.cidSet.contains(cid) {
+            for _ in keep(cid)..<n { total += sell(cid) ?? 0 }
         }
         return total
     }
@@ -210,19 +210,22 @@ struct Game: Sendable {
     // MARK: 융합
 
     /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 75팩 카드인 융합 몬스터만, 아니면 nil.
-    func fusionMaterials(_ cid: Int) -> [Int: Int]? {
-        guard let materials = db.cards[cid]?.materials, materials.allSatisfy({ $0.cid != nil }) else { return nil }
-        return materials.reduce(into: [:]) { $0[$1.cid!, default: 0] += $1.count ?? 1 }
-    }
+    func fusionMaterials(_ cid: Int) -> [Int: Int]? { db.cards[cid]?.fusionMaterials }
+
+    /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통)
+    func keep(_ cid: Int) -> Int { state.fusionOnly ? max(1, db.materialNeed[cid] ?? 1) : 1 }
 
     /// 설정이 켜져 있으면 소재를 아는 융합 몬스터는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
     func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && fusionMaterials(cid) != nil }
 
+    /// 「융합」 마법 카드가 있어야 융합이 열린다 (소비하지 않는다)
+    var hasFusionSpell: Bool { copies(CardDB.fusionSpell) > 0 }
+
     func canFuse(_ cid: Int) -> Bool {
-        fusionMaterials(cid)?.allSatisfy { copies($0.key) >= $0.value } == true
+        hasFusionSpell && fusionMaterials(cid)?.allSatisfy { copies($0.key) >= $0.value } == true
     }
 
-    /// 소재를 소비해 1장 만든다 (중복 자동 판매는 적용하지 않는다). 소재가 모자라면 false.
+    /// 소재를 소비해 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」이 없거나 소재가 모자라면 false.
     @discardableResult
     mutating func fuse(_ cid: Int) -> Bool {
         guard let materials = fusionMaterials(cid), canFuse(cid) else { return false }
@@ -311,9 +314,9 @@ struct Game: Sendable {
         return pulls
     }
 
-    /// 설정이 켜져 있고 2장째 이상이면 바로 1장 판다. 반환: 받은 코인.
+    /// 설정이 켜져 있고 `keep` 장을 넘으면 바로 1장 판다. 반환: 받은 코인.
     private mutating func autoSell(_ cid: Int) -> Int? {
-        guard state.autoSellDuplicates, copies(cid) > 1 else { return nil }
+        guard state.autoSellDuplicates, copies(cid) > keep(cid) else { return nil }
         return sell(cid)
     }
 

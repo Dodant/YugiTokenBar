@@ -27,6 +27,12 @@ struct CardInfo: Codable, Sendable, Equatable {
     func matches(kind filter: String) -> Bool {
         kind == filter || (kind == "몬스터" && type?.components(separatedBy: "/").contains(filter) == true)
     }
+
+    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 75팩 카드인 융합 몬스터만, 조건이나 없는 카드가 섞이면 nil.
+    var fusionMaterials: [Int: Int]? {
+        guard let materials, materials.allSatisfy({ $0.cid != nil }) else { return nil }
+        return materials.reduce(into: [:]) { $0[$1.cid!, default: 0] += $1.count ?? 1 }
+    }
 }
 
 /// 융합 소재 하나: cid 는 75팩의 카드, name 은 75팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
@@ -71,12 +77,21 @@ struct CardDB: Sendable {
     private(set) var allCIDs: [Int]
     /// allCIDs 를 빠르게 찾기 위한 집합 (시대 범위 안인지)
     private(set) var cidSet: Set<Int>
+    /// 범위 안 융합 몬스터의 소재로 필요한 최대 장 수 (사이버 드래곤 → 3, 사이버 엔드 드래곤). 중복 판매에서 그만큼 남긴다.
+    private(set) var materialNeed: [Int: Int]
 
     init(packs: [Pack], cards: [Int: CardInfo]) {
         self.packs = packs
         self.cards = cards
         self.allCIDs = cards.keys.sorted()
         self.cidSet = Set(cards.keys)
+        self.materialNeed = Self.materialNeeds(allCIDs, cards)
+    }
+
+    private static func materialNeeds(_ cids: [Int], _ cards: [Int: CardInfo]) -> [Int: Int] {
+        cids.reduce(into: [:]) { need, cid in
+            for (m, n) in cards[cid]?.fusionMaterials ?? [:] { need[m] = max(need[m] ?? 0, n) }
+        }
     }
 
     /// 앞 n 팩만 쓰는 DB (설정의 "시대 범위"). cards 는 그대로 두어 범위 밖 보유·기록 카드도 이름·이미지를 찾는다.
@@ -85,6 +100,7 @@ struct CardDB: Sendable {
         db.packs = Array(packs.prefix(n))
         db.cidSet = Set(db.packs.flatMap(\.cards).map(\.cid))
         db.allCIDs = db.cidSet.sorted()
+        db.materialNeed = Self.materialNeeds(db.allCIDs, cards)
         return db
     }
 
@@ -92,6 +108,8 @@ struct CardDB: Sendable {
     /// ZEXAL 리턴 오브 더 듀얼리스트(엑시즈), ARC-V 더 듀얼리스트 어드벤트(펜듈럼), VRAINS 코드 오브 더 듀얼리스트(링크).
     // ponytail: 팩 목록이 고정(cards.json)이라 인덱스로 나눈다. 팩을 더 넣으면 여기도 고친다.
     static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63)]
+    /// 「융합」 마법 카드 (푸른 눈의 백룡의 전설 SR). 1장 이상 있어야 융합할 수 있고 소비되지 않는다.
+    static let fusionSpell = 4837
     /// 시대를 대표하는 소환법 (설정의 시대 범위 메뉴 표시용)
     static let eraSummons = ["DM": "의식", "GX": "융합", "5D's": "싱크로", "ZEXAL": "엑시즈", "ARC-V": "펜듈럼", "VRAINS": "링크"]
 

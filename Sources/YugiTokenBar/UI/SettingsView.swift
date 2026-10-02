@@ -73,7 +73,7 @@ struct SettingsView: View {
             }
             row {
                 let n = model.db.allCIDs.filter { model.game.fusionMaterials($0) != nil }.count
-                labeled("융합 몬스터는 융합으로만", hint: "소재를 다 아는 융합 몬스터 \(n)종은 팩·무료 카드에서 안 나와요. 컬렉션에서 소재를 모아 융합하세요")
+                labeled("융합 몬스터는 융합으로만", hint: "소재를 다 아는 융합 몬스터 \(n)종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요")
                 Spacer()
                 Toggle("융합 몬스터는 융합으로만", isOn: $model.fusionOnly)
                     .labelsHidden()

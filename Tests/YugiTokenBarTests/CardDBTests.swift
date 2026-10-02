@@ -47,6 +47,11 @@ import Testing
         #expect(db.cards[4043]?.materials == [Material(cid: 4044), Material(cid: 4045)] && db.cards[4043]?.text == "")  // 용기사 가이아: 바닐라라 효과가 빈다
         #expect(db.cards[4098]?.materials?.first == Material(name: "미노타우로스"))  // 미노켄타우로스: 스타터 덱 카드라 75팩에 없다
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
+        // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
+        #expect(db.cards[CardDB.fusionSpell].map { ($0.name, $0.kind) } ?? ("", "") == ("융합", "마법"))
+        #expect(db.packs[0].cards.contains { $0.cid == CardDB.fusionSpell })
+        #expect(db.materialNeed[6390] == 3 && db.materialNeed[4007] == 2)  // 사이버 드래곤(사이버 엔드 드래곤), 푸른 눈의 백룡(쌍폭렬룡)
+        #expect(db.prefix(packs: 11).materialNeed[6390] == nil)  // DM 범위엔 사이버 드래곤을 쓰는 융합이 없다
         // 소재를 다 아는 융합(융합 전용 후보)의 소재는 어느 시대 범위에서도 그 융합과 같은 범위 안에 있다 → Game.isFusionOnly 가 범위 검사를 안 한다
         for era in db.eras {
             let sub = db.prefix(packs: era.packs.upperBound)
