@@ -92,8 +92,45 @@ import Testing
         p.setMood(.fly)
         run(&p, PartnerAnim.idle.frameCount)
         #expect(p.anim == .flyRight)
-        run(&p, PartnerAnim.flyRight.frameCount * PartnerTuning.flyLoops)
-        #expect(p.anim == .flyLeft)
+        run(&p, PartnerAnim.flyRight.frameCount)
+        #expect(p.anim == .flyRight)  // After one loop, still flyRight
+        run(&p, PartnerAnim.flyRight.frameCount * (PartnerTuning.flyLoops - 1))
+        #expect(p.anim == .flyLeft)  // After flyLoops total, switch to flyLeft
+        run(&p, PartnerAnim.flyLeft.frameCount * PartnerTuning.flyLoops)
+        #expect(p.anim == .flyRight)  // After flyLeft loops, switch back to flyRight
+    }
+
+    @Test func oneShotInteractions() {
+        // (a) setMood during one-shot doesn't cut it
+        var p = PartnerPlayer()
+        p.setMood(.sad)
+        p.interrupt(.excited)
+        #expect(p.anim == .excited)
+        p.setMood(.idle)
+        run(&p, 3)  // Tick a few frames into excited
+        #expect(p.anim == .excited)  // Still excited, not switched to idle yet
+        run(&p, PartnerAnim.excited.frameCount - 3)  // Finish excited
+        #expect(p.anim == .idle)  // Now becomes idle
+
+        // (b) play during non-idle base waits for loop end
+        var q = PartnerPlayer()
+        run(&q, PartnerAnim.idle.frameCount)  // Finish initial idle
+        q.setMood(.flap)
+        run(&q, 1)  // One tick to advance to flap
+        #expect(q.anim == .flap)
+        q.play(.wave)
+        #expect(q.anim == .flap && !q.queue.isEmpty)  // Still flap, wave waits in queue
+        run(&q, PartnerAnim.flap.frameCount)  // Finish one flap loop
+        #expect(q.anim == .wave)  // Now plays wave
+
+        // (c) interrupt with current anim restarts at frame 0
+        var r = PartnerPlayer()
+        run(&r, PartnerAnim.idle.frameCount)  // Finish initial idle (frame becomes 6, then advance)
+        r.setMood(.flap)  // hold > 0, so advance() is called immediately, frame = 0
+        run(&r, 3)  // Tick 3 more frames into flap
+        #expect(r.frame == 3 && r.anim == .flap)
+        r.interrupt(.flap)
+        #expect(r.anim == .flap && r.frame == 0)  // Restarted at frame 0
     }
 
     @Test func idleLooksAroundEventually() {
