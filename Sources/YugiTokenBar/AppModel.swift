@@ -105,6 +105,11 @@ final class AppModel: ObservableObject {
         save()
     }
 
+    var autoSellDuplicates: Bool {
+        get { game.state.autoSellDuplicates }
+        set { game.state.autoSellDuplicates = newValue; save() }
+    }
+
     func sell(_ cid: Int) {
         guard game.sell(cid) != nil else { return }
         save()

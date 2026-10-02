@@ -16,6 +16,8 @@ struct GameState: Codable, Sendable, Equatable {
     var claimedByProvider: [String: Int] = [:]
     /// 아직 열지 않은 무료 카드 장 수
     var pendingFree = 0
+    /// 설정: 이미 가진 카드가 나오면 바로 판다
+    var autoSellDuplicates = false
     var log: [LogEntry] = []
 
     init() {}
@@ -31,6 +33,7 @@ struct GameState: Codable, Sendable, Equatable {
         claimedDate = try c.decodeIfPresent(String.self, forKey: .claimedDate)
         claimedByProvider = try c.decodeIfPresent([String: Int].self, forKey: .claimedByProvider) ?? d.claimedByProvider
         pendingFree = try c.decodeIfPresent(Int.self, forKey: .pendingFree) ?? d.pendingFree
+        autoSellDuplicates = try c.decodeIfPresent(Bool.self, forKey: .autoSellDuplicates) ?? d.autoSellDuplicates
         log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log
     }
 }

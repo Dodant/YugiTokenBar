@@ -150,4 +150,23 @@ import Testing
         let w = Balance.slot5Weights.reduce(0.0) { $0 + $1.weight * Double(Balance.sellPrice[$1.tier]!) }
         #expect(4.0 * Double(Balance.sellPrice[1]!) + w < Double(Balance.packPrice))
     }
+
+    @Test func autoSellDuplicatesSellsRepeatsOnly() {
+        // 2종뿐인 팩: 한 봉투에 2장 → 두 번째 봉투부터 둘 다 중복
+        let db = makeDB([[(1, 1), (2, 4)]])
+        var state = GameState()
+        state.coins = 10_000
+        state.autoSellDuplicates = true
+        var game = Game(db: db, state: state)
+        var rng = SeededRNG(seed: 1)
+        let first = game.buy(pack: 0, using: &rng)
+        #expect(first.allSatisfy { $0.isNew && $0.soldFor == nil })
+        let second = game.buy(pack: 0, using: &rng)
+        #expect(second.compactMap(\.soldFor).sorted() == [Balance.sellPrice[1]!, Balance.sellPrice[4]!])
+        #expect(game.state.owned == [1: 1, 2: 1])
+        #expect(game.state.coins == 10_000 - 2 * Balance.packPrice + Balance.sellPrice[1]! + Balance.sellPrice[4]!)
+        game.state.autoSellDuplicates = false
+        _ = game.buy(pack: 0, using: &rng)
+        #expect(game.state.owned == [1: 2, 2: 2])
+    }
 }

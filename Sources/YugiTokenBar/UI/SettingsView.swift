@@ -24,6 +24,7 @@ struct SettingsView: View {
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    cardSection
                     updateSection
                     transferSection
                     aboutSection
@@ -35,6 +36,19 @@ struct SettingsView: View {
     }
 
     // MARK: 섹션
+
+    private var cardSection: some View {
+        section("카드") {
+            row {
+                labeled("중복 카드 자동 판매", hint: "이미 가진 카드가 나오면 바로 코인으로 바꿔요")
+                Spacer()
+                Toggle("중복 카드 자동 판매", isOn: $model.autoSellDuplicates)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+            }
+        }
+    }
 
     private var updateSection: some View {
         section("업데이트") {

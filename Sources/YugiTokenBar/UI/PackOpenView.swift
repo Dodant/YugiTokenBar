@@ -53,6 +53,7 @@ struct FlipCard: View {
                 .overlay(alignment: .bottomLeading) { RarityPill(label: pull.label, size: 10).padding(4) }
                 .overlay(alignment: .topTrailing) {
                     if pull.isNew { tag("NEW", .pink) }
+                    else if let coins = pull.soldFor { tag("+\(coinText(coins))", .green) }
                 }
                 .shadow(color: pull.tier == 2 ? Rarity.color(tier: 2) : .clear, radius: 10)
                 .modifier(RareEffect(tier: pull.tier, active: flipped))

@@ -20,6 +20,8 @@ struct Pull: Sendable, Equatable {
     let tier: Int
     let label: String
     let isNew: Bool
+    /// 중복 자동 판매로 바로 판 경우 받은 코인
+    var soldFor: Int? = nil
 }
 
 struct Game: Sendable {
@@ -75,8 +77,9 @@ struct Game: Sendable {
             state.pendingFree -= 1
             guard let cid = drawFree(using: &rng) else { state.pendingFree = 0; break }
             let card = topCard(cid)
-            pulls.append(Pull(cid: cid, tier: card?.tier ?? 1, label: card?.label ?? "", isNew: copies(cid) == 0))
+            let isNew = copies(cid) == 0
             give(cid, source: "free")
+            pulls.append(Pull(cid: cid, tier: card?.tier ?? 1, label: card?.label ?? "", isNew: isNew, soldFor: autoSell(cid)))
         }
         return pulls
     }
@@ -190,9 +193,15 @@ struct Game: Sendable {
             guard let card = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), using: &rng) else { continue }
             let isNew = copies(card.cid) == 0
             give(card.cid, source: db.packs[pack].pid)
-            pulls.append(Pull(cid: card.cid, tier: card.tier, label: card.label, isNew: isNew))
+            pulls.append(Pull(cid: card.cid, tier: card.tier, label: card.label, isNew: isNew, soldFor: autoSell(card.cid)))
         }
         return pulls
+    }
+
+    /// 설정이 켜져 있고 2장째 이상이면 바로 1장 판다. 반환: 받은 코인.
+    private mutating func autoSell(_ cid: Int) -> Int? {
+        guard state.autoSellDuplicates, copies(cid) > 1 else { return nil }
+        return sell(cid)
     }
 
     mutating func give(_ cid: Int, source: String, now: Date = Date()) {
