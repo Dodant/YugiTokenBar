@@ -54,7 +54,8 @@ struct FlipCard: View {
                 .overlay(alignment: .topTrailing) {
                     if pull.isNew { tag("NEW", .pink) }
                 }
-                .shadow(color: pull.tier >= 2 ? Rarity.color(tier: pull.tier) : .clear, radius: 10)
+                .shadow(color: pull.tier == 2 ? Rarity.color(tier: 2) : .clear, radius: 10)
+                .modifier(RareEffect(tier: pull.tier, active: flipped))
                 .rotation3DEffect(.degrees(flipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
                 .opacity(flipped ? 1 : 0)
             CardBack(glow: pull.tier >= 2 ? Rarity.color(tier: pull.tier) : nil)
@@ -71,5 +72,97 @@ struct FlipCard: View {
             .padding(.vertical, 2)
             .background(color, in: Capsule())
             .padding(4)
+    }
+}
+
+/// SR·UR 앞면이 드러날 때의 연출 (뒤집기 0.4초가 끝날 즈음 시작).
+/// SR: 금빛 광택 한 번 + 빛 맥박 + 살짝 튀어오름. UR: 무지개 광택 반복 + 빛 고리·반짝이 폭발 + 크게 튀어오름.
+private struct RareEffect: ViewModifier {
+    let tier: Int
+    let active: Bool
+    @State private var sweep = false
+    @State private var burst = false
+    @State private var pulse = false
+    @State private var pop = 0
+
+    private var ur: Bool { tier >= 4 }
+
+    func body(content: Content) -> some View {
+        if tier < 3 {
+            content
+        } else {
+            let color = Rarity.color(tier: tier)
+            content
+                .overlay { shine.allowsHitTesting(false) }
+                .shadow(color: color.opacity(pulse ? 0.95 : 0.45), radius: pulse ? 20 : 9)
+                .background { if ur { rings(color) } }
+                .overlay { if ur { sparkles(color) } }
+                .keyframeAnimator(initialValue: 1.0, trigger: pop) { view, scale in
+                    view.scaleEffect(scale)
+                } keyframes: { _ in
+                    LinearKeyframe(1.0, duration: 0.3)
+                    SpringKeyframe(ur ? 1.14 : 1.06, duration: 0.18)
+                    SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
+                }
+                .onChange(of: active) { start() }
+                .onAppear { start() }
+        }
+    }
+
+    private var shine: some View {
+        GeometryReader { g in
+            LinearGradient(colors: ur
+                           ? [.clear, .pink.opacity(0.45), .white.opacity(0.85), .cyan.opacity(0.45), .clear]
+                           : [.clear, .white.opacity(0.75), .clear],
+                           startPoint: .leading, endPoint: .trailing)
+                .frame(width: g.size.width * 0.7, height: g.size.height * 1.6)
+                .rotationEffect(.degrees(20))
+                .offset(x: sweep ? g.size.width * 1.3 : -g.size.width * 1.0, y: -g.size.height * 0.3)
+                .blendMode(.plusLighter)
+        }
+        .clipShape(.rect(cornerRadius: 7))
+    }
+
+    private func rings(_ color: Color) -> some View {
+        ZStack {
+            ForEach(0..<2, id: \.self) { i in
+                Circle()
+                    .stroke(color, lineWidth: 3)
+                    .scaleEffect(burst ? 1.8 + Double(i) * 0.6 : 0.3)
+                    .opacity(burst ? 0 : 0.9)
+            }
+        }
+    }
+
+    private func sparkles(_ color: Color) -> some View {
+        ZStack {
+            ForEach(0..<10, id: \.self) { i in
+                let angle = Double(i) / 10 * 2 * .pi
+                let r = burst ? 70.0 + Double(i % 3) * 14 : 0
+                Image(systemName: "sparkle")
+                    .font(.system(size: CGFloat(10 + (i % 3) * 4), weight: .bold))
+                    .foregroundStyle(i.isMultiple(of: 2) ? color : .white)
+                    .offset(x: cos(angle) * r, y: sin(angle) * r)
+                    .scaleEffect(burst ? 1 : 0.2)
+                    .opacity(burst ? 0 : 1)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func start() {
+        guard active else {
+            // 다음 팩: 애니메이션 없이 처음 상태로
+            var t = Transaction()
+            t.disablesAnimations = true
+            withTransaction(t) { sweep = false; burst = false; pulse = false }
+            return
+        }
+        pop += 1
+        withAnimation(ur
+                      ? .easeInOut(duration: 1.4).delay(0.35).repeatForever(autoreverses: false)
+                      : .easeInOut(duration: 0.9).delay(0.35)) { sweep = true }
+        withAnimation(.easeOut(duration: 0.9).delay(0.35)) { burst = true }
+        withAnimation(.easeInOut(duration: 1.1).delay(0.35).repeatForever()) { pulse = true }
     }
 }
