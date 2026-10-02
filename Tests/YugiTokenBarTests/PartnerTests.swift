@@ -226,4 +226,24 @@ import Testing
         _ = try model.importSave(SaveEnvelope(appVersion: "0", exportedAt: Date(), state: GameState()))
         #expect(!model.game.state.partnerUnlocked)  // 해금은 세이브 단위
     }
+
+    // MARK: 바탕화면 창
+
+    @MainActor @Test func offscreenOriginFallsBack() {
+        let main = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let size = CGSize(width: 118, height: 128)
+        let kept = CGPoint(x: 300, y: 200)
+        #expect(PartnerPanel.place(origin: kept, size: size, screens: [main], main: main) == kept)
+        let gone = CGPoint(x: 3000, y: 200)  // 떼어 낸 외부 모니터
+        let corner = CGPoint(x: 1440 - 118 - 24, y: 24)
+        #expect(PartnerPanel.place(origin: gone, size: size, screens: [main], main: main) == corner)
+        #expect(PartnerPanel.place(origin: nil, size: size, screens: [main], main: main) == corner)
+    }
+
+    @MainActor @Test func sizeIsClamped() {
+        #expect(PartnerPanel.windowSize(height: 10).height == 64)
+        #expect(PartnerPanel.windowSize(height: 999).height == 256)
+        let s = PartnerPanel.windowSize(height: 208)
+        #expect(s.width == 192 && s.height == 208)
+    }
 }

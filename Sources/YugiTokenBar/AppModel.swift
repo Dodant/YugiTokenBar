@@ -29,6 +29,8 @@ final class AppModel: ObservableObject {
     private var keychainPrompted = false
     /// 파트너 「날개 크리보」. 해금 전에는 멈춰 있다.
     let partner = PartnerModel()
+    /// 바탕화면 파트너 창 (해금되고 처음 보일 때 만든다)
+    private var partnerPanel: PartnerPanel?
     private var lastUsage: UsageSample?
     private var tokensPerMinute = 0
     /// 마지막으로 파트너 반응을 계산한 상태
@@ -234,7 +236,21 @@ final class AppModel: ObservableObject {
 
     /// 해금·설정에 맞춰 파트너를 돌리고 바탕화면 창을 보이거나 숨긴다.
     func updatePartner() {
-        guard game.state.partnerUnlocked, partner.isReady else { return }
+        guard game.state.partnerUnlocked, partner.isReady else { partnerPanel?.hide(); return }
         partner.start()
+        guard game.state.partnerEnabled else { partnerPanel?.hide(); return }
+        let panel = partnerPanel ?? PartnerPanel(
+            frame: partner.desktop,
+            onClick: { [weak self] in
+                self?.partner.interrupt(.puzzled)
+                PartnerPanel.openPopover()
+            },
+            onHide: { [weak self] in self?.partnerEnabled = false },
+            onMoved: { [weak self] origin in
+                self?.game.state.partnerOrigin = origin
+                self?.save()
+            })
+        partnerPanel = panel
+        panel.show(size: game.state.partnerSize, origin: game.state.partnerOrigin)
     }
 }
