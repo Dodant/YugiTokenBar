@@ -25,10 +25,8 @@ struct DexView: View {
                     Image(systemName: "square.grid.2x2")
                 }
                 .tag(-1)
-                Section("부스터 팩") {
-                    ForEach(game.db.packs.indices, id: \.self) { i in
-                        packItem(game, i).tag(i)
-                    }
+                ForEach(game.db.eras, id: \.name) { era in
+                    DexEraSection(name: era.name, packs: era.packs) { i in packItem(game, i) }
                 }
             }
             .listStyle(.sidebar)
@@ -199,6 +197,49 @@ struct DexView: View {
     private func packs(_ cid: Int) -> [(name: String, label: String)] {
         model.db.packs.compactMap { pack in
             pack.cards.first { $0.cid == cid }.map { (pack.name, $0.label) }
+        }
+    }
+}
+
+/// 사이드바의 시대(DM/GX) 묶음. 헤더를 눌러 접고 펴며, 접힘 상태는 다음 실행에도 기억한다.
+private struct DexEraSection<Item: View>: View {
+    @EnvironmentObject var model: AppModel
+    let name: String
+    let packs: Range<Int>
+    let item: (Int) -> Item
+    @AppStorage private var expanded: Bool
+
+    init(name: String, packs: Range<Int>, @ViewBuilder item: @escaping (Int) -> Item) {
+        self.name = name
+        self.packs = packs
+        self.item = item
+        _expanded = AppStorage(wrappedValue: true, "dex.era.\(name).expanded")
+    }
+
+    var body: some View {
+        let game = model.game
+        let owned = packs.reduce(0) { $0 + game.progress($1).owned }
+        let total = packs.reduce(0) { $0 + game.progress($1).total }
+        // ponytail: 기본 사이드바 꺾쇠는 마우스를 올려야 보여서, 상점처럼 항상 보이는 꺾쇠를 직접 그린다
+        Section {
+            if expanded {
+                ForEach(packs, id: \.self) { i in item(i).tag(i) }
+            }
+        } header: {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                    Text("\(name) · \(packs.count)팩")
+                    Spacer()
+                    Text("\(owned) / \(total)").monospacedDigit()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
     }
 }
