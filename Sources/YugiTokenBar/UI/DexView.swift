@@ -133,7 +133,7 @@ struct DexView: View {
             HStack(spacing: 4) {
                 Text(String(format: "%03d", number)).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
-                Text(label).foregroundStyle(.secondary)
+                RarityPill(label: label, owned: n > 0)
                 if n > 0 { Text("×\(n)").fontWeight(.semibold) }
             }
             .font(.caption2)
@@ -183,7 +183,9 @@ struct DexView: View {
                 }
                 Section("수록 팩") {
                     ForEach(packs(cid), id: \.name) { item in
-                        LabeledContent(item.name, value: item.label)
+                        LabeledContent(item.name) {
+                            RarityPill(label: item.label, owned: n > 0, size: 11)
+                        }
                     }
                 }
             }

@@ -41,14 +41,14 @@ struct FlipCard: View {
     var body: some View {
         ZStack {
             CardImageView(db: db, cid: pull.cid, size: .full)
-                .overlay(alignment: .bottomLeading) { tag(pull.label, .black.opacity(0.7)) }
+                .overlay(alignment: .bottomLeading) { RarityPill(label: pull.label, size: 10).padding(4) }
                 .overlay(alignment: .topTrailing) {
                     if pull.isNew { tag("NEW", .pink) }
                 }
-                .shadow(color: pull.tier >= 2 ? .yellow : .clear, radius: 10)
+                .shadow(color: pull.tier >= 2 ? Rarity.color(tier: pull.tier) : .clear, radius: 10)
                 .rotation3DEffect(.degrees(flipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
                 .opacity(flipped ? 1 : 0)
-            CardBack(glow: pull.tier >= 2)
+            CardBack(glow: pull.tier >= 2 ? Rarity.color(tier: pull.tier) : nil)
                 .rotation3DEffect(.degrees(flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
                 .opacity(flipped ? 0 : 1)
         }

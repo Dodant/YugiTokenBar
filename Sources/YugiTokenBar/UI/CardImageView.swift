@@ -30,10 +30,47 @@ struct CardImageView: View {
     }
 }
 
+/// 등급 색 (N 회청색 · R 파랑 · SR 금색 · UR 보라).
+enum Rarity {
+    static let colors: [Color] = [
+        Color(red: 0x5C / 255, green: 0x64 / 255, blue: 0x70 / 255),
+        Color(red: 0x4A / 255, green: 0x90 / 255, blue: 0xE2 / 255),
+        Color(red: 0xF5 / 255, green: 0xC4 / 255, blue: 0x51 / 255),
+        Color(red: 0xB0 / 255, green: 0x5C / 255, blue: 0xFF / 255),
+    ]
+
+    /// 아직 획득하지 못한 카드 (밝은 회색, N 회청색과 구분)
+    static let locked = Color(red: 0xA0 / 255, green: 0xA0 / 255, blue: 0xA0 / 255)
+
+    static func color(tier: Int) -> Color { colors[min(max(tier, 1), 4) - 1] }
+    static func color(label: String, owned: Bool = true) -> Color {
+        guard owned else { return locked }
+        return color(tier: (PackCard.labels.firstIndex(of: label) ?? 0) + 1)
+    }
+}
+
+/// 등급 알약. 등급 색으로 채우고, 미보유면 미획득 색.
+struct RarityPill: View {
+    let label: String
+    var owned = true
+    var size: CGFloat = 9
+
+    var body: some View {
+        let color = Rarity.color(label: label, owned: owned)
+        Text(label)
+            .font(.system(size: size, weight: .bold))
+            .foregroundStyle(owned && label == "SR" ? .black : .white)  // 금색 배경엔 흰 글자가 안 읽힌다
+            .padding(.horizontal, size * 0.6)
+            .padding(.vertical, size * 0.15)
+            .background(color, in: Capsule())
+    }
+}
+
 /// 카드 뒷면. YGOPRODeck 뒷면 이미지, 받기 전·실패 시엔 비슷한 갈색 그라데이션.
 struct CardBack: View {
     var name = ""
-    var glow = false
+    /// 레어 이상이면 등급 색으로 빛난다
+    var glow: Color? = nil
     @State private var image: NSImage?
 
     var body: some View {
@@ -59,7 +96,7 @@ struct CardBack: View {
         }
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 7))
-        .shadow(color: glow ? .yellow : .clear, radius: glow ? 10 : 0)
+        .shadow(color: glow ?? .clear, radius: glow == nil ? 0 : 10)
         .task { image = await ImageCache.shared.cardBack() }
     }
 }
