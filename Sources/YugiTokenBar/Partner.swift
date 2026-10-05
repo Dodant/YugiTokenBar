@@ -41,7 +41,7 @@ struct PartnerSheet {
 
 /// 파트너 동작 기준값. 게임 밸런스가 아니라서 `Balance`에 두지 않는다.
 enum PartnerTuning {
-    static let fps = 8.0
+    static let fps = 4.0
     /// Claude·Codex 공식 한도 중 가장 높은 %가 이 이상이면 시무룩
     static let sadPercent = 80.0
     static let flyTokensPerMinute = 100_000
@@ -167,7 +167,7 @@ extension PartnerAnim {
     }
 }
 
-/// 화면에 그릴 프레임 하나. 메뉴바와 바탕화면이 따로 가져서, 바탕화면이 8fps로 바뀌어도 메뉴바 라벨은 깜빡일 때만 다시 그린다.
+/// 화면에 그릴 프레임 하나. 메뉴바와 바탕화면이 따로 가져서, 바탕화면이 매 프레임 바뀌어도 메뉴바 라벨은 깜빡일 때만 다시 그린다.
 @MainActor final class FrameBox: ObservableObject {
     @Published var image: NSImage?
 }
