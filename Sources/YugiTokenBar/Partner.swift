@@ -41,7 +41,7 @@ struct PartnerSheet {
 
 /// 파트너 동작 기준값. 게임 밸런스가 아니라서 `Balance`에 두지 않는다.
 enum PartnerTuning {
-    static let fps = 4.0
+    static let fps = 5.0
     /// Claude·Codex 공식 한도 중 가장 높은 %가 이 이상이면 시무룩
     static let sadPercent = 80.0
     static let flyTokensPerMinute = 100_000
