@@ -11,7 +11,7 @@ struct ShopView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            PanelHeader(title: "상점", back: { model.showShop = false }) {
+            PanelHeader(title: "상점", back: { model.screen = .summary }) {
                 Text(coinText(model.game.state.coins))
                     .font(.callout).monospacedDigit().foregroundStyle(.secondary)
             }

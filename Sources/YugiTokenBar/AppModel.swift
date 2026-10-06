@@ -8,10 +8,9 @@ final class AppModel {
     private(set) var openingTitle = ""
     /// 지금 개봉 화면의 팩 (무료 카드면 nil). 개봉 화면의 [한 팩 더] 가 쓴다.
     private(set) var openingPack: Int?
-    var showOpening = false
     private(set) var openingID = UUID()
-    var showShop = false
-    var showSettings = false
+    /// 팝오버 안 지금 화면
+    var screen: PanelScreen = .summary
     /// 오늘 provider별 토큰·비용 (팝오버 사용량 표시)
     private(set) var todayTokens: [String: Int] = [:]
     private(set) var todayCost: [String: Double] = [:]
@@ -153,9 +152,15 @@ final class AppModel {
         openingTitle = title
         openingPack = pack
         openingID = UUID()
-        showOpening = true
+        // 개봉 중에 또 열면(한 팩 더) 돌아갈 곳은 그대로
+        if case .opening = screen {} else { screen = .opening(back: screen) }
         if pulls.contains(where: { $0.tier >= 3 }) { partner.play(.excited) }
         save()
+    }
+
+    /// 개봉 화면을 닫고 연 화면(요약·상점)으로 돌아간다.
+    func closeOpening() {
+        if case .opening(let back) = screen { screen = back }
     }
 
     var autoSellDuplicates: Bool {
@@ -302,4 +307,10 @@ final class AppModel {
         partnerPanel = panel
         panel.show(size: game.state.partnerSize, origin: game.state.partnerOrigin)
     }
+}
+
+/// 팝오버 안 화면. 개봉은 연 화면(요약·상점) 위에 뜨고, 닫으면 그리로 돌아간다.
+enum PanelScreen: Equatable {
+    case summary, shop, settings
+    indirect case opening(back: PanelScreen)
 }

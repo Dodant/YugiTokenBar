@@ -11,7 +11,7 @@ struct OpeningView: View {
         let pulls = model.opening
         let allFlipped = flipped.count == pulls.count
         VStack(spacing: 12) {
-            PanelHeader(title: model.openingTitle) { model.showOpening = false }
+            PanelHeader(title: model.openingTitle) { model.closeOpening() }
             // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
             let packLayout = model.openingPack != nil && pulls.count == 5
             let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
@@ -32,13 +32,13 @@ struct OpeningView: View {
             if !packLayout { Spacer(minLength: 0) }
             HStack(spacing: 8) {
                 if allFlipped, let again {
-                    Button("확인") { model.showOpening = false }.buttonStyle(.glass)
+                    Button("확인") { model.closeOpening() }.buttonStyle(.glass)
                     Button(again.title, action: again.action)
                         .disabled(!again.enabled)
                         .keyboardShortcut(.defaultAction)
                 } else {
                     Button(allFlipped ? "확인" : "모두 뒤집기") {
-                        if allFlipped { model.showOpening = false }
+                        if allFlipped { model.closeOpening() }
                         else { flipAll(pulls) }
                     }
                     .keyboardShortcut(.defaultAction)

@@ -10,16 +10,24 @@ struct PopoverView: View {
 
     var body: some View {
         // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점·개봉·설정은 요약 크기 안에 겹쳐 그려 높이를 고정
-        let covered = model.showShop || model.showSettings || model.showOpening
+        let covered = model.screen != .summary
         return summary
             .opacity(covered ? 0 : 1)
             .allowsHitTesting(!covered)
             .overlay {
-                // 개봉마다 새 뷰로 만들어 뒤집기·레어 연출 상태를 처음부터 시작한다
-                if model.showOpening { OpeningView().id(model.openingID) }
-                else if model.showShop { ShopView() }
-                else if model.showSettings { SettingsView(open: show) }
+                Group {
+                    switch model.screen {
+                    // 개봉마다 새 뷰로 만들어 뒤집기·레어 연출 상태를 처음부터 시작한다
+                    case .opening: OpeningView().id(model.openingID)
+                    case .shop: ShopView()
+                    case .settings: SettingsView(open: show)
+                    case .summary: EmptyView()
+                    }
+                }
+                .transition(.opacity)
             }
+            // 화면 전환은 짧게 겹쳐 사라지고 나타난다 (한 팩 더는 화면이 그대로라 바로 바뀐다)
+            .animation(lessMotion ? nil : .easeOut(duration: 0.15), value: model.screen)
             .padding(16)
             .frame(width: 340)
             .onChange(of: [covered, model.game.state.freePacks > 0, model.game.state.pendingFree > 0], initial: true) {
@@ -83,13 +91,13 @@ struct PopoverView: View {
                 .background(.fill.quinary, in: .rect(cornerRadius: 16))
 
             VStack(spacing: 2) {
-                MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.showShop = true }
+                MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.screen = .shop }
                 MenuRow(title: "컬렉션", systemImage: "square.stack.3d.up",
                         trailing: "\(game.ownedDistinct) / \(game.db.allCIDs.count)", chevron: false, opensWindow: true) { show("dex") }
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
                 UsageView()
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
-                MenuRow(title: "설정", systemImage: "gearshape", trailing: nil, chevron: true) { model.showSettings = true }
+                MenuRow(title: "설정", systemImage: "gearshape", trailing: nil, chevron: true) { model.screen = .settings }
                 MenuRow(title: "종료", systemImage: "power", trailing: "⌘Q", chevron: false) { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }

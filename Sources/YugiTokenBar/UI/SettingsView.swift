@@ -14,7 +14,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            PanelHeader(title: "설정") { model.showSettings = false }
+            PanelHeader(title: "설정") { model.screen = .summary }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     generalSection
