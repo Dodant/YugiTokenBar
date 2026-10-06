@@ -73,16 +73,15 @@ struct RarityPill: View {
     }
 }
 
-/// 카드 뒷면. YGOPRODeck 뒷면 이미지, 받기 전·실패 시엔 비슷한 갈색 그라데이션.
+/// 카드 뒷면. 번들 이미지, 못 읽으면 비슷한 갈색 그라데이션.
 struct CardBack: View {
     var name = ""
     /// 레어 이상이면 등급 색으로 빛난다
     var glow: Color? = nil
-    @State private var image: NSImage?
 
     var body: some View {
         ZStack {
-            if let image {
+            if let image = ImageCache.cardBack {
                 Image(nsImage: image).resizable()
             } else {
                 RadialGradient(colors: [Color(red: 0.35, green: 0.23, blue: 0.10), Color(red: 0.16, green: 0.09, blue: 0.03)],
@@ -104,7 +103,6 @@ struct CardBack: View {
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 7))
         .shadow(color: glow ?? .clear, radius: glow == nil ? 0 : 10)
-        .task { image = await ImageCache.shared.cardBack() }
     }
 }
 

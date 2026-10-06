@@ -65,9 +65,9 @@ final class ImageCache {
         return await image(key: "pack-\(url.lastPathComponent)", url: url, maxPixels: 480)
     }
 
-    func cardBack() async -> NSImage? {
-        await image(key: "cards-back_high", url: Self.ygoprodeck("cards/back_high"))
-    }
+    /// 카드 뒷면(tools/clean-card-back.py 산출물). .app 안에서는 Contents/Resources/card-back.jpg, `swift run`·테스트에서는 저장소의 Resources/card-back.jpg.
+    static let cardBack = NSImage(contentsOf: Bundle.main.url(forResource: "card-back", withExtension: "jpg")
+        ?? AppInfo.repoRoot.appendingPathComponent("Resources/card-back.jpg"))
 
     private static func ygoprodeck(_ path: String) -> URL {
         URL(string: "https://images.ygoprodeck.com/images/\(path).jpg")!

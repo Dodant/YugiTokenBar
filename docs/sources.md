@@ -14,7 +14,7 @@
 
 | 무엇 | 출처 |
 |---|---|
-| 카드 이미지(`cards_small`·`cards`)·카드 뒷면 | YGOPRODeck https://images.ygoprodeck.com/images/ |
+| 카드 이미지(`cards_small`·`cards`) | YGOPRODeck https://images.ygoprodeck.com/images/ |
 | 팩 봉투 | Yugipedia(한글판), 없으면 YGOPRODeck `images/sets/<setCode>.jpg` |
 | 오버프레임 21장 | 아래 표 |
 
@@ -61,3 +61,4 @@
 |---|---|
 | `Sources/YugiTokenBar/Usage/` 토큰 사용량 코드 | PokeTokenBar(MIT) https://github.com/chattymin/PokeTokenBar, 커밋 `de617e3`. 자세한 내용은 `Usage/NOTICE.md` |
 | `Resources/partner.png` 날개 크리보 스프라이트 | 사용자 제공(개인용) |
+| `Resources/card-back.jpg` 카드 뒷면 | Yugipedia [File:Back-KR.png](https://yugipedia.com/wiki/File:Back-KR.png)(한국판 실물 스캔 923×1351)에서 KONAMI·유희왕 로고를 지움(`tools/clean-card-back.py`) |

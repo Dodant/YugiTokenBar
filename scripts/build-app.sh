@@ -15,6 +15,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp ".build/release/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
 cp Resources/cards.json "$APP/Contents/Resources/cards.json"
 cp Resources/partner.png "$APP/Contents/Resources/partner.png"
+cp Resources/card-back.jpg "$APP/Contents/Resources/card-back.jpg"
 cp CHANGELOG.md "$APP/Contents/Resources/CHANGELOG.md"
 cp Sources/YugiTokenBar/Usage/NOTICE.md "$APP/Contents/Resources/NOTICE.md"
 cat > "$APP/Contents/Info.plist" <<PLIST

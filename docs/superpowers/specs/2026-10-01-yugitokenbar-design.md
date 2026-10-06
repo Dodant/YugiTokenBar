@@ -72,8 +72,10 @@ Sources/YugiTokenBar/
   UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션), Usage, CardImageView, PartnerPanel(바탕화면 파트너)
 CHANGELOG.md           패치노트 겸 버전 원본
 Resources/partner.png  파트너 스프라이트 시트(192×208 셀, 8열 × 9행)
+Resources/card-back.jpg 카드 뒷면(923×1351, 로고 없음. tools/clean-card-back.py 산출물)
 Tests/YugiTokenBarTests/
 tools/build-cards.py
+tools/clean-card-back.py  Yugipedia Back-KR.png 에서 로고를 지워 card-back.jpg 를 만듦
 ```
 
 ### 토큰 적립
@@ -196,7 +198,7 @@ VRAINS까지 75팩(6,160종)에서는 "무료 1장 + 1팩" 10,114~11,292회로 �
   - 업데이트: 현재 버전(Info.plist `CFBundleShortVersionString (CFBundleVersion)`, `swift run`이면 "개발 빌드"), [확인]을 누르면 `raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md`의 맨 위 버전과 숫자로 비교한다. 릴리스 없이 main 기준이다. 새 버전이면 GitHub 링크와 `git pull && scripts/build-app.sh --install`을 보여준다. 자동 확인·자동 업데이트는 없다.
   - 백업 & 이전: [내보내기], [가져오기](4절 내보내기·가져오기), 세이브 폴더 [Finder].
   - 정보 & 지원: [패치노트](`CHANGELOG.md` 창), GitHub 링크, PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
-- **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다. `scripts/build-app.sh`가 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣고, `cards.json`·`partner.png`·`CHANGELOG.md`·`Usage/NOTICE.md`를 Resources에 복사한다.
+- **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다. `scripts/build-app.sh`가 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣고, `cards.json`·`partner.png`·`card-back.jpg`·`CHANGELOG.md`·`Usage/NOTICE.md`를 Resources에 복사한다.
 
 ## 7. 오류 처리
 
