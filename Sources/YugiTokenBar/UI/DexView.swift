@@ -21,6 +21,7 @@ struct DexView: View {
     @State private var confirmSellLast = false
     @State private var confirmSellDuplicates = false
     @State private var confirmFuse = false
+    @State private var fusing: FusionShow?
     /// 0 = 모든 등급, 1~5 = CardInfo.tier
     @State private var tierFilter = 0
     /// "" = 모든 종류, 아니면 CardInfo.kind 또는 소환법 (CardInfo.matches)
@@ -174,6 +175,13 @@ struct DexView: View {
                 Button { showInspector.toggle() } label: { Label("정보", systemImage: "sidebar.trailing") }
             }
         }
+        .overlay {
+            if let fusing {
+                FusionAnimationView(db: model.db, show: fusing) { self.fusing = nil }
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.25), value: fusing)
     }
 
     private var filterBar: some View {
@@ -562,7 +570,11 @@ struct DexView: View {
                                     .disabled(!can)
                                     .help(why)
                                     .confirmationDialog("\(card.name) 융합", isPresented: $confirmFuse) {
-                                        Button("융합") { model.fuse(cid) }
+                                        Button("융합") {
+                                            let mats = card.materials?.flatMap { Array(repeating: $0.cid!, count: $0.count ?? 1) } ?? []
+                                            model.fuse(cid)
+                                            fusing = FusionShow(cid: cid, materials: mats)
+                                        }
                                     } message: {
                                         Text("\(consumed(materials))을 소비해요. 소재는 1장씩 남아 컬렉션에서 빠지지 않아요.")
                                     }

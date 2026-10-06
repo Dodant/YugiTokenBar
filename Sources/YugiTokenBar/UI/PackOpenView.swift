@@ -103,7 +103,7 @@ struct FlipCard: View {
 /// SR·UR 앞면이 드러날 때의 연출 (뒤집기 0.4초가 끝날 즈음 시작).
 /// SR: 금빛 광택 한 번 + 빛 맥박 + 살짝 튀어오름. UR: 무지개 광택 반복 + 빛 고리·반짝이 폭발 + 크게 튀어오름.
 /// SE: UR 연출에 고리·반짝이를 더하고 더 크게 튀어오름.
-private struct RareEffect: ViewModifier {
+struct RareEffect: ViewModifier {
     let tier: Int
     let active: Bool
     @State private var sweep = false
