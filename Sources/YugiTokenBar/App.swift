@@ -17,14 +17,14 @@ struct YugiTokenBarApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            PopoverView().environmentObject(model)
+            PopoverView().environmentObject(model).environment(\.animationsOff, model.game.state.animationsOff)
         } label: {
             MenuBarLabel(title: menuTitle, icon: model.partner.menu, unlocked: model.game.state.partnerUnlocked)
         }
         .menuBarExtraStyle(.window)
 
         Window("컬렉션", id: "dex") {
-            DexView().environmentObject(model)
+            DexView().environmentObject(model).environment(\.animationsOff, model.game.state.animationsOff)
         }
         .defaultSize(width: 980, height: 640)
 

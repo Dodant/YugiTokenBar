@@ -104,6 +104,14 @@ struct SettingsView: View {
                     .controlSize(.small)
             }
             row {
+                labeled("애니메이션 끄기", hint: "카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요")
+                Spacer()
+                Toggle("애니메이션 끄기", isOn: $model.animationsOff)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+            }
+            row {
                 let db = model.game.fullDB
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 4) {

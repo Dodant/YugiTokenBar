@@ -5,6 +5,7 @@ struct OpeningView: View {
     @EnvironmentObject var model: AppModel
     @State private var flipped: Set<Int> = []
     @State private var width: CGFloat = 300
+    @Environment(\.lessMotion) private var lessMotion
 
     var body: some View {
         let pulls = model.opening
@@ -66,7 +67,7 @@ struct OpeningView: View {
     private func cell(_ pull: Pull, _ i: Int) -> some View {
         VStack(spacing: 4) {
             FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
-                .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
+                .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
             // 상점 팩 칸처럼 아래 이름 한 줄. 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
             Text(model.db.cards[pull.cid]?.name ?? " ")
                 .font(.caption2).lineLimit(1).truncationMode(.tail)
@@ -76,16 +77,18 @@ struct OpeningView: View {
         }
     }
 
-    /// 레어 슬롯은 나머지를 먼저 뒤집고 0.6초 뒤에 뒤집는다
+    private var flip: Animation? { lessMotion ? nil : .easeInOut(duration: 0.4) }
+
+    /// 레어 슬롯은 나머지를 먼저 뒤집고 0.6초 뒤에 뒤집는다 (애니메이션을 끄면 한꺼번에)
     private func flipAll(_ pulls: [Pull]) {
-        let rare = pulls.indices.last.flatMap { isRare($0) && !flipped.contains($0) ? $0 : nil }
-        withAnimation(.easeInOut(duration: 0.4)) { flipped.formUnion(pulls.indices.filter { $0 != rare }) }
+        let rare = pulls.indices.last.flatMap { !lessMotion && isRare($0) && !flipped.contains($0) ? $0 : nil }
+        withAnimation(flip) { flipped.formUnion(pulls.indices.filter { $0 != rare }) }
         guard let rare else { return }
         let id = model.openingID
         Task {
             try? await Task.sleep(for: .milliseconds(600))
             guard model.openingID == id else { return }
-            withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(rare) }
+            withAnimation(flip) { _ = flipped.insert(rare) }
         }
     }
 
@@ -156,6 +159,7 @@ private struct RareEffect: ViewModifier {
     @State private var burst = false
     @State private var pulse = false
     @State private var pop = 0
+    @Environment(\.lessMotion) private var lessMotion
 
     private var ur: Bool { tier >= 4 }
     private var se: Bool { tier >= 5 }
@@ -163,6 +167,8 @@ private struct RareEffect: ViewModifier {
     func body(content: Content) -> some View {
         if tier < 3 {
             content
+        } else if lessMotion {
+            content.shadow(color: Rarity.color(tier: tier).opacity(active ? 0.7 : 0), radius: 12)  // 연출 없이 빛만
         } else {
             let color = Rarity.color(tier: tier)
             content

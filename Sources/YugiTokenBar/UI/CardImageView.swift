@@ -30,6 +30,12 @@ struct CardImageView: View {
     }
 }
 
+extension EnvironmentValues {
+    /// 설정 [애니메이션 끄기]. 읽을 때는 시스템 동작 줄이기와 합친 `lessMotion`
+    @Entry var animationsOff = false
+    var lessMotion: Bool { animationsOff || accessibilityReduceMotion }
+}
+
 /// 등급 색 (N 회청색 · R 파랑 · SR 금색 · UR 보라 · SE 진분홍).
 enum Rarity {
     static let colors: [Color] = [
@@ -127,12 +133,12 @@ struct PackImageView: View {
 }
 
 /// 마우스를 올리고 움직이면 실물 카드를 빛에 비춰 보듯 커서 쪽으로 기울고(스프링이라 살짝 출렁임), 빛 반사가 커서를 따라간다.
-/// N·R 흰 반사, SR 더 밝게, UR·SE 무지개 홀로그램을 덧입힌다. 동작 줄이기면 기울기 없이 반사만 약하게.
+/// N·R 흰 반사, SR 더 밝게, UR·SE 무지개 홀로그램을 덧입힌다. 동작 줄이기·애니메이션 끄기면 기울기 없이 반사만 약하게.
 private struct CardTilt: ViewModifier {
     let tier: Int
     let angleScale: Double
     let enabled: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.lessMotion) private var reduceMotion
     /// 카드 안 커서 위치 (-1…1), 밖이면 nil
     @State private var point: CGPoint?
     @State private var size: CGSize = .zero

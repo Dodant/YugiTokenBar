@@ -34,6 +34,8 @@ struct GameState: Codable, Sendable, Equatable {
     var autoSellDuplicates = false
     /// 설정: 소재를 다 아는 융합 몬스터는 팩·무료 카드에서 안 나오고 융합으로만 얻는다
     var fusionOnly = false
+    /// 설정: 카드 기울기·뒤집기·레어 연출·융합 연출을 끈다 (시스템 동작 줄이기와 같게)
+    var animationsOff = false
     /// 설정: 이 시대(`CardDB.eraStarts` 이름)까지만 상점·컬렉션·무료 카드에 쓴다. 기본 GX(싱크로 이전 27팩)
     var eraLimit = "GX"
     /// 파트너 「날개 크리보」 해금. 한 번 가지면 팔아도 유지 (`Game.unlockPartnerIfOwned`)
@@ -66,6 +68,7 @@ struct GameState: Codable, Sendable, Equatable {
         favorites = try c.decodeIfPresent(Set<Int>.self, forKey: .favorites) ?? d.favorites
         autoSellDuplicates = try c.decodeIfPresent(Bool.self, forKey: .autoSellDuplicates) ?? d.autoSellDuplicates
         fusionOnly = try c.decodeIfPresent(Bool.self, forKey: .fusionOnly) ?? d.fusionOnly
+        animationsOff = try c.decodeIfPresent(Bool.self, forKey: .animationsOff) ?? d.animationsOff
         eraLimit = try c.decodeIfPresent(String.self, forKey: .eraLimit) ?? d.eraLimit
         partnerUnlocked = try c.decodeIfPresent(Bool.self, forKey: .partnerUnlocked) ?? d.partnerUnlocked
         partnerEnabled = try c.decodeIfPresent(Bool.self, forKey: .partnerEnabled) ?? d.partnerEnabled

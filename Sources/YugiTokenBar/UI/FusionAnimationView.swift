@@ -17,7 +17,7 @@ struct FusionAnimationView: View {
     let db: CardDB
     let show: FusionShow
     let onDone: () -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.lessMotion) private var reduceMotion
     @State private var start = Date.now
     @State private var images: [Int: NSImage] = [:]
 

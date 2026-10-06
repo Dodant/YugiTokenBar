@@ -167,6 +167,11 @@ final class AppModel: ObservableObject {
         set { game.state.fusionOnly = newValue; save() }
     }
 
+    var animationsOff: Bool {
+        get { game.state.animationsOff }
+        set { game.state.animationsOff = newValue; save() }
+    }
+
     var partnerEnabled: Bool {
         get { game.state.partnerEnabled }
         set { guard newValue != game.state.partnerEnabled else { return }; game.state.partnerEnabled = newValue; save(); updatePartner() }
