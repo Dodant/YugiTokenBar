@@ -79,6 +79,8 @@ struct CardDB: Sendable {
     private(set) var cidSet: Set<Int>
     /// 범위 안 융합 몬스터의 소재로 필요한 최대 장 수 (사이버 드래곤 → 3, 사이버 엔드 드래곤). 중복 판매에서 그만큼 남긴다.
     private(set) var materialNeed: [Int: Int]
+    /// 카드마다 수록 팩 중 가장 높은 등급의 칸 (재수록 판정·판매가). 매번 모든 팩을 훑지 않게 미리 만든다.
+    private(set) var topCards: [Int: PackCard]
 
     init(packs: [Pack], cards: [Int: CardInfo]) {
         self.packs = packs
@@ -86,6 +88,25 @@ struct CardDB: Sendable {
         self.allCIDs = cards.keys.sorted()
         self.cidSet = Set(cards.keys)
         self.materialNeed = Self.materialNeeds(allCIDs, cards)
+        self.topCards = Self.topCards(packs)
+    }
+
+    /// 컬렉션 이름순 정렬 키: cid → 이름 순위(Finder 순서, 같은 이름은 같은 순위). 정렬마다 문자열을 비교하지 않으려고 쓴다
+    static func nameRanks(_ cards: [Int: CardInfo]) -> [Int: Int] {
+        let sorted = cards.sorted { $0.value.name.localizedStandardCompare($1.value.name) == .orderedAscending }
+        var ranks: [Int: Int] = [:], rank = 0
+        for (i, (cid, info)) in sorted.enumerated() {
+            if i > 0, sorted[i - 1].value.name.localizedStandardCompare(info.name) != .orderedSame { rank += 1 }
+            ranks[cid] = rank
+        }
+        return ranks
+    }
+
+    /// 같은 등급이면 먼저 나온 팩의 칸
+    private static func topCards(_ packs: [Pack]) -> [Int: PackCard] {
+        packs.flatMap(\.cards).reduce(into: [:]) { top, c in
+            if c.tier > top[c.cid]?.tier ?? .min { top[c.cid] = c }
+        }
     }
 
     private static func materialNeeds(_ cids: [Int], _ cards: [Int: CardInfo]) -> [Int: Int] {
@@ -101,6 +122,7 @@ struct CardDB: Sendable {
         db.cidSet = Set(db.packs.flatMap(\.cards).map(\.cid))
         db.allCIDs = db.cidSet.sorted()
         db.materialNeed = Self.materialNeeds(db.allCIDs, cards)
+        db.topCards = Self.topCards(db.packs)
         return db
     }
 

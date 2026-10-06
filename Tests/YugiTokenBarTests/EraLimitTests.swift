@@ -42,4 +42,18 @@ import Testing
         #expect(game.sellDuplicates() == dup.coins)
         #expect(game.state.owned == [1: 1, 12: 4])
     }
+
+    /// 재수록 카드의 판매가는 시대 범위 안 팩 중 가장 높은 등급으로 (범위 밖 GX 재수록 UR 은 안 친다)
+    @Test func reprintTierFollowsEraLimit() {
+        var packs: [[(cid: Int, tier: Int)]] = (0..<12).map { [($0 + 1, 1)] }
+        packs[3].append((1, 2))   // DM 재수록 R
+        packs[11].append((1, 4))  // GX 재수록 UR
+        var state = GameState()
+        state.eraLimit = "DM"
+        var game = Game(db: makeDB(packs), state: state)
+        #expect(game.topCard(1)?.tier == 2)
+        #expect(game.sellPrice(1) == Balance.sellPrice[2])
+        game.state.eraLimit = "GX"
+        #expect(game.topCard(1)?.tier == 4)
+    }
 }

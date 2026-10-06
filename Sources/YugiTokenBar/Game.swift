@@ -131,9 +131,7 @@ struct Game: Sendable {
     // MARK: 판매
 
     /// 재수록 카드는 수록된 팩 중 가장 높은 티어로 친다(판매가·무료 카드 공통).
-    func topCard(_ cid: Int) -> PackCard? {
-        db.packs.flatMap(\.cards).filter { $0.cid == cid }.max { $0.tier < $1.tier }
-    }
+    func topCard(_ cid: Int) -> PackCard? { db.topCards[cid] }
 
     func sellPrice(_ cid: Int) -> Int {
         Balance.sellPrice[topCard(cid)?.tier ?? 1] ?? 0

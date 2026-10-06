@@ -62,7 +62,7 @@ Sources/YugiTokenBar/
   AppModel.swift       60초마다 사용량 적립, 5분마다 공식 한도 갱신, 저장
   TodayUsageReader.swift  TodayUsage.read와 같은 집계, Claude 로그는 파일별 (수정 시각, 크기) 캐시 (Usage/ 밖에서 감쌈)
   Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·한도 provider + 의존 파일, TodayUsage(신규), NOTICE.md(출처·변경점)
-  CardDB.swift         cards.json 로드, 조회
+  CardDB.swift         cards.json 로드, 조회 (카드별 최고 등급 칸 `topCards`는 시대 범위 DB마다 미리 만들고, 컬렉션 이름순 키 `nameRanks`는 처음 이름순으로 볼 때 한 번 만든다)
   Game.swift           상태·적립·뽑기 (밸런스 상수는 파일 상단)
   ImageCache.swift     카드(YGOPRODeck)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시 (백그라운드에서 디코딩까지 끝내 스크롤 중 메인 스레드가 JPEG를 풀지 않음, 팩은 긴 변 480px로 줄임)
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업

@@ -62,3 +62,13 @@ import Testing
         }
     }
 }
+
+/// 이름순 키: Finder 순서(숫자는 크기순), 같은 이름은 같은 순위(그 안에서는 팩 순번으로 정렬된다)
+@Test func nameRanksFollowFinderOrderAndTieEqualNames() {
+    func info(_ name: String) -> CardInfo {
+        CardInfo(name: name, attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "", imageId: nil)
+    }
+    let r = CardDB.nameRanks([1: info("카드10"), 2: info("카드2"), 3: info("가"), 4: info("카드2")])
+    #expect(r[3]! < r[2]! && r[2]! < r[1]!)
+    #expect(r[2] == r[4])
+}

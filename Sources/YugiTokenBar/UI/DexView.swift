@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DexView: View {
     @EnvironmentObject var model: AppModel
+    @MainActor private static var nameRank: [Int: Int] = [:]
     @State private var scope: DexScope? = .all
     @State private var renaming: Deck?
     @State private var newName = ""
@@ -33,6 +34,9 @@ struct DexView: View {
 
     var body: some View {
         let game = model.game
+        // 카드 목록은 6천 장을 필터·정렬하므로 한 번 그릴 때 한 번만 계산해 아래에서 같이 쓴다
+        let tiered = tierEntries
+        let entries = visible(tiered)
         NavigationSplitView {
             List(selection: $scope) {
                 Label {
@@ -140,7 +144,7 @@ struct DexView: View {
             // 설정에서 시대 범위를 줄여 보던 팩이 사라지면 "전체"로
             .onChange(of: model.db.packs.count) { if case .pack(let i)? = scope, i >= model.db.packs.count { scope = .all } }
             .navigationTitle(title)
-            .navigationSubtitle(subtitle)
+            .navigationSubtitle(subtitle(tiered))
             .searchable(text: $search, placement: .toolbar, prompt: "카드 이름")
             .inspector(isPresented: $showInspector) {
                 detail.inspectorColumnWidth(min: 240, ideal: 260)
@@ -226,12 +230,11 @@ struct DexView: View {
         }
     }
 
-    private var subtitle: String {
+    private func subtitle(_ all: [(number: Int, cid: Int, label: String)]) -> String {
         if case .deck(let id)? = scope, let deck = model.game.deck(id) {
             let p = model.game.deckProgress(deck)
             return "\(p.owned) / \(p.total)장 보유 · 메인 덱 \(Balance.deckSize.lowerBound)~\(Balance.deckSize.upperBound)장"
         }
-        let all = tierEntries
         let owned = all.filter { model.game.copies($0.cid) > 0 }.count
         return "\(owned) / \(all.count)장 보유"
     }
@@ -253,20 +256,22 @@ struct DexView: View {
         .padding(.vertical, 2)
     }
 
-    /// 화면에 보일 카드: 등급 필터 → 미보유 숨기기 → 정렬. 같은 값이면 팩 순번 순.
-    private var entries: [(number: Int, cid: Int, label: String)] {
+    /// 화면에 보일 카드: 등급 필터 → 미보유 숨기기 → 정렬. 같은 값이면 팩 순번 순. (body 밖 동작용, body 는 한 번 계산한 값을 쓴다)
+    private var entries: [(number: Int, cid: Int, label: String)] { visible(tierEntries) }
+
+    private func visible(_ tiered: [(number: Int, cid: Int, label: String)]) -> [(number: Int, cid: Int, label: String)] {
         let game = model.game
-        let list = tierEntries.filter { showUnowned || game.copies($0.cid) > 0 }
+        let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
         let tier = { (e: (number: Int, cid: Int, label: String)) in (PackCard.labels.firstIndex(of: e.label) ?? 0) }
-        let name = { (cid: Int) in model.db.cards[cid]?.name ?? "" }
+        // 카드 목록은 바뀌지 않으니 이름 순위는 처음 이름순으로 볼 때 한 번만 만든다 (비교마다 문자열을 대면 6천 장에 ~50ms)
+        if sort == .name, Self.nameRank.isEmpty { Self.nameRank = CardDB.nameRanks(model.db.cards) }
+        let name = { (cid: Int) in Self.nameRank[cid] ?? .max }
         return list.sorted { a, b in
             switch sort {
             case .pack: break
             case .tierDesc: if tier(a) != tier(b) { return tier(a) > tier(b) }
             case .tierAsc: if tier(a) != tier(b) { return tier(a) < tier(b) }
-            case .name:
-                let c = name(a.cid).localizedStandardCompare(name(b.cid))
-                if c != .orderedSame { return c == .orderedAscending }
+            case .name: if name(a.cid) != name(b.cid) { return name(a.cid) < name(b.cid) }
             case .copies: if game.copies(a.cid) != game.copies(b.cid) { return game.copies(a.cid) > game.copies(b.cid) }
             }
             return a.number < b.number
