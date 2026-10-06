@@ -14,6 +14,7 @@ Claude Code·Codex·Gemini·Grok·Pi·Cursor 토큰 사용량으로 한국 정�
 - 밸런스 수치는 `Game.swift`의 `Balance`에만 둔다. 바꿀 때는 스펙 5절도 같이 고친다.
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 복사본이다. 직접 고치지 말고 `tools/import-usage.sh`(원본 `~/remote-claude-projects/code/PokeTokenBar-carryover`, 커밋 `de617e3`)로 다시 만든다. 바꾼 점은 `Usage/NOTICE.md`에 적는다. 캐시처럼 읽는 쪽 조정은 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
 - 버전과 패치노트는 `CHANGELOG.md` 맨 위에 `## x.y.z — 날짜` 항목을 추가하는 것으로만 올린다. `build-app.sh`(Info.plist)와 앱의 업데이트 확인(main의 raw 파일)이 이 파일을 읽는다.
+- 패치노트는 사용자용 문장(~했습니다)으로, 분류 줄 `**✨ 새로운 기능**`·`**🎨 개선**`·`**⚖️ 밸런스**`·`**🐛 오류 수정**`·`**⚡ 성능**` 중 해당하는 것만 쓴다. 같은 버전 안에서 바뀐 수치는 최종값만, 같은 기능은 모아서, 한 항목엔 한 주제. 내부 구조(cards.json 형식, 해상도 등)는 빼고 커밋에만 남긴다. 큰 버전은 제목 아래에 핵심 변화 한 줄.
 - `Resources/cards.json`은 `python3 tools/build-cards.py`로만 다시 만든다(Konami에 1초 간격으로 요청). 형식만 다시 쓸 때는 `--reformat`(네트워크 없음).
 - UI 문구는 한국어.
 - **문서는 항상 코드와 동기화한다.** 동작·구조·명령이 바뀌면 같은 커밋에서 스펙(해당 절), `Usage/NOTICE.md`, 이 파일을 함께 고친다.
