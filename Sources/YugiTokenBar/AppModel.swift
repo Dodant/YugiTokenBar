@@ -82,7 +82,7 @@ final class AppModel: ObservableObject {
         refreshing = true
         Task {
             defer { refreshing = false }
-            let usage = await Task.detached { TodayUsage.read() }.value
+            let usage = await Task.detached { await TodayUsage.read() }.value
             todayTokens = usage.byProvider
             todayCost = usage.cost
             game.claim(today: usage.date, byProvider: usage.byProvider)

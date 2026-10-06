@@ -7,7 +7,8 @@ REV=de617e3
 DST=Sources/YugiTokenBar/Usage
 mkdir -p "$DST"
 for f in LocalUsageReader AppLog AppEnv BinaryLocator ClaudeAccountRoots CustomScanRoots Models ModelPricing UsageEnvironment LogRepeatSuppressor UsageCost \
-         OAuthLimitsProvider KeychainAccess ProcessRunner CodexRateLimitsProvider; do
+         OAuthLimitsProvider KeychainAccess ProcessRunner CodexRateLimitsProvider \
+         UsageProvider LocalAdditionalUsageProvider LocalAsideUsageReader LocalAntigravityUsageReader CursorUsageAPI AppStatePaths; do
   git -C "$SRC" show "$REV:Sources/PokeTokenBar/Core/$f.swift" > "$DST/$f.swift"
 done
 python3 - "$DST" <<'PY'
@@ -21,5 +22,7 @@ def edit(name, fn):
 edit("UsageCost", lambda s: re.sub(r"\n    func text\(_ l: L.*?\n    }\n\n    func explanation\(_ l: L\).*?\n    }\n", "\n", s, flags=re.S))
 # 설정 화면용 추가 provider 루트 제거 (이 앱은 해당 리더를 복사하지 않음)
 edit("CustomScanRoots", lambda s: re.sub(r'        case "antigravity":.*?(?=        case "pi":)', "", s, flags=re.S))
+# Cursor API 캐시를 이 앱 세이브 폴더에 둔다
+edit("AppStatePaths", lambda s: s.replace('"PTB_STATE_DIR"', '"YTB_STATE_DIR"').replace('appendingPathComponent("PokeTokenBar")', 'appendingPathComponent("YugiTokenBar")'))
 edit("AppLog", lambda s: s.replace("PokeTokenBar.log", "YugiTokenBar.log").replace('"poketokenbar.log"', '"yugitokenbar.log"'))
 PY
