@@ -15,8 +15,8 @@ enum Balance {
     static let freeOpenBatch = 5
     /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
     static let monstersPerPack = 2
-    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 231 < packPrice 라 사고팔기로 코인이 늘지 않는다.
-    static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300, 5: 600]
+    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 206 < packPrice 라 사고팔기로 코인이 늘지 않는다.
+    static let sellPrice: [Int: Int] = [1: 20, 2: 50, 3: 150, 4: 400, 5: 1_200]
     /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
     static let maxCopiesInDeck = 3
     /// 메인 덱 권장 장 수. 표시만 하고 강제하지 않는다.
