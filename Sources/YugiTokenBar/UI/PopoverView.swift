@@ -3,8 +3,8 @@ import SwiftUI
 struct PopoverView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.openWindow) private var openWindow
-    /// 무료 팩·무료 카드 줄이 보이는지. 덮여 있는 동안(개봉·상점·설정)은 갱신하지 않는다:
-    /// 그사이 줄이 생기거나 사라지면(마지막 무료 팩을 열 때 포함) 패널 높이가 바뀌어 개봉 화면이 늘었다 줄었다 한다
+    /// 무료 팩·무료 카드 줄이 보이는지. 덮여 있는 동안(개봉·상점·설정)에는 새로 생기는 줄은 미뤘다가 돌아왔을 때 보이고
+    /// (팩을 까다 무료 팩이 생겨도 개봉 화면이 늘어나지 않게), 다 써서 사라지는 줄은 바로 뺀다(마지막 무료 팩을 열면 원래 높이로)
     @State private var freeRows: (pack: Bool, card: Bool)?
 
     var body: some View {
@@ -21,7 +21,8 @@ struct PopoverView: View {
             .padding(16)
             .frame(width: 340)
             .onChange(of: [covered, model.game.state.freePacks > 0, model.game.state.pendingFree > 0], initial: true) {
-                if !covered { freeRows = (model.game.state.freePacks > 0, model.game.state.pendingFree > 0) }
+                let now = (pack: model.game.state.freePacks > 0, card: model.game.state.pendingFree > 0)
+                freeRows = covered ? (now.pack && freeRows?.pack ?? false, now.card && freeRows?.card ?? false) : now
             }
     }
 
