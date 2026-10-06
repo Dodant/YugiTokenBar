@@ -21,11 +21,11 @@ struct OpeningView: View {
                 Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
                 Spacer()
             }
-            // 팩은 위 4장 + 레어 1장(3열 칸의 약 2.4배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
+            // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
             let packLayout = model.openingPack != nil && pulls.count == 5
             let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
             let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
-            let rareW = (width - 20) / 3 * 2.36
+            let rareW = (width - 20) / 3 * 1.75
             VStack(spacing: 10) {
                 ForEach(Array(stride(from: 0, to: pulls.count, by: cols)), id: \.self) { start in
                     HStack(alignment: .bottom, spacing: 10) {
