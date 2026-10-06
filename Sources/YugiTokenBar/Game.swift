@@ -54,8 +54,9 @@ struct Game: Sendable {
 
     /// 오늘의 provider별 누적 토큰을 받아 늘어난 만큼만 적립한다. 원장은 같은 날 안에서 절대 내려가지 않는다
     /// (일시적으로 0이나 작은 값이 읽혀도 나중에 같은 토큰을 두 번 적립하지 않도록). 반환: 이번에 쌓인 무료 카드 장 수.
+    /// earlier: 원장 날짜부터 어제까지의 날짜별 누적. 날짜가 바뀌면 원장 날짜는 남은 만큼, 그 뒤 앱이 꺼져 있던 날은 전부 적립한다.
     @discardableResult
-    mutating func claim(today: String, byProvider: [String: Int]) -> Int {
+    mutating func claim(today: String, byProvider: [String: Int], earlier: [String: [String: Int]] = [:]) -> Int {
         guard state.claimedDate != nil else {
             // 첫 실행: 설치 전 사용량은 적립하지 않는다.
             state.claimedDate = today
@@ -63,19 +64,24 @@ struct Game: Sendable {
             return 0
         }
         if let d = state.claimedDate, today < d { return 0 }  // 시계/시간대가 과거로 가도 원장을 리셋하지 않는다.
-        if state.claimedDate != today {
+        var delta = 0
+        if let d = state.claimedDate, d != today {
+            for (day, totals) in earlier where d <= day && day < today {
+                delta += Self.increase(from: day == d ? state.claimedByProvider : [:], to: totals)
+            }
             state.claimedDate = today
             state.claimedByProvider = [:]
         }
-        var delta = 0
-        for (provider, current) in byProvider {
-            let claimed = state.claimedByProvider[provider] ?? 0
-            if current > claimed {
-                delta += current - claimed
-                state.claimedByProvider[provider] = current
-            }
+        delta += Self.increase(from: state.claimedByProvider, to: byProvider)
+        for (provider, current) in byProvider where current > state.claimedByProvider[provider] ?? 0 {
+            state.claimedByProvider[provider] = current
         }
         return credit(delta)
+    }
+
+    /// provider별로 원장보다 늘어난 만큼의 합 (줄어든 provider 는 0)
+    private static func increase(from claimed: [String: Int], to current: [String: Int]) -> Int {
+        current.reduce(0) { $0 + max(0, $1.value - (claimed[$1.key] ?? 0)) }
     }
 
     /// 무료 카드는 바로 뽑지 않고 `pendingFree`에 쌓는다(사용자가 직접 연다). 반환: 이번에 쌓인 장 수.

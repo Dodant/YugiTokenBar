@@ -42,4 +42,26 @@ import Testing
         try FileManager.default.removeItem(at: b)
         #expect(await total() == 105)
     }
+
+    /// 읽기 시작: 원장 날짜 0시, 오늘보다 뒤면 오늘, 너무 오래면 catchUpDays 전까지
+    @Test func catchUpStartFollowsLedgerDay() {
+        let cal = Calendar.current
+        let now = cal.date(from: DateComponents(year: 2026, month: 10, day: 7, hour: 15))!
+        let today = cal.startOfDay(for: now)
+        let day = { (n: Int) in cal.date(byAdding: .day, value: n, to: today)! }
+        #expect(TodayUsageReader.start(since: nil, now: now) == today)
+        #expect(TodayUsageReader.start(since: "2026-10-05", now: now) == day(-2))
+        #expect(TodayUsageReader.start(since: "2026-10-09", now: now) == today)
+        #expect(TodayUsageReader.start(since: "2025-01-01", now: now) == day(-TodayUsageReader.catchUpDays))
+    }
+
+    @Test func totalsByDayLeavesOutToday() {
+        func entry(_ day: String, _ input: Int) -> LocalUsageReader.Entry {
+            LocalUsageReader.Entry(id: UUID().uuidString, date: Date(), localDay: day, model: "claude-opus-5-5",
+                                   input: input, output: 0, cacheWrite: 0, cacheRead: 0)
+        }
+        let totals = TodayUsageReader.totalsByDay([entry("2026-10-05", 10), entry("2026-10-05", 5), entry("2026-10-06", 7), entry("2026-10-07", 100)],
+                                                  before: "2026-10-07")
+        #expect(totals == ["2026-10-05": 15, "2026-10-06": 7])
+    }
 }

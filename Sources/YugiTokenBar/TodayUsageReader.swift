@@ -17,14 +17,20 @@ actor TodayUsageReader {
 
     init(claudeRoots: [URL]? = nil) { self.claudeRoots = claudeRoots }
 
-    func read(now: Date = Date()) async -> (date: String, byProvider: [String: Int], cost: [String: Double]) {
-        let start = Calendar.current.startOfDay(for: now)
+    /// 꺼져 있던 날을 거슬러 읽는 최대 일 수. Claude Code 가 기본으로 30일 지난 대화 기록을 지우므로 그보다 앞은 읽을 게 없다.
+    static let catchUpDays = 30
+
+    /// since: 적립 원장 날짜(`claimedDate`). 오늘보다 앞이면 그날부터 어제까지의 날짜별 합계도 `earlier`로 돌려준다
+    /// (앱이 꺼져 있던 날·자정 직전 몫을 `Game.claim`이 적립). 오늘 몫은 `TodayUsage.read`와 같다.
+    func read(since: String? = nil, now: Date = Date())
+        async -> (date: String, byProvider: [String: Int], cost: [String: Double], earlier: [String: [String: Int]]) {
         let today = LocalUsageReader.localDayFormatter().string(from: now)
+        let start = Self.start(since: since, now: now)
         // 아래는 Claude 를 캐시에서 읽는 것만 빼면 TodayUsage.read 와 같다
         let cursor = AppEnv.allowsLiveLimitsFetch
             ? await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: start).entries
             : LocalAdditionalUsageReader.cursorEntries(modifiedSince: start).entries
-        var tokens: [String: Int] = [:], cost: [String: Double] = [:]
+        var tokens: [String: Int] = [:], cost: [String: Double] = [:], earlier: [String: [String: Int]] = [:]
         for (provider, entries) in [
             (Provider.claude, claudeEntries(modifiedSince: start)),
             (.codex, LocalUsageReader.codexEntries(modifiedSince: start)),
@@ -37,8 +43,24 @@ actor TodayUsageReader {
             let b = TodayUsage.bucket(entries, day: today)
             tokens[provider.rawValue] = b.total
             cost[provider.rawValue] = b.cost
+            for (day, total) in Self.totalsByDay(entries, before: today) { earlier[day, default: [:]][provider.rawValue] = total }
         }
-        return (today, tokens, cost)
+        return (today, tokens, cost, earlier)
+    }
+
+    /// 읽기 시작 시각: 원장 날짜의 0시(오늘보다 뒤면 오늘, `catchUpDays`보다 앞이면 그만큼만).
+    static func start(since: String?, now: Date) -> Date {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: now)
+        guard let since, let day = LocalUsageReader.localDayFormatter().date(from: since) else { return today }
+        let oldest = cal.date(byAdding: .day, value: -catchUpDays, to: today) ?? today
+        return min(max(cal.startOfDay(for: day), oldest), today)
+    }
+
+    /// 오늘보다 앞 날짜별 토큰 합계 (`TodayUsage.bucket`과 같은 계산)
+    static func totalsByDay(_ entries: [LocalUsageReader.Entry], before today: String) -> [String: Int] {
+        Dictionary(grouping: entries.filter { $0.localDay < today }, by: \.localDay)
+            .mapValues { TodayUsage.bucket($0, day: $0[0].localDay).total }
     }
 
     /// `LocalUsageReader.claudeEntries(modifiedSince:roots:)` 와 같은 결과. 목록에서 빠진 파일은 캐시에서도 지운다.

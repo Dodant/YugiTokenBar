@@ -35,6 +35,28 @@ import Testing
         #expect(game.state.claimedByProvider["claude_code"] == 120_000)
     }
 
+    /// 날짜가 바뀌면 원장 날짜의 남은 몫과 앱이 꺼져 있던 날을 적립한다 (원장 날짜보다 앞은 버린다)
+    @Test func newDayCreditsRestOfLedgerDayAndDaysAppWasOff() {
+        var game = Game(db: db, state: GameState())
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 900_000])  // 첫 실행: 기준만
+        _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 1_000_000])  // +100K
+        _ = game.claim(today: "2026-10-04", byProvider: ["claude_code": 40_000], earlier: [
+            "2026-09-30": ["claude_code": 999_999],
+            "2026-10-01": ["claude_code": 1_200_000, "codex": 5_000],  // 꺼진 뒤 +200K, codex 는 원장에 없어서 전부
+            "2026-10-02": ["claude_code": 300_000, "codex": 50_000],
+        ])
+        #expect(game.state.dropProgress == 100_000 + 205_000 + 350_000 + 40_000)
+        #expect(game.state.claimedDate == "2026-10-04")
+        #expect(game.state.claimedByProvider == ["claude_code": 40_000])
+    }
+
+    /// 첫 실행은 지난 날짜도 적립하지 않는다 (설치 전 사용량)
+    @Test func firstRunIgnoresEarlierDays() {
+        var game = Game(db: db, state: GameState())
+        _ = game.claim(today: "2026-10-04", byProvider: ["claude_code": 40_000], earlier: ["2026-10-03": ["claude_code": 500_000]])
+        #expect(game.state.dropProgress == 0)
+    }
+
     @Test func newDayStartsLedgerFromZero() {
         var game = Game(db: db, state: GameState())
         var rng = SeededRNG(seed: 1)

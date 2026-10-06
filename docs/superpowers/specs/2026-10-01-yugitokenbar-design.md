@@ -82,7 +82,7 @@ tools/clean-card-back.py  Yugipedia Back-KR.png 에서 로고를 지워 card-bac
 
 - 토큰 = input + output + cacheWrite + cacheRead (PokeTokenBar와 동일).
 - 집계 대상(`TodayUsageReader.read` = `TodayUsage.read`와 같은 결과, 이 Mac의 로컬 로그만. 오늘 바뀐 Claude JSONL은 수십~수백 MB라 파일마다 수정 시각·크기가 그대로면 다시 파싱하지 않고 메모리에 둔 결과를 쓴다. 쓰는 중인 세션 파일은 매번 통째로 다시 읽는다): Claude Code(`~/.claude/projects` 등), Codex(`~/.codex/sessions`·`archived_sessions`), Gemini, Grok(`~/.grok/sessions`), Pi(`~/.pi/agent/sessions`), oh-my-pi, Cursor. Cursor는 실앱·`PTB_PARITY=1`에서만 대시보드 API(`CursorUsageAPI`, Cursor 로그인 토큰)를 쓰고, 실패하거나 개발 실행이면 로컬 `state.vscdb`를 읽는다. API 캐시는 세이브 폴더의 `cursor-usage-api-cache.json`.
-- 매 갱신마다 오늘의 provider별 누적 토큰을 구하고, `claimedToday.byProvider`와의 **양수 차이만** 적립한다. 날짜가 바뀌면 원장을 새로 시작한다 (PokeTokenBar `claimedTodayTokensByProvider` 방식).
+- 매 갱신마다 오늘의 provider별 누적 토큰을 구하고, `claimedToday.byProvider`와의 **양수 차이만** 적립한다. 날짜가 바뀌면 원장을 새로 시작한다 (PokeTokenBar `claimedTodayTokensByProvider` 방식). 그때 원장 날짜(`claimedDate`)부터 어제까지 날짜별 누적도 함께 읽어(`TodayUsageReader.read(since:)`, 최대 `catchUpDays` = 30일. Claude Code가 기본으로 30일 지난 기록을 지운다), 원장 날짜는 원장과의 양수 차이만, 그 뒤 앱이 꺼져 있던 날은 전부 적립한다. 자정 직전 마지막 갱신 뒤 쓴 몫도 여기서 들어온다.
 - 첫 실행 시 오늘 누적치를 원장에 그대로 기록한다 → 설치 전 사용량은 적립하지 않는다.
 - **원장은 같은 날 안에서 절대 내려가지 않는다.** 일시적으로 작은 값이 읽혀도 원장을 낮추지 않아야 나중에 같은 토큰을 두 번 적립하지 않는다.
 - 적립된 delta는 `coinRemainder`에 더해 10,000 토큰마다 `coins += 1`로 환산하고(나머지는 이월), 같은 delta를 `dropProgress`(무료 카드용)에도 더한다.
@@ -216,7 +216,7 @@ VRAINS까지 75팩(6,160종)에서는 "무료 1장 + 1팩" 10,114~11,292회로 �
 ## 8. 테스트
 
 `Tests/YugiTokenBarTests` (시드 고정 RNG 주입):
-- 적립: 같은 누적치를 두 번 반영해도 한 번만 적립, 날짜 변경 시 원장 리셋, 첫 실행은 적립 0
+- 적립: 같은 누적치를 두 번 반영해도 한 번만 적립, 날짜 변경 시 원장 리셋과 지난 날짜 몫 적립, 첫 실행은 적립 0
 - 코인과 무료 카드: 10M 경계, 나머지 이월
 - 판매: 중복 자동 판매는 켰을 때 2장째부터만 팔고 끄면 다시 쌓인다; 자동 판매 취소는 코인을 돌려주고 카드를 되돌리며, 코인이 모자라면 거절
 - 시대 범위: `DM`이면 팩·카드·보유 종 수·무료 카드·무료 팩이 DM 팩 안에서만, 해제하면 전체로 돌아온다; 범위 밖 중복은 팔리지 않고 덱 진행도·즐겨찾기 수에서 빠진다

@@ -108,7 +108,7 @@ final class AppModel {
         refreshing = true
         Task {
             defer { refreshing = false }
-            let usage = await usageReader.read()  // actor 라서 메인 스레드 밖에서 읽는다
+            let usage = await usageReader.read(since: game.state.claimedDate)  // actor 라서 메인 스레드 밖에서 읽는다
             // 같은 값이라도 넣으면 읽는 화면이 다시 그려질 수 있어 바뀔 때만
             if todayTokens != usage.byProvider { todayTokens = usage.byProvider }
             if todayCost != usage.cost { todayCost = usage.cost }
@@ -116,14 +116,14 @@ final class AppModel {
             tokensPerMinute = PartnerMood.tokensPerMinute(from: lastUsage, to: sample)
             lastUsage = sample
             updatePartnerMood()
-            claim(today: usage.date, byProvider: usage.byProvider)
+            claim(today: usage.date, byProvider: usage.byProvider, earlier: usage.earlier)
         }
     }
 
     /// 늘어난 토큰이 있을 때만 적립하고 저장한다. 쉬는 중이면 상태가 그대로라 저장도, 화면 다시 그리기도 하지 않는다.
-    func claim(today: String, byProvider: [String: Int]) {
+    func claim(today: String, byProvider: [String: Int], earlier: [String: [String: Int]] = [:]) {
         var next = game
-        next.claim(today: today, byProvider: byProvider)
+        next.claim(today: today, byProvider: byProvider, earlier: earlier)
         guard next.state != game.state else { return }
         game = next
         save()
