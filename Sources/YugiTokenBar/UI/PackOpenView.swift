@@ -21,8 +21,9 @@ struct OpeningView: View {
                 Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
                 Spacer()
             }
-            // 팩은 위 4장 + 아래 가운데 레어 1장(3열 칸의 1.35배, 위 줄과 조금 띄움). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
-            let cols = model.openingPack != nil && pulls.count == 5 ? 4 : min(max(pulls.count, 1), 3)
+            // 팩은 위 4장 + 레어 1장(3열 칸의 1.35배, 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
+            let packLayout = model.openingPack != nil && pulls.count == 5
+            let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
             let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
             let rareW = (width - 20) / 3 * 1.35
             VStack(spacing: 10) {
@@ -32,12 +33,12 @@ struct OpeningView: View {
                             cell(pulls[i], i).frame(width: isRare(i) ? rareW : cellW)
                         }
                     }
-                    .padding(.top, isRare(start) ? 12 : 0)
+                    .frame(maxHeight: isRare(start) ? .infinity : nil)
                 }
             }
             .frame(maxWidth: .infinity)
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-            Spacer(minLength: 0)
+            if !packLayout { Spacer(minLength: 0) }
             HStack(spacing: 8) {
                 if allFlipped, let again {
                     Button("확인") { model.showOpening = false }.buttonStyle(.glass)
