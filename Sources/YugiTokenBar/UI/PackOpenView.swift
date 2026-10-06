@@ -21,10 +21,10 @@ struct OpeningView: View {
                 Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
                 Spacer()
             }
-            // 팩은 위 4장 + 아래 가운데 레어 1장(3열 칸의 1.15배). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
+            // 팩은 위 4장 + 아래 가운데 레어 1장(3열 칸의 1.35배, 위 줄과 조금 띄움). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
             let cols = model.openingPack != nil && pulls.count == 5 ? 4 : min(max(pulls.count, 1), 3)
             let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
-            let rareW = (width - 20) / 3 * 1.15
+            let rareW = (width - 20) / 3 * 1.35
             VStack(spacing: 10) {
                 ForEach(Array(stride(from: 0, to: pulls.count, by: cols)), id: \.self) { start in
                     HStack(alignment: .bottom, spacing: 10) {
@@ -32,6 +32,7 @@ struct OpeningView: View {
                             cell(pulls[i], i).frame(width: isRare(i) ? rareW : cellW)
                         }
                     }
+                    .padding(.top, isRare(start) ? 12 : 0)
                 }
             }
             .frame(maxWidth: .infinity)
