@@ -34,7 +34,7 @@ import Testing
         game.state.owned[2] = 3
         let fused = game.fuse(10)
         #expect(fused)
-        #expect(game.state.owned == [2: 1, 10: 1, CardDB.fusionSpell: 1])  // 소재1은 마지막 장이라 빠지고, 소재2는 2장만 소비, 「융합」은 남는다
+        #expect(game.state.owned == [1: 1, 2: 1, 10: 1, CardDB.fusionSpell: 1])  // 소재1은 마지막 장이라 남고, 소재2는 2장만 소비, 「융합」은 남는다
         #expect(game.state.log.first?.cid == 10 && game.state.log.first?.source == "융합")
         let unknown = game.fuse(11)
         #expect(game.fusionMaterials(11) == nil && !unknown)  // 소재를 모르는 융합은 못 만든다

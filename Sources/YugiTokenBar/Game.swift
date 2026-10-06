@@ -229,11 +229,11 @@ struct Game: Sendable {
         hasFusionSpell && fusionMaterials(cid)?.allSatisfy { copies($0.key) >= $0.value } == true
     }
 
-    /// 소재를 소비해 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」이 없거나 소재가 모자라면 false.
+    /// 소재를 소비해(1장은 남긴다) 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」이 없거나 소재가 모자라면 false.
     @discardableResult
     mutating func fuse(_ cid: Int) -> Bool {
         guard let materials = fusionMaterials(cid), canFuse(cid) else { return false }
-        for (m, n) in materials { state.owned[m] = copies(m) > n ? copies(m) - n : nil }
+        for (m, n) in materials { state.owned[m] = max(1, copies(m) - n) }  // 마지막 1장은 남겨 컬렉션에서 빠지지 않는다
         give(cid, source: "융합")
         return true
     }

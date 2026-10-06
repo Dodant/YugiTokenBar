@@ -564,7 +564,7 @@ struct DexView: View {
                                     .confirmationDialog("\(card.name) 융합", isPresented: $confirmFuse) {
                                         Button("융합") { model.fuse(cid) }
                                     } message: {
-                                        Text("\(consumed(materials))을 소비해요. 0장이 되는 소재는 컬렉션에서 빠져요.")
+                                        Text("\(consumed(materials))을 소비해요. 소재는 1장씩 남아 컬렉션에서 빠지지 않아요.")
                                     }
                             }
                         }
