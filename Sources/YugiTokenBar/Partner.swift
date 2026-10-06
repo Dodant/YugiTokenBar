@@ -5,17 +5,17 @@ import ImageIO
 enum PartnerAnim: Int, CaseIterable, Sendable {
     case idle, flyRight, flyLeft, wave, flap, sad, excited, puzzled, lookAround
 
-    /// 모든 행이 16프레임
-    var frameCount: Int { PartnerSheet.columns }
+    var frameCount: Int { Self.frameCounts[rawValue] }
+    private static let frameCounts = [6, 8, 8, 4, 5, 8, 6, 6, 6]
 }
 
-/// `Resources/partner.png`(셀 192×208, 16열 × 9행)을 동작별 프레임으로 자른 것.
+/// `Resources/partner.png`(셀 192×208, 8열 × 9행)을 동작별 프레임으로 자른 것.
 struct PartnerSheet {
     static let cell = CGSize(width: 192, height: 208)
-    static let columns = 16
+    static let columns = 8
     let frames: [PartnerAnim: [CGImage]]
 
-    /// 이미지가 아니거나 크기가 격자(3072×1872)와 다르면 nil.
+    /// 이미지가 아니거나 크기가 격자(1536×1872)와 다르면 nil.
     init?(url: URL) {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
@@ -41,7 +41,7 @@ struct PartnerSheet {
 
 /// 파트너 동작 기준값. 게임 밸런스가 아니라서 `Balance`에 두지 않는다.
 enum PartnerTuning {
-    static let fps = 10.0
+    static let fps = 5.0
     /// Claude·Codex 공식 한도 중 가장 높은 %가 이 이상이면 시무룩
     static let sadPercent = 80.0
     static let flyTokensPerMinute = 100_000
