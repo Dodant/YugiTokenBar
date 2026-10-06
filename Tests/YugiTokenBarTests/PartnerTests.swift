@@ -87,17 +87,47 @@ import Testing
         #expect(q.anim == .sad)
     }
 
-    @Test func flyAlternatesDirection() {
-        var p = PartnerPlayer()
+    /// 쉬는 동안이면 끝날 때까지 돌린다. 돌린 틱 수를 돌려준다.
+    private func runRest(_ p: inout PartnerPlayer) -> Int {
+        var n = 0
+        while p.resting { p.tick(); n += 1 }
+        return n
+    }
+
+    @Test func flyAlternatesDirectionWithRests() {
+        var p = PartnerPlayer(rng: SeededRNG(seed: 1))
         p.setMood(.fly)
         run(&p, PartnerAnim.idle.frameCount)
         #expect(p.anim == .flyRight)
         run(&p, PartnerAnim.flyRight.frameCount)
-        #expect(p.anim == .flyRight)  // After one loop, still flyRight
-        run(&p, PartnerAnim.flyRight.frameCount * (PartnerTuning.flyLoops - 1))
-        #expect(p.anim == .flyLeft)  // After flyLoops total, switch to flyLeft
-        run(&p, PartnerAnim.flyLeft.frameCount * PartnerTuning.flyLoops)
-        #expect(p.anim == .flyRight)  // After flyLeft loops, switch back to flyRight
+        #expect(p.resting && p.anim == .flyRight && p.frame == 0)  // 한 바퀴 뒤 첫 프레임에서 쉰다
+        _ = runRest(&p)
+        #expect(p.anim == .flyLeft)  // 쉬고 나면 반대 방향
+        run(&p, PartnerAnim.flyLeft.frameCount)
+        _ = runRest(&p)
+        #expect(p.anim == .flyRight)
+    }
+
+    @Test func baseLoopRestsWithinRange() {
+        for seed in 0..<20 as Range<UInt64> {
+            var p = PartnerPlayer(rng: SeededRNG(seed: seed))
+            p.setMood(.flap)
+            run(&p, PartnerAnim.idle.frameCount)
+            #expect(p.anim == .flap)
+            run(&p, PartnerAnim.flap.frameCount)
+            let range = PartnerTuning.rest(.flap)
+            let ticks = runRest(&p)
+            #expect(ticks >= Int(range.lowerBound * PartnerTuning.fps) && ticks <= Int(range.upperBound * PartnerTuning.fps))
+            #expect(p.anim == .flap && p.frame == 0 && !p.resting)
+        }
+    }
+
+    @Test func oneShotDoesNotRest() {
+        var p = PartnerPlayer(rng: SeededRNG(seed: 2))
+        p.setMood(.sad)
+        p.interrupt(.excited)
+        run(&p, PartnerAnim.excited.frameCount)
+        #expect(p.anim == .sad && !p.resting)  // 한 번 재생 뒤에는 쉬지 않고 바로 기준 상태
     }
 
     @Test func oneShotInteractions() {
@@ -134,9 +164,10 @@ import Testing
     }
 
     @Test func idleLooksAroundEventually() {
-        var p = PartnerPlayer()
+        var p = PartnerPlayer(rng: SeededRNG(seed: 3))
         var seen = false
-        for _ in 0..<(PartnerTuning.lookAroundTicks + 60) {
+        let maxIdle = PartnerTuning.lookAroundEvery.upperBound + PartnerTuning.rest(.idle).upperBound
+        for _ in 0..<Int(maxIdle * PartnerTuning.fps) + PartnerAnim.idle.frameCount {
             p.tick()
             seen = seen || p.anim == .lookAround
         }

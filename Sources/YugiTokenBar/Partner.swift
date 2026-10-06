@@ -46,12 +46,17 @@ enum PartnerTuning {
     static let sadPercent = 80.0
     static let flyTokensPerMinute = 100_000
     static let flapTokensPerMinute = 1_000
-    /// 비행 행을 한 방향으로 몇 번 돌고 방향을 바꾸나
-    static let flyLoops = 2
-    /// 대기: 깜빡임 뒤 첫 프레임으로 멈춰 있는 틱 (3초)
-    static let idleHoldTicks = Int(3 * fps)
-    /// 대기가 이만큼(20초) 이어지면 두리번 1회
-    static let lookAroundTicks = Int(20 * fps)
+    /// 기준 동작을 한 바퀴 재생한 뒤 첫 프레임에서 쉬는 시간(초). 범위 안에서 무작위.
+    static func rest(_ mood: PartnerMood) -> ClosedRange<Double> {
+        switch mood {
+        case .idle: 3...8
+        case .flap: 2...5
+        case .fly: 1...3
+        case .sad: 4...8
+        }
+    }
+    /// 대기가 이만큼(초, 무작위) 이어지면 두리번 1회
+    static let lookAroundEvery = 20.0...40.0
     /// 메뉴바 깜빡임 주기 (4초)
     static let menuBlinkTicks = Int(4 * fps)
     /// 바탕화면 파트너 높이(pt). 설정 슬라이더는 16 단위.
@@ -77,6 +82,16 @@ enum PartnerMood: Equatable, Sendable {
         return .idle
     }
 
+    /// 이 상태의 기준 동작인가 (쉬기 여부 판단용)
+    func plays(_ anim: PartnerAnim) -> Bool {
+        switch self {
+        case .idle: anim == .idle || anim == .lookAround
+        case .flap: anim == .flap
+        case .fly: anim == .flyRight || anim == .flyLeft
+        case .sad: anim == .sad
+        }
+    }
+
     /// 직전 갱신과의 합계 차이 ÷ 경과 분(1분 미만은 1분으로 쳐서 튀지 않게). 첫 갱신·날짜 변경·감소는 0.
     static func tokensPerMinute(from previous: UsageSample?, to current: UsageSample) -> Int {
         guard let previous, previous.date == current.date, current.total > previous.total else { return 0 }
@@ -85,18 +100,30 @@ enum PartnerMood: Equatable, Sendable {
     }
 }
 
-/// 파트너 애니메이션 진행 (1틱 = 1/fps 초). 한 번 재생 동작은 큐로 받아 기준 상태를 잠시 덮는다.
+/// 파트너 애니메이션 진행 (1틱 = 1/fps 초). 기준 동작은 한 바퀴마다 무작위로 쉬고,
+/// 한 번 재생 동작은 큐로 받아 기준 상태를 잠시 덮는다(끝나면 쉬지 않고 기준 상태로).
 struct PartnerPlayer: Sendable {
     private(set) var mood: PartnerMood = .idle
     private(set) var anim: PartnerAnim = .idle
     private(set) var frame = 0
     private(set) var queue: [PartnerAnim] = []
-    /// 대기 첫 프레임으로 멈춰 있을 남은 틱
+    /// 첫 프레임으로 쉬고 있을 남은 틱
     private var hold = 0
-    /// 지금 동작을 몇 번 돌았나 (비행 방향 전환용)
-    private var loops = 0
-    /// 대기가 이어진 틱 (두리번용)
+    /// 지금 동작이 한 번 재생(큐·클릭)인가
+    private var oneShot = false
+    /// 대기가 이어진 틱과, 두리번까지 남은 기준 (틱)
     private var idleTicks = 0
+    private var lookAroundAt: Int
+    private var rng: any RandomNumberGenerator & Sendable
+
+    init(rng: any RandomNumberGenerator & Sendable = SystemRandomNumberGenerator()) {
+        self.rng = rng
+        lookAroundAt = 0
+        lookAroundAt = randomTicks(PartnerTuning.lookAroundEvery)
+    }
+
+    /// 기준 동작 사이에 쉬는 중
+    var resting: Bool { hold > 0 }
 
     mutating func setMood(_ next: PartnerMood) {
         guard next != mood else { return }
@@ -116,38 +143,50 @@ struct PartnerPlayer: Sendable {
     mutating func interrupt(_ a: PartnerAnim) {
         queue.removeAll()
         hold = 0
-        start(a)
+        start(a, oneShot: true)
     }
 
     mutating func tick() {
         if mood == .idle { idleTicks += 1 }
-        if hold > 0 { hold -= 1; return }
+        if hold > 0 {
+            hold -= 1
+            if hold == 0 { advance() }
+            return
+        }
         frame += 1
         guard frame >= anim.frameCount else { return }
-        loops += 1
-        advance()
+        // 한 번 재생·큐·상태가 바뀐 뒤의 옛 동작이면 바로 다음으로, 지금 상태의 동작이면 첫 프레임에서 쉰다
+        if oneShot || !queue.isEmpty || !mood.plays(anim) { advance(); return }
+        frame = 0
+        hold = max(1, randomTicks(PartnerTuning.rest(mood)))
     }
 
-    /// 지금 동작이 한 바퀴 끝났을 때: 큐 → 기준 상태
+    /// 다음 동작: 큐 → 기준 상태
     private mutating func advance() {
-        if !queue.isEmpty { start(queue.removeFirst()); return }
+        if !queue.isEmpty { start(queue.removeFirst(), oneShot: true); return }
         switch mood {
         case .sad: start(.sad)
         case .flap: start(.flap)
-        case .fly:
-            if anim != .flyRight && anim != .flyLeft { start(.flyRight) }
-            else if loops >= PartnerTuning.flyLoops { start(anim == .flyRight ? .flyLeft : .flyRight) }
-            else { frame = 0 }
+        case .fly: start(anim == .flyRight ? .flyLeft : .flyRight)
         case .idle:
-            if idleTicks >= PartnerTuning.lookAroundTicks { idleTicks = 0; start(.lookAround) }
-            else { start(.idle); hold = PartnerTuning.idleHoldTicks }
+            if idleTicks >= lookAroundAt {
+                idleTicks = 0
+                lookAroundAt = randomTicks(PartnerTuning.lookAroundEvery)
+                start(.lookAround)
+            } else {
+                start(.idle)
+            }
         }
     }
 
-    private mutating func start(_ a: PartnerAnim) {
-        if a != anim { loops = 0 }
+    private mutating func start(_ a: PartnerAnim, oneShot: Bool = false) {
         anim = a
         frame = 0
+        self.oneShot = oneShot
+    }
+
+    private mutating func randomTicks(_ seconds: ClosedRange<Double>) -> Int {
+        Int((Double.random(in: seconds, using: &rng) * PartnerTuning.fps).rounded())
     }
 
     /// 메뉴바 대기 행 프레임: menuBlinkTicks 마다 깜빡임 한 번, 나머지는 첫 프레임 (라벨을 다시 그리는 횟수를 줄이려고).
