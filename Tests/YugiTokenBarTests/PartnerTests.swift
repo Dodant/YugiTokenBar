@@ -7,7 +7,7 @@ import Testing
     // MARK: 시트
 
     @Test func sheetSlicesEveryRow() throws {
-        #expect(PartnerAnim.allCases.map(\.frameCount) == [6, 8, 8, 4, 5, 8, 6, 6, 6])
+        #expect(PartnerAnim.allCases.map(\.frameCount) == Array(repeating: 16, count: 9))
         let sheet = try #require(PartnerSheet.bundled())
         for anim in PartnerAnim.allCases {
             let frames = try #require(sheet.frames[anim])
@@ -144,8 +144,8 @@ import Testing
     }
 
     @Test func menuBlinksPeriodically() {
-        #expect((0..<6).map { PartnerPlayer.menuFrame(tick: $0) } == [0, 1, 2, 3, 4, 5])
-        #expect(PartnerPlayer.menuFrame(tick: 6) == 0)
+        #expect((0..<16).map { PartnerPlayer.menuFrame(tick: $0) } == Array(0..<16))
+        #expect(PartnerPlayer.menuFrame(tick: 16) == 0)
         #expect(PartnerPlayer.menuFrame(tick: PartnerTuning.menuBlinkTicks - 1) == 0)
         #expect(PartnerPlayer.menuFrame(tick: PartnerTuning.menuBlinkTicks + 1) == 1)
     }
