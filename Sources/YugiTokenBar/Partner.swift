@@ -225,9 +225,16 @@ extension PartnerAnim {
         if sheet == nil { AppLog.write("partner.png 를 읽지 못해 파트너를 끕니다") }
         let images = sheet?.frames ?? [:]
         frames = images.mapValues { $0.map { NSImage(cgImage: $0, size: PartnerSheet.cell) } }
-        let height = 18.0
-        let menuSize = NSSize(width: height * PartnerSheet.cell.width / PartnerSheet.cell.height, height: height)
-        menuFrames = (images[.idle] ?? []).map { NSImage(cgImage: $0, size: menuSize) }
+        // 메뉴바: 셀 위쪽 빈 공간(대기 행 그림은 y 54~203)을 잘라 세로 가운데에 오게 하고, 숫자와 살짝 띄운다
+        let crop = CGRect(x: 0, y: 50, width: PartnerSheet.cell.width, height: 157)
+        let height = 18.0, gap = 3.0
+        let iconSize = NSSize(width: height * crop.width / crop.height, height: height)
+        menuFrames = (images[.idle] ?? []).compactMap { $0.cropping(to: crop) }.map { cg in
+            NSImage(size: NSSize(width: iconSize.width + gap, height: height), flipped: false) { _ in
+                NSImage(cgImage: cg, size: iconSize).draw(in: NSRect(origin: .zero, size: iconSize))
+                return true
+            }
+        }
     }
 
     var isReady: Bool { !menuFrames.isEmpty }
