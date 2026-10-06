@@ -155,6 +155,14 @@ struct Game: Sendable {
         return price
     }
 
+    /// 자동 판매 취소: 받은 코인을 돌려주고 카드를 1장 되돌린다. 그사이 코인을 써서 모자라면 false.
+    mutating func unsell(_ cid: Int, refund: Int) -> Bool {
+        guard state.coins >= refund else { return false }
+        state.coins -= refund
+        state.owned[cid, default: 0] += 1
+        return true
+    }
+
     /// 중복분(`keep` 장 넘는 것)을 팔면 받을 (장 수, 코인). 각 카드 `keep` 장은 남는다.
     var duplicatesValue: (count: Int, coins: Int) {
         state.owned.filter { db.cidSet.contains($0.key) }.reduce((0, 0)) { acc, kv in

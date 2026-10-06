@@ -170,6 +170,14 @@ import Testing
         #expect(second.compactMap(\.soldFor).sorted() == [Balance.sellPrice[1]!, Balance.sellPrice[4]!])
         #expect(game.state.owned == [1: 1, 2: 1])
         #expect(game.state.coins == 10_000 - 2 * Balance.packPrice + Balance.sellPrice[1]! + Balance.sellPrice[4]!)
+        // 판매 취소: 코인을 돌려주고 카드가 돌아온다, 코인이 모자라면 거절
+        let kept = game.unsell(2, refund: Balance.sellPrice[4]!)
+        #expect(kept)
+        #expect(game.state.owned == [1: 1, 2: 2])
+        #expect(game.state.coins == 10_000 - 2 * Balance.packPrice + Balance.sellPrice[1]!)
+        let short = game.unsell(1, refund: game.state.coins + 1)
+        #expect(!short)
+        game.state.owned[2] = 1
         game.state.autoSellDuplicates = false
         _ = game.buy(pack: 0, using: &rng)
         #expect(game.state.owned == [1: 2, 2: 2])

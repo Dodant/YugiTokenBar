@@ -177,6 +177,14 @@ final class AppModel: ObservableObject {
         set { guard newValue != game.state.partnerSize else { return }; game.state.partnerSize = newValue; save(); updatePartner() }
     }
 
+    /// 개봉 화면에서 자동 판매된 i 번째 카드를 판매 취소
+    func keepSold(at i: Int) {
+        guard opening.indices.contains(i), let coins = opening[i].soldFor,
+              game.unsell(opening[i].cid, refund: coins) else { return }
+        opening[i].soldFor = nil
+        save()
+    }
+
     func fuse(_ cid: Int) {
         guard game.fuse(cid) else { return }
         save()

@@ -65,7 +65,7 @@ struct OpeningView: View {
 
     private func cell(_ pull: Pull, _ i: Int) -> some View {
         VStack(spacing: 4) {
-            FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
+            FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
                 .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
             // 상점 팩 칸처럼 아래 이름 한 줄. 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
             Text(model.db.cards[pull.cid]?.name ?? " ")
@@ -103,6 +103,10 @@ struct FlipCard: View {
     let pull: Pull
     let db: CardDB
     let flipped: Bool
+    var canUnsell = false
+    /// 자동 판매 표시(+ⓒ)에 마우스를 올리면 ✕ 로 바뀌고, 누르면 판매를 취소한다
+    var onUnsell: (() -> Void)?
+    @State private var hoverSold = false
 
     var body: some View {
         ZStack {
@@ -110,7 +114,15 @@ struct FlipCard: View {
                 .overlay(alignment: .bottomLeading) { RarityPill(label: pull.label, size: 10).padding(4) }
                 .overlay(alignment: .topTrailing) {
                     if pull.isNew { tag("NEW", .pink) }
-                    else if let coins = pull.soldFor { tag("+\(coinText(coins))", .green) }
+                    else if let coins = pull.soldFor {
+                        Button { onUnsell?() } label: {
+                            tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+\(coinText(coins))", hoverSold && canUnsell ? .red : .green)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!canUnsell)
+                        .onHover { hoverSold = $0 }
+                        .help(canUnsell ? "판매 취소: 코인을 돌려주고 카드를 가져요" : "코인이 모자라 취소할 수 없어요")
+                    }
                 }
                 .shadow(color: pull.tier == 2 ? Rarity.color(tier: 2) : .clear, radius: 10)
                 .modifier(RareEffect(tier: pull.tier, active: flipped))
