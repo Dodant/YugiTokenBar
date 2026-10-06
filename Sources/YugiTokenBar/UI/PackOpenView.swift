@@ -20,7 +20,8 @@ struct OpeningView: View {
                 Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
                 Spacer()
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+            // 1~2장(무료 카드)이면 그 수만큼 열을 줘서 폭을 채운다
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: min(max(pulls.count, 1), 3)), spacing: 10) {
                 ForEach(Array(pulls.enumerated()), id: \.offset) { i, pull in
                     VStack(spacing: 4) {
                         FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
