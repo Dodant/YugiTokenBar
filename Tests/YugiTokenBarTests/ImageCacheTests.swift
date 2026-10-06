@@ -57,6 +57,33 @@ import Testing
         #expect(again !== b)  // 밀려나서 디스크에서 다시
     }
 
+    /// 기다리던 셀이 하나라도 남아 있으면 받기를 이어 가고, 다 사라지면(스크롤로 지나감) 받기를 취소한다
+    @MainActor @Test func keepsDownloadWhileSomeoneWaits() async throws {
+        let cache = ImageCache(dir: tempDir()) { _, _, _ in
+            try? await Task.sleep(for: .milliseconds(300))
+            return Task.isCancelled ? nil : onePixel()
+        }
+        let gone = Task { await cache.image(1, size: .small) }
+        let staying = Task { await cache.image(1, size: .small) }
+        try await Task.sleep(for: .milliseconds(50))
+        gone.cancel()
+        #expect(await staying.value != nil)
+    }
+
+    @MainActor @Test func cancelsDownloadWhenEveryoneLeaves() async throws {
+        let seen = CancelFlag()
+        let cache = ImageCache(dir: tempDir()) { _, _, _ in
+            try? await Task.sleep(for: .seconds(10))
+            if Task.isCancelled { await seen.set() }
+            return nil
+        }
+        let gone = Task { await cache.image(1, size: .small) }
+        try await Task.sleep(for: .milliseconds(50))
+        gone.cancel()
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(await seen.value)
+    }
+
     /// 팩 이미지는 긴 변이 maxPixels 를 넘지 않게 줄여서 디코딩한다
     @Test func decodeDownsamplesToMaxPixels() throws {
         let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 300, pixelsHigh: 600, bitsPerSample: 8,
@@ -67,4 +94,14 @@ import Testing
         #expect(max(small.width, small.height) == 120)
         #expect(ImageCache.decode(data, maxPixels: nil)?.height == 600)
     }
+}
+
+private actor CancelFlag {
+    var value = false
+    func set() { value = true }
+}
+
+private func onePixel() -> CGImage? {
+    CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 0,
+              space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?.makeImage()
 }

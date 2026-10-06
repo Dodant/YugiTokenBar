@@ -13,13 +13,18 @@ final class ImageCache {
 
     let dir: URL
     private let memory = NSCache<NSString, NSImage>()
-    private var inFlight: [String: Task<CGImage?, Never>] = [:]
+    /// 받는 중인 이미지와 그걸 기다리는 뷰 수. 기다리는 뷰가 다 사라지면(스크롤로 셀이 지나감) 받기를 취소한다.
+    private var inFlight: [String: (task: Task<CGImage?, Never>, waiters: Int)] = [:]
+    /// (원본 URL, 캐시 파일, maxPixels) → 이미지. 테스트가 네트워크 대신 넣는다.
+    private let loader: @Sendable (URL, URL, Int?) async -> CGImage?
 
     /// memoryLimit: 메모리 캐시 상한(디코딩된 픽셀 바이트). 작은 카드 한 장이 약 400KB 라 150MB 면 수백 장,
     /// 도감 한 화면(수십 장)과 그 앞뒤 스크롤은 넉넉히 남고, 6천 장을 다 훑어도 그 이상 쌓이지 않는다.
     init(dir: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("YugiTokenBar"), memoryLimit: Int = 150 << 20) {
+        .appendingPathComponent("YugiTokenBar"), memoryLimit: Int = 150 << 20,
+         loader: @escaping @Sendable (URL, URL, Int?) async -> CGImage? = ImageCache.load) {
         self.dir = dir
+        self.loader = loader
         memory.totalCostLimit = memoryLimit
     }
 
@@ -77,18 +82,29 @@ final class ImageCache {
     private func image(key: String, url: URL, maxPixels: Int? = nil) async -> NSImage? {
         if let image = memory.object(forKey: key as NSString) { return image }
         let file = dir.appendingPathComponent("\(key).jpg")
-        let task = inFlight[key] ?? Task.detached { await Self.load(url, file: file, maxPixels: maxPixels) }
-        inFlight[key] = task
-        let cg = await task.value
-        inFlight[key] = nil
+        let loader = loader
+        let task = inFlight[key]?.task ?? Task.detached { await loader(url, file, maxPixels) }
+        inFlight[key] = (task, (inFlight[key]?.waiters ?? 0) + 1)
+        let cg = await withTaskCancellationHandler { await task.value } onCancel: {
+            Task { @MainActor in self.leave(key, task) }
+        }
+        if inFlight[key]?.task == task { inFlight[key] = nil }  // 그사이 새로 시작한 받기는 남긴다
         guard let cg else { return nil }
         let image = NSImage(cgImage: cg, size: .zero)
         memory.setObject(image, forKey: key as NSString, cost: cg.bytesPerRow * cg.height)
         return image
     }
 
+    /// 기다리던 뷰 하나가 사라졌다. 남은 뷰가 없으면 받기를 취소한다.
+    private func leave(_ key: String, _ task: Task<CGImage?, Never>) {
+        guard let entry = inFlight[key], entry.task == task else { return }
+        if entry.waiters > 1 { inFlight[key]?.waiters -= 1; return }
+        task.cancel()
+        inFlight[key] = nil
+    }
+
     /// 받아서(또는 디스크에서 읽어서) 바로 디코딩한다. 깨진 캐시 파일은 지워 다음에 다시 받게 한다.
-    private nonisolated static func load(_ url: URL, file: URL, maxPixels: Int?) async -> CGImage? {
+    nonisolated static func load(_ url: URL, file: URL, maxPixels: Int?) async -> CGImage? {
         guard let data = await fetch(url, file: file) else { return nil }
         guard let image = decode(data, maxPixels: maxPixels) else {
             try? FileManager.default.removeItem(at: file)
@@ -109,9 +125,17 @@ final class ImageCache {
         return CGImageSourceCreateImageAtIndex(source, 0, options as CFDictionary)
     }
 
+    /// 호스트당 동시 연결을 줄인다(기본 6). 빠르게 스크롤해도 YGOPRODeck 에 한꺼번에 몰리지 않게.
+    // ponytail: 동시 연결 수만 막는다. 초당 요청 수 제한이 문제 되면 받기 사이 간격(토큰 버킷) 추가
+    private nonisolated static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.httpMaximumConnectionsPerHost = 3
+        return URLSession(configuration: config)
+    }()
+
     private nonisolated static func fetch(_ url: URL, file: URL) async -> Data? {
         if let data = try? Data(contentsOf: file) { return data }
-        guard let (data, response) = try? await URLSession.shared.data(from: url),
+        guard let (data, response) = try? await session.data(from: url),
               (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? data.write(to: file, options: .atomic)

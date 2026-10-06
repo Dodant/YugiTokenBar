@@ -17,6 +17,40 @@ import Testing
         #expect(store.load() == state)
     }
 
+    /// 모든 필드를 기본값과 다르게 채워 저장 → 읽기. `init(from:)` 에 새 필드 한 줄을 빠뜨리면 그 값이 실행마다 기본값으로 돌아가는데,
+    /// 그걸 잡는다. 새 필드를 추가하면 아래 채우기에도 넣어야 첫 검사가 통과한다.
+    @Test func everyFieldSurvivesSaveAndLoad() throws {
+        var state = GameState()
+        state.coins = 1
+        state.coinRemainder = 2
+        state.dropProgress = 3
+        state.owned = [4007: 2]
+        state.claimedDate = "2026-10-01"
+        state.claimedByProvider = ["codex": 5]
+        state.pendingFree = 4
+        state.packStamp = 5
+        state.freePacks = 6
+        state.favorites = [4007]
+        state.autoSellDuplicates = true
+        state.fusionOnly = true
+        state.animationsOff = true
+        state.eraLimit = "DM"
+        state.partnerUnlocked = true
+        state.partnerEnabled = false
+        state.partnerSize = 200
+        state.partnerOrigin = CGPoint(x: 10, y: 20)
+        state.decks = [Deck(name: "덱", cards: [4007: 1])]
+        state.log = [LogEntry(cid: 4007, source: LogEntry.free, date: Date(timeIntervalSince1970: 1_000))]
+
+        let defaults = Dictionary(uniqueKeysWithValues: Mirror(reflecting: GameState()).children.map { ($0.label!, "\($0.value)") })
+        let unfilled = Mirror(reflecting: state).children.filter { defaults[$0.label!] == "\($0.value)" }.map { $0.label! }
+        #expect(unfilled.isEmpty, "기본값 그대로인 필드: \(unfilled)")
+
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        try store.save(state)
+        #expect(store.load() == state)
+    }
+
     @Test func olderSaveMissingKeysStillLoads() throws {
         let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
         try Data(#"{"coins":7,"owned":{"4007":2}}"#.utf8).write(to: store.url)
