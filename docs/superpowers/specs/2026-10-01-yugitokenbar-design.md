@@ -60,6 +60,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량을 보�
 Sources/YugiTokenBar/
   App.swift            앱 진입, 메뉴바 라벨
   AppModel.swift       60초마다 사용량 적립, 5분마다 공식 한도 갱신, 저장
+  TodayUsageReader.swift  TodayUsage.read와 같은 집계, Claude 로그는 파일별 (수정 시각, 크기) 캐시 (Usage/ 밖에서 감쌈)
   Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·한도 provider + 의존 파일, TodayUsage(신규), NOTICE.md(출처·변경점)
   CardDB.swift         cards.json 로드, 조회
   Game.swift           상태·적립·뽑기 (밸런스 상수는 파일 상단)
@@ -77,7 +78,7 @@ tools/build-cards.py
 ### 토큰 적립
 
 - 토큰 = input + output + cacheWrite + cacheRead (PokeTokenBar와 동일).
-- 집계 대상(`TodayUsage.read`, 이 Mac의 로컬 로그만): Claude Code(`~/.claude/projects` 등), Codex(`~/.codex/sessions`·`archived_sessions`), Gemini, Grok(`~/.grok/sessions`), Pi(`~/.pi/agent/sessions`), oh-my-pi, Cursor. Cursor는 실앱·`PTB_PARITY=1`에서만 대시보드 API(`CursorUsageAPI`, Cursor 로그인 토큰)를 쓰고, 실패하거나 개발 실행이면 로컬 `state.vscdb`를 읽는다. API 캐시는 세이브 폴더의 `cursor-usage-api-cache.json`.
+- 집계 대상(`TodayUsageReader.read` = `TodayUsage.read`와 같은 결과, 이 Mac의 로컬 로그만. 오늘 바뀐 Claude JSONL은 수십~수백 MB라 파일마다 수정 시각·크기가 그대로면 다시 파싱하지 않고 메모리에 둔 결과를 쓴다. 쓰는 중인 세션 파일은 매번 통째로 다시 읽는다): Claude Code(`~/.claude/projects` 등), Codex(`~/.codex/sessions`·`archived_sessions`), Gemini, Grok(`~/.grok/sessions`), Pi(`~/.pi/agent/sessions`), oh-my-pi, Cursor. Cursor는 실앱·`PTB_PARITY=1`에서만 대시보드 API(`CursorUsageAPI`, Cursor 로그인 토큰)를 쓰고, 실패하거나 개발 실행이면 로컬 `state.vscdb`를 읽는다. API 캐시는 세이브 폴더의 `cursor-usage-api-cache.json`.
 - 매 갱신마다 오늘의 provider별 누적 토큰을 구하고, `claimedToday.byProvider`와의 **양수 차이만** 적립한다. 날짜가 바뀌면 원장을 새로 시작한다 (PokeTokenBar `claimedTodayTokensByProvider` 방식).
 - 첫 실행 시 오늘 누적치를 원장에 그대로 기록한다 → 설치 전 사용량은 적립하지 않는다.
 - **원장은 같은 날 안에서 절대 내려가지 않는다.** 일시적으로 작은 값이 읽혀도 원장을 낮추지 않아야 나중에 같은 토큰을 두 번 적립하지 않는다.

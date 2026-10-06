@@ -31,6 +31,8 @@ final class AppModel: ObservableObject {
     let partner: PartnerModel
     /// 바탕화면 파트너 창 (해금되고 처음 보일 때 만든다)
     private var partnerPanel: PartnerPanel?
+    /// 오늘 사용량 (Claude 로그는 파일별로 캐시)
+    private let usageReader = TodayUsageReader()
     private var lastUsage: UsageSample?
     private var tokensPerMinute = 0
     /// 마지막으로 파트너 반응을 계산한 상태
@@ -102,7 +104,8 @@ final class AppModel: ObservableObject {
         refreshing = true
         Task {
             defer { refreshing = false }
-            let usage = await Task.detached { await TodayUsage.read() }.value
+            let reader = usageReader
+            let usage = await Task.detached { await reader.read() }.value
             todayTokens = usage.byProvider
             todayCost = usage.cost
             let sample = UsageSample(date: usage.date, total: usage.byProvider.values.reduce(0, +), at: Date())

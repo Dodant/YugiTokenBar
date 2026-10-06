@@ -17,4 +17,29 @@ import Testing
         #expect(TodayUsage.total(entries, day: today) == 4123)
         #expect(TodayUsage.total(entries, day: "1999-01-01") == 0)
     }
+
+    /// 파일별 캐시: 캐시 없는 경로와 같은 값, 줄이 붙으면 다시 읽고, 지운 파일은 빠진다
+    @Test func todayReaderCachesPerFileAndFollowsChanges() async throws {
+        let root = tempDir()
+        let project = root.appendingPathComponent("proj")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let ts = ISO8601DateFormatter().string(from: Date())
+        func line(_ id: String, _ input: Int) -> String {
+            #"{"type":"assistant","timestamp":"\#(ts)","requestId":"r\#(id)","message":{"id":"m\#(id)","model":"claude-opus-5-5","usage":{"input_tokens":\#(input),"output_tokens":0}}}"# + "\n"
+        }
+        let a = project.appendingPathComponent("a.jsonl"), b = project.appendingPathComponent("b.jsonl")
+        try line("1", 100).write(to: a, atomically: true, encoding: .utf8)
+        try line("2", 20).write(to: b, atomically: true, encoding: .utf8)
+        let since = Date().addingTimeInterval(-3600)
+        let today = LocalUsageReader.localDayFormatter().string(from: Date())
+        let reader = TodayUsageReader(claudeRoots: [root])
+        func total() async -> Int { TodayUsage.total(await reader.claudeEntries(modifiedSince: since), day: today) }
+
+        #expect(await total() == 120)
+        #expect(await total() == TodayUsage.total(LocalUsageReader.claudeEntries(modifiedSince: since, roots: [root]), day: today))
+        try (line("1", 100) + line("3", 5)).write(to: a, atomically: true, encoding: .utf8)
+        #expect(await total() == 125)
+        try FileManager.default.removeItem(at: b)
+        #expect(await total() == 105)
+    }
 }
