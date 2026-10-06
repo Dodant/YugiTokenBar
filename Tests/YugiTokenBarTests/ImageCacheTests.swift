@@ -27,6 +27,25 @@ import Testing
         #expect(await cache.image(id, size: .full) != nil)
     }
 
+    /// cached 는 메모리에 올라온 것만 바로 준다 (비동기 image 와 같은 키: 크기별, 오버프레임은 크기 무관)
+    @MainActor @Test func cachedReturnsOnlyWhatIsInMemory() async throws {
+        let dir = tempDir()
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2, bitsPerSample: 8,
+                                   samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let over = try #require(ImageCache.overframe.keys.first)
+        for name in ["cards_small-7", "overframe-\(over)"] {
+            try rep.representation(using: .png, properties: [:])!.write(to: dir.appendingPathComponent("\(name).jpg"))
+        }
+        let cache = ImageCache(dir: dir)
+        #expect(cache.cached(7, size: .small) == nil)  // 디스크에만 있으면 없다
+        let small = try #require(await cache.image(7, size: .small))
+        #expect(cache.cached(7, size: .small) === small)
+        #expect(cache.cached(7, size: .full) == nil)
+        let o = try #require(await cache.image(over, size: .small))
+        #expect(cache.cached(over, size: .full) === o)
+    }
+
     @MainActor @Test func removesGarbageCacheFileAndRetriesNextCall() async throws {
         let dir = tempDir()
         let cacheFile = dir.appendingPathComponent("cards_small-456.jpg")

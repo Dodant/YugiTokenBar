@@ -272,7 +272,9 @@ struct DexView: View {
     private func visible(_ tiered: [DexEntry]) -> [DexEntry] {
         let game = model.game
         let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
-        let tier = { (e: DexEntry) in model.db.tier(e.cid) }
+        // 비교마다 model.db(관찰 게터 + 시대 DB 조회)를 거치지 않게 한 번만 꺼낸다
+        let db = game.db
+        let tier = { (e: DexEntry) in db.tier(e.cid) }
         // 카드 목록은 바뀌지 않으니 이름 순위는 처음 이름순으로 볼 때 한 번만 만든다 (비교마다 문자열을 대면 6천 장에 ~50ms)
         if sort == .name, Self.nameRank.isEmpty { Self.nameRank = CardDB.nameRanks(model.db.cards) }
         let name = { (cid: Int) in Self.nameRank[cid] ?? .max }
@@ -380,6 +382,15 @@ struct DexView: View {
         .contentShape(Rectangle()) }
         .help(model.db.cards[cid]?.name ?? "")
         .onTapGesture { select(cid) }
+        // VoiceOver: 셀 하나를 카드 한 장으로 읽고, 마우스를 올려야 보이는 ☆·− 는 동작으로 둔다
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(cellLabel(cid, label: label, inDeck: inDeck))
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAction { select(cid) }
+        .accessibilityActions {
+            Button(game.state.favorites.contains(cid) ? "즐겨찾기 해제" : "즐겨찾기") { model.toggleFavorite(cid) }
+            if let deckID { Button("덱에서 1장 빼기") { model.removeFromDeck(deckID, [cid]) } }
+        }
         // 사이드바 덱 줄에 끌어다 놓는다. 페이로드는 cid 를 쉼표로 이은 문자열 (선택된 카드를 끌면 선택 전체).
         .draggable(targets(cid).sorted().map(String.init).joined(separator: ",")) {
             DragPreview(db: model.db, cids: targets(cid).sorted())
@@ -387,6 +398,13 @@ struct DexView: View {
         .contextMenu { deckMenu(targets(cid), inDeck: deckID) }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("grid")) } action: { frames.map[cid] = $0 }
         .onDisappear { frames.map[cid] = nil }
+    }
+
+    /// "푸른 눈의 백룡, UR, 보유 2장" (덱 화면이면 "덱 3장, 보유 2장")
+    private func cellLabel(_ cid: Int, label: String, inDeck: Int?) -> String {
+        let n = model.game.copies(cid)
+        let status = inDeck.map { "덱 \($0)장, 보유 \(n)장" } ?? (n > 0 ? "보유 \(n)장" : "미보유")
+        return "\(model.db.cards[cid]?.name ?? ""), \(label), \(status)"
     }
 
     /// 클릭 = 그 카드만, ⌘클릭 = 토글, ⇧클릭 = 마지막 클릭부터 범위 추가. (Ctrl클릭은 macOS 우클릭이라 안 쓴다)
@@ -479,7 +497,8 @@ struct DexView: View {
             HStack {
                 Text("덱")
                 Spacer()
-                Button { scope = .deck(model.addDeck().id) } label: { Image(systemName: "plus") }
+                Button("새 덱", systemImage: "plus") { scope = .deck(model.addDeck().id) }
+                    .labelStyle(.iconOnly)
                     .buttonStyle(.plain)
                     .help("새 덱")
             }

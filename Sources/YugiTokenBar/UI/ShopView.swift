@@ -11,16 +11,7 @@ struct ShopView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                Button { model.showShop = false } label: {
-                    Image(systemName: "chevron.left").font(.body.weight(.semibold)).frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .keyboardShortcut(.cancelAction)
-                Text("상점").font(.title3.weight(.semibold))
-                Spacer()
+            PanelHeader(title: "상점", back: { model.showShop = false }) {
                 Text(coinText(model.game.state.coins))
                     .font(.callout).monospacedDigit().foregroundStyle(.secondary)
             }

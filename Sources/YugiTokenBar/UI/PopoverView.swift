@@ -3,6 +3,7 @@ import SwiftUI
 struct PopoverView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.lessMotion) private var lessMotion
     /// 무료 팩·무료 카드 줄이 보이는지. 덮여 있는 동안(개봉·상점·설정)에는 새로 생기는 줄은 미뤘다가 돌아왔을 때 보이고
     /// (팩을 까다 무료 팩이 생겨도 개봉 화면이 늘어나지 않게), 다 써서 사라지는 줄은 바로 뺀다(마지막 무료 팩을 열면 원래 높이로)
     @State private var freeRows: (pack: Bool, card: Bool)?
@@ -14,7 +15,8 @@ struct PopoverView: View {
             .opacity(covered ? 0 : 1)
             .allowsHitTesting(!covered)
             .overlay {
-                if model.showOpening { OpeningView() }
+                // 개봉마다 새 뷰로 만들어 뒤집기·레어 연출 상태를 처음부터 시작한다
+                if model.showOpening { OpeningView().id(model.openingID) }
                 else if model.showShop { ShopView() }
                 else if model.showSettings { SettingsView(open: show) }
             }
@@ -42,6 +44,9 @@ struct PopoverView: View {
                             .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
                             .cardTilt(tier: game.db.tier(entry.cid), angleScale: 0.5)
                             .hoverHint(game.db.cards[entry.cid]?.name ?? "")
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(game.db.cards[entry.cid]?.name ?? "")
+                            .accessibilityAddTraits(.isImage)
                     }
                     if state.log.isEmpty {
                         Text("아직 카드가 없어요").font(.callout).foregroundStyle(.secondary)
@@ -90,6 +95,7 @@ struct PopoverView: View {
                 .font(.system(size: 30, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
+                .animation(lessMotion ? nil : .default, value: state.coins)  // 적립·구매가 withAnimation 밖이라 여기서 건다
                 .hoverHint("토큰 \(Balance.tokensPerCoin.formatted()) = \(coinText(1))")
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
@@ -122,6 +128,33 @@ struct PopoverView: View {
             window.makeKey()
         }
     }
+}
+
+/// 패널 안 화면(상점·설정·개봉) 머리말: 뒤로(esc) · 제목 · 오른쪽 내용.
+struct PanelHeader<Trailing: View>: View {
+    let title: String
+    let back: () -> Void
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(action: back) {
+                Image(systemName: "chevron.left").font(.body.weight(.semibold)).frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .keyboardShortcut(.cancelAction)
+            .accessibilityLabel("뒤로")
+            Text(title).font(.title3.weight(.semibold)).lineLimit(1)
+            Spacer()
+            trailing
+        }
+    }
+}
+
+extension PanelHeader where Trailing == EmptyView {
+    init(title: String, back: @escaping () -> Void) { self.init(title: title, back: back) { EmptyView() } }
 }
 
 /// 쌓인 무료 카드·무료 팩 한 줄.

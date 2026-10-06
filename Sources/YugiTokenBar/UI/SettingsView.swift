@@ -14,17 +14,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                Button { model.showSettings = false } label: {
-                    Image(systemName: "chevron.left").font(.body.weight(.semibold)).frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .keyboardShortcut(.cancelAction)
-                Text("설정").font(.title3.weight(.semibold))
-                Spacer()
-            }
+            PanelHeader(title: "설정") { model.showSettings = false }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     generalSection

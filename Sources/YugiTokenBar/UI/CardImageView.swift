@@ -8,6 +8,14 @@ struct CardImageView: View {
     var owned = true
     @State private var image: NSImage?
 
+    init(db: CardDB, cid: Int, size: ImageCache.Size = .small, owned: Bool = true) {
+        self.db = db
+        self.cid = cid
+        self.size = size
+        self.owned = owned
+        _image = State(initialValue: db.cards[cid]?.imageId.flatMap { ImageCache.shared.cached($0, size: size) })
+    }
+
     var body: some View {
         ZStack {
             if let image {
@@ -22,10 +30,11 @@ struct CardImageView: View {
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 7))
         .task(id: cid) {
+            guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
+            // 캐시에 있으면 뒷면을 거치지 않고 바로 바꾼다
+            if let hit = ImageCache.shared.cached(imageId, size: size) { image = hit; return }
             image = nil
-            if let imageId = db.cards[cid]?.imageId {
-                image = await ImageCache.shared.image(imageId, size: size)
-            }
+            image = await ImageCache.shared.image(imageId, size: size)
         }
     }
 }

@@ -31,9 +31,18 @@ final class ImageCache {
     func image(_ imageId: Int, size: Size) async -> NSImage? {
         if let s = Self.overframe[imageId] {
             // 원본이 600~1,160px 이라 YGOPRODeck 큰 이미지(세로 614px)만큼 줄여 두 크기에 함께 쓴다
-            return await image(key: "overframe-\(imageId)", url: URL(string: s)!, maxPixels: 614)
+            return await image(key: key(imageId, size: size), url: URL(string: s)!, maxPixels: 614)
         }
-        return await image(key: "\(size.rawValue)-\(imageId)", url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"))
+        return await image(key: key(imageId, size: size), url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"))
+    }
+
+    /// 메모리 캐시에 이미 있으면 바로 (뷰가 첫 프레임부터 그리도록, 기다리는 동안 뒷면이 깜빡이지 않게)
+    func cached(_ imageId: Int, size: Size) -> NSImage? {
+        memory.object(forKey: key(imageId, size: size) as NSString)
+    }
+
+    private func key(_ imageId: Int, size: Size) -> String {
+        Self.overframe[imageId] != nil ? "overframe-\(imageId)" : "\(size.rawValue)-\(imageId)"
     }
 
     /// passcode → 공식 오버프레임(Yugipedia "Extended art") 이미지. 워터마크(SAMPLE) 없는 실물 스캔·공식 이미지만.

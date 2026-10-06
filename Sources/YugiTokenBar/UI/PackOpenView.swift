@@ -11,17 +11,7 @@ struct OpeningView: View {
         let pulls = model.opening
         let allFlipped = flipped.count == pulls.count
         VStack(spacing: 12) {
-            HStack(spacing: 6) {
-                Button { model.showOpening = false } label: {
-                    Image(systemName: "chevron.left").font(.body.weight(.semibold)).frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .keyboardShortcut(.cancelAction)
-                Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
-                Spacer()
-            }
+            PanelHeader(title: model.openingTitle) { model.showOpening = false }
             // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
             let packLayout = model.openingPack != nil && pulls.count == 5
             let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
@@ -58,7 +48,6 @@ struct OpeningView: View {
             .buttonBorderShape(.capsule)
             .controlSize(.large)
         }
-        .onChange(of: model.openingID) { flipped = [] }
     }
 
     /// 팩의 마지막 칸은 R 이상 확정 레어 슬롯이라 조금 크게 둔다
@@ -68,13 +57,30 @@ struct OpeningView: View {
         VStack(spacing: 4) {
             FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
                 .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(accessibilityLabel(pull, i))
+                .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
+                .accessibilityAction { withAnimation(flip) { _ = flipped.insert(i) } }
+                .accessibilityActions {
+                    if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
+                }
             // 상점 팩 칸처럼 아래 이름 한 줄. 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
             Text(model.db.cards[pull.cid]?.name ?? " ")
                 .font(.caption2).lineLimit(1).truncationMode(.tail)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
                 .opacity(flipped.contains(i) ? 1 : 0)
+                .accessibilityHidden(true)  // 위 카드가 이름을 읽는다 (뒤집기 전에 이름이 새지 않게)
         }
+    }
+
+    /// 뒤집기 전 "카드 3, 뒤집기 전", 뒤집은 뒤 "푸른 눈의 백룡, UR, 새 카드" (자동 판매면 "+ⓒ 10 자동 판매")
+    private func accessibilityLabel(_ pull: Pull, _ i: Int) -> String {
+        guard flipped.contains(i) else { return "카드 \(i + 1), 뒤집기 전" }
+        var parts = [model.db.cards[pull.cid]?.name ?? "", pull.label]
+        if pull.isNew { parts.append("새 카드") }
+        if let coins = pull.soldFor { parts.append("+\(coinText(coins)) 자동 판매") }
+        return parts.joined(separator: ", ")
     }
 
     private var flip: Animation? { lessMotion ? nil : .easeInOut(duration: 0.4) }
@@ -240,13 +246,7 @@ private struct RareEffect: ViewModifier {
     }
 
     private func start() {
-        guard active else {
-            // 다음 팩: 애니메이션 없이 처음 상태로
-            var t = Transaction()
-            t.disablesAnimations = true
-            withTransaction(t) { sweep = false; burst = false; pulse = false }
-            return
-        }
+        guard active else { return }  // 다음 팩은 개봉 화면째 새로 만들어져 처음 상태로 시작한다
         pop += 1
         withAnimation(ur
                       ? .easeInOut(duration: se ? 1.6 : 1.4).delay(0.35).repeatForever(autoreverses: false)
