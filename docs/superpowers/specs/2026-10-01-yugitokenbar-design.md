@@ -130,7 +130,7 @@ tools/build-cards.py
 | `cardsPerPack` | 5 (노멀 4 + 레어 이상 1) |
 | `monstersPerPack` | 2 (한 봉투에서 보장하는 몬스터 장 수) |
 | `slot5Weights` | R 70% / SR 18% / UR 10% / SE 2% (50팩에 1장) |
-| `freeWeights` | 무료 카드: N 60% / R 25% / SR 10% / UR 4% / SE 1% |
+| `freeWeights` | 무료 카드: N 70% / R 23% / SR 5% / UR 1.5% / SE 0.5% |
 | `sellPrice` | 1장당 N 20 / R 50 / SR 150 / UR 400 / SE 1,200 코인 |
 | `maxCopiesInDeck` | 3 (덱에 같은 카드 최대 장 수, 유희왕 규칙. 미보유도 가능) |
 | `deckSize` | 40~60 (메인 덱 권장 장 수, 표시만) |

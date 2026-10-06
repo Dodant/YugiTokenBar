@@ -9,7 +9,7 @@ enum Balance {
     /// 팩 5번째 장의 티어 확률 (R / SR / UR / SE). SE 가 없는 팩은 UR 로 내려간다.
     static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.10), (5, 0.02)]
     /// 무료 카드의 티어 확률 (N / R / SR / UR / SE). 티어 안에서는 균등.
-    static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.60), (2, 0.25), (3, 0.10), (4, 0.04), (5, 0.01)]
+    static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.70), (2, 0.23), (3, 0.05), (4, 0.015), (5, 0.005)]
     static let logLimit = 50
     /// 무료 카드를 한 번에 여는 최대 장 수 (팩 1봉투와 같은 5장)
     static let freeOpenBatch = 5

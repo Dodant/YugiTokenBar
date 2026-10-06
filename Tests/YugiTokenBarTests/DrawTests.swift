@@ -102,12 +102,12 @@ import Testing
     }
 
     @Test func freeCardsFollowTierWeights() {
-        // 노멀 50종 + 울트라(4) 50종: 티어 안 균등이면 울트라 ≈ 4%, 카드 수 비례였다면 ≈ 50%
+        // 노멀 50종 + 울트라(4) 50종: 티어 안 균등이면 울트라 ≈ 2%, 카드 수 비례였다면 ≈ 50%
         let big = makeDB([(1...50).map { ($0, 1) } + (51...100).map { ($0, 4) }])
         let game = Game(db: big, state: GameState())
         var rng = SeededRNG(seed: 5)
         let ultras = (0..<2_000).filter { _ in game.drawFree(using: &rng)! > 50 }.count
-        #expect((55...150).contains(ultras))  // 기대 100 (N 60% + 빈 R·SR 35% → N 으로 내려감, UR 5%)
+        #expect((20...65).contains(ultras))  // 기대 40 (N 70% + 빈 R·SR 28% → N 으로 내려감, 빈 SE 0.5% → UR, UR 2%)
     }
 
     @Test func logKeepsNewestFifty() {
