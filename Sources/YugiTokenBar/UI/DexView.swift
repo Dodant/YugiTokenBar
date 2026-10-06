@@ -2,11 +2,7 @@ import SwiftUI
 
 struct DexView: View {
     @Environment(AppModel.self) private var model
-    @MainActor private static var nameRank: [Int: Int] = [:]
     @State private var scope: DexScope? = .all
-    @State private var renaming: Deck?
-    @State private var newName = ""
-    @State private var deleting: Deck?
     /// 여러 장 선택. 클릭 = 한 장, ⌘클릭 = 토글, ⇧클릭 = 범위 추가, 빈 곳에서 끌기 = 러버밴드.
     @State private var selectedCards: Set<Int> = []
     /// ⇧클릭 범위의 시작점 (마지막으로 클릭한 카드)
@@ -14,12 +10,12 @@ struct DexView: View {
     @State private var marquee: CGRect?
     @State private var marqueeBase: Set<Int> = []
     @State private var frames = FrameStore()
+    @State private var listCache = DexListCache()
     @State private var showInspector = true
     /// 융합 소재 링크로 이동 중인 카드: 범위를 바꾸면 onChange 가 선택을 비우므로 그 뒤에 고른다
     @State private var jumpTarget: Int?
     @State private var scrollTarget: Int?
     @State private var confirmSellLast = false
-    @State private var confirmSellDuplicates = false
     @State private var confirmFuse = false
     @State private var fusing: FusionShow?
     /// 0 = 모든 등급, 1~5 = CardInfo.tier
@@ -34,55 +30,11 @@ struct DexView: View {
     @AppStorage("dex.scopeDay") private var savedDay = 0.0  // 마지막으로 연 시각(timeIntervalSince1970)
 
     var body: some View {
-        let game = model.game
-        // 카드 목록은 6천 장을 필터·정렬하므로 한 번 그릴 때 한 번만 계산해 아래에서 같이 쓴다
-        let tiered = tierEntries
-        let entries = visible(tiered)
+        // 카드 목록은 조건(DexQuery)이 바뀔 때만 다시 거르고 정렬한다. 카드 클릭·코인 변화로는 다시 하지 않는다
+        let (tiered, entries) = listCache.list(dexQuery, model.game)
         NavigationSplitView {
-            List(selection: $scope) {
-                Label {
-                    HStack {
-                        Text("전체")
-                        Spacer()
-                        Text("\(game.ownedDistinct) / \(game.db.allCIDs.count)").foregroundStyle(.secondary).monospacedDigit()
-                    }
-                } icon: {
-                    Image(systemName: "square.grid.2x2")
-                }
-                .tag(DexScope.all)
-                Label {
-                    HStack {
-                        Text("즐겨찾기")
-                        Spacer()
-                        Text("\(game.favoritesInRange)").foregroundStyle(.secondary).monospacedDigit()
-                    }
-                } icon: {
-                    Image(systemName: "star.fill").foregroundStyle(.yellow)
-                }
-                .tag(DexScope.favorites)
-                ForEach(game.db.eras, id: \.name) { era in
-                    DexEraSection(name: era.name, packs: era.packs) { i in packItem(game, i) }
-                }
-                deckSection
-            }
-            .listStyle(.sidebar)
-            .safeAreaInset(edge: .bottom) { tierStats(game) }
-            .alert("덱 이름", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-                TextField("이름", text: $newName)
-                Button("저장") { if let deck = renaming { model.renameDeck(deck.id, to: newName) } }
-                Button("취소", role: .cancel) {}
-            }
-            .confirmationDialog("'\(deleting?.name ?? "")' 덱을 지울까요?",
-                                isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
-                Button("삭제", role: .destructive) {
-                    guard let deck = deleting else { return }
-                    if scope == .deck(deck.id) { scope = .all }
-                    model.deleteDeck(deck.id)
-                }
-            } message: {
-                Text("카드는 컬렉션에 그대로 있어요.")
-            }
-            .navigationSplitViewColumnWidth(min: 220, ideal: 250)
+            DexSidebar(scope: $scope)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 250)
         } detail: {
             // .scrollPosition(id:) 는 스크롤 중에도 값을 계속 써서 줄마다 창 전체를 다시 계산하므로, 이동할 때만 쓰는 ScrollViewReader 로
             ScrollView { ScrollViewReader { proxy in
@@ -123,7 +75,7 @@ struct DexView: View {
                 } else if entries.isEmpty, scope == .favorites, model.game.state.favorites.isEmpty {
                     ContentUnavailableView("즐겨찾기한 카드가 없어요", systemImage: "star",
                                            description: Text("카드에 마우스를 올리고 오른쪽 위 ☆를 눌러 보세요"))
-                } else if entries.isEmpty, !query.isEmpty, scope != .all {
+                } else if entries.isEmpty, !dexQuery.search.isEmpty, scope != .all {
                     // 팩 안에서 검색해 없을 때: 같은 검색어로 전체에서 다시
                     ContentUnavailableView {
                         Label("'\(search)' 카드가 여기엔 없어요", systemImage: "magnifyingglass")
@@ -152,17 +104,7 @@ struct DexView: View {
                 detail.inspectorColumnWidth(min: 240, ideal: 260)
             }
             .toolbar {
-                let dup = model.game.duplicatesValue
-                Button { confirmSellDuplicates = true } label: {
-                    Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
-                }
-                .help("카드마다 1장\(model.game.state.fusionOnly ? ", 융합 소재는 필요한 장 수" : "")만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
-                .disabled(dup.count == 0)
-                .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirmSellDuplicates) {
-                    Button("+\(coinText(dup.coins))에 판매") { model.sellDuplicates() }
-                } message: {
-                    Text(model.game.state.fusionOnly ? "카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남아서 컬렉션은 그대로예요." : "카드마다 1장씩은 남아서 컬렉션은 그대로예요.")
-                }
+                SellDuplicatesButton()
                 // 러버밴드는 보이는 셀만 잡으니, 필터된 목록 전체는 이걸로
                 Button {
                     selectedCards = Set(entries.map(\.cid))
@@ -249,68 +191,19 @@ struct DexView: View {
         return "\(owned) / \(all.count)장 보유"
     }
 
-    private func packItem(_ game: Game, _ i: Int) -> some View {
-        let pack = game.db.packs[i]
-        let p = game.progress(i)
-        return HStack(spacing: 8) {
-            PackImageView(pack: pack)
-                .frame(height: 36)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(pack.name).lineLimit(1)
-                HStack {
-                    ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
-                    Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
-                }
-            }
-        }
-        .padding(.vertical, 2)
-    }
+    /// 화면에 보일 카드 (body 밖 동작용. 조건이 같으면 캐시를 그대로 쓴다)
+    private var entries: [DexEntry] { listCache.list(dexQuery, model.game).visible }
 
-    /// 화면에 보일 카드: 등급 필터 → 미보유 숨기기 → 정렬. 같은 값이면 팩 순번 순. (body 밖 동작용, body 는 한 번 계산한 값을 쓴다)
-    private var entries: [DexEntry] { visible(tierEntries) }
-
-    private func visible(_ tiered: [DexEntry]) -> [DexEntry] {
-        let game = model.game
-        let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
-        // 비교마다 model.db(관찰 게터 + 시대 DB 조회)를 거치지 않게 한 번만 꺼낸다
-        let db = game.db
-        let tier = { (e: DexEntry) in db.tier(e.cid) }
-        // 카드 목록은 바뀌지 않으니 이름 순위는 처음 이름순으로 볼 때 한 번만 만든다 (비교마다 문자열을 대면 6천 장에 ~50ms)
-        if sort == .name, Self.nameRank.isEmpty { Self.nameRank = CardDB.nameRanks(model.db.cards) }
-        let name = { (cid: Int) in Self.nameRank[cid] ?? .max }
-        return list.sorted { a, b in
-            switch sort {
-            case .pack: break
-            case .tierDesc: if tier(a) != tier(b) { return tier(a) > tier(b) }
-            case .tierAsc: if tier(a) != tier(b) { return tier(a) < tier(b) }
-            case .name: if name(a.cid) != name(b.cid) { return name(a.cid) < name(b.cid) }
-            case .copies: if game.copies(a.cid) != game.copies(b.cid) { return game.copies(a.cid) > game.copies(b.cid) }
-            }
-            return a.number < b.number
-        }
-    }
-
-    /// number 는 등급 필터·정렬과 상관없이 팩(또는 전체) 안 순번.
-    /// 띄어쓰기는 무시한다 ("푸른눈" 으로도 "푸른 눈의 백룡" 이 찾아진다)
-    private var query: String { search.replacingOccurrences(of: " ", with: "") }
-
-    private var tierEntries: [DexEntry] {
-        let db = model.db
-        // 전체·즐겨찾기·덱: 팩 순서대로, 재수록은 처음 나온 팩 기준 한 번만
-        var seen = Set<Int>()
-        let all = { db.packs.flatMap(\.cards).filter { seen.insert($0).inserted } }
-        let cards: [Int] = switch scope {
-        case .pack(let i)? where db.packs.indices.contains(i): db.packs[i].cards
-        case .favorites?: all().filter { model.game.state.favorites.contains($0) }
-        case .deck(let id)?:
-            { let inDeck = model.game.deck(id)?.cards ?? [:]; return all().filter { inDeck[$0] != nil } }()
-        default: all()
-        }
-        return cards.enumerated()
-            .filter { tierFilter == 0 || db.tier($0.element) == tierFilter }
-            .filter { kindFilter.isEmpty || db.cards[$0.element]?.matches(kind: kindFilter) == true }
-            .filter { query.isEmpty || (db.cards[$0.element]?.name ?? "").replacingOccurrences(of: " ", with: "").localizedStandardContains(query) }
-            .map { DexEntry(number: $0.offset + 1, cid: $0.element, label: db.cards[$0.element]?.rarity ?? "N") }
+    /// 지금 그리드 조건. 보유·즐겨찾기·덱은 결과에 영향을 줄 때만 넣어서, 상관없는 변화(코인 등)로는 다시 계산하지 않는다
+    private var dexQuery: DexQuery {
+        let state = model.game.state
+        return DexQuery(
+            scope: scope, tier: tierFilter, kind: kindFilter,
+            search: search.replacingOccurrences(of: " ", with: ""),
+            showUnowned: showUnowned, sort: sort, era: state.eraLimit,
+            owned: !showUnowned || sort == .copies ? state.owned : nil,
+            favorites: scope == .favorites ? state.favorites : nil,
+            deck: deckID.map { id in Set(model.game.deck(id)?.cards.keys.map { $0 } ?? []) })
     }
 
     /// 보고 있는 덱 (덱 화면이 아니면 nil)
@@ -482,30 +375,6 @@ struct DexView: View {
         if model.addToDeck(deck, cids) == 0 { NSSound.beep() }
     }
 
-    /// 사이드바 "덱" 묶음: + 로 새 덱, 줄에 카드를 끌어다 놓으면 추가, 우클릭으로 이름 바꾸기·삭제.
-    private var deckSection: some View {
-        Section {
-            ForEach(model.game.state.decks) { deck in
-                DeckRow(deck: deck)
-                    .tag(DexScope.deck(deck.id))
-                    .contextMenu {
-                        Button("이름 바꾸기") { newName = deck.name; renaming = deck }
-                        Button("삭제", role: .destructive) { deleting = deck }
-                    }
-            }
-        } header: {
-            HStack {
-                Text("덱")
-                Spacer()
-                Button("새 덱", systemImage: "plus") { scope = .deck(model.addDeck().id) }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.plain)
-                    .help("새 덱")
-            }
-            .padding(.leading, 3).padding(.trailing, 6)  // 시대 헤더와 같은 여백
-        }
-    }
-
     /// 즐겨찾기 별: 체크된 카드는 항상, 아니면 마우스를 올렸을 때만.
     @ViewBuilder private func star(_ cid: Int, hovered: Bool) -> some View {
         let on = model.game.state.favorites.contains(cid)
@@ -521,27 +390,6 @@ struct DexView: View {
             .padding(3)
             .help(on ? "즐겨찾기 해제" : "즐겨찾기")
         }
-    }
-
-    /// 사이드바 아래: 등급마다 보유/전체 종류 수와 모은 비율
-    private func tierStats(_ game: Game) -> some View {
-        Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
-            ForEach(Array(game.tierProgress.enumerated()), id: \.offset) { i, p in
-                let label = CardInfo.rarities[i]
-                let ratio = p.total > 0 ? Double(p.owned) / Double(p.total) : 0
-                GridRow {
-                    RarityPill(label: label).gridColumnAlignment(.center)
-                    ProgressView(value: ratio).tint(Rarity.color(label: label)).controlSize(.small)
-                    Text("\(p.owned) / \(p.total)").foregroundStyle(.secondary).gridColumnAlignment(.trailing)
-                    Text(ratio, format: .percent.precision(.fractionLength(1))).gridColumnAlignment(.trailing)
-                }
-            }
-        }
-        .font(.caption)
-        .monospacedDigit()
-        .padding(12)
-        .background(.bar)
-        .overlay(alignment: .top) { Divider() }
     }
 
     /// 오른쪽 패널: 융합할 수 있는 카드가 있을 때만 맨 위에 "융합 가능" 목록, 그 아래 선택한 카드 정보
@@ -877,5 +725,212 @@ private struct FusableSection: View {
             .padding(12)
             Divider()
         }
+    }
+}
+
+/// 컬렉션 사이드바. 따로 둬서 카드를 클릭(선택)해도 팩·등급 통계를 다시 세지 않는다.
+private struct DexSidebar: View {
+    @Environment(AppModel.self) private var model
+    @Binding var scope: DexScope?
+    @State private var renaming: Deck?
+    @State private var newName = ""
+    @State private var deleting: Deck?
+
+    var body: some View {
+        let game = model.game
+        List(selection: $scope) {
+            Label {
+                HStack {
+                    Text("전체")
+                    Spacer()
+                    Text("\(game.ownedDistinct) / \(game.db.allCIDs.count)").foregroundStyle(.secondary).monospacedDigit()
+                }
+            } icon: {
+                Image(systemName: "square.grid.2x2")
+            }
+            .tag(DexScope.all)
+            Label {
+                HStack {
+                    Text("즐겨찾기")
+                    Spacer()
+                    Text("\(game.favoritesInRange)").foregroundStyle(.secondary).monospacedDigit()
+                }
+            } icon: {
+                Image(systemName: "star.fill").foregroundStyle(.yellow)
+            }
+            .tag(DexScope.favorites)
+            ForEach(game.db.eras, id: \.name) { era in
+                DexEraSection(name: era.name, packs: era.packs) { i in packItem(game, i) }
+            }
+            deckSection
+        }
+        .listStyle(.sidebar)
+        .safeAreaInset(edge: .bottom) { tierStats(game) }
+        .alert("덱 이름", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+            TextField("이름", text: $newName)
+            Button("저장") { if let deck = renaming { model.renameDeck(deck.id, to: newName) } }
+            Button("취소", role: .cancel) {}
+        }
+        .confirmationDialog("'\(deleting?.name ?? "")' 덱을 지울까요?",
+                            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
+            Button("삭제", role: .destructive) {
+                guard let deck = deleting else { return }
+                if scope == .deck(deck.id) { scope = .all }
+                model.deleteDeck(deck.id)
+            }
+        } message: {
+            Text("카드는 컬렉션에 그대로 있어요.")
+        }
+    }
+
+    private func packItem(_ game: Game, _ i: Int) -> some View {
+        let pack = game.db.packs[i]
+        let p = game.progress(i)
+        return HStack(spacing: 8) {
+            PackImageView(pack: pack)
+                .frame(height: 36)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(pack.name).lineLimit(1)
+                HStack {
+                    ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
+                    Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                }
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    /// 사이드바 "덱" 묶음: + 로 새 덱, 줄에 카드를 끌어다 놓으면 추가, 우클릭으로 이름 바꾸기·삭제.
+    private var deckSection: some View {
+        Section {
+            ForEach(model.game.state.decks) { deck in
+                DeckRow(deck: deck)
+                    .tag(DexScope.deck(deck.id))
+                    .contextMenu {
+                        Button("이름 바꾸기") { newName = deck.name; renaming = deck }
+                        Button("삭제", role: .destructive) { deleting = deck }
+                    }
+            }
+        } header: {
+            HStack {
+                Text("덱")
+                Spacer()
+                Button("새 덱", systemImage: "plus") { scope = .deck(model.addDeck().id) }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.plain)
+                    .help("새 덱")
+            }
+            .padding(.leading, 3).padding(.trailing, 6)  // 시대 헤더와 같은 여백
+        }
+    }
+
+    /// 사이드바 아래: 등급마다 보유/전체 종류 수와 모은 비율
+    private func tierStats(_ game: Game) -> some View {
+        Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
+            ForEach(Array(game.tierProgress.enumerated()), id: \.offset) { i, p in
+                let label = CardInfo.rarities[i]
+                let ratio = p.total > 0 ? Double(p.owned) / Double(p.total) : 0
+                GridRow {
+                    RarityPill(label: label).gridColumnAlignment(.center)
+                    ProgressView(value: ratio).tint(Rarity.color(label: label)).controlSize(.small)
+                    Text("\(p.owned) / \(p.total)").foregroundStyle(.secondary).gridColumnAlignment(.trailing)
+                    Text(ratio, format: .percent.precision(.fractionLength(1))).gridColumnAlignment(.trailing)
+                }
+            }
+        }
+        .font(.caption)
+        .monospacedDigit()
+        .padding(12)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
+    }
+}
+
+/// 툴바 [중복 모두 팔기]. 따로 둬서 카드를 클릭해도 중복 수를 다시 세지 않는다.
+private struct SellDuplicatesButton: View {
+    @Environment(AppModel.self) private var model
+    @State private var confirm = false
+
+    var body: some View {
+        let dup = model.game.duplicatesValue
+        Button { confirm = true } label: {
+            Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
+        }
+        .help("카드마다 1장\(model.game.state.fusionOnly ? ", 융합 소재는 필요한 장 수" : "")만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
+        .disabled(dup.count == 0)
+        .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirm) {
+            Button("+\(coinText(dup.coins))에 판매") { model.sellDuplicates() }
+        } message: {
+            Text(model.game.state.fusionOnly ? "카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남아서 컬렉션은 그대로예요." : "카드마다 1장씩은 남아서 컬렉션은 그대로예요.")
+        }
+    }
+}
+
+/// 그리드 목록을 정하는 조건. 같으면 결과도 같다.
+struct DexQuery: Equatable {
+    var scope: DexScope?
+    /// 0 = 모든 등급, 1~5 = CardInfo.tier
+    var tier = 0
+    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 (CardInfo.matches)
+    var kind = ""
+    /// 띄어쓰기를 뺀 검색어 ("푸른눈" 으로도 "푸른 눈의 백룡" 이 찾아진다)
+    var search = ""
+    var showUnowned = true
+    var sort = DexSort.pack
+    var era = ""
+    /// 결과에 영향을 줄 때만 채운다: 보유(미보유 숨기기·보유 많은 순), 즐겨찾기(즐겨찾기 범위), 덱 카드(덱 범위)
+    var owned: [Int: Int]?
+    var favorites: Set<Int>?
+    var deck: Set<Int>?
+
+    /// 카드 목록은 바뀌지 않으니 이름 순위는 처음 이름순으로 볼 때 한 번만 만든다 (비교마다 문자열을 대면 6천 장에 ~50ms)
+    @MainActor private static var nameRank: [Int: Int] = [:]
+
+    /// tiered: 범위·등급·종류·검색까지 거른 목록(부제의 보유 수용). visible: 그다음 미보유 숨기기 → 정렬, 같은 값이면 팩 순번 순.
+    /// number 는 등급 필터·정렬과 상관없이 팩(또는 전체) 안 순번.
+    @MainActor func entries(in game: Game) -> (tiered: [DexEntry], visible: [DexEntry]) {
+        let db = game.db
+        // 전체·즐겨찾기·덱: 팩 순서대로, 재수록은 처음 나온 팩 기준 한 번만
+        var seen = Set<Int>()
+        let all = { db.packs.flatMap(\.cards).filter { seen.insert($0).inserted } }
+        let cards: [Int] = switch scope {
+        case .pack(let i)? where db.packs.indices.contains(i): db.packs[i].cards
+        case .favorites?: all().filter { game.state.favorites.contains($0) }
+        case .deck(let id)?:
+            { let inDeck = game.deck(id)?.cards ?? [:]; return all().filter { inDeck[$0] != nil } }()
+        default: all()
+        }
+        let tiered = cards.enumerated()
+            .filter { tier == 0 || db.tier($0.element) == tier }
+            .filter { kind.isEmpty || db.cards[$0.element]?.matches(kind: kind) == true }
+            .filter { search.isEmpty || (db.cards[$0.element]?.name ?? "").replacingOccurrences(of: " ", with: "").localizedStandardContains(search) }
+            .map { DexEntry(number: $0.offset + 1, cid: $0.element, label: db.cards[$0.element]?.rarity ?? "N") }
+        let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
+        guard sort != .pack else { return (tiered, list) }  // 이미 팩 순번 순
+        let tierOf = { (e: DexEntry) in db.tier(e.cid) }
+        if sort == .name, Self.nameRank.isEmpty { Self.nameRank = CardDB.nameRanks(db.cards) }
+        let name = { (cid: Int) in Self.nameRank[cid] ?? .max }
+        let visible = list.sorted { a, b in
+            switch sort {
+            case .pack: break
+            case .tierDesc: if tierOf(a) != tierOf(b) { return tierOf(a) > tierOf(b) }
+            case .tierAsc: if tierOf(a) != tierOf(b) { return tierOf(a) < tierOf(b) }
+            case .name: if name(a.cid) != name(b.cid) { return name(a.cid) < name(b.cid) }
+            case .copies: if game.copies(a.cid) != game.copies(b.cid) { return game.copies(a.cid) > game.copies(b.cid) }
+            }
+            return a.number < b.number
+        }
+        return (tiered, visible)
+    }
+}
+
+/// 마지막 조건과 그 결과. 클래스라 채워도 뷰를 다시 그리지 않는다 (FrameStore 와 같은 이유).
+@MainActor private final class DexListCache {
+    private var query: DexQuery?
+    private var result: (tiered: [DexEntry], visible: [DexEntry]) = ([], [])
+
+    func list(_ query: DexQuery, _ game: Game) -> (tiered: [DexEntry], visible: [DexEntry]) {
+        if query != self.query { result = query.entries(in: game); self.query = query }
+        return result
     }
 }
