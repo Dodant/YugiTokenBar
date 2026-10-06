@@ -4,7 +4,7 @@
 
 ## 1. 목적
 
-Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량을 보상으로 바꿔 **한국 정발 유희왕 카드 컬렉션(DM~VRAINS·Modern)**을 채우는 macOS 메뉴바 앱.
+Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량을 보상으로 바꿔 **한국 정발 유희왕 카드 컬렉션**을 채우는 macOS 메뉴바 앱.
 목표: 추억 + 컬렉션 채우기 + 자주 까는 보상 재미. 이번 범위는 **컬렉션과 덱 구성까지** (대결 없음).
 
 ## 2. 카드 풀 기준
