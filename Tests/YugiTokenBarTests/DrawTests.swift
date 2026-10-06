@@ -31,7 +31,7 @@ import Testing
         #expect(rich().draw(pack: 0, tier: 3, using: &rng)?.cid == 5)
         // 노멀·레어가 이미 봉투에 나왔으면 → 위로 올라가 울트라
         #expect(rich().draw(pack: 0, tier: 2, excluding: [1, 2, 3, 4, 5], using: &rng)?.cid == 6)
-        // 최상위 티어 요청도 범위 밖 크래시 없이 아래로
+        // SE 가 없는 팩이면 아래(UR)로
         #expect(rich().draw(pack: 0, tier: 5, using: &rng)?.cid == 6)
     }
 

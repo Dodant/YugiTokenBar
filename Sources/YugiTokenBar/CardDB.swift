@@ -45,15 +45,15 @@ struct Material: Codable, Sendable, Equatable {
 
 struct PackCard: Codable, Sendable, Equatable {
     let cid: Int
-    /// 1 N · 2 R · 3 SR · 4 UR (마스터 듀얼식 4등급)
+    /// 1 N · 2 R · 3 SR · 4 UR · 5 SE
     let tier: Int
     let label: String
 
-    static let labels = ["N", "R", "SR", "UR"]
+    static let labels = ["N", "R", "SR", "UR", "SE"]
 
-    /// cards.json 의 Konami 원래 레어도(SE·UL·HR = 티어 5)를 UR 로 합친다.
+    /// cards.json 의 Konami 원래 레어도 중 티어 5(SE·PSE·QCSE·10000 SE·UL·HR 등)를 SE 하나로 합친다.
     var simplified: PackCard {
-        let t = min(max(tier, 1), 4)
+        let t = min(max(tier, 1), Self.labels.count)
         return PackCard(cid: cid, tier: t, label: Self.labels[t - 1])
     }
 }

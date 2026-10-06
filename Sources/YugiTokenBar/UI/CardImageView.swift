@@ -30,19 +30,20 @@ struct CardImageView: View {
     }
 }
 
-/// 등급 색 (N 회청색 · R 파랑 · SR 금색 · UR 보라).
+/// 등급 색 (N 회청색 · R 파랑 · SR 금색 · UR 보라 · SE 진분홍).
 enum Rarity {
     static let colors: [Color] = [
         Color(red: 0x5C / 255, green: 0x64 / 255, blue: 0x70 / 255),
         Color(red: 0x4A / 255, green: 0x90 / 255, blue: 0xE2 / 255),
         Color(red: 0xF5 / 255, green: 0xC4 / 255, blue: 0x51 / 255),
         Color(red: 0xB0 / 255, green: 0x5C / 255, blue: 0xFF / 255),
+        Color(red: 0xFF / 255, green: 0x3D / 255, blue: 0x7F / 255),
     ]
 
     /// 아직 획득하지 못한 카드 (밝은 회색, N 회청색과 구분)
     static let locked = Color(red: 0xA0 / 255, green: 0xA0 / 255, blue: 0xA0 / 255)
 
-    static func color(tier: Int) -> Color { colors[min(max(tier, 1), 4) - 1] }
+    static func color(tier: Int) -> Color { colors[min(max(tier, 1), colors.count) - 1] }
     static func color(label: String, owned: Bool = true) -> Color {
         guard owned else { return locked }
         return color(tier: (PackCard.labels.firstIndex(of: label) ?? 0) + 1)

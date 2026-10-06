@@ -102,6 +102,7 @@ struct FlipCard: View {
 
 /// SR·UR 앞면이 드러날 때의 연출 (뒤집기 0.4초가 끝날 즈음 시작).
 /// SR: 금빛 광택 한 번 + 빛 맥박 + 살짝 튀어오름. UR: 무지개 광택 반복 + 빛 고리·반짝이 폭발 + 크게 튀어오름.
+/// SE: UR 연출에 고리·반짝이를 더하고 더 크게 튀어오름.
 private struct RareEffect: ViewModifier {
     let tier: Int
     let active: Bool
@@ -111,6 +112,7 @@ private struct RareEffect: ViewModifier {
     @State private var pop = 0
 
     private var ur: Bool { tier >= 4 }
+    private var se: Bool { tier >= 5 }
 
     func body(content: Content) -> some View {
         if tier < 3 {
@@ -126,7 +128,7 @@ private struct RareEffect: ViewModifier {
                     view.scaleEffect(scale)
                 } keyframes: { _ in
                     LinearKeyframe(1.0, duration: 0.3)
-                    SpringKeyframe(ur ? 1.14 : 1.06, duration: 0.18)
+                    SpringKeyframe(se ? 1.2 : ur ? 1.14 : 1.06, duration: 0.18)
                     SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
                 }
                 .onChange(of: active) { start() }
@@ -150,7 +152,7 @@ private struct RareEffect: ViewModifier {
 
     private func rings(_ color: Color) -> some View {
         ZStack {
-            ForEach(0..<2, id: \.self) { i in
+            ForEach(0..<(se ? 3 : 2), id: \.self) { i in
                 Circle()
                     .stroke(color, lineWidth: 3)
                     .scaleEffect(burst ? 1.8 + Double(i) * 0.6 : 0.3)
@@ -161,8 +163,9 @@ private struct RareEffect: ViewModifier {
 
     private func sparkles(_ color: Color) -> some View {
         ZStack {
-            ForEach(0..<10, id: \.self) { i in
-                let angle = Double(i) / 10 * 2 * .pi
+            let n = se ? 16 : 10
+            ForEach(0..<n, id: \.self) { i in
+                let angle = Double(i) / Double(n) * 2 * .pi
                 let r = burst ? 70.0 + Double(i % 3) * 14 : 0
                 Image(systemName: "sparkle")
                     .font(.system(size: CGFloat(10 + (i % 3) * 4), weight: .bold))

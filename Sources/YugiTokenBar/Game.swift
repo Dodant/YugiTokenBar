@@ -6,17 +6,17 @@ enum Balance {
     /// 코인으로 이만큼 사면 무료 팩 1장 (무료 팩으로 깐 건 세지 않는다)
     static let packsPerFreePack = 10
     static let tokensPerFreeCard = 10_000_000
-    /// 팩 5번째 장의 티어 확률 (R / SR / UR)
-    static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.12)]
-    /// 무료 카드의 티어 확률 (N / R / SR / UR). 티어 안에서는 균등.
-    static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.60), (2, 0.25), (3, 0.10), (4, 0.05)]
+    /// 팩 5번째 장의 티어 확률 (R / SR / UR / SE). SE 가 없는 팩은 UR 로 내려간다.
+    static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.10), (5, 0.02)]
+    /// 무료 카드의 티어 확률 (N / R / SR / UR / SE). 티어 안에서는 균등.
+    static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.60), (2, 0.25), (3, 0.10), (4, 0.04), (5, 0.01)]
     static let logLimit = 50
     /// 무료 카드를 한 번에 여는 최대 장 수 (팩 1봉투와 같은 5장)
     static let freeOpenBatch = 5
     /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
     static let monstersPerPack = 2
-    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 225 < packPrice 라 사고팔기로 코인이 늘지 않는다.
-    static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300]
+    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 231 < packPrice 라 사고팔기로 코인이 늘지 않는다.
+    static let sellPrice: [Int: Int] = [1: 30, 2: 60, 3: 150, 4: 300, 5: 600]
     /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
     static let maxCopiesInDeck = 3
     /// 메인 덱 권장 장 수. 표시만 하고 강제하지 않는다.
@@ -259,7 +259,7 @@ struct Game: Sendable {
     }
 
     static func fallbackOrder(_ tier: Int) -> [Int] {
-        [tier] + Array(stride(from: tier - 1, through: 1, by: -1)) + Array(stride(from: tier + 1, through: 4, by: 1))
+        [tier] + Array(stride(from: tier - 1, through: 1, by: -1)) + Array(stride(from: tier + 1, through: PackCard.labels.count, by: 1))
     }
 
     /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택.

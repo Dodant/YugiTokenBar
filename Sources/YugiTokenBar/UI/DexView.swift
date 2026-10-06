@@ -21,7 +21,7 @@ struct DexView: View {
     @State private var confirmSellLast = false
     @State private var confirmSellDuplicates = false
     @State private var confirmFuse = false
-    /// 0 = 모든 등급, 1~4 = PackCard.tier
+    /// 0 = 모든 등급, 1~5 = PackCard.tier
     @State private var tierFilter = 0
     /// "" = 모든 종류, 아니면 CardInfo.kind 또는 소환법 (CardInfo.matches)
     @State private var kindFilter = ""
@@ -193,6 +193,7 @@ struct DexView: View {
                 Text("R 레어").tag(2)
                 Text("SR 슈퍼").tag(3)
                 Text("UR 울트라").tag(4)
+                Text("SE 시크릿").tag(5)
             }
             .fixedSize()
             Picker("정렬", selection: $sort) {
