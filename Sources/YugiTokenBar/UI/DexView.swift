@@ -66,6 +66,7 @@ struct DexView: View {
                 deckSection
             }
             .listStyle(.sidebar)
+            .safeAreaInset(edge: .bottom) { tierStats(game) }
             .alert("덱 이름", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
                 TextField("이름", text: $newName)
                 Button("저장") { if let deck = renaming { model.renameDeck(deck.id, to: newName) } }
@@ -501,6 +502,27 @@ struct DexView: View {
             .padding(3)
             .help(on ? "즐겨찾기 해제" : "즐겨찾기")
         }
+    }
+
+    /// 사이드바 아래: 등급마다 보유/전체 종류 수와 모은 비율
+    private func tierStats(_ game: Game) -> some View {
+        Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
+            ForEach(Array(game.tierProgress.enumerated()), id: \.offset) { i, p in
+                let label = CardInfo.rarities[i]
+                let ratio = p.total > 0 ? Double(p.owned) / Double(p.total) : 0
+                GridRow {
+                    RarityPill(label: label).gridColumnAlignment(.center)
+                    ProgressView(value: ratio).tint(Rarity.color(label: label)).controlSize(.small)
+                    Text("\(p.owned) / \(p.total)").foregroundStyle(.secondary).gridColumnAlignment(.trailing)
+                    Text(ratio, format: .percent.precision(.fractionLength(1))).gridColumnAlignment(.trailing)
+                }
+            }
+        }
+        .font(.caption)
+        .monospacedDigit()
+        .padding(12)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
     }
 
     /// 오른쪽 패널: 융합할 수 있는 카드가 있을 때만 맨 위에 "융합 가능" 목록, 그 아래 선택한 카드 정보

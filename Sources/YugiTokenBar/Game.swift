@@ -113,6 +113,17 @@ struct Game: Sendable {
     /// 시대 범위 안에서 1장 이상 가진 종류 수
     var ownedDistinct: Int { db.allCIDs.filter { copies($0) > 0 }.count }
 
+    /// 시대 범위 안 등급(1~5)별 보유 종류 수 / 전체 종류 수. 인덱스 0 = N
+    var tierProgress: [(owned: Int, total: Int)] {
+        var out = Array(repeating: (owned: 0, total: 0), count: CardInfo.rarities.count)
+        for cid in db.allCIDs {
+            let i = min(max(db.tier(cid), 1), out.count) - 1
+            out[i].total += 1
+            if copies(cid) > 0 { out[i].owned += 1 }
+        }
+        return out
+    }
+
     func progress(_ pack: Int) -> (owned: Int, total: Int) {
         let cards = db.packs[pack].cards
         return (cards.filter { copies($0) > 0 }.count, cards.count)

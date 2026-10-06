@@ -17,6 +17,7 @@ import Testing
         #expect(game.db.allCIDs == Array(1...11))
         #expect(game.db.eras.map(\.name) == ["DM"])
         #expect(game.ownedDistinct == 0)
+        #expect(game.tierProgress.map(\.total).reduce(0, +) == 11 && game.tierProgress.allSatisfy { $0.owned == 0 })
         #expect(game.db.cards[12] != nil)  // 이름·이미지 조회는 그대로
         var rng = SeededRNG(seed: 3)
         while game.state.pendingFree > 0 { #expect(game.openFree(using: &rng).allSatisfy { $0.cid <= 11 }) }
@@ -25,6 +26,7 @@ import Testing
         game.state.eraLimit = "GX"
         #expect(game.db.packs.count == 12)
         #expect(game.ownedDistinct == 12)
+        #expect(game.tierProgress.map(\.owned).reduce(0, +) == 12)  // 등급별 합 = 보유 종류 수
     }
 
     @Test func hiddenCardsAreNotSoldOrCounted() {
