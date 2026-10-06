@@ -215,8 +215,8 @@ extension PartnerAnim {
 }
 
 /// 화면에 그릴 프레임 하나. 메뉴바와 바탕화면이 따로 가져서, 바탕화면이 매 프레임 바뀌어도 메뉴바 라벨은 깜빡일 때만 다시 그린다.
-@MainActor final class FrameBox: ObservableObject {
-    @Published var image: NSImage?
+@MainActor @Observable final class FrameBox {
+    var image: NSImage?
 }
 
 /// 파트너 애니메이션을 타이머로 돌리고 프레임을 내보낸다. 시트를 못 읽으면 아무것도 하지 않는다(메뉴바는 카드 아이콘).
@@ -269,7 +269,7 @@ extension PartnerAnim {
         render()
     }
 
-    /// 바뀐 프레임만 내보낸다 (같은 이미지면 @Published 를 건드리지 않는다).
+    /// 바뀐 프레임만 내보낸다 (같은 이미지면 image 를 건드리지 않는다).
     private func render() {
         guard isReady else { return }
         let image = frames[player.anim]?[player.frame]

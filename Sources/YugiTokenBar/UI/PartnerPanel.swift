@@ -50,7 +50,7 @@ import SwiftUI
 
 /// 지금 프레임 하나를 창 크기에 맞춰 그린다.
 struct PartnerView: View {
-    @ObservedObject var frame: FrameBox
+    let frame: FrameBox
 
     var body: some View {
         if let image = frame.image {

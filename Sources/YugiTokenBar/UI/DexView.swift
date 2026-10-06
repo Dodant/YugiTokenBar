@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DexView: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     @MainActor private static var nameRank: [Int: Int] = [:]
     @State private var scope: DexScope? = .all
     @State private var renaming: Deck?
@@ -663,7 +663,7 @@ struct DexView: View {
 
 /// 사이드바의 시대(DM/GX) 묶음. 헤더를 눌러 접고 펴며, 접힘 상태는 다음 실행에도 기억한다.
 private struct DexEraSection<Item: View>: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     let name: String
     let packs: Range<Int>
     let item: (Int) -> Item
@@ -709,7 +709,7 @@ private struct DexEraSection<Item: View>: View {
 
 /// 사이드바 덱 한 줄: 팩 줄처럼 이름·진행 바·보유/덱 장 수. 카드를 끌어다 놓으면 그 덱에 1장 넣는다(못 넣으면 비프).
 private struct DeckRow: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     let deck: Deck
     @State private var targeted = false
 
@@ -816,7 +816,7 @@ enum DexSort: String, CaseIterable {
 /// "융합 가능" 목록. inspector 클로저는 부모가 다시 그려져도 갱신되지 않을 때가 있어 모델을 직접 구독하는 뷰로 뺐다.
 /// 누르면 그 카드로 이동해 상세(융합 버튼)를 연다
 private struct FusableSection: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     let selected: Set<Int>
     let jump: (Int) -> Void
 

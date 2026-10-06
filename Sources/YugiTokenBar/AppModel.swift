@@ -1,42 +1,41 @@
 import SwiftUI
 
-@MainActor
-final class AppModel: ObservableObject {
-    @Published private(set) var game: Game
+@MainActor @Observable
+final class AppModel {
+    private(set) var game: Game
     /// 마지막 구매·무료 카드 결과 (팝오버 안 개봉 화면이 보여줌)
-    @Published private(set) var opening: [Pull] = []
-    @Published private(set) var openingTitle = ""
+    private(set) var opening: [Pull] = []
+    private(set) var openingTitle = ""
     /// 지금 개봉 화면의 팩 (무료 카드면 nil). 개봉 화면의 [한 팩 더] 가 쓴다.
-    @Published private(set) var openingPack: Int?
-    @Published var showOpening = false
-    @Published private(set) var openingID = UUID()
-    @Published var showShop = false
-    @Published var showSettings = false
+    private(set) var openingPack: Int?
+    var showOpening = false
+    private(set) var openingID = UUID()
+    var showShop = false
+    var showSettings = false
     /// 오늘 provider별 토큰·비용 (팝오버 사용량 표시)
-    @Published private(set) var todayTokens: [String: Int] = [:]
-    @Published private(set) var todayCost: [String: Double] = [:]
+    private(set) var todayTokens: [String: Int] = [:]
+    private(set) var todayCost: [String: Double] = [:]
     /// 공식 한도 (Claude: OAuth usage, Codex: app-server). 못 읽으면 nil.
-    @Published private(set) var claudeLimits: LimitStatus?
-    @Published private(set) var codexLimits: CodexRateLimitSnapshot?
+    private(set) var claudeLimits: LimitStatus?
+    private(set) var codexLimits: CodexRateLimitSnapshot?
 
-    private let store: StateStore
-    private var rng = SystemRandomNumberGenerator()
-    private var timer: Timer?
-    private var refreshing = false
-    private var limitsTimer: Timer?
-    private var fetchingLimits = false
+    // 아래는 화면이 읽지 않는 내부 상태라 관찰하지 않는다
+    @ObservationIgnored private let store: StateStore
+    @ObservationIgnored private var rng = SystemRandomNumberGenerator()
+    @ObservationIgnored private var refreshing = false
+    @ObservationIgnored private var fetchingLimits = false
     /// 키체인 암호 창을 이번 실행에서 이미 띄웠으면(거절 포함) 자동 갱신은 다시 띄우지 않는다.
-    private var keychainPrompted = false
+    @ObservationIgnored private var keychainPrompted = false
     /// 파트너 「날개 크리보」. 해금 전에는 멈춰 있다.
-    let partner: PartnerModel
+    @ObservationIgnored let partner: PartnerModel
     /// 바탕화면 파트너 창 (해금되고 처음 보일 때 만든다)
-    private var partnerPanel: PartnerPanel?
+    @ObservationIgnored private var partnerPanel: PartnerPanel?
     /// 오늘 사용량 (Claude 로그는 파일별로 캐시)
-    private let usageReader = TodayUsageReader()
-    private var lastUsage: UsageSample?
-    private var tokensPerMinute = 0
+    @ObservationIgnored private let usageReader = TodayUsageReader()
+    @ObservationIgnored private var lastUsage: UsageSample?
+    @ObservationIgnored private var tokensPerMinute = 0
     /// 마지막으로 파트너 반응을 계산한 상태
-    private var partnerSeen: GameState
+    @ObservationIgnored private var partnerSeen: GameState
 
     /// partner: 테스트는 `PartnerModel(sheet: nil)` 을 넘겨 실제 창·타이머를 띄우지 않는다.
     init(db: CardDB, store: StateStore = .standard(), partner: PartnerModel? = nil) {
@@ -57,14 +56,19 @@ final class AppModel: ObservableObject {
     func start() {
         unlockOnLaunch()
         updatePartner()
-        refresh()
-        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
-        }
-        refreshLimits()
+        every(.seconds(60)) { $0.refresh() }
         // ponytail: 5분 고정 주기. 429 가 잦으면 Retry-After 백오프 추가
-        limitsTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refreshLimits() }
+        every(.seconds(300)) { $0.refreshLimits() }
+    }
+
+    /// 바로 한 번, 그 뒤 period 마다. 앱 수명 동안 돈다(모델이 사라지면 멈춘다).
+    private func every(_ period: Duration, _ action: @escaping (AppModel) -> Void) {
+        Task { [weak self] in
+            while true {
+                // 쉬는 동안 모델을 붙잡지 않도록 부를 때만 꺼낸다
+                if let self { action(self) } else { return }
+                try? await Task.sleep(for: period)
+            }
         }
     }
 
@@ -104,9 +108,8 @@ final class AppModel: ObservableObject {
         refreshing = true
         Task {
             defer { refreshing = false }
-            let reader = usageReader
-            let usage = await Task.detached { await reader.read() }.value
-            // 같은 값을 다시 넣어도 @Published 는 화면을 다시 그리게 하므로 바뀔 때만
+            let usage = await usageReader.read()  // actor 라서 메인 스레드 밖에서 읽는다
+            // 같은 값이라도 넣으면 읽는 화면이 다시 그려질 수 있어 바뀔 때만
             if todayTokens != usage.byProvider { todayTokens = usage.byProvider }
             if todayCost != usage.cost { todayCost = usage.cost }
             let sample = UsageSample(date: usage.date, total: usage.byProvider.values.reduce(0, +), at: Date())

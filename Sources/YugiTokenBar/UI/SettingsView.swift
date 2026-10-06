@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 /// 팝오버 안 설정 화면 (상점처럼 요약 위에 겹쳐 그린다)
 struct SettingsView: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     /// 창 열기 (패치노트·라이선스)
     let open: (String) -> Void
     @State private var checking = false
@@ -69,7 +69,7 @@ struct SettingsView: View {
                 labeled("바탕화면 파트너", hint: unlocked ? "날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요"
                                                     : "「날개 크리보」 카드를 얻으면 파트너로 함께해요")
                 Spacer()
-                Toggle("바탕화면 파트너", isOn: $model.partnerEnabled)
+                Toggle("바탕화면 파트너", isOn: Bindable(model).partnerEnabled)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .controlSize(.small)
@@ -77,7 +77,7 @@ struct SettingsView: View {
             }
             row {
                 Text("크기")
-                Slider(value: $model.partnerSize, in: PartnerTuning.sizes, step: PartnerTuning.sizeStep)
+                Slider(value: Bindable(model).partnerSize, in: PartnerTuning.sizes, step: PartnerTuning.sizeStep)
                     .controlSize(.small)
                     .disabled(!unlocked || !model.partnerEnabled)
             }
@@ -89,7 +89,7 @@ struct SettingsView: View {
             row {
                 labeled("중복 카드 자동 판매", hint: "이미 가진 카드가 나오면 바로 코인으로 바꿔요")
                 Spacer()
-                Toggle("중복 카드 자동 판매", isOn: $model.autoSellDuplicates)
+                Toggle("중복 카드 자동 판매", isOn: Bindable(model).autoSellDuplicates)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .controlSize(.small)
@@ -98,7 +98,7 @@ struct SettingsView: View {
                 let n = model.db.allCIDs.filter { model.game.fusionMaterials($0) != nil }.count
                 labeled("융합 몬스터는 융합으로만", hint: "소재를 다 아는 융합 몬스터 \(n)종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요")
                 Spacer()
-                Toggle("융합 몬스터는 융합으로만", isOn: $model.fusionOnly)
+                Toggle("융합 몬스터는 융합으로만", isOn: Bindable(model).fusionOnly)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .controlSize(.small)
@@ -106,7 +106,7 @@ struct SettingsView: View {
             row {
                 labeled("애니메이션 끄기", hint: "카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요")
                 Spacer()
-                Toggle("애니메이션 끄기", isOn: $model.animationsOff)
+                Toggle("애니메이션 끄기", isOn: Bindable(model).animationsOff)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .controlSize(.small)
@@ -123,7 +123,7 @@ struct SettingsView: View {
                     Text("\(model.db.packs.count)팩 · \(model.db.allCIDs.count.formatted())장").font(.caption2).foregroundStyle(.tertiary)
                 }
                 Spacer()
-                Picker("시대 범위", selection: $model.eraLimit) {
+                Picker("시대 범위", selection: Bindable(model).eraLimit) {
                     ForEach(db.eras, id: \.name) { era in Text("\(era.name)(\(CardDB.eraSummons[era.name] ?? ""))까지").tag(era.name) }
                 }
                 .labelsHidden()

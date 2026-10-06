@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct PopoverView: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     @Environment(\.openWindow) private var openWindow
     /// 무료 팩·무료 카드 줄이 보이는지. 덮여 있는 동안(개봉·상점·설정)에는 새로 생기는 줄은 미뤘다가 돌아왔을 때 보이고
     /// (팩을 까다 무료 팩이 생겨도 개봉 화면이 늘어나지 않게), 다 써서 사라지는 줄은 바로 뺀다(마지막 무료 팩을 열면 원래 높이로)

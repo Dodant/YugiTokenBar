@@ -3,7 +3,7 @@ import SwiftUI
 /// Claude Code·Codex 공식 한도(5시간·주간·모델별 주간) + 오늘 토큰·비용. 누르면 한도를 바로 다시 읽는다.
 /// 그 밖의 에이전트(Gemini·Grok·Pi·oh-my-pi·Cursor)는 오늘 쓴 것만 토큰·비용 한 줄로 보인다.
 struct UsageView: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
 
     var body: some View {
         let claude = model.claudeLimits

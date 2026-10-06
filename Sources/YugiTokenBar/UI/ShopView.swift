@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ShopView: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     /// 스크롤 위치(위에서부터 pt). 상점을 닫았다 열거나 앱을 다시 켜도 그 자리로.
     /// @AppStorage 로 두면 스크롤 프레임마다 써서 상점 전체를 다시 그리므로, 멈췄을 때만 UserDefaults 에 직접 쓴다
     private static let scrollKey = "shop.scrollY"
@@ -51,7 +51,7 @@ struct ShopView: View {
 
 /// 시대별 접고 펴는 팩 묶음. 접힘 상태는 다음 실행에도 기억한다.
 private struct EraSection: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     let name: String
     let packs: Range<Int>
     @AppStorage private var expanded: Bool
@@ -100,7 +100,7 @@ private struct EraSection: View {
 
 /// 상점 그리드 칸: 팩 이미지와 그 아래 이름 한 줄, 마우스를 올리면 이미지가 흐려지며 전체 이름·진행도·구매 버튼.
 struct PackTile: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     let index: Int
     @State private var hover = false
 
@@ -152,7 +152,7 @@ struct PackTile: View {
 
 /// 팝오버 바로 구매 줄: 팩 이미지 · 이름 · 진행도 · 구매 버튼.
 struct PackRow: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     let index: Int
 
     var body: some View {
@@ -178,7 +178,7 @@ struct PackRow: View {
 
 /// 1팩 구매 버튼. 가격(코인)을 그대로 보여준다.
 struct BuyButton: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     let index: Int
 
     var body: some View {

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 팝오버 안 팩·무료 카드 개봉 화면. 상점처럼 요약 화면 위에 겹쳐 그린다(패널 높이 고정).
 struct OpeningView: View {
-    @EnvironmentObject var model: AppModel
+    @Environment(AppModel.self) private var model
     @State private var flipped: Set<Int> = []
     @State private var width: CGFloat = 300
     @Environment(\.lessMotion) private var lessMotion
