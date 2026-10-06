@@ -136,7 +136,7 @@ struct CardDB: Sendable {
     /// 「날개 크리보」(잃어버린 천년 SR). 가지면 파트너가 해금된다.
     static let partnerCard = 6314
     /// 시대를 대표하는 소환법 (설정의 시대 범위 메뉴 표시용)
-    static let eraSummons = ["DM": "의식", "GX": "융합", "5D's": "싱크로", "ZEXAL": "엑시즈", "ARC-V": "펜듈럼", "VRAINS": "링크", "Modern": "최신"]
+    static let eraSummons = ["DM": "의식", "GX": "융합", "5D's": "싱크로", "ZEXAL": "엑시즈", "ARC-V": "펜듈럼", "VRAINS": "링크", "Modern": "지원"]
 
     /// (시대 이름, 팩 인덱스 범위). 테스트용 작은 DB 에선 빈 시대를 뺀다.
     var eras: [(name: String, packs: Range<Int>)] {
