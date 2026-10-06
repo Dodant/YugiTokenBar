@@ -548,6 +548,13 @@ struct DexView: View {
                             let can = model.game.canFuse(cid)
                             let why = !model.game.hasFusionSpell ? "「융합」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
                             HStack(spacing: 4) {
+                                Spacer()
+                                if !model.game.hasFusionSpell {  // 누르면 「융합」 카드로 이동
+                                    Image(systemName: "questionmark.circle")
+                                        .foregroundStyle(.secondary)
+                                        .hoverHint("「융합」 마법 카드가 1장 있어야 해요 (소비되지 않아요)")
+                                        .onTapGesture { jump(to: CardDB.fusionSpell) }
+                                }
                                 Button { confirmFuse = true } label: { Label("융합", systemImage: "arrow.triangle.merge") }
                                     .buttonStyle(.glass)
                                     .buttonBorderShape(.capsule)
@@ -559,12 +566,6 @@ struct DexView: View {
                                     } message: {
                                         Text("\(consumed(materials))을 소비해요. 0장이 되는 소재는 컬렉션에서 빠져요.")
                                     }
-                                if !model.game.hasFusionSpell {  // 누르면 「융합」 카드로 이동
-                                    Image(systemName: "questionmark.circle")
-                                        .foregroundStyle(.secondary)
-                                        .hoverHint("「융합」 마법 카드가 1장 있어야 해요 (소비되지 않아요)")
-                                        .onTapGesture { jump(to: CardDB.fusionSpell) }
-                                }
                             }
                         }
                     }
