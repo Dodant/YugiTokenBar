@@ -40,6 +40,17 @@ import Testing
         #expect(game.fusionMaterials(11) == nil && !unknown)  // 소재를 모르는 융합은 못 만든다
     }
 
+    /// 오른쪽 "융합 가능" 목록: 설정·「융합」·소재가 다 있어야 나온다
+    @Test func fusableListsOnlyReadyFusions() {
+        var game = Game(db: db, state: GameState())
+        game.state.owned = [1: 1, 2: 2, CardDB.fusionSpell: 1]
+        #expect(game.fusable.isEmpty)  // 설정이 꺼져 있으면 없다
+        game.state.fusionOnly = true
+        #expect(game.fusable == [10])  // 11 은 소재를 몰라서 빠진다
+        game.state.owned[CardDB.fusionSpell] = nil
+        #expect(game.fusable.isEmpty)
+    }
+
     /// 융합 전용 설정이 켜져 있으면 소재는 필요한 최대 장 수(소재2 → 2장)까지 중복으로 치지 않는다
     @Test func fusionOnlyKeepsMaterialCopiesFromDuplicateSales() {
         var state = GameState()

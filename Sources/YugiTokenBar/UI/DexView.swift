@@ -503,7 +503,50 @@ struct DexView: View {
         }
     }
 
-    @ViewBuilder private var detail: some View {
+    /// 오른쪽 패널: 융합할 수 있는 카드가 있을 때만 맨 위에 "융합 가능" 목록, 그 아래 선택한 카드 정보
+    private var detail: some View {
+        VStack(spacing: 0) {
+            let fusable = model.game.fusable
+            if !fusable.isEmpty {
+                fusableList(fusable)
+                Divider()
+            }
+            cardDetail.frame(maxHeight: .infinity)
+        }
+    }
+
+    /// 누르면 그 카드로 이동해 상세(융합 버튼)를 연다
+    private func fusableList(_ cids: [Int]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("융합 가능 · \(cids.count)", systemImage: "arrow.triangle.merge")
+                .font(.headline)
+                .foregroundStyle(.purple)
+            ScrollView {
+                VStack(spacing: 2) {
+                    ForEach(cids, id: \.self) { cid in
+                        let owned = model.game.copies(cid) > 0
+                        Button { jump(to: cid) } label: {
+                            HStack(spacing: 8) {
+                                CardImageView(db: model.db, cid: cid, owned: owned).frame(width: 22)
+                                Text(model.db.cards[cid]?.name ?? "").lineLimit(1)
+                                Spacer(minLength: 4)
+                                if !owned { Text("미보유").font(.caption).foregroundStyle(.secondary) }
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .contentShape(.rect)
+                            .background(selectedCards == [cid] ? Color.accentColor.opacity(0.18) : .clear, in: .rect(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .frame(maxHeight: min(CGFloat(cids.count) * 38, 190))
+        }
+        .padding(12)
+    }
+
+    @ViewBuilder private var cardDetail: some View {
         if selectedCards.count > 1 {
             ContentUnavailableView {
                 Label("\(selectedCards.count)장 선택됨", systemImage: "rectangle.on.rectangle")
