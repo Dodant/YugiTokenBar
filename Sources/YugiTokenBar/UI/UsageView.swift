@@ -43,11 +43,11 @@ struct UsageView: View {
 
     static func claudeMeters(_ s: LimitStatus) -> [Meter] {
         var meters: [Meter] = []
-        if let u = s.fiveHour?.utilization { meters.append(Meter(label: "5h", percent: u)) }
-        if let u = s.sevenDay?.utilization { meters.append(Meter(label: "주", percent: u)) }
+        if let u = s.fiveHour?.utilization { meters.append(Meter(label: "5h", percent: u, resetsAt: s.fiveHour?.resetDate)) }
+        if let u = s.sevenDay?.utilization { meters.append(Meter(label: "주", percent: u, resetsAt: s.sevenDay?.resetDate)) }
         for e in s.scopedLimitEntries {
             guard let p = e.percent else { continue }
-            meters.append(Meter(label: e.scope?.model?.displayName ?? "모델", percent: p))
+            meters.append(Meter(label: e.scope?.model?.displayName ?? "모델", percent: p, resetsAt: e.resetDate))
         }
         return meters
     }
@@ -61,14 +61,16 @@ struct UsageView: View {
     }
 
     static func codexMeters(_ s: CodexRateLimitSnapshot) -> [Meter] {
-        [s.primary.map { Meter(label: "5h", percent: Double($0.usedPercent)) },
-         s.secondary.map { Meter(label: "주", percent: Double($0.usedPercent)) }].compactMap { $0 }
+        [s.primary.map { Meter(label: "5h", percent: Double($0.usedPercent), resetsAt: $0.resetDate) },
+         s.secondary.map { Meter(label: "주", percent: Double($0.usedPercent), resetsAt: $0.resetDate) }].compactMap { $0 }
     }
 }
 
 struct Meter {
     let label: String
     let percent: Double
+    /// 초기화 시각 (모르면 nil). 지난 한도는 파트너 상태에서 뺀다.
+    var resetsAt: Date? = nil
 }
 
 private struct ProviderUsageRow: View {

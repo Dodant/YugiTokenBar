@@ -146,8 +146,8 @@ import Testing
         var q = PartnerPlayer()
         run(&q, PartnerAnim.idle.frameCount)  // Finish initial idle
         q.setMood(.flap)
-        run(&q, 1)  // One tick to advance to flap
-        #expect(q.anim == .flap)
+        #expect(q.anim == .flap && q.frame == 0)  // setMood ends the idle rest and starts flap at once
+        run(&q, 1)
         q.play(.wave)
         #expect(q.anim == .flap && !q.queue.isEmpty)  // Still flap, wave waits in queue
         run(&q, PartnerAnim.flap.frameCount)  // Finish one flap loop
@@ -240,7 +240,7 @@ import Testing
         var state = GameState()
         state.pendingFree = 1
         try store.save(state)
-        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store)
+        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store, partner: PartnerModel(sheet: nil))
         #expect(!model.game.state.partnerUnlocked)
         #expect(model.openFree())  // 풀에 날개 크리보 1종뿐
         #expect(model.game.state.partnerUnlocked)
@@ -252,22 +252,54 @@ import Testing
         var state = GameState()
         state.owned[CardDB.partnerCard] = 1
         try store.save(state)
-        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store)
+        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store, partner: PartnerModel(sheet: nil))
         #expect(!model.game.state.partnerUnlocked)
         model.unlockOnLaunch()
         #expect(model.game.state.partnerUnlocked)
         #expect(store.load().partnerUnlocked)
     }
 
-    @MainActor @Test func importLockedSaveHidesPartner() throws {
-        let dir = tempDir()
-        let store = StateStore(url: dir.appendingPathComponent("state.json"))
+    @MainActor @Test func importKeepsUnlockAndLocalPartnerSettings() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
         var state = GameState()
         state.partnerUnlocked = true
+        state.partnerSize = 200
         try store.save(state)
-        let model = AppModel(db: makeDB([[(1, 1)]]), store: store)
-        _ = try model.importSave(SaveEnvelope(appVersion: "0", exportedAt: Date(), state: GameState()))
-        #expect(!model.game.state.partnerUnlocked)  // 해금은 세이브 단위
+        let model = AppModel(db: makeDB([[(1, 1)]]), store: store, partner: PartnerModel(sheet: nil))
+        var incoming = GameState()
+        incoming.partnerSize = 64
+        _ = try model.importSave(SaveEnvelope(appVersion: "0", exportedAt: Date(), state: incoming))
+        #expect(model.game.state.partnerUnlocked)  // 해금은 영구
+        #expect(model.game.state.partnerSize == 200)  // 표시 설정은 이 Mac 값
+        #expect(store.load().partnerUnlocked)
+    }
+
+    @MainActor @Test func importSaveWithKuribohUnlocks() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        try store.save(GameState())
+        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store, partner: PartnerModel(sheet: nil))
+        var incoming = GameState()
+        incoming.owned[CardDB.partnerCard] = 1
+        _ = try model.importSave(SaveEnvelope(appVersion: "0", exportedAt: Date(), state: incoming))
+        #expect(model.game.state.partnerUnlocked)
+        #expect(store.load().partnerUnlocked)
+    }
+
+    @MainActor @Test func missingSheetDisablesPartner() {
+        let m = PartnerModel(sheet: nil)
+        #expect(!m.isReady)
+        m.start()
+        m.play(.excited)
+        #expect(m.menu.image == nil && m.desktop.image == nil)
+    }
+
+    @Test func expiredLimitsDoNotMakeSad() {
+        let now = Date()
+        let stale = Meter(label: "5h", percent: 95, resetsAt: now.addingTimeInterval(-60))
+        let live = Meter(label: "주", percent: 40, resetsAt: now.addingTimeInterval(3600))
+        #expect(PartnerMood.limitPercent([stale, live], now: now) == 40)
+        #expect(PartnerMood.limitPercent([Meter(label: "모델", percent: 85)], now: now) == 85)  // 시각 모름 → 유지
+        #expect(PartnerMood.limitPercent([], now: now) == 0)
     }
 
     // MARK: 바탕화면 창
@@ -278,8 +310,10 @@ import Testing
         let kept = CGPoint(x: 300, y: 200)
         #expect(PartnerPanel.place(origin: kept, size: size, screens: [main], main: main) == kept)
         let gone = CGPoint(x: 3000, y: 200)  // 떼어 낸 외부 모니터
+        let sliver = CGPoint(x: 1440 - 10, y: 200)  // 10pt 만 걸치게 끌어냄
         let corner = CGPoint(x: 1440 - 118 - 24, y: 24)
         #expect(PartnerPanel.place(origin: gone, size: size, screens: [main], main: main) == corner)
+        #expect(PartnerPanel.place(origin: sliver, size: size, screens: [main], main: main) == corner)
         #expect(PartnerPanel.place(origin: nil, size: size, screens: [main], main: main) == corner)
     }
 

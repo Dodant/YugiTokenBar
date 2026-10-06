@@ -2,7 +2,7 @@
 
 작성일: 2026-10-02 · 상태: 구현됨 (본 스펙 4·6·7·8·9절에 합침)
 
-구현 커밋에서 이 내용을 본 스펙(`2026-10-01-yugitokenbar-design.md`)의 4절(구조·저장), 6절(화면), 8절(테스트), 9절(범위 밖)에 합친다.
+이 내용은 본 스펙(`2026-10-01-yugitokenbar-design.md`)의 4절(구조·저장), 6절(화면), 7절(오류), 8절(테스트), 9절(범위 밖), 10절(라이선스)에 합쳤다. 이후 바뀌는 내용은 본 스펙이 기준이다.
 
 ## 1. 목적
 
@@ -11,8 +11,8 @@ PokeTokenBar의 바탕화면 동료처럼, 토큰 사용 상태에 반응하는 
 ## 2. 해금
 
 - 「날개 크리보」(cid 6314, 15번째 팩 『잃어버린 천년』 SR, GX 시대라 기본 시대 범위 안)를 1장 이상 가지면 해금된다.
-- 해금은 영구다. 처음 가졌을 때 `GameState.partnerUnlocked = true`를 저장하고, 이후 팔거나 시대 범위를 바꿔도 유지된다.
-- 검사는 `AppModel.save()` 직전(`Game.unlockPartnerIfOwned()`, 새로 해금되면 true)과 앱 시작 시 한 번. 팩·무료 카드·융합·가져오기 모두 save를 거치므로 따로 연결하지 않는다. 이미 가진 옛 세이브는 다음 시작 때 해금된다.
+- 해금은 영구다. 처음 가졌을 때 `GameState.partnerUnlocked = true`를 저장하고, 이후 팔거나 시대 범위를 바꾸거나 해금 전 세이브를 가져와도 유지된다(가져오기 때 파트너 표시 설정도 이 Mac 값).
+- 검사는 `AppModel.save()` 직전(`Game.unlockPartnerIfOwned()`, 새로 해금되면 true), 가져오기 직후, 앱 시작 시 한 번. 팩·무료 카드·융합은 save를 거치므로 따로 연결하지 않는다. 이미 가진 옛 세이브는 다음 시작 때 해금된다.
 - 새로 해금되면 바탕화면 파트너가 나타나며 설렘 동작을 한 번 재생한다.
 - 해금 전: 메뉴바는 지금의 카드 아이콘, 바탕화면 파트너 없음. 설정의 파트너 줄은 비활성이고 "「날개 크리보」 카드를 얻으면 파트너로 함께해요" 안내를 보인다.
 
@@ -43,7 +43,7 @@ PokeTokenBar의 바탕화면 동료처럼, 토큰 사용 상태에 반응하는 
 
 | 조건 | 동작 |
 |---|---|
-| Claude·Codex 공식 한도 중 가장 높은 % ≥ 80 | 시무룩(5) |
+| Claude·Codex 공식 한도 중 가장 높은 %(초기화 시각이 지난 한도는 뺀다) ≥ 80 | 시무룩(5) |
 | 분당 토큰 ≥ 100,000 | 비행: 오른쪽(1)과 왼쪽(2)을 번갈아, 제자리 |
 | 분당 토큰 ≥ 1,000 | 날갯짓(4) |
 | 그 밖 | 대기: 깜빡임(0). 대기가 20~40초(무작위) 이어질 때마다 두리번(8) 1회 |
@@ -60,7 +60,7 @@ PokeTokenBar의 바탕화면 동료처럼, 토큰 사용 상태에 반응하는 
 | 팩·무료 카드 개봉에서 SR/UR가 나옴, 무료 팩 또는 무료 카드가 늘어남, 새로 해금 | 설렘(6) |
 | 코인이 `Balance.packPrice` 미만 → 이상이 됨 | 손짓(3) |
 
-같은 동작이 이미 큐에 있으면 다시 넣지 않는다.
+같은 동작이 이미 큐에 있거나 한 번 재생 중이면 다시 넣지 않는다. 해금 전(타이머가 꺼진 동안)의 반응은 버린다.
 
 ### 메뉴바
 
@@ -71,7 +71,7 @@ PokeTokenBar의 바탕화면 동료처럼, 토큰 사용 상태에 반응하는 
 
 - 테두리 없는 투명 `NSPanel`(`.nonactivatingPanel`, 레벨 `.floating`, `.canJoinAllSpaces`·`.fullScreenAuxiliary`, 그림자 없음), 내용은 SwiftUI `PartnerView`(현재 프레임 이미지)를 `NSHostingView` 하위 클래스에 담는다.
 - 마우스: 누른 뒤 4pt 넘게 움직이면 창 드래그, 아니면 클릭. 클릭은 갸웃만 재생한다(MenuBarExtra(macOS 26)에는 창을 코드로 여는 API가 없고 상태바 버튼에 target/action이 없어 팝오버는 못 연다). 우클릭·Ctrl 클릭은 메뉴 [숨기기] → `partnerEnabled = false`.
-- 위치는 드래그가 끝날 때 `GameState.partnerOrigin`에 저장. 저장 위치가 어느 화면에도 없으면(모니터 분리 등) 주 화면 오른쪽 아래(여백 24pt)로.
+- 위치는 드래그가 끝날 때 `GameState.partnerOrigin`에 저장. 창 가운데가 어느 화면에도 없으면(모니터 분리, 화면 밖으로 끌어냄, 키워서 넘침 등) 주 화면 오른쪽 아래(여백 24pt)로.
 - 크기 `partnerSize`는 창 높이(pt), 폭은 192:208 비율.
 
 ## 6. 설정·저장
@@ -91,7 +91,8 @@ PokeTokenBar의 바탕화면 동료처럼, 토큰 사용 상태에 반응하는 
 
 ```
 Sources/YugiTokenBar/
-  Partner.swift          시트 자르기, PartnerAnim(행 표), PartnerMood.base, PartnerModel(현재 동작·프레임·큐·타이머)
+  Partner.swift          PartnerAnim(행 표), PartnerSheet(자르기), PartnerTuning(기준값), PartnerMood(기준 상태),
+                         PartnerPlayer(동작·프레임·큐·쉬기), FrameBox, PartnerModel(타이머·프레임 내보내기)
   UI/PartnerPanel.swift  NSPanel 컨트롤러, 마우스 처리 호스팅 뷰, PartnerView
 Resources/partner.png
 ```

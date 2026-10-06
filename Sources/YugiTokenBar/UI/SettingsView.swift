@@ -77,7 +77,7 @@ struct SettingsView: View {
             }
             row {
                 Text("크기")
-                Slider(value: $model.partnerSize, in: PartnerTuning.sizes, step: 16)
+                Slider(value: $model.partnerSize, in: PartnerTuning.sizes, step: PartnerTuning.sizeStep)
                     .controlSize(.small)
                     .disabled(!unlocked || !model.partnerEnabled)
             }

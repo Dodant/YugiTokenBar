@@ -22,11 +22,11 @@ import SwiftUI
         panel.contentView = host
     }
 
-    /// 크기를 맞추고 보인다. 이미 보이면 위치는 그대로 두고 크기만 바꾼다.
+    /// 크기를 맞추고 보인다. 이미 보이면 지금 위치에서 크기만 바꾼다(키워서 가운데가 화면 밖이 되면 오른쪽 아래로).
     func show(size: Double, origin: CGPoint?) {
         let windowSize = Self.windowSize(height: size)
-        let start = panel.isVisible ? panel.frame.origin : Self.place(
-            origin: origin, size: windowSize,
+        let start = Self.place(
+            origin: panel.isVisible ? panel.frame.origin : origin, size: windowSize,
             screens: NSScreen.screens.map(\.visibleFrame),
             main: NSScreen.screens.first?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900))
         panel.setFrame(CGRect(origin: start, size: windowSize), display: true)
@@ -41,9 +41,9 @@ import SwiftUI
         return CGSize(width: h * PartnerSheet.cell.width / PartnerSheet.cell.height, height: h)
     }
 
-    /// 저장 위치가 어느 화면에도 걸치지 않으면(모니터 분리 등) 주 화면 오른쪽 아래.
+    /// 창 가운데가 어느 화면에도 없으면(모니터 분리, 화면 밖으로 끌어냄 등) 주 화면 오른쪽 아래.
     static func place(origin: CGPoint?, size: CGSize, screens: [CGRect], main: CGRect) -> CGPoint {
-        if let origin, screens.contains(where: { $0.intersects(CGRect(origin: origin, size: size)) }) { return origin }
+        if let origin, screens.contains(where: { $0.contains(CGPoint(x: origin.x + size.width / 2, y: origin.y + size.height / 2)) }) { return origin }
         return CGPoint(x: main.maxX - size.width - margin, y: main.minY + margin)
     }
 }

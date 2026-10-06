@@ -35,7 +35,9 @@ struct PartnerSheet {
     static func bundled() -> PartnerSheet? {
         let url = Bundle.main.url(forResource: "partner", withExtension: "png")
             ?? CardDB.repoCardsURL.deletingLastPathComponent().appendingPathComponent("partner.png")
-        return PartnerSheet(url: url)
+        let sheet = PartnerSheet(url: url)
+        if sheet == nil { AppLog.write("partner.png 를 읽지 못해 파트너를 끕니다") }
+        return sheet
     }
 }
 
@@ -59,8 +61,9 @@ enum PartnerTuning {
     static let lookAroundEvery = 20.0...40.0
     /// 메뉴바 깜빡임 주기 (4초)
     static let menuBlinkTicks = Int(4 * fps)
-    /// 바탕화면 파트너 높이(pt). 설정 슬라이더는 16 단위.
+    /// 바탕화면 파트너 높이(pt)와 설정 슬라이더 단위
     static let sizes = 64.0...256.0
+    static let sizeStep = 16.0
 }
 
 /// 갱신(60초) 때 읽은 오늘 토큰 합계
@@ -80,6 +83,11 @@ enum PartnerMood: Equatable, Sendable {
         if tokensPerMinute >= PartnerTuning.flyTokensPerMinute { return .fly }
         if tokensPerMinute >= PartnerTuning.flapTokensPerMinute { return .flap }
         return .idle
+    }
+
+    /// 시무룩 판정에 쓰는 한도 %: 초기화 시각이 지난 한도(조회 실패로 남은 옛 값)는 뺀다.
+    static func limitPercent(_ meters: [Meter], now: Date = Date()) -> Double {
+        meters.filter { ($0.resetsAt ?? .distantFuture) > now }.map(\.percent).max() ?? 0
     }
 
     /// 이 상태의 기준 동작인가 (쉬기 여부 판단용)
@@ -132,9 +140,9 @@ struct PartnerPlayer: Sendable {
         if hold > 0 { hold = 0; advance() }  // 멈춰 있던 대기는 바로 새 상태로
     }
 
-    /// 한 번 재생. 같은 동작이 이미 큐에 있으면 넣지 않는다. 멈춰 있던 대기는 바로 끊는다.
+    /// 한 번 재생. 같은 동작이 이미 큐에 있거나 한 번 재생 중이면 넣지 않는다. 멈춰 있던 대기는 바로 끊는다.
     mutating func play(_ a: PartnerAnim) {
-        guard !queue.contains(a) else { return }
+        guard !queue.contains(a), !(oneShot && anim == a) else { return }
         queue.append(a)
         if hold > 0 { hold = 0; advance() }
     }
@@ -222,7 +230,6 @@ extension PartnerAnim {
     private var ticks = 0
 
     init(sheet: PartnerSheet? = .bundled()) {
-        if sheet == nil { AppLog.write("partner.png 를 읽지 못해 파트너를 끕니다") }
         let images = sheet?.frames ?? [:]
         frames = images.mapValues { $0.map { NSImage(cgImage: $0, size: PartnerSheet.cell) } }
         // 메뉴바: 셀 위쪽 빈 공간(대기 행 그림은 y 54~203)을 잘라 세로 가운데에 오게 하고, 숫자와 살짝 띄운다
@@ -244,7 +251,7 @@ extension PartnerAnim {
         guard isReady, timer == nil else { return }
         render()
         let timer = Timer(timeInterval: 1 / PartnerTuning.fps, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            MainActor.assumeIsolated { self?.tick() }  // RunLoop.main 에서 불린다
         }
         timer.tolerance = 0.02
         RunLoop.main.add(timer, forMode: .common)  // 메뉴·팝오버가 열려 있어도 돈다
@@ -252,7 +259,8 @@ extension PartnerAnim {
     }
 
     func setMood(_ mood: PartnerMood) { player.setMood(mood); render() }
-    func play(_ anim: PartnerAnim) { player.play(anim); render() }
+    /// 해금 전(타이머 꺼짐)의 반응은 버린다. 쌓아 두면 해금 순간 한꺼번에 재생된다.
+    func play(_ anim: PartnerAnim) { guard timer != nil else { return }; player.play(anim); render() }
     func interrupt(_ anim: PartnerAnim) { player.interrupt(anim); render() }
 
     private func tick() {
