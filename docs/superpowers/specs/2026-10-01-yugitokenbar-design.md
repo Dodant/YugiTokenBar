@@ -18,7 +18,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량을 보�
 | 표시 이름 | 한국어 카드명 |
 | 팩/레어도 | 한국 정발 팩 기준 (Konami DB `t_rid`) |
 | 카드 정보/효과 | OCG 기준 한국어 텍스트 |
-| 이미지 | YGOPRODeck 영문 실물 이미지, 한국어 텍스트는 이미지 밖에 별도 표시 |
+| 이미지 | YGOPRODeck 영문 실물 이미지, 한국어 텍스트는 이미지 밖에 별도 표시. 공식 오버프레임(Yugipedia "Extended art") 판이 있는 카드는 그 이미지(`ImageCache.overframe`, passcode → Yugipedia 파일 URL, 100팩에 든 오버프레임 21종 전부를 손으로 골랐다. 워터마크 없는 RA05 영문 UR·LOSP 일본판 PScR·CF02 공식 이미지 12장, Yugipedia에 SAMPLE 워터마크 판이나 마스터 듀얼 렌더뿐이거나 이미지가 없는 9장은 일본 카드숍(카드러시·블루래빗) 상품 스캔) |
 
 ### 레어도 매핑 (Konami 레어도 라벨 → 게임 티어, 마스터 듀얼식 4등급)
 
@@ -65,7 +65,7 @@ Sources/YugiTokenBar/
   Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·한도 provider + 의존 파일, TodayUsage(신규), NOTICE.md(출처·변경점)
   CardDB.swift         cards.json 로드, 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 처음 이름순으로 볼 때 한 번 만든다)
   Game.swift           상태·적립·뽑기 (밸런스 상수는 파일 상단)
-  ImageCache.swift     카드(YGOPRODeck)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시 (백그라운드에서 디코딩까지 끝내 스크롤 중 메인 스레드가 JPEG를 풀지 않음, 팩은 긴 변 480px로 줄임. 메모리 캐시는 디코딩된 픽셀 바이트 150MB 상한, 넘으면 오래된 것부터 내보내고 디스크에서 다시 읽음)
+  ImageCache.swift     카드(YGOPRODeck, 오버프레임은 Yugipedia를 긴 변 614px로 줄여 두 크기에 공용)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시 (백그라운드에서 디코딩까지 끝내 스크롤 중 메인 스레드가 JPEG를 풀지 않음, 팩은 긴 변 480px로 줄임. 메모리 캐시는 디코딩된 픽셀 바이트 150MB 상한, 넘으면 오래된 것부터 내보내고 디스크에서 다시 읽음)
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
   Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기

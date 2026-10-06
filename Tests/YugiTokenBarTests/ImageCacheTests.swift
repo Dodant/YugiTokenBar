@@ -14,6 +14,19 @@ import Testing
         #expect(image != nil)
     }
 
+    /// 오버프레임 카드는 크기와 상관없이 overframe-<passcode> 한 파일을 쓴다
+    @MainActor @Test func overframeCardsUseTheirOwnFile() async throws {
+        let dir = tempDir()
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2, bitsPerSample: 8,
+                                   samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let id = try #require(ImageCache.overframe.keys.first)
+        try rep.representation(using: .png, properties: [:])!.write(to: dir.appendingPathComponent("overframe-\(id).jpg"))
+        let cache = ImageCache(dir: dir)
+        #expect(await cache.image(id, size: .small) != nil)
+        #expect(await cache.image(id, size: .full) != nil)
+    }
+
     @MainActor @Test func removesGarbageCacheFileAndRetriesNextCall() async throws {
         let dir = tempDir()
         let cacheFile = dir.appendingPathComponent("cards_small-456.jpg")

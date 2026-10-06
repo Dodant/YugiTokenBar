@@ -3,6 +3,7 @@
 Claude Code·Codex·Gemini·Grok·Pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션(정규 부스터 100팩, 8,172종. 어시스트 팩 같은 미니 팩 제외)을 채우는 macOS 메뉴바 앱. 개인용이며 배포하지 않는다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
+- 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 21장·복사한 코드. 이미지 출처를 바꾸면 같이 고친다)
 - 구현 계획: `docs/superpowers/plans/2026-10-01-yugitokenbar.md` (작업 1~10, 코드 포함, 2026-10-01 사전 검증됨)
 - 실행 방식: **Subagent-driven** (superpowers:subagent-driven-development) — 사용자가 선택함
 
