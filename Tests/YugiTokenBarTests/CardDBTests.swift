@@ -26,7 +26,9 @@ import Testing
         // 재수록 카드는 수록 팩 중 가장 높은 등급: 유벨(환영의 어둠 N, 팬텀 나이트메어 QCSE → SE)
         #expect(db.cards.values.first { $0.name == "유벨" }?.rarity == "SE")
         let tiers = Dictionary(grouping: db.cards.values, by: \.tier).mapValues(\.count)
-        #expect(tiers == [1: 4758, 2: 1730, 3: 896, 4: 552, 5: 236])
+        #expect(tiers == [1: 4758, 2: 1730, 3: 896, 4: 488, 5: 300])
+        // 팩 표지 몬스터는 SE (악몽의 미궁·어둠의 유산은 표지가 마법·함정이라 빠진다)
+        #expect(db.cards[4007]?.rarity == "SE" && db.cards[4223]?.rarity == "SE")  // 푸른 눈의 백룡, 블랙 데몬즈 드래곤
         for pack in db.packs {
             for cid in pack.cards {
                 #expect(db.cards[cid] != nil, "팩 \(pack.name) 의 cid \(cid) 가 cards 에 없음")
