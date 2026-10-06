@@ -106,15 +106,24 @@ final class AppModel: ObservableObject {
             defer { refreshing = false }
             let reader = usageReader
             let usage = await Task.detached { await reader.read() }.value
-            todayTokens = usage.byProvider
-            todayCost = usage.cost
+            // 같은 값을 다시 넣어도 @Published 는 화면을 다시 그리게 하므로 바뀔 때만
+            if todayTokens != usage.byProvider { todayTokens = usage.byProvider }
+            if todayCost != usage.cost { todayCost = usage.cost }
             let sample = UsageSample(date: usage.date, total: usage.byProvider.values.reduce(0, +), at: Date())
             tokensPerMinute = PartnerMood.tokensPerMinute(from: lastUsage, to: sample)
             lastUsage = sample
             updatePartnerMood()
-            game.claim(today: usage.date, byProvider: usage.byProvider)
-            save()
+            claim(today: usage.date, byProvider: usage.byProvider)
         }
+    }
+
+    /// 늘어난 토큰이 있을 때만 적립하고 저장한다. 쉬는 중이면 상태가 그대로라 저장도, 화면 다시 그리기도 하지 않는다.
+    func claim(today: String, byProvider: [String: Int]) {
+        var next = game
+        next.claim(today: today, byProvider: byProvider)
+        guard next.state != game.state else { return }
+        game = next
+        save()
     }
 
     @discardableResult

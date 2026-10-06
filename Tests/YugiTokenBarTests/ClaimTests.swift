@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import YugiTokenBar
 
@@ -100,3 +101,18 @@ import Testing
         #expect(game.state.owned.values.reduce(0, +) == 5)
     }
 }
+
+/// 매분 갱신: 늘어난 토큰이 없으면 저장하지 않고(파일을 다시 만들지 않음), 늘면 적립하고 저장한다
+@MainActor @Test func modelClaimSavesOnlyWhenStateChanges() throws {
+    let file = tempDir().appendingPathComponent("state.json")
+    let model = AppModel(db: makeDB([[(1, 1)]]), store: StateStore(url: file), partner: PartnerModel(sheet: nil))
+    model.claim(today: "2026-10-06", byProvider: ["claude_code": 100])
+    #expect(FileManager.default.fileExists(atPath: file.path))
+    try FileManager.default.removeItem(at: file)
+    model.claim(today: "2026-10-06", byProvider: ["claude_code": 100])
+    #expect(!FileManager.default.fileExists(atPath: file.path))
+    model.claim(today: "2026-10-06", byProvider: ["claude_code": 100 + Balance.tokensPerCoin])
+    #expect(FileManager.default.fileExists(atPath: file.path))
+    #expect(model.game.state.coins == 1)
+}
+

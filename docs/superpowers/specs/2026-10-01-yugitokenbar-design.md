@@ -59,7 +59,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량을 보�
 ```
 Sources/YugiTokenBar/
   App.swift            앱 진입, 메뉴바 라벨
-  AppModel.swift       60초마다 사용량 적립, 5분마다 공식 한도 갱신, 저장
+  AppModel.swift       60초마다 사용량 적립(늘어난 토큰이 없으면 저장·화면 갱신 안 함), 5분마다 공식 한도 갱신, 저장
   TodayUsageReader.swift  TodayUsage.read와 같은 집계, Claude 로그는 파일별 (수정 시각, 크기) 캐시 (Usage/ 밖에서 감쌈)
   Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·한도 provider + 의존 파일, TodayUsage(신규), NOTICE.md(출처·변경점)
   CardDB.swift         cards.json 로드, 조회 (카드별 최고 등급 칸 `topCards`는 시대 범위 DB마다 미리 만들고, 컬렉션 이름순 키 `nameRanks`는 처음 이름순으로 볼 때 한 번 만든다)
