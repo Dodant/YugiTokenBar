@@ -23,4 +23,15 @@ import Testing
         #expect(image == nil)
         #expect(!FileManager.default.fileExists(atPath: cacheFile.path))
     }
+
+    /// 팩 이미지는 긴 변이 maxPixels 를 넘지 않게 줄여서 디코딩한다
+    @Test func decodeDownsamplesToMaxPixels() throws {
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 300, pixelsHigh: 600, bitsPerSample: 8,
+                                   samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let data = try #require(rep.representation(using: .png, properties: [:]))
+        let small = try #require(ImageCache.decode(data, maxPixels: 120))
+        #expect(max(small.width, small.height) == 120)
+        #expect(ImageCache.decode(data, maxPixels: nil)?.height == 600)
+    }
 }

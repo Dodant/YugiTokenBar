@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import YugiTokenBar
 
@@ -36,4 +37,12 @@ import Testing
         game.deleteDeck(deck.id)
         #expect(game.state.decks.isEmpty)
     }
+}
+
+@Test func dexScopeKeyRoundTrips() {
+    for scope in [DexScope.all, .favorites, .pack(12), .deck(UUID())] {
+        #expect(DexScope(key: scope.key) == scope)
+    }
+    #expect(DexScope(key: "") == nil)
+    #expect(DexScope(key: "pack:x") == nil)
 }

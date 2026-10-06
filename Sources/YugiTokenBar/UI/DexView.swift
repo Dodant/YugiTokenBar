@@ -2,7 +2,7 @@ import SwiftUI
 
 struct DexView: View {
     @EnvironmentObject var model: AppModel
-    @State private var scope: DexScope? = .pack(0)
+    @State private var scope: DexScope? = .all
     @State private var renaming: Deck?
     @State private var newName = ""
     @State private var deleting: Deck?
@@ -13,7 +13,6 @@ struct DexView: View {
     @State private var marquee: CGRect?
     @State private var marqueeBase: Set<Int> = []
     @State private var frames = FrameStore()
-    @State private var hoveredCard: Int?
     @State private var showInspector = true
     /// 융합 소재 링크로 이동 중인 카드: 범위를 바꾸면 onChange 가 선택을 비우므로 그 뒤에 고른다
     @State private var jumpTarget: Int?
@@ -28,6 +27,9 @@ struct DexView: View {
     @State private var search = ""
     @State private var showUnowned = true  // 기억하지 않고 창을 열 때마다 켠다
     @AppStorage("dex.sort") private var sort = DexSort.pack
+    /// 마지막으로 고른 사이드바 항목과 연 시각. 그날 처음 열면 "전체"로 시작한다
+    @AppStorage("dex.scope") private var savedScope = ""
+    @AppStorage("dex.scopeDay") private var savedDay = 0.0  // 마지막으로 연 시각(timeIntervalSince1970)
 
     var body: some View {
         let game = model.game
@@ -76,13 +78,13 @@ struct DexView: View {
             }
             .navigationSplitViewColumnWidth(min: 220, ideal: 250)
         } detail: {
-            ScrollView {
+            // .scrollPosition(id:) 는 스크롤 중에도 값을 계속 써서 줄마다 창 전체를 다시 계산하므로, 이동할 때만 쓰는 ScrollViewReader 로
+            ScrollView { ScrollViewReader { proxy in
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
                     ForEach(entries, id: \.number) { entry in
                         cell(number: entry.number, cid: entry.cid, label: entry.label)
                     }
                 }
-                .scrollTargetLayout()
                 .padding(16)
                 // 빈 곳: 클릭하면 선택 해제, 끌면 러버밴드 선택
                 .background {
@@ -100,8 +102,12 @@ struct DexView: View {
                     }
                 }
                 .coordinateSpace(.named("grid"))
-            }
-            .scrollPosition(id: $scrollTarget, anchor: .center)
+                .onChange(of: scrollTarget) {
+                    guard let target = scrollTarget else { return }
+                    proxy.scrollTo(target, anchor: .center)
+                    scrollTarget = nil
+                }
+            } }
             // ponytail: macOS 26 툴바 유리 그룹 안에선 메뉴 Picker 글자가 안 그려지고 체크박스가 뭉개져서 그리드 위 막대에 둔다
             .safeAreaInset(edge: .top, spacing: 0) { filterBar }
             .overlay {
@@ -126,7 +132,11 @@ struct DexView: View {
                                            description: Text(showUnowned ? "다른 팩이나 종류·등급을 골라 보세요" : "미보유 카드 포함을 켜면 전부 보여요"))
                 }
             }
-            .onChange(of: scope) { selectedCards = jumpTarget.map { [$0] } ?? []; anchor = jumpTarget; jumpTarget = nil }
+            .onChange(of: scope) {
+                selectedCards = jumpTarget.map { [$0] } ?? []; anchor = jumpTarget; jumpTarget = nil
+                if let scope { savedScope = scope.key }
+            }
+            .onAppear { restoreScope() }
             // 설정에서 시대 범위를 줄여 보던 팩이 사라지면 "전체"로
             .onChange(of: model.db.packs.count) { if case .pack(let i)? = scope, i >= model.db.packs.count { scope = .all } }
             .navigationTitle(title)
@@ -287,6 +297,19 @@ struct DexView: View {
     }
 
     /// 보고 있는 덱 (덱 화면이 아니면 nil)
+    /// 그날 처음 열면 "전체", 아니면 마지막 항목(범위 밖 팩·지운 덱이면 "전체")
+    private func restoreScope() {
+        let sameDay = Calendar.current.isDateInToday(Date(timeIntervalSince1970: savedDay))
+        let restored: DexScope? = sameDay ? DexScope(key: savedScope) : nil
+        savedDay = Date().timeIntervalSince1970
+        switch restored {
+        case .pack(let i)? where model.db.packs.indices.contains(i): scope = restored
+        case .deck(let id)? where model.game.deck(id) != nil: scope = restored
+        case .favorites?: scope = restored
+        default: scope = .all
+        }
+    }
+
     private var deckID: UUID? { if case .deck(let id)? = scope { id } else { nil } }
 
     /// 같은 소재가 반복되면 한 줄로 ("사이버 드래곤 × 3"). "× N" 조건의 count 도 곱한다
@@ -323,12 +346,12 @@ struct DexView: View {
         let n = inDeck ?? game.copies(cid)
         let owned = inDeck.map { game.copies(cid) >= $0 } ?? (n > 0)
         let selected = selectedCards.contains(cid)
-        return VStack(spacing: 4) {
+        return Hovering { hovered in VStack(spacing: 4) {
             CardImageView(db: model.db, cid: cid, owned: owned)
                 .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
                 .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
-                .overlay(alignment: .topTrailing) { star(cid) }
-                .overlay(alignment: .topLeading) { if let deckID { minus(deckID, cid) } }
+                .overlay(alignment: .topTrailing) { star(cid, hovered: hovered) }
+                .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
             Text(model.db.cards[cid]?.name ?? "")
                 .font(.caption2).lineLimit(1).truncationMode(.tail)
                 .foregroundStyle(owned ? .primary : .secondary)
@@ -342,8 +365,7 @@ struct DexView: View {
             .font(.caption2)
             .monospacedDigit()
         }
-        .contentShape(Rectangle())
-        .onHover { hoveredCard = $0 ? cid : (hoveredCard == cid ? nil : hoveredCard) }
+        .contentShape(Rectangle()) }
         .help(model.db.cards[cid]?.name ?? "")
         .onTapGesture { select(cid) }
         // 사이드바 덱 줄에 끌어다 놓는다. 페이로드는 cid 를 쉼표로 이은 문자열 (선택된 카드를 끌면 선택 전체).
@@ -389,19 +411,17 @@ struct DexView: View {
     }
 
     /// 덱 화면의 빼기 단추: 마우스를 올렸을 때만.
-    @ViewBuilder private func minus(_ deck: UUID, _ cid: Int) -> some View {
-        if hoveredCard == cid {
-            Button { model.removeFromDeck(deck, cid) } label: {
-                Image(systemName: "minus")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 22, height: 22)
-                    .background(.black.opacity(0.45), in: Circle())
-            }
-            .buttonStyle(.plain)
-            .padding(3)
-            .help("덱에서 1장 빼기")
+    private func minus(_ deck: UUID, _ cid: Int) -> some View {
+        Button { model.removeFromDeck(deck, cid) } label: {
+            Image(systemName: "minus")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(.black.opacity(0.45), in: Circle())
         }
+        .buttonStyle(.plain)
+        .padding(3)
+        .help("덱에서 1장 빼기")
     }
 
     /// 우클릭·선택 메뉴: 덱 화면이면 빼기, 아니면 덱에 넣기(미보유도 가능). 여러 장이면 장 수를 붙인다.
@@ -456,9 +476,9 @@ struct DexView: View {
     }
 
     /// 즐겨찾기 별: 체크된 카드는 항상, 아니면 마우스를 올렸을 때만.
-    @ViewBuilder private func star(_ cid: Int) -> some View {
+    @ViewBuilder private func star(_ cid: Int, hovered: Bool) -> some View {
         let on = model.game.state.favorites.contains(cid)
-        if on || hoveredCard == cid {
+        if on || hovered {
             Button { model.toggleFavorite(cid) } label: {
                 Image(systemName: on ? "star.fill" : "star")
                     .font(.system(size: 12, weight: .bold))
@@ -687,6 +707,15 @@ private struct DragPreview: View {
     }
 }
 
+/// 마우스 올림 상태를 셀 안에 둔다. DexView 의 @State 로 두면 스크롤 중 셀이 커서 밑을 지날 때마다
+/// 창 전체(카드 목록 필터·정렬)를 다시 계산해서 버벅인다.
+private struct Hovering<Content: View>: View {
+    @ViewBuilder let content: (Bool) -> Content
+    @State private var hovered = false
+
+    var body: some View { content(hovered).onHover { hovered = $0 } }
+}
+
 /// 화면에 보이는 셀의 프레임 (러버밴드 선택용). 클래스라 갱신해도 뷰를 다시 그리지 않는다.
 private final class FrameStore {
     var map: [Int: CGRect] = [:]
@@ -697,6 +726,27 @@ enum DexScope: Hashable {
     case all, favorites
     case pack(Int)
     case deck(UUID)
+
+    /// UserDefaults 저장용: "all", "favorites", "pack:3", "deck:<UUID>"
+    var key: String {
+        switch self {
+        case .all: "all"
+        case .favorites: "favorites"
+        case .pack(let i): "pack:\(i)"
+        case .deck(let id): "deck:\(id.uuidString)"
+        }
+    }
+
+    init?(key: String) {
+        let parts = key.split(separator: ":", maxSplits: 1).map(String.init)
+        switch (parts.first, parts.count) {
+        case ("all", 1): self = .all
+        case ("favorites", 1): self = .favorites
+        case ("pack", 2): guard let i = Int(parts[1]) else { return nil }; self = .pack(i)
+        case ("deck", 2): guard let id = UUID(uuidString: parts[1]) else { return nil }; self = .deck(id)
+        default: return nil
+        }
+    }
 }
 
 enum DexSort: String, CaseIterable {

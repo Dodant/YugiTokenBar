@@ -3,7 +3,8 @@ import SwiftUI
 struct ShopView: View {
     @EnvironmentObject var model: AppModel
     /// 스크롤 위치(위에서부터 pt). 상점을 닫았다 열거나 앱을 다시 켜도 그 자리로.
-    @AppStorage("shop.scrollY") private var savedY = 0.0
+    /// @AppStorage 로 두면 스크롤 프레임마다 써서 상점 전체를 다시 그리므로, 멈췄을 때만 UserDefaults 에 직접 쓴다
+    private static let scrollKey = "shop.scrollY"
     @State private var position = ScrollPosition()
     /// 복원 전에 들어오는 0 으로 저장값을 덮지 않게
     @State private var restored = false
@@ -33,13 +34,15 @@ struct ShopView: View {
             .frame(maxHeight: .infinity)
             .scrollPosition($position)
             .panelScrollBottom()
-            .onScrollGeometryChange(for: Double.self) { $0.contentOffset.y } action: { _, y in
-                if restored { savedY = max(0, y) }
+            .onScrollPhaseChange { _, phase, context in
+                if restored, phase == .idle {
+                    UserDefaults.standard.set(max(0, context.geometry.contentOffset.y), forKey: Self.scrollKey)
+                }
             }
             .task {
                 // 첫 레이아웃이 끝난 뒤 옮겨야 적용된다
                 await Task.yield()
-                position.scrollTo(y: savedY)
+                position.scrollTo(y: UserDefaults.standard.double(forKey: Self.scrollKey))
                 restored = true
             }
         }
