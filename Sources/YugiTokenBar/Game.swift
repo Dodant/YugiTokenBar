@@ -6,7 +6,9 @@ enum Balance {
     /// 코인으로 이만큼 사면 무료 팩 1장 (무료 팩으로 깐 건 세지 않는다)
     static let packsPerFreePack = 10
     static let tokensPerFreeCard = 10_000_000
-    /// 팩 5번째 장의 티어 확률 (R / SR / UR / SE). SE 가 없는 팩은 UR 로 내려간다.
+    /// 팩 4번째 장이 노멀 대신 레어(R)가 될 확률
+    static let slot4RareChance = 0.30
+    /// 팩 5번째 장의 티어 확률 (R / SR / UR / SE). 그 티어가 없는 팩은 아래 → 위 티어 순으로 찾는다.
     static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.10), (5, 0.02)]
     /// 무료 카드의 티어 확률 (N / R / SR / UR / SE). 티어 안에서는 균등.
     static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.70), (2, 0.23), (3, 0.05), (4, 0.015), (5, 0.005)]
@@ -15,7 +17,7 @@ enum Balance {
     static let freeOpenBatch = 5
     /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
     static let monstersPerPack = 2
-    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 206 < packPrice 라 사고팔기로 코인이 늘지 않는다.
+    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 215 < packPrice 라 사고팔기로 코인이 늘지 않는다.
     static let sellPrice: [Int: Int] = [1: 20, 2: 50, 3: 150, 4: 400, 5: 1_200]
     /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
     static let maxCopiesInDeck = 3
@@ -320,9 +322,10 @@ struct Game: Sendable {
         return (pack, open(pack: pack, using: &rng))
     }
 
-    /// 봉투 하나 열기: 노멀 4 + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
+    /// 봉투 하나 열기: 노멀 3 + 슬롯4(노멀, `slot4RareChance`로 레어) + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
     private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
-        let tiers = [1, 1, 1, 1, slot5Tier(using: &rng)]
+        let slot4 = Double.random(in: 0..<1, using: &rng) < Balance.slot4RareChance ? 2 : 1
+        let tiers = [1, 1, 1, slot4, slot5Tier(using: &rng)]
         var pulls: [Pull] = []
         for (i, tier) in tiers.enumerated() {
             let kind = i < Balance.monstersPerPack ? "몬스터" : nil

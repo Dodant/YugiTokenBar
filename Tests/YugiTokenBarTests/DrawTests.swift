@@ -35,15 +35,19 @@ import Testing
         #expect(rich().draw(pack: 0, tier: 5, using: &rng) == 6)
     }
 
-    @Test func packHasFourNormalsAndOneRareSlot() {
+    @Test func packHasThreeNormalsSlot4MaybeRareAndOneRareSlot() {
         var game = rich()
         var rng = SeededRNG(seed: 11)
         let opened = game.buy(pack: 0, using: &rng)
         #expect(opened.count == 5)
-        #expect(opened.prefix(4).allSatisfy { $0.tier == 1 })
+        #expect(opened.prefix(3).allSatisfy { $0.tier == 1 })
         #expect(opened[4].tier >= 2)
         #expect(game.state.coins == 1_000_000 - Balance.packPrice)
         #expect(opened.filter(\.isNew).count == Set(opened.map(\.cid)).count)
+        // 4번째 장은 30% 로 레어 (기대 600 / 2,000)
+        game.state.coins = 10_000_000
+        let rares = (0..<2_000).filter { _ in game.buy(pack: 0, using: &rng)[3].tier == 2 }.count
+        #expect((500...700).contains(rares))
     }
 
     @Test func noDuplicateCardWithinOnePack() {
@@ -148,7 +152,8 @@ import Testing
 
     @Test func packResaleValueIsBelowPackPrice() {
         let w = Balance.slot5Weights.reduce(0.0) { $0 + $1.weight * Double(Balance.sellPrice[$1.tier]!) }
-        #expect(4.0 * Double(Balance.sellPrice[1]!) + w < Double(Balance.packPrice))
+        let slot4 = (1 - Balance.slot4RareChance) * Double(Balance.sellPrice[1]!) + Balance.slot4RareChance * Double(Balance.sellPrice[2]!)
+        #expect(3.0 * Double(Balance.sellPrice[1]!) + slot4 + w < Double(Balance.packPrice))
     }
 
     @Test func autoSellDuplicatesSellsRepeatsOnly() {
