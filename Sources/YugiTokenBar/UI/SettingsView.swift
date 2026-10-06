@@ -39,32 +39,20 @@ struct SettingsView: View {
         // swift run 바이너리는 .app 이 아니라 로그인 항목으로 등록할 수 없다
         let installed = AppInfo.bundleVersion != nil
         return section("일반") {
-            row {
-                labeled("로그인 시 자동 실행", hint: installed ? "Mac에 로그인하면 메뉴바에 바로 떠요" : "설치한 앱(.app)에서만 켤 수 있어요")
-                Spacer()
-                Toggle("로그인 시 자동 실행", isOn: $launchAtLogin)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .disabled(!installed)
-                    .onChange(of: launchAtLogin) { setLaunchAtLogin() }
-            }
+            toggleRow("로그인 시 자동 실행", hint: installed ? "Mac에 로그인하면 메뉴바에 바로 떠요" : "설치한 앱(.app)에서만 켤 수 있어요",
+                      isOn: $launchAtLogin)
+                .disabled(!installed)
+                .onChange(of: launchAtLogin) { setLaunchAtLogin() }
         }
     }
 
     private var partnerSection: some View {
         let unlocked = model.game.state.partnerUnlocked
         return section("파트너 (베타)") {
-            row {
-                labeled("바탕화면 파트너", hint: unlocked ? "날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요"
-                                                    : "「날개 크리보」 카드를 얻으면 파트너로 함께해요")
-                Spacer()
-                Toggle("바탕화면 파트너", isOn: Bindable(model).partnerEnabled)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .disabled(!unlocked)
-            }
+            toggleRow("바탕화면 파트너", hint: unlocked ? "날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요"
+                                                 : "「날개 크리보」 카드를 얻으면 파트너로 함께해요",
+                      isOn: Bindable(model).partnerEnabled)
+                .disabled(!unlocked)
             row {
                 Text("크기")
                 Slider(value: Bindable(model).partnerSize, in: PartnerTuning.sizes, step: PartnerTuning.sizeStep)
@@ -76,31 +64,13 @@ struct SettingsView: View {
 
     private var cardSection: some View {
         section("카드") {
-            row {
-                labeled("중복 카드 자동 판매", hint: "이미 가진 카드가 나오면 바로 코인으로 바꿔요")
-                Spacer()
-                Toggle("중복 카드 자동 판매", isOn: Bindable(model).autoSellDuplicates)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-            }
-            row {
-                let n = model.db.allCIDs.filter { model.game.fusionMaterials($0) != nil }.count
-                labeled("융합 몬스터는 융합으로만", hint: "소재를 다 아는 융합 몬스터 \(n)종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요")
-                Spacer()
-                Toggle("융합 몬스터는 융합으로만", isOn: Bindable(model).fusionOnly)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-            }
-            row {
-                labeled("애니메이션 끄기", hint: "카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요")
-                Spacer()
-                Toggle("애니메이션 끄기", isOn: Bindable(model).animationsOff)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-            }
+            toggleRow("중복 카드 자동 판매", hint: "이미 가진 카드가 나오면 바로 코인으로 바꿔요",
+                      isOn: Bindable(model).autoSellDuplicates)
+            let n = model.db.allCIDs.filter { model.game.fusionMaterials($0) != nil }.count
+            toggleRow("융합 몬스터는 융합으로만", hint: "소재를 다 아는 융합 몬스터 \(n)종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요",
+                      isOn: Bindable(model).fusionOnly)
+            toggleRow("애니메이션 끄기", hint: "카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요",
+                      isOn: Bindable(model).animationsOff)
             row {
                 let db = model.game.fullDB
                 VStack(alignment: .leading, spacing: 1) {
@@ -309,6 +279,19 @@ struct SettingsView: View {
         HStack(spacing: 10) { content() }
             .padding(.horizontal, 12).padding(.vertical, 8)
             .frame(minHeight: 36)
+    }
+
+    /// 이름·설명 + 오른쪽 스위치 한 줄. VoiceOver 는 스위치에서 설명까지 읽는다
+    private func toggleRow(_ title: String, hint: String, isOn: Binding<Bool>) -> some View {
+        row {
+            labeled(title, hint: hint)
+            Spacer()
+            Toggle(title, isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .accessibilityHint(hint)
+        }
     }
 
     private func labeled(_ title: String, hint: String) -> some View {
