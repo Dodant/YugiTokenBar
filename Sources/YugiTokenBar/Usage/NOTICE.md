@@ -4,14 +4,17 @@
 로컬 브랜치 `graduation-carryover` 커밋 `de617e3`의 `Sources/PokeTokenBar/Core/`에서 `tools/import-usage.sh`로 복사했다.
 
 LocalUsageReader, AppLog, AppEnv, BinaryLocator, ClaudeAccountRoots, CustomScanRoots, Models, ModelPricing,
-UsageEnvironment, LogRepeatSuppressor, UsageCost, OAuthLimitsProvider, KeychainAccess, ProcessRunner, CodexRateLimitsProvider
+UsageEnvironment, LogRepeatSuppressor, UsageCost, OAuthLimitsProvider, KeychainAccess, ProcessRunner, CodexRateLimitsProvider,
+UsageProvider, LocalAdditionalUsageProvider, LocalAsideUsageReader, LocalAntigravityUsageReader, CursorUsageAPI, AppStatePaths
+(뒤의 6개는 Cursor 사용량용. Aside·Antigravity 리더는 `LocalAdditionalUsageProvider`가 참조해서 같이 복사)
 
 ## 변경점
 1. `UsageCost.swift`: UI 문자열 타입 `L`에 의존하는 `text(_:compact:)`, `explanation(_:)` 제거
 2. `CustomScanRoots.swift`: `curatedRoots(for:)`에서 복사하지 않은 리더(antigravity, opencode, aside, hermes, cursor, copilot, kiro) case 제거
 3. `AppLog.swift`: 로그 파일 `YugiTokenBar.log`, 큐 라벨 `yugitokenbar.log`
 4. (삭제) `Shims.swift` — `OAuthLimitsProvider.swift`를 통째로 복사하면서 필요 없어짐
-5. `TodayUsage.swift`(신규): 이 앱 전용 오늘 provider별 누적 토큰·비용 집계
+5. `TodayUsage.swift`(신규): 이 앱 전용 오늘 provider별 누적 토큰·비용 집계 (Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor)
+6. `AppStatePaths.swift`: 환경변수 `YTB_STATE_DIR`, 기본 폴더 `YugiTokenBar` (Cursor API 캐시 위치)
 
 ## MIT License
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated

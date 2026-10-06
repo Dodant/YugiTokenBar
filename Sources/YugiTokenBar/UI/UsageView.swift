@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Claude Code·Codex 공식 한도(5시간·주간·모델별 주간) + 오늘 토큰·비용. 누르면 한도를 바로 다시 읽는다.
+/// 그 밖의 에이전트(Gemini·Grok·Pi·oh-my-pi·Cursor)는 오늘 쓴 것만 토큰·비용 한 줄로 보인다.
 struct UsageView: View {
     @EnvironmentObject var model: AppModel
 
@@ -18,12 +19,27 @@ struct UsageView: View {
                 tokens: model.todayTokens["codex"] ?? 0, cost: model.todayCost["codex"] ?? 0,
                 reset: codex?.primary?.resetDate,
                 meters: codex.map(Self.codexMeters) ?? [])
+            ForEach(Self.others, id: \.id) { p in
+                if let tokens = model.todayTokens[p.id], tokens > 0 {
+                    ProviderUsageRow(
+                        name: p.name, symbol: p.symbol, tint: p.tint,
+                        tokens: tokens, cost: model.todayCost[p.id] ?? 0, reset: nil, meters: nil)
+                }
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .contentShape(Rectangle())
         .onTapGesture { model.refreshLimits(userInitiated: true) }
     }
+
+    static let others: [(id: String, name: String, symbol: String, tint: Color)] = [
+        ("gemini", "Gemini", "sparkle", .blue),
+        ("grok", "Grok", "bolt.fill", .gray),
+        ("pi", "Pi", "circle.hexagongrid.fill", .purple),
+        ("omp", "oh-my-pi", "circle.hexagongrid", .indigo),
+        ("cursor", "Cursor", "cursorarrow.rays", .mint),
+    ]
 
     static func claudeMeters(_ s: LimitStatus) -> [Meter] {
         var meters: [Meter] = []
@@ -62,7 +78,8 @@ private struct ProviderUsageRow: View {
     let tokens: Int
     let cost: Double
     let reset: Date?
-    let meters: [Meter]
+    /// nil 이면 공식 한도를 읽지 않는 provider (한도 줄 없음)
+    let meters: [Meter]?
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -79,9 +96,9 @@ private struct ProviderUsageRow: View {
                     Text("\(shortTokens(tokens)) · \(String(format: "$%.2f", cost))")
                         .font(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
-                if meters.isEmpty {
+                if let meters, meters.isEmpty {
                     Text("한도 정보 없음 · 눌러서 불러오기").font(.caption).foregroundStyle(.tertiary)
-                } else {
+                } else if let meters {
                     HStack(spacing: 10) {
                         ForEach(meters, id: \.label) { MeterView(meter: $0) }
                     }

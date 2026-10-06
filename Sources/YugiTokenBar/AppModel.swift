@@ -100,7 +100,7 @@ final class AppModel: ObservableObject {
         refreshing = true
         Task {
             defer { refreshing = false }
-            let usage = await Task.detached { TodayUsage.read() }.value
+            let usage = await Task.detached { await TodayUsage.read() }.value
             todayTokens = usage.byProvider
             todayCost = usage.cost
             let sample = UsageSample(date: usage.date, total: usage.byProvider.values.reduce(0, +), at: Date())
