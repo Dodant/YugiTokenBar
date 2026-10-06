@@ -21,11 +21,12 @@ struct OpeningView: View {
                 Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
                 Spacer()
             }
-            // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
+            // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다)를 한 덩어리로 제목과 버튼 사이 세로 가운데에 둔다. 무료 팩·카드 줄 때문에 패널이 길어져도 카드 사이가 벌어지지 않는다. 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
             let packLayout = model.openingPack != nil && pulls.count == 5
             let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
             let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
             let rareW = (width - 20) / 3 * 1.75
+            if packLayout { Spacer(minLength: 0) }
             VStack(spacing: 10) {
                 ForEach(Array(stride(from: 0, to: pulls.count, by: cols)), id: \.self) { start in
                     HStack(alignment: .bottom, spacing: 10) {
@@ -33,12 +34,13 @@ struct OpeningView: View {
                             cell(pulls[i], i).frame(width: isRare(i) ? nil : cellW).frame(maxWidth: isRare(i) ? rareW : nil)
                         }
                     }
-                    .frame(maxHeight: isRare(start) ? .infinity : nil)
+                    .padding(.top, isRare(start) ? 10 : 0)
                 }
             }
             .frame(maxWidth: .infinity)
+            .layoutPriority(1)
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-            if !packLayout { Spacer(minLength: 0) }
+            Spacer(minLength: 0)
             HStack(spacing: 8) {
                 if allFlipped, let again {
                     Button("확인") { model.showOpening = false }.buttonStyle(.glass)
