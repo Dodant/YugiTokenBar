@@ -159,6 +159,9 @@ struct CardDB: Sendable {
         }
         var packs = file.packs
         for i in packs.indices { packs[i].cards = packs[i].cards.map(\.simplified) }
+        // 재수록으로 팩마다 등급이 다른 카드(유벨 N·UR 등)는 모든 팩에서 가장 높은 등급으로
+        let top = topCards(packs)
+        for i in packs.indices { packs[i].cards = packs[i].cards.map { top[$0.cid]! } }
         return CardDB(packs: packs, cards: cards)
     }
 

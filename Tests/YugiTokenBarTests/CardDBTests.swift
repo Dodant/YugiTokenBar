@@ -23,6 +23,9 @@ import Testing
         #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
         #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 100팩 모두 한글판
         #expect(db.allCIDs.count == 8172)
+        // 재수록 카드는 모든 팩에서 가장 높은 등급: 유벨(환영의 어둠 N, 팬텀 나이트메어 UR)
+        #expect(Dictionary(grouping: db.packs.flatMap(\.cards), by: \.cid).values.allSatisfy { Set($0.map(\.tier)).count == 1 })
+        #expect(db.packs.flatMap(\.cards).filter { db.cards[$0.cid]?.name == "유벨" }.map(\.tier) == [4, 4])
         for pack in db.packs {
             for card in pack.cards {
                 #expect(db.cards[card.cid] != nil, "팩 \(pack.name) 의 cid \(card.cid) 가 cards 에 없음")
