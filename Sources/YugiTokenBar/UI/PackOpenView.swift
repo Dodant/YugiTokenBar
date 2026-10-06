@@ -21,14 +21,15 @@ struct OpeningView: View {
                 Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
                 Spacer()
             }
-            // 3열(팩은 3 + 2, 아랫줄 가운데). 1~2장(무료 카드)이면 그 수만큼 열을 줘서 폭을 채운다
-            let cols = min(max(pulls.count, 1), 3)
+            // 팩은 위 4장 + 아래 가운데 레어 1장(3열 칸의 1.15배). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
+            let cols = model.openingPack != nil && pulls.count == 5 ? 4 : min(max(pulls.count, 1), 3)
             let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
+            let rareW = (width - 20) / 3 * 1.15
             VStack(spacing: 10) {
                 ForEach(Array(stride(from: 0, to: pulls.count, by: cols)), id: \.self) { start in
                     HStack(alignment: .bottom, spacing: 10) {
                         ForEach(start..<min(start + cols, pulls.count), id: \.self) { i in
-                            cell(pulls[i], i).frame(width: isRare(i) ? cellW * 1.15 : cellW)
+                            cell(pulls[i], i).frame(width: isRare(i) ? rareW : cellW)
                         }
                     }
                 }
