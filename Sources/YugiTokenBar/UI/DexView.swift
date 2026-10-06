@@ -548,6 +548,7 @@ struct DexView: View {
                 CardImageView(db: model.db, cid: cid, size: .full, owned: n > 0)
                     .frame(maxWidth: .infinity)
                     .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
+                    .cardTilt(tier: model.db.tier(cid))
                     .listRowSeparator(.hidden)
                 Section {
                     Text(card.name).font(.title3.weight(.semibold))

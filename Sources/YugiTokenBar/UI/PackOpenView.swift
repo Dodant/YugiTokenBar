@@ -132,6 +132,7 @@ struct FlipCard: View {
                 .rotation3DEffect(.degrees(flipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
                 .opacity(flipped ? 0 : 1)
         }
+        .cardTilt(tier: pull.tier, enabled: flipped)  // 뒤집기 회전 바깥에서 기운다
     }
 
     private func tag(_ text: String, _ color: Color) -> some View {

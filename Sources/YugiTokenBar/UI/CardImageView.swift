@@ -125,3 +125,69 @@ struct PackImageView: View {
         }
     }
 }
+
+/// 마우스를 올리고 움직이면 실물 카드를 빛에 비춰 보듯 커서 쪽으로 기울고(스프링이라 살짝 출렁임), 빛 반사가 커서를 따라간다.
+/// N·R 흰 반사, SR 더 밝게, UR·SE 무지개 홀로그램을 덧입힌다. 동작 줄이기면 기울기 없이 반사만 약하게.
+private struct CardTilt: ViewModifier {
+    let tier: Int
+    let angleScale: Double
+    let enabled: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 카드 안 커서 위치 (-1…1), 밖이면 nil
+    @State private var point: CGPoint?
+    @State private var size: CGSize = .zero
+
+    private static let maxAngle = 8.0
+    private static let hoverScale = 1.03
+    private static let spring = Animation.interpolatingSpring(stiffness: 180, damping: 16)
+    private static let glare = (normal: 0.14, bright: 0.22, holo: 0.18)
+    private static let holoOpacity = 0.14
+    private static let shadowShift = 4.0
+
+    func body(content: Content) -> some View {
+        let on = enabled && point != nil
+        let p = enabled ? point ?? .zero : .zero
+        let angle = reduceMotion ? 0 : Self.maxAngle * angleScale
+        let lift = on && !reduceMotion
+        content
+            .overlay { if enabled { reflection(p).opacity(on ? (reduceMotion ? 0.5 : 1) : 0).allowsHitTesting(false) } }
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
+            .onContinuousHover { phase in
+                guard case .active(let loc) = phase, size.width > 0, size.height > 0 else { point = nil; return }
+                point = CGPoint(x: min(max(loc.x / size.width * 2 - 1, -1), 1), y: min(max(loc.y / size.height * 2 - 1, -1), 1))
+            }
+            // 커서 쪽 가장자리가 안으로 눌린다
+            .rotation3DEffect(.degrees(-p.y * angle), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
+            .rotation3DEffect(.degrees(p.x * angle), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+            .scaleEffect(lift ? Self.hoverScale : 1)
+            .shadow(color: .black.opacity(lift ? 0.25 : 0), radius: 8,
+                    x: -p.x * Self.shadowShift * angleScale, y: -p.y * Self.shadowShift * angleScale + 2)
+            .animation(reduceMotion ? .easeOut(duration: 0.15) : Self.spring, value: point)
+    }
+
+    private func reflection(_ p: CGPoint) -> some View {
+        let center = UnitPoint(x: (p.x + 1) / 2, y: (p.y + 1) / 2)
+        let holo = tier >= 4  // RareEffect 의 UR 판정과 같다
+        let glare = holo ? Self.glare.holo : tier >= 3 ? Self.glare.bright : Self.glare.normal
+        return ZStack {
+            if holo {
+                AngularGradient(colors: [.red, .orange, .yellow, .green, .cyan, .blue, .purple, Rarity.color(tier: tier), .red],
+                                center: center, angle: .degrees(p.x * 60 + p.y * 30))
+                    .opacity(Self.holoOpacity)
+            }
+            GeometryReader { g in
+                RadialGradient(colors: [.white.opacity(glare), .clear], center: center,
+                               startRadius: 0, endRadius: max(g.size.width, g.size.height) * 0.7)
+            }
+        }
+        .blendMode(.plusLighter)
+        .clipShape(.rect(cornerRadius: 7))
+    }
+}
+
+extension View {
+    /// 카드 호버 기울기·반사. angleScale 은 작은 썸네일에서 각도를 줄일 때, enabled 는 앞면이 보일 때만 켤 때
+    func cardTilt(tier: Int, angleScale: Double = 1, enabled: Bool = true) -> some View {
+        modifier(CardTilt(tier: tier, angleScale: angleScale, enabled: enabled))
+    }
+}
