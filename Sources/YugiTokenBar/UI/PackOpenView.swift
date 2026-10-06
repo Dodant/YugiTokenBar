@@ -122,6 +122,7 @@ private struct RareEffect: ViewModifier {
             content
                 .overlay { shine.allowsHitTesting(false) }
                 .shadow(color: color.opacity(pulse ? 0.95 : 0.45), radius: pulse ? 20 : 9)
+                .shadow(color: se ? Self.gold.opacity(pulse ? 0.9 : 0.3) : .clear, radius: pulse ? 28 : 12)
                 .background { if ur { rings(color) } }
                 .overlay { if ur { sparkles(color) } }
                 .keyframeAnimator(initialValue: 1.0, trigger: pop) { view, scale in
@@ -136,16 +137,24 @@ private struct RareEffect: ViewModifier {
         }
     }
 
+    private static let gold = Color(red: 1, green: 0.8, blue: 0.25)
+
+    /// SE 는 금색 빛줄기 두 줄이 잇따라 지나간다
     private var shine: some View {
         GeometryReader { g in
-            LinearGradient(colors: ur
-                           ? [.clear, .pink.opacity(0.45), .white.opacity(0.85), .cyan.opacity(0.45), .clear]
-                           : [.clear, .white.opacity(0.75), .clear],
-                           startPoint: .leading, endPoint: .trailing)
-                .frame(width: g.size.width * 0.7, height: g.size.height * 1.6)
-                .rotationEffect(.degrees(20))
-                .offset(x: sweep ? g.size.width * 1.3 : -g.size.width * 1.0, y: -g.size.height * 0.3)
-                .blendMode(.plusLighter)
+            ForEach(0..<(se ? 2 : 1), id: \.self) { i in
+                LinearGradient(colors: se
+                               ? [.clear, .orange.opacity(0.5), Self.gold.opacity(0.95), .white, Self.gold.opacity(0.95), .orange.opacity(0.5), .clear]
+                               : ur
+                               ? [.clear, .pink.opacity(0.45), .white.opacity(0.85), .cyan.opacity(0.45), .clear]
+                               : [.clear, .white.opacity(0.75), .clear],
+                               startPoint: .leading, endPoint: .trailing)
+                    .frame(width: g.size.width * (i == 0 ? 0.7 : 0.35), height: g.size.height * 1.6)
+                    .rotationEffect(.degrees(20))
+                    .offset(x: (sweep ? g.size.width * 1.3 : -g.size.width * 1.0) - Double(i) * g.size.width * 0.9,
+                            y: -g.size.height * 0.3)
+                    .blendMode(.plusLighter)
+            }
         }
         .clipShape(.rect(cornerRadius: 7))
     }
@@ -169,7 +178,7 @@ private struct RareEffect: ViewModifier {
                 let r = burst ? 70.0 + Double(i % 3) * 14 : 0
                 Image(systemName: "sparkle")
                     .font(.system(size: CGFloat(10 + (i % 3) * 4), weight: .bold))
-                    .foregroundStyle(i.isMultiple(of: 2) ? color : .white)
+                    .foregroundStyle(i.isMultiple(of: 2) ? color : se && i % 4 == 1 ? Self.gold : .white)
                     .offset(x: cos(angle) * r, y: sin(angle) * r)
                     .scaleEffect(burst ? 1 : 0.2)
                     .opacity(burst ? 0 : 1)
@@ -188,7 +197,7 @@ private struct RareEffect: ViewModifier {
         }
         pop += 1
         withAnimation(ur
-                      ? .easeInOut(duration: 1.4).delay(0.35).repeatForever(autoreverses: false)
+                      ? .easeInOut(duration: se ? 1.6 : 1.4).delay(0.35).repeatForever(autoreverses: false)
                       : .easeInOut(duration: 0.9).delay(0.35)) { sweep = true }
         withAnimation(.easeOut(duration: 0.9).delay(0.35)) { burst = true }
         withAnimation(.easeInOut(duration: 1.1).delay(0.35).repeatForever()) { pulse = true }
