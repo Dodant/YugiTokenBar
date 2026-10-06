@@ -21,6 +21,18 @@ import Testing
         #expect(p.owned == 1 && p.total == 4)
     }
 
+    /// 여러 장을 한 번에 넣으면 한도에 걸린 것만 빼고 넣은 장 수를 돌려준다 (저장은 한 번)
+    @MainActor @Test func modelAddsSelectionAtOnce() {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        let model = AppModel(db: makeDB([[(1, 1), (2, 1)]]), store: store, partner: PartnerModel(sheet: nil))
+        let deck = model.addDeck()
+        #expect(model.addToDeck(deck.id, [1, 1, 1, 1, 2]) == 4)
+        #expect(model.addToDeck(deck.id, [1]) == 0)
+        model.removeFromDeck(deck.id, [1, 2])
+        #expect(model.game.deck(deck.id)?.cards == [1: 2])
+        #expect(store.load().decks.first?.cards == [1: 2])
+    }
+
     @Test func removeRenameDelete() {
         var game = Game(db: makeDB([[(1, 1)]]), state: GameState())
         let deck = game.addDeck()

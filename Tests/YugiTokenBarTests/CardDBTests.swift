@@ -79,3 +79,13 @@ import Testing
     #expect(r[3]! < r[2]! && r[2]! < r[1]!)
     #expect(r[2] == r[4])
 }
+
+/// cards.json 에 범위 밖 등급이 있어도 1~5 로 잘라 읽는다 (Pull.label 등이 죽지 않게)
+@Test func outOfRangeTiersAreClamped() {
+    func card(_ tier: Int) -> CardInfo {
+        CardInfo(name: "", attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "", imageId: nil, tier: tier)
+    }
+    let db = CardDB(packs: [], cards: [1: card(0), 2: card(9), 3: card(3)])
+    #expect([1, 2, 3].map(db.tier) == [1, 5, 3])
+    #expect(Pull(cid: 2, tier: db.tier(2), isNew: true).label == "SE")
+}

@@ -424,7 +424,7 @@ struct DexView: View {
 
     /// 덱 화면의 빼기 단추: 마우스를 올렸을 때만.
     private func minus(_ deck: UUID, _ cid: Int) -> some View {
-        Button { model.removeFromDeck(deck, cid) } label: {
+        Button { model.removeFromDeck(deck, [cid]) } label: {
             Image(systemName: "minus")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(.white)
@@ -441,7 +441,7 @@ struct DexView: View {
         let many = cids.count > 1 ? " (\(cids.count)장)" : ""
         if let deck {
             Button("덱에서 1장씩 빼기\(many)") {
-                cids.forEach { model.removeFromDeck(deck, $0) }
+                model.removeFromDeck(deck, cids)
                 selectedCards = selectedCards.filter { model.game.deck(deck)?.cards[$0] != nil }  // 0장이 된 카드는 선택에서도 뺀다
             }
         } else {
@@ -461,7 +461,7 @@ struct DexView: View {
 
     /// 덱에 1장씩 넣고, 하나도 못 넣으면(3장 한도) 비프.
     private func add(_ deck: UUID, _ cids: Set<Int>) {
-        if !cids.map({ model.addToDeck(deck, $0) }).contains(true) { NSSound.beep() }
+        if model.addToDeck(deck, cids) == 0 { NSSound.beep() }
     }
 
     /// 사이드바 "덱" 묶음: + 로 새 덱, 줄에 카드를 끌어다 놓으면 추가, 우클릭으로 이름 바꾸기·삭제.
@@ -730,9 +730,9 @@ private struct DeckRow: View {
         }
         .listRowBackground(targeted ? Color.accentColor.opacity(0.25) : nil)
         .dropDestination(for: String.self) { items, _ in
-            let added = items.flatMap { $0.split(separator: ",") }.compactMap { Int($0) }.filter { model.addToDeck(deck.id, $0) }
-            if added.isEmpty { NSSound.beep() }
-            return !added.isEmpty
+            let added = model.addToDeck(deck.id, items.flatMap { $0.split(separator: ",") }.compactMap { Int($0) })
+            if added == 0 { NSSound.beep() }
+            return added > 0
         } isTargeted: { targeted = $0 }
     }
 }

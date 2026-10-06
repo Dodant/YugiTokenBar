@@ -204,13 +204,20 @@ final class AppModel {
     func addDeck() -> Deck { let deck = game.addDeck(); save(); return deck }
     func renameDeck(_ id: UUID, to name: String) { game.renameDeck(id, to: name); save() }
     func deleteDeck(_ id: UUID) { game.deleteDeck(id); save() }
-    func removeFromDeck(_ id: UUID, _ cid: Int) { game.removeFromDeck(id, cid); save() }
 
-    @discardableResult
-    func addToDeck(_ id: UUID, _ cid: Int) -> Bool {
-        guard game.addToDeck(id, cid) else { return false }
+    /// 카드마다 1장씩 빼고 한 번만 저장한다 (여러 장 선택).
+    func removeFromDeck(_ id: UUID, _ cids: some Sequence<Int>) {
+        for cid in cids { game.removeFromDeck(id, cid) }
         save()
-        return true
+    }
+
+    /// 카드마다 1장씩 넣고 넣은 게 있으면 한 번만 저장한다. 반환: 넣은 장 수 (3장 한도에 걸린 카드는 빠진다).
+    @discardableResult
+    func addToDeck(_ id: UUID, _ cids: some Sequence<Int>) -> Int {
+        var added = 0
+        for cid in cids where game.addToDeck(id, cid) { added += 1 }
+        if added > 0 { save() }
+        return added
     }
 
     func toggleFavorite(_ cid: Int) {

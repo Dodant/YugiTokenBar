@@ -81,8 +81,14 @@ struct CardDB: Sendable {
     /// 범위 안 융합 몬스터의 소재로 필요한 최대 장 수 (사이버 드래곤 → 3, 사이버 엔드 드래곤). 중복 판매에서 그만큼 남긴다.
     private(set) var materialNeed: [Int: Int]
 
+    /// 등급은 1~5 로 자른다. cards.json 에 범위 밖 등급이 있어도 뽑기(티어 1~5 만 찾음)·판매가·등급 표시가 어긋나거나 죽지 않게.
     init(packs: [Pack], cards: [Int: CardInfo]) {
         self.packs = packs
+        let cards = cards.mapValues { card in
+            var card = card
+            card.tier = min(max(card.tier, 1), CardInfo.rarities.count)
+            return card
+        }
         self.cards = cards
         self.allCIDs = cards.keys.sorted()
         self.cidSet = Set(cards.keys)
