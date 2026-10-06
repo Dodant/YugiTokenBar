@@ -15,9 +15,12 @@ final class ImageCache {
     private let memory = NSCache<NSString, NSImage>()
     private var inFlight: [String: Task<CGImage?, Never>] = [:]
 
+    /// memoryLimit: 메모리 캐시 상한(디코딩된 픽셀 바이트). 작은 카드 한 장이 약 400KB 라 150MB 면 수백 장,
+    /// 도감 한 화면(수십 장)과 그 앞뒤 스크롤은 넉넉히 남고, 6천 장을 다 훑어도 그 이상 쌓이지 않는다.
     init(dir: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("YugiTokenBar")) {
+        .appendingPathComponent("YugiTokenBar"), memoryLimit: Int = 150 << 20) {
         self.dir = dir
+        memory.totalCostLimit = memoryLimit
     }
 
     func image(_ imageId: Int, size: Size) async -> NSImage? {
@@ -48,7 +51,7 @@ final class ImageCache {
         inFlight[key] = nil
         guard let cg else { return nil }
         let image = NSImage(cgImage: cg, size: .zero)
-        memory.setObject(image, forKey: key as NSString)
+        memory.setObject(image, forKey: key as NSString, cost: cg.bytesPerRow * cg.height)
         return image
     }
 
