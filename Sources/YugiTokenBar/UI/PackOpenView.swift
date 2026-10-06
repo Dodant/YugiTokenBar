@@ -4,6 +4,7 @@ import SwiftUI
 struct OpeningView: View {
     @EnvironmentObject var model: AppModel
     @State private var flipped: Set<Int> = []
+    @State private var width: CGFloat = 300
 
     var body: some View {
         let pulls = model.opening
@@ -20,21 +21,20 @@ struct OpeningView: View {
                 Text(model.openingTitle).font(.title3.weight(.semibold)).lineLimit(1)
                 Spacer()
             }
-            // 1~2장(무료 카드)이면 그 수만큼 열을 줘서 폭을 채운다
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: min(max(pulls.count, 1), 3)), spacing: 10) {
-                ForEach(Array(pulls.enumerated()), id: \.offset) { i, pull in
-                    VStack(spacing: 4) {
-                        FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
-                            .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
-                        // 상점 팩 칸처럼 아래 이름 한 줄. 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
-                        Text(model.db.cards[pull.cid]?.name ?? " ")
-                            .font(.caption2).lineLimit(1).truncationMode(.tail)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .opacity(flipped.contains(i) ? 1 : 0)
+            // 3열(팩은 3 + 2, 아랫줄 가운데). 1~2장(무료 카드)이면 그 수만큼 열을 줘서 폭을 채운다
+            let cols = min(max(pulls.count, 1), 3)
+            let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
+            VStack(spacing: 10) {
+                ForEach(Array(stride(from: 0, to: pulls.count, by: cols)), id: \.self) { start in
+                    HStack(alignment: .bottom, spacing: 10) {
+                        ForEach(start..<min(start + cols, pulls.count), id: \.self) { i in
+                            cell(pulls[i], i).frame(width: isRare(i) ? cellW * 1.15 : cellW)
+                        }
                     }
                 }
             }
+            .frame(maxWidth: .infinity)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             Spacer(minLength: 0)
             HStack(spacing: 8) {
                 if allFlipped, let again {
@@ -45,7 +45,7 @@ struct OpeningView: View {
                 } else {
                     Button(allFlipped ? "확인" : "모두 뒤집기") {
                         if allFlipped { model.showOpening = false }
-                        else { withAnimation(.easeInOut(duration: 0.4)) { flipped = Set(pulls.indices) } }
+                        else { flipAll(pulls) }
                     }
                     .keyboardShortcut(.defaultAction)
                 }
@@ -55,6 +55,35 @@ struct OpeningView: View {
             .controlSize(.large)
         }
         .onChange(of: model.openingID) { flipped = [] }
+    }
+
+    /// 팩의 마지막 칸은 R 이상 확정 레어 슬롯이라 조금 크게 둔다
+    private func isRare(_ i: Int) -> Bool { model.openingPack != nil && i == model.opening.count - 1 }
+
+    private func cell(_ pull: Pull, _ i: Int) -> some View {
+        VStack(spacing: 4) {
+            FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i))
+                .onTapGesture { withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(i) } }
+            // 상점 팩 칸처럼 아래 이름 한 줄. 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
+            Text(model.db.cards[pull.cid]?.name ?? " ")
+                .font(.caption2).lineLimit(1).truncationMode(.tail)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .opacity(flipped.contains(i) ? 1 : 0)
+        }
+    }
+
+    /// 레어 슬롯은 나머지를 먼저 뒤집고 0.6초 뒤에 뒤집는다
+    private func flipAll(_ pulls: [Pull]) {
+        let rare = pulls.indices.last.flatMap { isRare($0) && !flipped.contains($0) ? $0 : nil }
+        withAnimation(.easeInOut(duration: 0.4)) { flipped.formUnion(pulls.indices.filter { $0 != rare }) }
+        guard let rare else { return }
+        let id = model.openingID
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            guard model.openingID == id else { return }
+            withAnimation(.easeInOut(duration: 0.4)) { _ = flipped.insert(rare) }
+        }
     }
 
     /// 다 뒤집은 뒤 한 번 더: 팩(무료 팩 포함)이면 같은 팩을 코인으로, 무료 카드면 남은 장을. 둘 다 아니면 nil.
