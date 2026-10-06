@@ -138,7 +138,7 @@ struct SettingsView: View {
                     ProgressView().controlSize(.small)
                 } else {
                     if let latest { Text("v\(latest)").foregroundStyle(.secondary).monospacedDigit() }
-                    Button("확인") { checkUpdate() }.controlSize(.small)
+                    Button("업데이트 확인") { checkUpdate() }.controlSize(.small)
                 }
             }
             if let latest, !checking {

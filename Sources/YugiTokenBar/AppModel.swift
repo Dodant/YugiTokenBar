@@ -18,12 +18,15 @@ final class AppModel {
     /// 공식 한도 (Claude: OAuth usage, Codex: app-server). 못 읽으면 nil.
     private(set) var claudeLimits: LimitStatus?
     private(set) var codexLimits: CodexRateLimitSnapshot?
+    /// 공식 한도를 읽는 중 (사용량 칸이 표시한다)
+    private(set) var fetchingLimits = false
+    /// 마지막 저장이 실패했으면 그 이유 (팝오버·메뉴바가 경고한다. 다음 저장이 되면 지운다)
+    private(set) var saveError: String?
 
     // 아래는 화면이 읽지 않는 내부 상태라 관찰하지 않는다
     @ObservationIgnored private let store: StateStore
     @ObservationIgnored private var rng = SystemRandomNumberGenerator()
     @ObservationIgnored private var refreshing = false
-    @ObservationIgnored private var fetchingLimits = false
     /// 키체인 암호 창을 이번 실행에서 이미 띄웠으면(거절 포함) 자동 갱신은 다시 띄우지 않는다.
     @ObservationIgnored private var keychainPrompted = false
     /// 파트너 「날개 크리보」. 해금 전에는 멈춰 있다.
@@ -264,7 +267,13 @@ final class AppModel {
 
     private func save() {
         let unlocked = game.unlockPartnerIfOwned()
-        do { try store.save(game.state) } catch { AppLog.write("state 저장 실패: \(error)") }
+        do {
+            try store.save(game.state)
+            if saveError != nil { saveError = nil }
+        } catch {
+            AppLog.write("state 저장 실패: \(error)")
+            saveError = error.localizedDescription
+        }
         if unlocked { updatePartner() }  // 타이머를 먼저 켜야 아래 반응이 재생된다
         for anim in PartnerAnim.reactions(from: partnerSeen, to: game.state, newlyUnlocked: unlocked) { partner.play(anim) }
         partnerSeen = game.state

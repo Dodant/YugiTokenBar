@@ -494,7 +494,7 @@ struct DexView: View {
                         Button {
                             if n == 1 { confirmSellLast = true } else { model.sell(cid) }
                         } label: {
-                            Label("1장 판매 · +\(coinText(price))", systemImage: "dollarsign.circle")
+                            Label("1장 판매 · +\(coinText(price))", systemImage: "c.circle")
                         }
                         .buttonStyle(.glass)
                         .buttonBorderShape(.capsule)
@@ -854,7 +854,7 @@ private struct SellDuplicatesButton: View {
     var body: some View {
         let dup = model.game.duplicatesValue
         Button { confirm = true } label: {
-            Label("중복 모두 팔기", systemImage: "dollarsign.circle").labelStyle(.titleAndIcon)
+            Label("중복 모두 팔기", systemImage: "c.circle").labelStyle(.titleAndIcon)
         }
         .help("카드마다 1장\(model.game.state.fusionOnly ? ", 융합 소재는 필요한 장 수" : "")만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
         .disabled(dup.count == 0)

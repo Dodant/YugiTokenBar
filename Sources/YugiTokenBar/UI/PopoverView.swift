@@ -35,6 +35,15 @@ struct PopoverView: View {
         return VStack(alignment: .leading, spacing: 16) {
             header(state)
 
+            // ponytail: 덮인 화면(개봉·상점·설정) 중에 생기면 패널이 한 줄 늘어난다. 저장 실패는 드물어서 freeRows 처럼 미루지 않는다
+            if let error = model.saveError {
+                FreeRow(systemImage: "exclamationmark.triangle.fill", title: "진행 상황을 저장하지 못했어요",
+                        hint: error, button: "폴더 열기") { NSWorkspace.shared.activateFileViewerSelecting([model.saveFolder]) }
+                    .padding(12)
+                    .background(.fill.quinary, in: .rect(cornerRadius: 16))
+                    .tint(.orange)
+            }
+
             VStack(alignment: .leading, spacing: 8) {
                 caption("최근 획득")
                 HStack(spacing: 9) {
@@ -170,7 +179,7 @@ private struct FreeRow: View {
             Image(systemName: systemImage).font(.title2).foregroundStyle(.tint).frame(width: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.callout.weight(.medium)).monospacedDigit()
-                Text(hint).font(.caption).foregroundStyle(.secondary)
+                Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
             }
             Spacer(minLength: 4)
             Button(button, action: action)
@@ -254,6 +263,7 @@ func shortCoins(_ n: Int) -> String {
 
 func coinText(_ n: Int) -> String { "ⓒ \(shortCoins(n))" }
 
+/// 1,000 미만은 그대로 (0.5K 를 "0K" 로 보이지 않게)
 func shortTokens(_ n: Int) -> String {
-    n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1e6) : String(format: "%.0fK", Double(n) / 1e3)
+    n < 1_000 ? "\(n)" : n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1e6) : String(format: "%.0fK", Double(n) / 1e3)
 }

@@ -12,7 +12,7 @@ import Testing
         """#
         let status = try JSONDecoder().decode(LimitStatus.self, from: Data(json.utf8))
         let meters = UsageView.claudeMeters(status)
-        #expect(meters.map(\.label) == ["5h", "주", "Fable"])
+        #expect(meters.map(\.label) == ["5시간", "주간", "Fable"])
         #expect(meters.map(\.percent) == [50, 52.4, 65])
     }
 

@@ -295,8 +295,8 @@ import Testing
 
     @Test func expiredLimitsDoNotMakeSad() {
         let now = Date()
-        let stale = Meter(label: "5h", percent: 95, resetsAt: now.addingTimeInterval(-60))
-        let live = Meter(label: "주", percent: 40, resetsAt: now.addingTimeInterval(3600))
+        let stale = Meter(label: "5시간", percent: 95, resetsAt: now.addingTimeInterval(-60))
+        let live = Meter(label: "주간", percent: 40, resetsAt: now.addingTimeInterval(3600))
         #expect(PartnerMood.limitPercent([stale, live], now: now) == 40)
         #expect(PartnerMood.limitPercent([Meter(label: "모델", percent: 85)], now: now) == 85)  // 시각 모름 → 유지
         #expect(PartnerMood.limitPercent([], now: now) == 0)

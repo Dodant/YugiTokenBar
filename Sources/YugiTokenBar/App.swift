@@ -19,7 +19,7 @@ struct YugiTokenBarApp: App {
         MenuBarExtra {
             PopoverView().environment(model).environment(\.animationsOff, model.game.state.animationsOff)
         } label: {
-            MenuBarLabel(title: menuTitle, icon: model.partner.menu, unlocked: model.game.state.partnerUnlocked)
+            MenuBarLabel(title: menuTitle, icon: model.partner.menu, unlocked: model.game.state.partnerUnlocked, saveFailed: model.saveError != nil)
         }
         .menuBarExtraStyle(.window)
 
@@ -38,7 +38,7 @@ struct YugiTokenBarApp: App {
     private var menuTitle: String {
         let state = model.game.state
         let coins = shortCoins(state.coins)
-        return state.pendingFree > 0 ? "\(coins) ·\(state.pendingFree)" : coins
+        return state.pendingFree > 0 ? "\(coins) · \(state.pendingFree)" : coins
     }
 }
 
@@ -47,9 +47,14 @@ private struct MenuBarLabel: View {
     let title: String
     let icon: FrameBox
     let unlocked: Bool
+    /// 저장이 실패하면 아이콘 자리에 경고 (팝오버를 열지 않아도 보이게)
+    let saveFailed: Bool
 
     var body: some View {
-        if unlocked, let image = icon.image {
+        if saveFailed {
+            Label(title, systemImage: "exclamationmark.triangle.fill")
+                .labelStyle(.titleAndIcon)
+        } else if unlocked, let image = icon.image {
             Label { Text(title) } icon: { Image(nsImage: image) }
                 .labelStyle(.titleAndIcon)
         } else {

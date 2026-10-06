@@ -3,6 +3,20 @@ import Testing
 @testable import YugiTokenBar
 
 @Suite struct StateStoreTests {
+    /// 저장이 실패하면 모델이 이유를 들고 있다가(경고 표시), 다음 저장이 되면 지운다
+    @MainActor @Test func modelReportsSaveFailureUntilNextSuccess() throws {
+        let dir = tempDir()
+        let blocker = dir.appendingPathComponent("save")
+        try Data().write(to: blocker)  // 폴더 자리에 파일이 있어 폴더를 만들 수 없다
+        let model = AppModel(db: makeDB([[(1, 1)]]), store: StateStore(url: blocker.appendingPathComponent("state.json")),
+                             partner: PartnerModel(sheet: nil))
+        model.toggleFavorite(1)
+        #expect(model.saveError != nil)
+        try FileManager.default.removeItem(at: blocker)
+        model.toggleFavorite(1)
+        #expect(model.saveError == nil)
+    }
+
     @Test func roundTrip() throws {
         let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
         var state = GameState()
