@@ -47,6 +47,9 @@ import Testing
         #expect(game.fusable.isEmpty)  // 설정이 꺼져 있으면 없다
         game.state.fusionOnly = true
         #expect(game.fusable == [10])  // 11 은 소재를 몰라서 빠진다
+        game.state.owned[10] = 1
+        #expect(game.fusable.isEmpty)  // 이미 가진 융합 몬스터는 안 띄운다
+        game.state.owned[10] = nil
         game.state.owned[CardDB.fusionSpell] = nil
         #expect(game.fusable.isEmpty)
     }

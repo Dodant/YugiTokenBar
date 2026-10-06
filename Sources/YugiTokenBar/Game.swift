@@ -229,10 +229,10 @@ struct Game: Sendable {
         hasFusionSpell && fusionMaterials(cid)?.allSatisfy { copies($0.key) >= $0.value } == true
     }
 
-    /// 지금 융합할 수 있는 범위 안 융합 몬스터 (설정이 꺼져 있으면 없다). 미보유 먼저, 그 안에서 cid 순.
+    /// 지금 융합할 수 있는 범위 안 미보유 융합 몬스터 (설정이 꺼져 있으면 없다)
     var fusable: [Int] {
         guard state.fusionOnly, hasFusionSpell else { return [] }
-        return db.allCIDs.filter(canFuse).sorted { (copies($0) > 0 ? 1 : 0, $0) < (copies($1) > 0 ? 1 : 0, $1) }
+        return db.allCIDs.filter { copies($0) == 0 && canFuse($0) }
     }
 
     /// 소재를 소비해(1장은 남긴다) 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」이 없거나 소재가 모자라면 false.

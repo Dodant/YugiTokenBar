@@ -524,13 +524,11 @@ struct DexView: View {
             ScrollView {
                 VStack(spacing: 2) {
                     ForEach(cids, id: \.self) { cid in
-                        let owned = model.game.copies(cid) > 0
                         Button { jump(to: cid) } label: {
                             HStack(spacing: 8) {
-                                CardImageView(db: model.db, cid: cid, owned: owned).frame(width: 22)
+                                CardImageView(db: model.db, cid: cid, owned: false).frame(width: 22)
                                 Text(model.db.cards[cid]?.name ?? "").lineLimit(1)
-                                Spacer(minLength: 4)
-                                if !owned { Text("미보유").font(.caption).foregroundStyle(.secondary) }
+                                Spacer(minLength: 0)
                             }
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
