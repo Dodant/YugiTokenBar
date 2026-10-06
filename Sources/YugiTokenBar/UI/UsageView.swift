@@ -11,19 +11,19 @@ struct UsageView: View {
         VStack(alignment: .leading, spacing: 12) {
             ProviderUsageRow(
                 name: "Claude", symbol: "staroflife.fill", tint: .orange,
-                tokens: model.todayTokens["claude_code"] ?? 0, cost: model.todayCost["claude_code"] ?? 0,
+                tokens: model.todayTokens[Provider.claude.rawValue] ?? 0, cost: model.todayCost[Provider.claude.rawValue] ?? 0,
                 reset: claude?.fiveHour?.resetDate,
                 meters: claude.map(Self.claudeMeters) ?? [])
             ProviderUsageRow(
                 name: "Codex", symbol: "hexagon.fill", tint: .teal,
-                tokens: model.todayTokens["codex"] ?? 0, cost: model.todayCost["codex"] ?? 0,
+                tokens: model.todayTokens[Provider.codex.rawValue] ?? 0, cost: model.todayCost[Provider.codex.rawValue] ?? 0,
                 reset: codex?.primary?.resetDate,
                 meters: codex.map(Self.codexMeters) ?? [])
             ForEach(Self.others, id: \.id) { p in
-                if let tokens = model.todayTokens[p.id], tokens > 0 {
+                if let tokens = model.todayTokens[p.id.rawValue], tokens > 0 {
                     ProviderUsageRow(
                         name: p.name, symbol: p.symbol, tint: p.tint,
-                        tokens: tokens, cost: model.todayCost[p.id] ?? 0, reset: nil, meters: nil)
+                        tokens: tokens, cost: model.todayCost[p.id.rawValue] ?? 0, reset: nil, meters: nil)
                 }
             }
         }
@@ -33,12 +33,12 @@ struct UsageView: View {
         .onTapGesture { model.refreshLimits(userInitiated: true) }
     }
 
-    static let others: [(id: String, name: String, symbol: String, tint: Color)] = [
-        ("gemini", "Gemini", "sparkle", .blue),
-        ("grok", "Grok", "bolt.fill", .gray),
-        ("pi", "Pi", "circle.hexagongrid.fill", .purple),
-        ("omp", "oh-my-pi", "circle.hexagongrid", .indigo),
-        ("cursor", "Cursor", "cursorarrow.rays", .mint),
+    static let others: [(id: Provider, name: String, symbol: String, tint: Color)] = [
+        (.gemini, "Gemini", "sparkle", .blue),
+        (.grok, "Grok", "bolt.fill", .gray),
+        (.pi, "Pi", "circle.hexagongrid.fill", .purple),
+        (.omp, "oh-my-pi", "circle.hexagongrid", .indigo),
+        (.cursor, "Cursor", "cursorarrow.rays", .mint),
     ]
 
     static func claudeMeters(_ s: LimitStatus) -> [Meter] {

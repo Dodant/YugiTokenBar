@@ -99,7 +99,7 @@ struct Game: Sendable {
             state.pendingFree -= 1
             guard let cid = drawFree(using: &rng) else { state.pendingFree = 0; break }
             let isNew = copies(cid) == 0
-            give(cid, source: "free")
+            give(cid, source: LogEntry.free)
             pulls.append(Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid)))
         }
         return pulls
@@ -261,7 +261,7 @@ struct Game: Sendable {
     mutating func fuse(_ cid: Int) -> Bool {
         guard let materials = fusionMaterials(cid), canFuse(cid) else { return false }
         for (m, n) in materials { state.owned[m] = max(1, copies(m) - n) }  // 마지막 1장은 남겨 컬렉션에서 빠지지 않는다
-        give(cid, source: "융합")
+        give(cid, source: LogEntry.fusion)
         return true
     }
 
@@ -286,7 +286,7 @@ struct Game: Sendable {
 
     /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택.
     /// kind(몬스터·마법·함정)가 있으면 그 종류만. 보유 수 상한은 없다.
-    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], kind: String? = nil, using rng: inout R) -> Int? {
+    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], kind: CardKind? = nil, using rng: inout R) -> Int? {
         for t in Self.fallbackOrder(tier) {
             let candidates = db.packs[pack].cards.filter {
                 db.tier($0) == t && !excluding.contains($0) && !isFusionOnly($0) && (kind == nil || db.cards[$0]?.kind == kind)
@@ -336,7 +336,7 @@ struct Game: Sendable {
         let tiers = [1, 1, 1, slot4, slot5Tier(using: &rng)]
         var pulls: [Pull] = []
         for (i, tier) in tiers.enumerated() {
-            let kind = i < Balance.monstersPerPack ? "몬스터" : nil
+            let kind: CardKind? = i < Balance.monstersPerPack ? .monster : nil
             guard let cid = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), kind: kind, using: &rng) else { continue }
             let isNew = copies(cid) == 0
             give(cid, source: db.packs[pack].pid)

@@ -34,7 +34,7 @@ struct PartnerSheet {
     /// .app 안에서는 Contents/Resources/partner.png, `swift run`·테스트에서는 저장소의 Resources/partner.png.
     static func bundled() -> PartnerSheet? {
         let url = Bundle.main.url(forResource: "partner", withExtension: "png")
-            ?? CardDB.repoCardsURL.deletingLastPathComponent().appendingPathComponent("partner.png")
+            ?? AppInfo.repoRoot.appendingPathComponent("Resources/partner.png")
         let sheet = PartnerSheet(url: url)
         if sheet == nil { AppLog.write("partner.png 를 읽지 못해 파트너를 끕니다") }
         return sheet

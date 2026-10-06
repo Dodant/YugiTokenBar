@@ -1,5 +1,10 @@
 import Foundation
 
+/// 사용량을 읽는 에이전트. rawValue 는 `byProvider`·세이브 원장(`claimedByProvider`)의 키.
+enum Provider: String, CaseIterable, Sendable {
+    case claude = "claude_code", codex, gemini, grok, pi, omp, cursor
+}
+
 /// `TodayUsage.read` 와 같은 결과를 내되, Claude 로그는 파일마다 (수정 시각, 크기)가 그대로면 다시 파싱하지 않는다.
 /// 오늘 바뀐 Claude JSONL(수십~수백 MB)을 60초마다 통째로 다시 읽던 비용을 줄인다.
 /// `Usage/` 는 PokeTokenBar 복사본이라 고치지 않고, 그 공개 함수(`jsonlFiles`·`parseClaudeFile`·`dedupKeepMax`)로 감싼다.
@@ -21,17 +26,17 @@ actor TodayUsageReader {
             : LocalAdditionalUsageReader.cursorEntries(modifiedSince: start).entries
         var tokens: [String: Int] = [:], cost: [String: Double] = [:]
         for (provider, entries) in [
-            ("claude_code", claudeEntries(modifiedSince: start)),
-            ("codex", LocalUsageReader.codexEntries(modifiedSince: start)),
-            ("gemini", LocalUsageReader.geminiEntries(modifiedSince: start)),
-            ("grok", LocalUsageReader.grokEntries(modifiedSince: start)),
-            ("pi", LocalUsageReader.piEntries(modifiedSince: start)),
-            ("omp", LocalUsageReader.ompEntries(modifiedSince: start)),
-            ("cursor", cursor),
+            (Provider.claude, claudeEntries(modifiedSince: start)),
+            (.codex, LocalUsageReader.codexEntries(modifiedSince: start)),
+            (.gemini, LocalUsageReader.geminiEntries(modifiedSince: start)),
+            (.grok, LocalUsageReader.grokEntries(modifiedSince: start)),
+            (.pi, LocalUsageReader.piEntries(modifiedSince: start)),
+            (.omp, LocalUsageReader.ompEntries(modifiedSince: start)),
+            (.cursor, cursor),
         ] {
             let b = TodayUsage.bucket(entries, day: today)
-            tokens[provider] = b.total
-            cost[provider] = b.cost
+            tokens[provider.rawValue] = b.total
+            cost[provider.rawValue] = b.cost
         }
         return (today, tokens, cost)
     }

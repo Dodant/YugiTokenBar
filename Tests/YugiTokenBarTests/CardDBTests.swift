@@ -14,9 +14,9 @@ import Testing
         #expect(db.packs.first?.setCode == "LOB")
         #expect(db.eras.map(\.name) == ["DM", "GX", "5D's", "ZEXAL", "ARC-V", "VRAINS", "Modern"])
         let kinds = Dictionary(grouping: db.cards.values, by: \.kind).mapValues(\.count)
-        #expect(kinds == ["몬스터": 5033, "마법": 1719, "함정": 1420])
+        #expect(kinds == [.monster: 5033, .spell: 1719, .trap: 1420])
         // 팩마다 노멀 몬스터가 보장 장 수 이상이라 몬스터 슬롯이 다른 티어로 올라가지 않는다
-        #expect(db.packs.allSatisfy { p in p.cards.filter { db.tier($0) == 1 && db.cards[$0]?.kind == "몬스터" }.count >= Balance.monstersPerPack })
+        #expect(db.packs.allSatisfy { p in p.cards.filter { db.tier($0) == 1 && db.cards[$0]?.kind == .monster }.count >= Balance.monstersPerPack })
         #expect(db.eras.map(\.packs) == [0..<11, 11..<27, 27..<43, 43..<51, 51..<63, 63..<75, 75..<100])
         // 시대 첫 팩: 듀얼리스트의 투혼(GX), 듀얼리스트의 태동(싱크로), 리턴 오브 더 듀얼리스트(엑시즈), 더 듀얼리스트 어드벤트(펜듈럼), 코드 오브 더 듀얼리스트(링크), 라이즈 오브 더 듀얼리스트(Modern)
         #expect(db.eras.map { db.packs[$0.packs.lowerBound].setCode } == ["LOB", "SOD", "TDGS", "REDU", "DUEA", "COTD", "ROTD"])
@@ -55,7 +55,7 @@ import Testing
         #expect(db.cards[4098]?.materials?.first == Material(name: "미노타우로스"))  // 미노켄타우로스: 스타터 덱 카드라 100팩에 없다
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
-        #expect(db.cards[CardDB.fusionSpell].map { ($0.name, $0.kind) } ?? ("", "") == ("융합", "마법"))
+        #expect(db.cards[CardDB.fusionSpell].map { ($0.name, $0.kind) } ?? ("", .monster) == ("융합", .spell))
         #expect(db.packs[0].cards.contains(CardDB.fusionSpell))
         #expect(db.materialNeed[6390] == 3 && db.materialNeed[4007] == 2)  // 사이버 드래곤(사이버 엔드 드래곤), 푸른 눈의 백룡(쌍폭렬룡)
         #expect(db.prefix(packs: 11).materialNeed[6390] == nil)  // DM 범위엔 사이버 드래곤을 쓰는 융합이 없다

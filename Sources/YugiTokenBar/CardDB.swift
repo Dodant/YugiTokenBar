@@ -23,21 +23,31 @@ struct CardInfo: Codable, Sendable, Equatable {
     /// level 칸의 이름: 엑시즈는 랭크, 링크는 링크 수
     var levelName: String { type?.contains("엑시즈") == true ? "랭크" : type?.contains("링크") == true ? "링크" : "레벨" }
 
-    /// 몬스터 / 마법 / 함정. 마법·함정은 attr 칸에 "마법"·"함정"이 들어 있다.
-    var kind: String { attr == "마법" || attr == "함정" ? attr! : "몬스터" }
+    /// 마법·함정은 attr 칸에 "마법"·"함정"이 들어 있고, 나머지(속성)는 몬스터.
+    var kind: CardKind { attr.flatMap(CardKind.init(rawValue:)) ?? .monster }
 
     /// 컬렉션 종류 메뉴의 소환법 (시대 순)
     static let summons = ["의식", "융합", "싱크로", "엑시즈", "펜듈럼", "링크"]
     /// 종류 메뉴 값과 맞는지: 몬스터·마법·함정은 kind, 소환법은 몬스터의 type 칸 (의식 마법은 아님, 엑시즈 펜듈럼은 둘 다)
     func matches(kind filter: String) -> Bool {
-        kind == filter || (kind == "몬스터" && type?.components(separatedBy: "/").contains(filter) == true)
+        kind.rawValue == filter || (kind == .monster && type?.components(separatedBy: "/").contains(filter) == true)
     }
 
     /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 100팩 카드인 융합 몬스터만, 조건이나 없는 카드가 섞이면 nil.
     var fusionMaterials: [Int: Int]? {
-        guard let materials, materials.allSatisfy({ $0.cid != nil }) else { return nil }
-        return materials.reduce(into: [:]) { $0[$1.cid!, default: 0] += $1.count ?? 1 }
+        guard let materials else { return nil }
+        var need: [Int: Int] = [:]
+        for m in materials {
+            guard let cid = m.cid else { return nil }
+            need[cid, default: 0] += m.count ?? 1
+        }
+        return need
     }
+}
+
+/// 카드 종류. rawValue 는 컬렉션 종류 메뉴 값이자 cards.json attr 칸 값(마법·함정).
+enum CardKind: String, CaseIterable, Sendable {
+    case monster = "몬스터", spell = "마법", trap = "함정"
 }
 
 /// 융합 소재 하나: cid 는 100팩의 카드, name 은 100팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
@@ -150,9 +160,5 @@ struct CardDB: Sendable {
         return try load(from: repoCardsURL)
     }
 
-    static let repoCardsURL = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent()  // Sources/YugiTokenBar
-        .deletingLastPathComponent()  // Sources
-        .deletingLastPathComponent()  // 저장소 루트
-        .appendingPathComponent("Resources/cards.json")
+    static let repoCardsURL = AppInfo.repoRoot.appendingPathComponent("Resources/cards.json")
 }

@@ -24,7 +24,7 @@ struct DexView: View {
     @State private var fusing: FusionShow?
     /// 0 = 모든 등급, 1~5 = CardInfo.tier
     @State private var tierFilter = 0
-    /// "" = 모든 종류, 아니면 CardInfo.kind 또는 소환법 (CardInfo.matches)
+    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 (CardInfo.matches)
     @State private var kindFilter = ""
     @State private var search = ""
     @State private var showUnowned = true  // 기억하지 않고 창을 열 때마다 켠다
@@ -87,8 +87,8 @@ struct DexView: View {
             // .scrollPosition(id:) 는 스크롤 중에도 값을 계속 써서 줄마다 창 전체를 다시 계산하므로, 이동할 때만 쓰는 ScrollViewReader 로
             ScrollView { ScrollViewReader { proxy in
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
-                    ForEach(entries, id: \.number) { entry in
-                        cell(number: entry.number, cid: entry.cid, label: entry.label)
+                    ForEach(entries) { entry in
+                        cell(cid: entry.cid, label: entry.label)
                     }
                 }
                 .padding(16)
@@ -190,7 +190,7 @@ struct DexView: View {
             Picker("종류", selection: $kindFilter) {
                 Text("모든 종류").tag("")
                 Divider()
-                ForEach(["몬스터", "마법", "함정"], id: \.self) { Text($0).tag($0) }
+                ForEach(CardKind.allCases, id: \.self) { Text($0.rawValue).tag($0.rawValue) }
                 Divider()
                 ForEach(CardInfo.summons, id: \.self) { Text($0).tag($0) }
             }
@@ -240,7 +240,7 @@ struct DexView: View {
         }
     }
 
-    private func subtitle(_ all: [(number: Int, cid: Int, label: String)]) -> String {
+    private func subtitle(_ all: [DexEntry]) -> String {
         if case .deck(let id)? = scope, let deck = model.game.deck(id) {
             let p = model.game.deckProgress(deck)
             return "\(p.owned) / \(p.total)장 보유 · 메인 덱 \(Balance.deckSize.lowerBound)~\(Balance.deckSize.upperBound)장"
@@ -267,12 +267,12 @@ struct DexView: View {
     }
 
     /// 화면에 보일 카드: 등급 필터 → 미보유 숨기기 → 정렬. 같은 값이면 팩 순번 순. (body 밖 동작용, body 는 한 번 계산한 값을 쓴다)
-    private var entries: [(number: Int, cid: Int, label: String)] { visible(tierEntries) }
+    private var entries: [DexEntry] { visible(tierEntries) }
 
-    private func visible(_ tiered: [(number: Int, cid: Int, label: String)]) -> [(number: Int, cid: Int, label: String)] {
+    private func visible(_ tiered: [DexEntry]) -> [DexEntry] {
         let game = model.game
         let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
-        let tier = { (e: (number: Int, cid: Int, label: String)) in model.db.tier(e.cid) }
+        let tier = { (e: DexEntry) in model.db.tier(e.cid) }
         // 카드 목록은 바뀌지 않으니 이름 순위는 처음 이름순으로 볼 때 한 번만 만든다 (비교마다 문자열을 대면 6천 장에 ~50ms)
         if sort == .name, Self.nameRank.isEmpty { Self.nameRank = CardDB.nameRanks(model.db.cards) }
         let name = { (cid: Int) in Self.nameRank[cid] ?? .max }
@@ -292,7 +292,7 @@ struct DexView: View {
     /// 띄어쓰기는 무시한다 ("푸른눈" 으로도 "푸른 눈의 백룡" 이 찾아진다)
     private var query: String { search.replacingOccurrences(of: " ", with: "") }
 
-    private var tierEntries: [(number: Int, cid: Int, label: String)] {
+    private var tierEntries: [DexEntry] {
         let db = model.db
         // 전체·즐겨찾기·덱: 팩 순서대로, 재수록은 처음 나온 팩 기준 한 번만
         var seen = Set<Int>()
@@ -308,7 +308,7 @@ struct DexView: View {
             .filter { tierFilter == 0 || db.tier($0.element) == tierFilter }
             .filter { kindFilter.isEmpty || db.cards[$0.element]?.matches(kind: kindFilter) == true }
             .filter { query.isEmpty || (db.cards[$0.element]?.name ?? "").replacingOccurrences(of: " ", with: "").localizedStandardContains(query) }
-            .map { ($0.offset + 1, $0.element, db.cards[$0.element]?.rarity ?? "N") }
+            .map { DexEntry(number: $0.offset + 1, cid: $0.element, label: db.cards[$0.element]?.rarity ?? "N") }
     }
 
     /// 보고 있는 덱 (덱 화면이 아니면 nil)
@@ -354,7 +354,7 @@ struct DexView: View {
     /// 끌기·우클릭이 적용되는 카드들: 선택된 카드면 선택 전체, 아니면 그 카드만.
     private func targets(_ cid: Int) -> Set<Int> { selectedCards.contains(cid) ? selectedCards : [cid] }
 
-    private func cell(number: Int, cid: Int, label: String) -> some View {
+    private func cell(cid: Int, label: String) -> some View {
         let game = model.game
         // 덱 화면에선 덱에 넣은 장 수를 보여주고, 보유가 그보다 적으면 미보유처럼 흐리게(더 모아야 할 카드)
         let inDeck = deckID.flatMap { game.deck($0)?.cards[cid] }
@@ -602,7 +602,7 @@ struct DexView: View {
                                     .help(why)
                                     .confirmationDialog("\(card.name) 융합", isPresented: $confirmFuse) {
                                         Button("융합") {
-                                            let mats = card.materials?.flatMap { Array(repeating: $0.cid!, count: $0.count ?? 1) } ?? []
+                                            let mats = materials.flatMap { m in m.cid.map { Array(repeating: $0, count: m.count ?? 1) } ?? [] }  // 연출은 소재 줄 순서대로
                                             model.fuse(cid)
                                             fusing = FusionShow(cid: cid, materials: mats)
                                         }
@@ -769,6 +769,14 @@ private struct Hovering<Content: View>: View {
 /// 화면에 보이는 셀의 프레임 (러버밴드 선택용). 클래스라 갱신해도 뷰를 다시 그리지 않는다.
 private final class FrameStore {
     var map: [Int: CGRect] = [:]
+}
+
+/// 그리드 한 칸. number 는 등급 필터·정렬과 상관없이 팩(또는 전체) 안 순번이라 id 로 쓴다.
+struct DexEntry: Identifiable {
+    let number: Int
+    let cid: Int
+    let label: String
+    var id: Int { number }
 }
 
 /// 사이드바 선택: 전체 · 즐겨찾기 · 팩 · 덱

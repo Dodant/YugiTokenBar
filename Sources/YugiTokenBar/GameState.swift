@@ -2,8 +2,10 @@ import Foundation
 
 struct LogEntry: Codable, Sendable, Equatable {
     let cid: Int
-    /// "free" 또는 팩 pid
+    /// `free`, `fusion` 또는 팩 pid. 세이브에 그대로 쓰는 문자열이라 enum 대신 상수로 둔다.
     let source: String
+    static let free = "free"
+    static let fusion = "융합"
     let date: Date
 }
 
