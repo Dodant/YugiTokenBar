@@ -3,6 +3,9 @@ import SwiftUI
 struct PopoverView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.openWindow) private var openWindow
+    /// 무료 팩·무료 카드 줄이 보이는지. 덮여 있는 동안(개봉·상점·설정)은 갱신하지 않는다:
+    /// 그사이 줄이 생기거나 사라지면(마지막 무료 팩을 열 때 포함) 패널 높이가 바뀌어 개봉 화면이 늘었다 줄었다 한다
+    @State private var freeRows: (pack: Bool, card: Bool)?
 
     var body: some View {
         // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점·개봉·설정은 요약 크기 안에 겹쳐 그려 높이를 고정
@@ -17,6 +20,9 @@ struct PopoverView: View {
             }
             .padding(16)
             .frame(width: 340)
+            .onChange(of: [covered, model.game.state.freePacks > 0, model.game.state.pendingFree > 0], initial: true) {
+                if !covered { freeRows = (model.game.state.freePacks > 0, model.game.state.pendingFree > 0) }
+            }
     }
 
     // 패널 자체가 Liquid Glass 라서 내용에는 유리를 겹치지 않는다(겹치면 뒤 배경 색이 번져 탁해짐).
@@ -42,14 +48,14 @@ struct PopoverView: View {
                 .frame(height: 79)
             }
 
-            if state.freePacks > 0 {
+            if freeRows?.pack ?? (state.freePacks > 0) {
                 FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",
                         hint: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩", button: "열기") { model.openFreePack() }
                     .padding(12)
                     .background(.fill.quinary, in: .rect(cornerRadius: 16))
             }
 
-            if state.pendingFree > 0 {
+            if freeRows?.card ?? (state.pendingFree > 0) {
                 FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: "토큰으로 모은 카드예요",
                         button: state.pendingFree > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기") { model.openFree() }
                     .padding(12)
