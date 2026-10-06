@@ -9,11 +9,16 @@ struct CardInfo: Codable, Sendable, Equatable {
     let def: String?
     let text: String
     let imageId: Int?
+    /// 1 N · 2 R · 3 SR · 4 UR · 5 SE. 재수록 카드는 수록 팩 중 가장 높은 등급 (build-cards.py 가 옮겨 둔 것).
+    var tier: Int = 1
     /// 펜듈럼 몬스터만: P스케일과 펜듈럼 효과
     var scale: Int? = nil
     var pendulum: String? = nil
     /// 융합 몬스터만: 효과 첫 줄(소재 줄)을 build-cards.py 가 떼어 둔 것. NEX 로만 소환하는 2종은 없다.
     var materials: [Material]? = nil
+
+    static let rarities = ["N", "R", "SR", "UR", "SE"]
+    var rarity: String { Self.rarities[min(max(tier, 1), Self.rarities.count) - 1] }
 
     /// level 칸의 이름: 엑시즈는 랭크, 링크는 링크 수
     var levelName: String { type?.contains("엑시즈") == true ? "랭크" : type?.contains("링크") == true ? "링크" : "레벨" }
@@ -43,26 +48,12 @@ struct Material: Codable, Sendable, Equatable {
     var count: Int? = nil
 }
 
-struct PackCard: Codable, Sendable, Equatable {
-    let cid: Int
-    /// 1 N · 2 R · 3 SR · 4 UR · 5 SE
-    let tier: Int
-    let label: String
-
-    static let labels = ["N", "R", "SR", "UR", "SE"]
-
-    /// cards.json 의 Konami 원래 레어도 중 티어 5(SE·PSE·QCSE·10000 SE·UL·HR 등)를 SE 하나로 합친다.
-    var simplified: PackCard {
-        let t = min(max(tier, 1), Self.labels.count)
-        return PackCard(cid: cid, tier: t, label: Self.labels[t - 1])
-    }
-}
-
 struct Pack: Codable, Sendable, Identifiable, Equatable {
     let pid: String
     let name: String
     let date: String
-    var cards: [PackCard]
+    /// 수록 카드 cid (등급은 CardInfo.tier)
+    var cards: [Int]
     /// 대응하는 TCG 팩 코드 (LOB 등)
     var setCode: String? = nil
     /// 봉투 이미지: Yugipedia 한글판, 없으면 YGOPRODeck 영문판
@@ -79,8 +70,6 @@ struct CardDB: Sendable {
     private(set) var cidSet: Set<Int>
     /// 범위 안 융합 몬스터의 소재로 필요한 최대 장 수 (사이버 드래곤 → 3, 사이버 엔드 드래곤). 중복 판매에서 그만큼 남긴다.
     private(set) var materialNeed: [Int: Int]
-    /// 카드마다 수록 팩 중 가장 높은 등급의 칸 (재수록 판정·판매가). 매번 모든 팩을 훑지 않게 미리 만든다.
-    private(set) var topCards: [Int: PackCard]
 
     init(packs: [Pack], cards: [Int: CardInfo]) {
         self.packs = packs
@@ -88,7 +77,6 @@ struct CardDB: Sendable {
         self.allCIDs = cards.keys.sorted()
         self.cidSet = Set(cards.keys)
         self.materialNeed = Self.materialNeeds(allCIDs, cards)
-        self.topCards = Self.topCards(packs)
     }
 
     /// 컬렉션 이름순 정렬 키: cid → 이름 순위(Finder 순서, 같은 이름은 같은 순위). 정렬마다 문자열을 비교하지 않으려고 쓴다
@@ -102,12 +90,7 @@ struct CardDB: Sendable {
         return ranks
     }
 
-    /// 같은 등급이면 먼저 나온 팩의 칸
-    private static func topCards(_ packs: [Pack]) -> [Int: PackCard] {
-        packs.flatMap(\.cards).reduce(into: [:]) { top, c in
-            if c.tier > top[c.cid]?.tier ?? .min { top[c.cid] = c }
-        }
-    }
+    func tier(_ cid: Int) -> Int { cards[cid]?.tier ?? 1 }
 
     private static func materialNeeds(_ cids: [Int], _ cards: [Int: CardInfo]) -> [Int: Int] {
         cids.reduce(into: [:]) { need, cid in
@@ -119,10 +102,9 @@ struct CardDB: Sendable {
     func prefix(packs n: Int) -> CardDB {
         var db = self
         db.packs = Array(packs.prefix(n))
-        db.cidSet = Set(db.packs.flatMap(\.cards).map(\.cid))
+        db.cidSet = Set(db.packs.flatMap(\.cards))
         db.allCIDs = db.cidSet.sorted()
         db.materialNeed = Self.materialNeeds(db.allCIDs, cards)
-        db.topCards = Self.topCards(db.packs)
         return db
     }
 
@@ -157,12 +139,7 @@ struct CardDB: Sendable {
         for (key, info) in file.cards {
             if let cid = Int(key) { cards[cid] = info }
         }
-        var packs = file.packs
-        for i in packs.indices { packs[i].cards = packs[i].cards.map(\.simplified) }
-        // 재수록으로 팩마다 등급이 다른 카드(유벨 N·UR 등)는 모든 팩에서 가장 높은 등급으로
-        let top = topCards(packs)
-        for i in packs.indices { packs[i].cards = packs[i].cards.map { top[$0.cid]! } }
-        return CardDB(packs: packs, cards: cards)
+        return CardDB(packs: file.packs, cards: cards)
     }
 
     /// .app 안에서는 Contents/Resources/cards.json, `swift run`·테스트에서는 저장소의 Resources/cards.json.

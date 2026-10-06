@@ -14,17 +14,17 @@ struct SeededRNG: RandomNumberGenerator {
     }
 }
 
-/// 팩마다 (cid, tier) 목록으로 작은 카드 DB를 만든다.
+/// 팩마다 (cid, tier) 목록으로 작은 카드 DB를 만든다. 여러 팩에 있는 카드는 build-cards.py 처럼 가장 높은 tier.
 func makeDB(_ packs: [[(cid: Int, tier: Int)]]) -> CardDB {
     var cards: [Int: CardInfo] = [:]
     var built: [Pack] = []
     for (i, list) in packs.enumerated() {
         for c in list {
             cards[c.cid] = CardInfo(name: "카드\(c.cid)", attr: nil, level: nil, type: nil,
-                                    atk: nil, def: nil, text: "", imageId: nil)
+                                    atk: nil, def: nil, text: "", imageId: nil, tier: max(cards[c.cid]?.tier ?? 1, c.tier))
         }
         built.append(Pack(pid: "p\(i)", name: "팩\(i)", date: "2004-01-01",
-                          cards: list.map { PackCard(cid: $0.cid, tier: $0.tier, label: "T\($0.tier)") }))
+                          cards: list.map(\.cid)))
     }
     return CardDB(packs: built, cards: cards)
 }

@@ -26,10 +26,10 @@ enum Balance {
 struct Pull: Sendable, Equatable {
     let cid: Int
     let tier: Int
-    let label: String
     let isNew: Bool
     /// 중복 자동 판매로 바로 판 경우 받은 코인
     var soldFor: Int? = nil
+    var label: String { CardInfo.rarities[tier - 1] }
 }
 
 struct Game: Sendable {
@@ -96,10 +96,9 @@ struct Game: Sendable {
         while state.pendingFree > 0, pulls.count < Balance.freeOpenBatch {
             state.pendingFree -= 1
             guard let cid = drawFree(using: &rng) else { state.pendingFree = 0; break }
-            let card = topCard(cid)
             let isNew = copies(cid) == 0
             give(cid, source: "free")
-            pulls.append(Pull(cid: cid, tier: card?.tier ?? 1, label: card?.label ?? "", isNew: isNew, soldFor: autoSell(cid)))
+            pulls.append(Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid)))
         }
         return pulls
     }
@@ -116,12 +115,12 @@ struct Game: Sendable {
 
     func progress(_ pack: Int) -> (owned: Int, total: Int) {
         let cards = db.packs[pack].cards
-        return (cards.filter { copies($0.cid) > 0 }.count, cards.count)
+        return (cards.filter { copies($0) > 0 }.count, cards.count)
     }
 
     /// 팩의 모든 카드를 1장 이상 가졌으면 완료(✓ 표시만, 구매는 계속 가능).
     func isComplete(_ pack: Int) -> Bool {
-        db.packs[pack].cards.allSatisfy { copies($0.cid) > 0 }
+        db.packs[pack].cards.allSatisfy { copies($0) > 0 }
     }
 
     func canBuy(_ pack: Int) -> Bool {
@@ -130,11 +129,8 @@ struct Game: Sendable {
 
     // MARK: 판매
 
-    /// 재수록 카드는 수록된 팩 중 가장 높은 티어로 친다(판매가·무료 카드 공통).
-    func topCard(_ cid: Int) -> PackCard? { db.topCards[cid] }
-
     func sellPrice(_ cid: Int) -> Int {
-        Balance.sellPrice[topCard(cid)?.tier ?? 1] ?? 0
+        Balance.sellPrice[db.tier(cid)] ?? 0
     }
 
     /// 1장 판매. 보유하지 않았으면 nil, 팔았으면 받은 코인.
@@ -247,10 +243,9 @@ struct Game: Sendable {
     /// 전체 카드에서 `freeWeights`로 티어를 고르고 그 안에서 균등 선택.
     /// 그 티어가 비었으면 팩과 같이 아래 → 위 티어 순으로 찾는다.
     func drawFree<R: RandomNumberGenerator>(using rng: inout R) -> Int? {
-        let tiers = Dictionary(db.packs.flatMap(\.cards).map { ($0.cid, $0.tier) }, uniquingKeysWith: max)
         var byTier: [Int: [Int]] = [:]
         for cid in db.allCIDs where !isFusionOnly(cid) {
-            byTier[tiers[cid] ?? 1, default: []].append(cid)
+            byTier[db.tier(cid), default: []].append(cid)
         }
         for t in Self.fallbackOrder(pickTier(Balance.freeWeights, using: &rng)) {
             if let cid = byTier[t]?.randomElement(using: &rng) { return cid }
@@ -259,17 +254,17 @@ struct Game: Sendable {
     }
 
     static func fallbackOrder(_ tier: Int) -> [Int] {
-        [tier] + Array(stride(from: tier - 1, through: 1, by: -1)) + Array(stride(from: tier + 1, through: PackCard.labels.count, by: 1))
+        [tier] + Array(stride(from: tier - 1, through: 1, by: -1)) + Array(stride(from: tier + 1, through: CardInfo.rarities.count, by: 1))
     }
 
     /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택.
     /// kind(몬스터·마법·함정)가 있으면 그 종류만. 보유 수 상한은 없다.
-    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], kind: String? = nil, using rng: inout R) -> PackCard? {
+    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], kind: String? = nil, using rng: inout R) -> Int? {
         for t in Self.fallbackOrder(tier) {
             let candidates = db.packs[pack].cards.filter {
-                $0.tier == t && !excluding.contains($0.cid) && !isFusionOnly($0.cid) && (kind == nil || db.cards[$0.cid]?.kind == kind)
+                db.tier($0) == t && !excluding.contains($0) && !isFusionOnly($0) && (kind == nil || db.cards[$0]?.kind == kind)
             }
-            if let card = candidates.randomElement(using: &rng) { return card }
+            if let cid = candidates.randomElement(using: &rng) { return cid }
         }
         return nil
     }
@@ -314,10 +309,10 @@ struct Game: Sendable {
         var pulls: [Pull] = []
         for (i, tier) in tiers.enumerated() {
             let kind = i < Balance.monstersPerPack ? "몬스터" : nil
-            guard let card = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), kind: kind, using: &rng) else { continue }
-            let isNew = copies(card.cid) == 0
-            give(card.cid, source: db.packs[pack].pid)
-            pulls.append(Pull(cid: card.cid, tier: card.tier, label: card.label, isNew: isNew, soldFor: autoSell(card.cid)))
+            guard let cid = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), kind: kind, using: &rng) else { continue }
+            let isNew = copies(cid) == 0
+            give(cid, source: db.packs[pack].pid)
+            pulls.append(Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid)))
         }
         return pulls
     }

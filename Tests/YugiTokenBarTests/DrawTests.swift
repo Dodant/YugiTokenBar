@@ -28,11 +28,11 @@ import Testing
     @Test func emptyTierFallsDownThenUp() {
         var rng = SeededRNG(seed: 3)
         // 팩0에 SR(3) 없음 → 아래로 내려가 레어
-        #expect(rich().draw(pack: 0, tier: 3, using: &rng)?.cid == 5)
+        #expect(rich().draw(pack: 0, tier: 3, using: &rng) == 5)
         // 노멀·레어가 이미 봉투에 나왔으면 → 위로 올라가 울트라
-        #expect(rich().draw(pack: 0, tier: 2, excluding: [1, 2, 3, 4, 5], using: &rng)?.cid == 6)
+        #expect(rich().draw(pack: 0, tier: 2, excluding: [1, 2, 3, 4, 5], using: &rng) == 6)
         // SE 가 없는 팩이면 아래(UR)로
-        #expect(rich().draw(pack: 0, tier: 5, using: &rng)?.cid == 6)
+        #expect(rich().draw(pack: 0, tier: 5, using: &rng) == 6)
     }
 
     @Test func packHasFourNormalsAndOneRareSlot() {

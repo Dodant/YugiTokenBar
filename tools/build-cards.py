@@ -12,7 +12,7 @@ import sys
 import time
 import urllib.request
 
-TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽) = 5 — 앱(CardDB.load)이 UR(4)로 합친다
+TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽 등) = 5 = 앱의 SE
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
 CUTOFF = "2026/07/15"  # 『카오스 오리진즈』까지
 MINI = re.compile(r"어시스트 팩|익스팬션 팩|얼티미트 스페셜 팩")
@@ -109,7 +109,7 @@ def korean_pack_image(set_code):
 
 def split_materials(cards):
     """융합 몬스터의 효과 텍스트 첫 줄(소재 줄)을 materials 로 뗀다. 이미 뗀 파일(--reformat)은 그대로.
-    "이름" 은 75팩 카드면 {"cid"}, 아니면 {"name"}, 그 밖("전사족 몬스터")은 {"rule"}, 뒤의 "× N" 은 count.
+    "이름" 은 100팩 카드면 {"cid"}, 아니면 {"name"}, 그 밖("전사족 몬스터")은 {"rule"}, 뒤의 "× N" 은 count.
     NEX 로만 소환하는 2종·베어트론은 소재 줄이 없다(첫 줄이 '.' 로 끝나는 효과문)."""
     names = {v["name"]: int(k) for k, v in cards.items()}
     nospace = {n.replace(" ", ""): c for n, c in names.items()}
@@ -135,8 +135,20 @@ def split_materials(cards):
         info["text"] = rest.strip()
 
 
+def move_tiers(out):
+    """팩마다 붙은 등급을 카드로 옮긴다: 재수록 카드는 수록 팩 중 가장 높은 등급. 팩에는 cid 목록만 남는다.
+    이미 옮긴 파일(--reformat)은 그대로."""
+    for p in out["packs"]:
+        for c in p["cards"]:
+            if isinstance(c, dict):
+                info = out["cards"][str(c["cid"])]
+                info["tier"] = max(info.get("tier", 1), c["tier"])
+        p["cards"] = [c["cid"] if isinstance(c, dict) else c for c in p["cards"]]
+
+
 def write(out):
-    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게. 융합 소재 분리도 여기서 한다."""
+    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게. 등급 이식·융합 소재 분리도 여기서 한다."""
+    move_tiers(out)
     split_materials(out["cards"])
     dump = lambda x: json.dumps(x, ensure_ascii=False, separators=(",", ":"))
     with open(OUT, "w", encoding="utf-8") as f:

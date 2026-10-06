@@ -16,20 +16,20 @@ import Testing
         let kinds = Dictionary(grouping: db.cards.values, by: \.kind).mapValues(\.count)
         #expect(kinds == ["몬스터": 5033, "마법": 1719, "함정": 1420])
         // 팩마다 노멀 몬스터가 보장 장 수 이상이라 몬스터 슬롯이 다른 티어로 올라가지 않는다
-        #expect(db.packs.allSatisfy { p in p.cards.filter { $0.tier == 1 && db.cards[$0.cid]?.kind == "몬스터" }.count >= Balance.monstersPerPack })
+        #expect(db.packs.allSatisfy { p in p.cards.filter { db.tier($0) == 1 && db.cards[$0]?.kind == "몬스터" }.count >= Balance.monstersPerPack })
         #expect(db.eras.map(\.packs) == [0..<11, 11..<27, 27..<43, 43..<51, 51..<63, 63..<75, 75..<100])
         // 시대 첫 팩: 듀얼리스트의 투혼(GX), 듀얼리스트의 태동(싱크로), 리턴 오브 더 듀얼리스트(엑시즈), 더 듀얼리스트 어드벤트(펜듈럼), 코드 오브 더 듀얼리스트(링크), 라이즈 오브 더 듀얼리스트(Modern)
         #expect(db.eras.map { db.packs[$0.packs.lowerBound].setCode } == ["LOB", "SOD", "TDGS", "REDU", "DUEA", "COTD", "ROTD"])
         #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
         #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 100팩 모두 한글판
         #expect(db.allCIDs.count == 8172)
-        // 재수록 카드는 모든 팩에서 가장 높은 등급: 유벨(환영의 어둠 N, 팬텀 나이트메어 QCSE → SE)
-        #expect(Dictionary(grouping: db.packs.flatMap(\.cards), by: \.cid).values.allSatisfy { Set($0.map(\.tier)).count == 1 })
-        #expect(db.packs.flatMap(\.cards).filter { db.cards[$0.cid]?.name == "유벨" }.map(\.label) == ["SE", "SE"])
+        // 재수록 카드는 수록 팩 중 가장 높은 등급: 유벨(환영의 어둠 N, 팬텀 나이트메어 QCSE → SE)
+        #expect(db.cards.values.first { $0.name == "유벨" }?.rarity == "SE")
+        let tiers = Dictionary(grouping: db.cards.values, by: \.tier).mapValues(\.count)
+        #expect(tiers == [1: 4758, 2: 1730, 3: 896, 4: 552, 5: 236])
         for pack in db.packs {
-            for card in pack.cards {
-                #expect(db.cards[card.cid] != nil, "팩 \(pack.name) 의 cid \(card.cid) 가 cards 에 없음")
-                #expect((1...5).contains(card.tier))
+            for cid in pack.cards {
+                #expect(db.cards[cid] != nil, "팩 \(pack.name) 의 cid \(cid) 가 cards 에 없음")
             }
         }
         #expect(db.cards.values.allSatisfy { !$0.name.isEmpty && $0.imageId != nil })
@@ -54,7 +54,7 @@ import Testing
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
         #expect(db.cards[CardDB.fusionSpell].map { ($0.name, $0.kind) } ?? ("", "") == ("융합", "마법"))
-        #expect(db.packs[0].cards.contains { $0.cid == CardDB.fusionSpell })
+        #expect(db.packs[0].cards.contains(CardDB.fusionSpell))
         #expect(db.materialNeed[6390] == 3 && db.materialNeed[4007] == 2)  // 사이버 드래곤(사이버 엔드 드래곤), 푸른 눈의 백룡(쌍폭렬룡)
         #expect(db.prefix(packs: 11).materialNeed[6390] == nil)  // DM 범위엔 사이버 드래곤을 쓰는 융합이 없다
         // 소재를 다 아는 융합(융합 전용 후보)의 소재는 어느 시대 범위에서도 그 융합과 같은 범위 안에 있다 → Game.isFusionOnly 가 범위 검사를 안 한다

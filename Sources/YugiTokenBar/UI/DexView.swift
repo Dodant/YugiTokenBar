@@ -21,7 +21,7 @@ struct DexView: View {
     @State private var confirmSellLast = false
     @State private var confirmSellDuplicates = false
     @State private var confirmFuse = false
-    /// 0 = 모든 등급, 1~5 = PackCard.tier
+    /// 0 = 모든 등급, 1~5 = CardInfo.tier
     @State private var tierFilter = 0
     /// "" = 모든 종류, 아니면 CardInfo.kind 또는 소환법 (CardInfo.matches)
     @State private var kindFilter = ""
@@ -263,7 +263,7 @@ struct DexView: View {
     private func visible(_ tiered: [(number: Int, cid: Int, label: String)]) -> [(number: Int, cid: Int, label: String)] {
         let game = model.game
         let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
-        let tier = { (e: (number: Int, cid: Int, label: String)) in (PackCard.labels.firstIndex(of: e.label) ?? 0) }
+        let tier = { (e: (number: Int, cid: Int, label: String)) in model.db.tier(e.cid) }
         // 카드 목록은 바뀌지 않으니 이름 순위는 처음 이름순으로 볼 때 한 번만 만든다 (비교마다 문자열을 대면 6천 장에 ~50ms)
         if sort == .name, Self.nameRank.isEmpty { Self.nameRank = CardDB.nameRanks(model.db.cards) }
         let name = { (cid: Int) in Self.nameRank[cid] ?? .max }
@@ -287,19 +287,19 @@ struct DexView: View {
         let db = model.db
         // 전체·즐겨찾기·덱: 팩 순서대로, 재수록은 처음 나온 팩 기준 한 번만
         var seen = Set<Int>()
-        let all = { db.packs.flatMap(\.cards).filter { seen.insert($0.cid).inserted } }
-        let cards: [PackCard] = switch scope {
+        let all = { db.packs.flatMap(\.cards).filter { seen.insert($0).inserted } }
+        let cards: [Int] = switch scope {
         case .pack(let i)? where db.packs.indices.contains(i): db.packs[i].cards
-        case .favorites?: all().filter { model.game.state.favorites.contains($0.cid) }
+        case .favorites?: all().filter { model.game.state.favorites.contains($0) }
         case .deck(let id)?:
-            { let inDeck = model.game.deck(id)?.cards ?? [:]; return all().filter { inDeck[$0.cid] != nil } }()
+            { let inDeck = model.game.deck(id)?.cards ?? [:]; return all().filter { inDeck[$0] != nil } }()
         default: all()
         }
         return cards.enumerated()
-            .filter { tierFilter == 0 || $0.element.tier == tierFilter }
-            .filter { kindFilter.isEmpty || db.cards[$0.element.cid]?.matches(kind: kindFilter) == true }
-            .filter { query.isEmpty || (db.cards[$0.element.cid]?.name ?? "").replacingOccurrences(of: " ", with: "").localizedStandardContains(query) }
-            .map { ($0.offset + 1, $0.element.cid, $0.element.label) }
+            .filter { tierFilter == 0 || db.tier($0.element) == tierFilter }
+            .filter { kindFilter.isEmpty || db.cards[$0.element]?.matches(kind: kindFilter) == true }
+            .filter { query.isEmpty || (db.cards[$0.element]?.name ?? "").replacingOccurrences(of: " ", with: "").localizedStandardContains(query) }
+            .map { ($0.offset + 1, $0.element, db.cards[$0.element]?.rarity ?? "N") }
     }
 
     /// 보고 있는 덱 (덱 화면이 아니면 nil)
@@ -608,9 +608,8 @@ struct DexView: View {
     }
 
     private func packs(_ cid: Int) -> [(name: String, label: String)] {
-        model.db.packs.compactMap { pack in
-            pack.cards.first { $0.cid == cid }.map { (pack.name, $0.label) }
-        }
+        let label = model.db.cards[cid]?.rarity ?? "N"
+        return model.db.packs.filter { $0.cards.contains(cid) }.map { ($0.name, label) }
     }
 }
 

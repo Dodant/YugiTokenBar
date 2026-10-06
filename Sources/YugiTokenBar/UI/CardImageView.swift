@@ -46,7 +46,7 @@ enum Rarity {
     static func color(tier: Int) -> Color { colors[min(max(tier, 1), colors.count) - 1] }
     static func color(label: String, owned: Bool = true) -> Color {
         guard owned else { return locked }
-        return color(tier: (PackCard.labels.firstIndex(of: label) ?? 0) + 1)
+        return color(tier: (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1)
     }
 }
 
