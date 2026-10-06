@@ -205,7 +205,13 @@ extension View {
 }
 
 /// 코인 표기: ⓒ 1,000
-func coinText(_ n: Int) -> String { "ⓒ \(n.formatted())" }
+/// 만 단위부터 K·M (12,345 → 12.3K, 1,000,000 → 1M). 메뉴바와 `coinText`가 같이 쓴다
+func shortCoins(_ n: Int) -> String {
+    guard abs(n) >= 10_000 else { return n.formatted() }
+    return n.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)).locale(Locale(identifier: "en_US")))
+}
+
+func coinText(_ n: Int) -> String { "ⓒ \(shortCoins(n))" }
 
 func shortTokens(_ n: Int) -> String {
     n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1e6) : String(format: "%.0fK", Double(n) / 1e3)
