@@ -28,14 +28,14 @@ struct CardInfo: Codable, Sendable, Equatable {
         kind == filter || (kind == "몬스터" && type?.components(separatedBy: "/").contains(filter) == true)
     }
 
-    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 75팩 카드인 융합 몬스터만, 조건이나 없는 카드가 섞이면 nil.
+    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 100팩 카드인 융합 몬스터만, 조건이나 없는 카드가 섞이면 nil.
     var fusionMaterials: [Int: Int]? {
         guard let materials, materials.allSatisfy({ $0.cid != nil }) else { return nil }
         return materials.reduce(into: [:]) { $0[$1.cid!, default: 0] += $1.count ?? 1 }
     }
 }
 
-/// 융합 소재 하나: cid 는 75팩의 카드, name 은 75팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
+/// 융합 소재 하나: cid 는 100팩의 카드, name 은 100팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
 struct Material: Codable, Sendable, Equatable {
     var cid: Int? = nil
     var name: String? = nil
@@ -127,15 +127,16 @@ struct CardDB: Sendable {
     }
 
     /// 시대별 첫 팩(발매순 인덱스): DM 푸른 눈의 백룡의 전설, GX 듀얼리스트의 투혼, 5D's 듀얼리스트의 태동(싱크로),
-    /// ZEXAL 리턴 오브 더 듀얼리스트(엑시즈), ARC-V 더 듀얼리스트 어드벤트(펜듈럼), VRAINS 코드 오브 더 듀얼리스트(링크).
+    /// ZEXAL 리턴 오브 더 듀얼리스트(엑시즈), ARC-V 더 듀얼리스트 어드벤트(펜듈럼), VRAINS 코드 오브 더 듀얼리스트(링크),
+    /// Modern 라이즈 오브 더 듀얼리스트(VRAINS 이후).
     // ponytail: 팩 목록이 고정(cards.json)이라 인덱스로 나눈다. 팩을 더 넣으면 여기도 고친다.
-    static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63)]
+    static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63), ("Modern", 75)]
     /// 「융합」 마법 카드 (푸른 눈의 백룡의 전설 SR). 1장 이상 있어야 융합할 수 있고 소비되지 않는다.
     static let fusionSpell = 4837
     /// 「날개 크리보」(잃어버린 천년 SR). 가지면 파트너가 해금된다.
     static let partnerCard = 6314
     /// 시대를 대표하는 소환법 (설정의 시대 범위 메뉴 표시용)
-    static let eraSummons = ["DM": "의식", "GX": "융합", "5D's": "싱크로", "ZEXAL": "엑시즈", "ARC-V": "펜듈럼", "VRAINS": "링크"]
+    static let eraSummons = ["DM": "의식", "GX": "융합", "5D's": "싱크로", "ZEXAL": "엑시즈", "ARC-V": "펜듈럼", "VRAINS": "링크", "Modern": "최신"]
 
     /// (시대 이름, 팩 인덱스 범위). 테스트용 작은 DB 에선 빈 시대를 뺀다.
     var eras: [(name: String, packs: Range<Int>)] {

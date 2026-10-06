@@ -540,7 +540,7 @@ struct DexView: View {
                                     Text("보유 \(model.game.copies(mcid))").foregroundStyle(.secondary).monospacedDigit()
                                 }
                             } else if let name = g.material.name {
-                                Text(name + suffix).foregroundStyle(.secondary).help("정규 부스터 75팩에 없는 카드예요")
+                                Text(name + suffix).foregroundStyle(.secondary).help("정규 부스터 100팩에 없는 카드예요")
                             } else {
                                 Text((g.material.rule ?? "") + suffix).foregroundStyle(.secondary)
                             }

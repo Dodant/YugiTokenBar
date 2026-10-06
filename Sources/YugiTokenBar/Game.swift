@@ -33,7 +33,7 @@ struct Pull: Sendable, Equatable {
 }
 
 struct Game: Sendable {
-    /// 75팩 전체
+    /// 100팩 전체
     let fullDB: CardDB
     var state: GameState
     /// 시대 이름 → 그 시대까지 자른 DB (미리 만들어 두고 고르기만 한다)
@@ -217,7 +217,7 @@ struct Game: Sendable {
 
     // MARK: 융합
 
-    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 75팩 카드인 융합 몬스터만, 아니면 nil.
+    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 100팩 카드인 융합 몬스터만, 아니면 nil.
     func fusionMaterials(_ cid: Int) -> [Int: Int]? { db.cards[cid]?.fusionMaterials }
 
     /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통)

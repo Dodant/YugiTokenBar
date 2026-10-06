@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Konami 한국 DB + YGOPRODeck → Resources/cards.json
 
-한국 정발 정규 부스터 팩 중 『이터니티 코드』(2020-04-14, VRAINS 마지막 팩)까지 75팩을 수집한다.
+한국 정발 정규 부스터 팩 중 『카오스 오리진즈』(2026-07-14)까지 100팩을 수집한다(76번째부터 VRAINS 이후 Modern).
+같은 분류의 미니 팩(＋1 어시스트·익스팬션 팩, 얼티미트 스페셜 팩: 20장 이하, 노멀 없음)은 뺀다.
 사용: python3 tools/build-cards.py [출력경로]
 """
 import html
@@ -13,7 +14,8 @@ import urllib.request
 
 TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽) = 5 — 앱(CardDB.load)이 UR(4)로 합친다
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
-CUTOFF = "2020/07/25"  # 『라이즈 오브 더 듀얼리스트』(VRAINS 이후 첫 팩) 직전까지
+CUTOFF = "2026/07/15"  # 『카오스 오리진즈』까지
+MINI = re.compile(r"어시스트 팩|익스팬션 팩|얼티미트 스페셜 팩")
 # --reformat: 받아 오지 않고 기존 파일을 지금 형식으로만 다시 쓴다
 REFORMAT = "--reformat" in sys.argv
 ARGS = [a for a in sys.argv[1:] if a != "--reformat"]
@@ -46,7 +48,7 @@ def parse_products(page):
         r'.*?<p>([^<]*)</p>\s*<input type="hidden" class="link_value" value="[^"]*pid=(\d+)',
         page, re.S)
     boosters = [(d, html.unescape(n).strip(), pid) for d, cat, n, pid in rows
-                if cat == "【정규 부스터 팩】" and d < CUTOFF]
+                if cat == "【정규 부스터 팩】" and d < CUTOFF and not MINI.search(html.unescape(n))]
     return sorted(boosters)
 
 
@@ -108,14 +110,14 @@ def korean_pack_image(set_code):
 def split_materials(cards):
     """융합 몬스터의 효과 텍스트 첫 줄(소재 줄)을 materials 로 뗀다. 이미 뗀 파일(--reformat)은 그대로.
     "이름" 은 75팩 카드면 {"cid"}, 아니면 {"name"}, 그 밖("전사족 몬스터")은 {"rule"}, 뒤의 "× N" 은 count.
-    NEX 로만 소환하는 2종은 소재 줄이 없다(첫 줄이 '.' 로 끝나는 효과문)."""
+    NEX 로만 소환하는 2종·베어트론은 소재 줄이 없다(첫 줄이 '.' 로 끝나는 효과문)."""
     names = {v["name"]: int(k) for k, v in cards.items()}
     nospace = {n.replace(" ", ""): c for n, c in names.items()}
 
     def material(part):
         m = re.fullmatch(r"(.+?)\s*×\s*(\d+)", part)
         part, count = (m.group(1), int(m.group(2))) if m else (part, None)
-        if q := re.fullmatch(r'"(.+)"', part):
+        if q := re.fullmatch(r'"([^"]+)"', part):  # "A"이나 "B" 는 rule
             cid = names.get(q.group(1)) or nospace.get(q.group(1).replace(" ", ""))
             out = {"cid": cid} if cid else {"name": q.group(1)}
         else:
@@ -190,8 +192,8 @@ def main():
     print(f"packs={len(packs)} distinct={len(infos)} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
-    if len(packs) != 75 or any(not i["name"] for i in infos.values()) or any(not p["imageURL"] for p in packs):
-        sys.exit("검증 실패: 팩 수가 75가 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
+    if len(packs) != 100 or any(not i["name"] for i in infos.values()) or any(not p["imageURL"] for p in packs):
+        sys.exit("검증 실패: 팩 수가 100이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 
 if __name__ == "__main__":

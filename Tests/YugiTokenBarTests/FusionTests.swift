@@ -2,7 +2,7 @@ import Testing
 @testable import YugiTokenBar
 
 @Suite struct FusionTests {
-    /// 팩0: 노멀 1·2·3, 「융합」 마법(해금 카드), UR 10 = 1 + 2 + 2 (소재를 다 아는 융합), UR 11 = 1 + 75팩에 없는 카드
+    /// 팩0: 노멀 1·2·3, 「융합」 마법(해금 카드), UR 10 = 1 + 2 + 2 (소재를 다 아는 융합), UR 11 = 1 + 100팩에 없는 카드
     let db: CardDB = {
         func info(_ name: String, _ materials: [Material]? = nil) -> CardInfo {
             CardInfo(name: name, attr: nil, level: nil, type: materials == nil ? "전사족/일반" : "전사족/융합",
