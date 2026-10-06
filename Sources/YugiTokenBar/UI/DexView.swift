@@ -358,18 +358,15 @@ struct DexView: View {
                 .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
                 .overlay(alignment: .topTrailing) { star(cid, hovered: hovered) }
                 .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
-            Text(model.db.cards[cid]?.name ?? "")
-                .font(.caption2).lineLimit(1).truncationMode(.tail)
-                .foregroundStyle(owned ? .primary : .secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }
             HStack(spacing: 4) {
-                Text(String(format: "%03d", number)).foregroundStyle(.secondary)
+                Text(model.db.cards[cid]?.name ?? "")
+                    .lineLimit(1).truncationMode(.tail)
+                    .foregroundStyle(owned ? .primary : .secondary)
                 Spacer(minLength: 0)
-                RarityPill(label: label, owned: owned)
-                if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold) }
+                if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
             }
             .font(.caption2)
-            .monospacedDigit()
         }
         .contentShape(Rectangle()) }
         .help(model.db.cards[cid]?.name ?? "")
