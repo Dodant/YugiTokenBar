@@ -19,8 +19,7 @@ struct YugiTokenBarApp: App {
         MenuBarExtra {
             PopoverView().environmentObject(model)
         } label: {
-            Label(menuTitle, systemImage: "rectangle.portrait.on.rectangle.portrait.fill")
-                .labelStyle(.titleAndIcon)
+            MenuBarLabel(title: menuTitle, icon: model.partner.menu, unlocked: model.game.state.partnerUnlocked)
         }
         .menuBarExtraStyle(.window)
 
@@ -40,5 +39,22 @@ struct YugiTokenBarApp: App {
         let state = model.game.state
         let coins = state.coins.formatted()
         return state.pendingFree > 0 ? "\(coins) ·\(state.pendingFree)" : coins
+    }
+}
+
+/// 메뉴바 라벨: 파트너가 해금되면 카드 아이콘 자리에 날개 크리보. 코인·배지 글자는 그대로.
+private struct MenuBarLabel: View {
+    let title: String
+    @ObservedObject var icon: FrameBox
+    let unlocked: Bool
+
+    var body: some View {
+        if unlocked, let image = icon.image {
+            Label { Text(title) } icon: { Image(nsImage: image) }
+                .labelStyle(.titleAndIcon)
+        } else {
+            Label(title, systemImage: "rectangle.portrait.on.rectangle.portrait.fill")
+                .labelStyle(.titleAndIcon)
+        }
     }
 }

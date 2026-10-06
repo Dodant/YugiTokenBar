@@ -29,6 +29,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     generalSection
                     cardSection
+                    partnerSection
                     updateSection
                     transferSection
                     aboutSection
@@ -57,6 +58,28 @@ struct SettingsView: View {
                     .controlSize(.small)
                     .disabled(!installed)
                     .onChange(of: launchAtLogin) { setLaunchAtLogin() }
+            }
+        }
+    }
+
+    private var partnerSection: some View {
+        let unlocked = model.game.state.partnerUnlocked
+        return section("파트너 (베타)") {
+            row {
+                labeled("바탕화면 파트너", hint: unlocked ? "날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요"
+                                                    : "「날개 크리보」 카드를 얻으면 파트너로 함께해요")
+                Spacer()
+                Toggle("바탕화면 파트너", isOn: $model.partnerEnabled)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .disabled(!unlocked)
+            }
+            row {
+                Text("크기")
+                Slider(value: $model.partnerSize, in: PartnerTuning.sizes, step: PartnerTuning.sizeStep)
+                    .controlSize(.small)
+                    .disabled(!unlocked || !model.partnerEnabled)
             }
         }
     }

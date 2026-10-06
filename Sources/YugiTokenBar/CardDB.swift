@@ -110,6 +110,8 @@ struct CardDB: Sendable {
     static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63)]
     /// 「융합」 마법 카드 (푸른 눈의 백룡의 전설 SR). 1장 이상 있어야 융합할 수 있고 소비되지 않는다.
     static let fusionSpell = 4837
+    /// 「날개 크리보」(잃어버린 천년 SR). 가지면 파트너가 해금된다.
+    static let partnerCard = 6314
     /// 시대를 대표하는 소환법 (설정의 시대 범위 메뉴 표시용)
     static let eraSummons = ["DM": "의식", "GX": "융합", "5D's": "싱크로", "ZEXAL": "엑시즈", "ARC-V": "펜듈럼", "VRAINS": "링크"]
 

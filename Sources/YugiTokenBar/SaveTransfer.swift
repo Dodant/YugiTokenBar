@@ -52,10 +52,15 @@ enum SaveTransferError: LocalizedError, Equatable {
 
 extension GameState {
     /// 다른 Mac 세이브를 들여올 때 적립 원장은 이 Mac 값을 쓴다. 안 그러면 오늘 토큰을 다시 적립한다.
+    /// 파트너 해금은 영구라 둘 중 하나라도 해금이면 유지하고, 파트너 표시 설정(켜기·크기·위치)은 이 Mac 값을 쓴다.
     func withLedger(of local: GameState) -> GameState {
         var state = self
         state.claimedDate = local.claimedDate
         state.claimedByProvider = local.claimedByProvider
+        state.partnerUnlocked = partnerUnlocked || local.partnerUnlocked
+        state.partnerEnabled = local.partnerEnabled
+        state.partnerSize = local.partnerSize
+        state.partnerOrigin = local.partnerOrigin
         return state
     }
 
