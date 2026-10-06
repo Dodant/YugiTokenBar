@@ -298,7 +298,7 @@ private struct FusionScene {
         var tx = gc
         tx.opacity = na
         tx.addFilter(.shadow(color: c1, radius: 8 * na))
-        tx.draw(Text(name).font(.system(size: min(26, W / 16), weight: .bold, design: .serif)).foregroundStyle(.white),
+        tx.draw(Text(name).font(.system(size: min(22, W / 18), weight: .semibold)).kerning(1.5).foregroundStyle(.white),
                 at: CGPoint(x: 0, y: yy + rh / 2 + 22 + (1 - na) * 8), anchor: .top)
         var hint = gc
         hint.opacity = 0.55 * clamp(dt - 1.6)
