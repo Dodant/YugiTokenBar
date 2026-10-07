@@ -141,39 +141,52 @@ struct DexView: View {
     }
 
     private var filterBar: some View {
-        HStack(spacing: 14) {
-            Picker("종류", selection: $kindFilter) {
-                Text("모든 종류").tag("")
-                Divider()
-                ForEach(CardKind.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
-                Divider()
-                ForEach(CardInfo.summonCodes, id: \.self) { Text(CardInfo.summonTitle($0)).tag($0) }
-            }
-            .fixedSize()
-            Picker("등급", selection: $tierFilter) {
-                Text("모든 등급").tag(0)
-                Divider()
-                Text("N 노멀").tag(1)
-                Text("R 레어").tag(2)
-                Text("SR 슈퍼").tag(3)
-                Text("UR 울트라").tag(4)
-                Text("SE 시크릿").tag(5)
-            }
-            .fixedSize()
-            Picker("정렬", selection: $sort) {
-                ForEach(DexSort.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-            .fixedSize()
-            Spacer()
-            Toggle("미보유 카드 포함", isOn: $showUnowned)
-                .toggleStyle(.checkbox)
-                .help("끄면 가진 카드만 보여요")
+        // 영어·일본어는 메뉴 이름까지 넣으면 기본 창 폭에서 넘친다 → 넘칠 때만 메뉴 이름을 숨긴다(값이 "모든 종류"처럼 스스로 설명)
+        ViewThatFits(in: .horizontal) {
+            filterRow(labels: true)
+            filterRow(labels: false)
         }
         .pickerStyle(.menu)
         .controlSize(.small)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(.bar)
+    }
+
+    private func filterRow(labels: Bool) -> some View {
+        HStack(spacing: 14) {
+            filterPickers.labelsVisibility(labels ? .automatic : .hidden)
+            Spacer()
+            Toggle("미보유 카드 포함", isOn: $showUnowned)
+                .toggleStyle(.checkbox)
+                .lineLimit(1)
+                .help("끄면 가진 카드만 보여요")
+        }
+    }
+
+    @ViewBuilder private var filterPickers: some View {
+        Picker("종류", selection: $kindFilter) {
+            Text("모든 종류").tag("")
+            Divider()
+            ForEach(CardKind.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
+            Divider()
+            ForEach(CardInfo.summonCodes, id: \.self) { Text(CardInfo.summonTitle($0)).tag($0) }
+        }
+        .fixedSize()
+        Picker("등급", selection: $tierFilter) {
+            Text("모든 등급").tag(0)
+            Divider()
+            Text("N 노멀").tag(1)
+            Text("R 레어").tag(2)
+            Text("SR 슈퍼").tag(3)
+            Text("UR 울트라").tag(4)
+            Text("SE 시크릿").tag(5)
+        }
+        .fixedSize()
+        Picker("정렬", selection: $sort) {
+            ForEach(DexSort.allCases, id: \.self) { Text($0.title).tag($0) }
+        }
+        .fixedSize()
     }
 
     private var title: String {

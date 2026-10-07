@@ -65,7 +65,7 @@
 /* PartnerPanel.swift:100 */
 "숨기기" = "隠す";
 /* PopoverView.swift:76 */
-"%lld팩마다 랜덤 부스터 1팩" = "%lldパックごとにランダムなブースターパック1パック";
+"%lld팩마다 랜덤 부스터 1팩" = "%lldパックごとにランダムで1パック";
 /* PopoverView.swift:81 */
 "토큰으로 모은 카드예요" = "トークンで集めたカードです";
 /* PopoverView.swift:48 */

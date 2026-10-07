@@ -142,7 +142,7 @@ private struct MeterView: View {
         let p = min(100, max(0, meter.percent))
         let color: Color = p >= 85 ? Palette.danger : p >= 60 ? Palette.warning : .primary
         HStack(spacing: 4) {
-            Text(meter.label).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            Text(meter.label).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
             Capsule().fill(.quaternary)
                 .frame(width: Self.barWidth, height: 4)
                 .overlay(alignment: .leading) {

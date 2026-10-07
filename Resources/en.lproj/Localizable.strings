@@ -221,7 +221,7 @@
 /* CardDetailView.swift:40 */
 "융합 소재" = "Fusion Materials";
 /* CardDetailView.swift:113 */
-"수록 팩" = "Packs";
+"수록 팩" = "Included in";
 /* CardDetailView.swift:131 */
 "랭크 %lld" = "Rank %lld";
 /* CardDetailView.swift:132 */
@@ -307,7 +307,7 @@
 /* DexView.swift:91 */
 "다른 팩이나 종류·등급을 골라 보세요" = "Try another pack, card type, or rarity";
 /* DexView.swift:91 */
-"미보유 카드 포함을 켜면 전부 보여요" = "Turn on \"Include unowned cards\" to see them all";
+"미보유 카드 포함을 켜면 전부 보여요" = "Turn on \"Show unowned\" to see them all";
 /* DexView.swift:82 */
 "'%@' 카드가 여기엔 없어요" = "No \"%@\" cards here";
 /* DexView.swift:84 */
@@ -335,7 +335,7 @@
 /* DexView.swift:163 */
 "정렬" = "Sort";
 /* DexView.swift:168 */
-"미보유 카드 포함" = "Include unowned cards";
+"미보유 카드 포함" = "Show unowned";
 /* DexView.swift:170 */
 "끄면 가진 카드만 보여요" = "When off, only cards you own are shown";
 /* DexView.swift:146 */
