@@ -51,6 +51,8 @@ struct GameState: Codable, Sendable, Equatable {
     /// 컬렉션 창에서 만든 덱들
     var decks: [Deck] = []
     var log: [LogEntry] = []
+    /// 코인으로 마지막에 산 팩의 pid (팝오버 바로 구매용). nil이면 로그에서 찾는다
+    var lastBoughtPid: String?
 
     init() {}
 
@@ -78,6 +80,7 @@ struct GameState: Codable, Sendable, Equatable {
         partnerOrigin = try c.decodeIfPresent(CGPoint.self, forKey: .partnerOrigin)
         decks = try c.decodeIfPresent([Deck].self, forKey: .decks) ?? d.decks
         log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log
+        lastBoughtPid = try c.decodeIfPresent(String.self, forKey: .lastBoughtPid)
     }
 }
 

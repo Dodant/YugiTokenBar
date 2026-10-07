@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import YugiTokenBar
 
@@ -88,6 +89,19 @@ import Testing
         #expect(game.lastBoughtPack == 0)
         _ = game.buy(pack: 1, using: &rng)
         game.give(21, source: "free")
+        #expect(game.lastBoughtPack == 1)
+    }
+
+    @Test func lastBoughtPackIgnoresFreePacksAndLogOverflow() {
+        var game = rich()
+        var rng = SeededRNG(seed: 2)
+        _ = game.buy(pack: 1, using: &rng)
+        game.give(21, source: db.packs[0].pid)  // 무료 팩으로 연 팩은 산 팩이 아니다
+        #expect(game.lastBoughtPack == 1)
+        for _ in 0..<(Balance.logLimit + 5) { game.give(21, source: "free") }  // 팩 기록이 로그에서 밀려나도
+        #expect(game.lastBoughtPack == 1)
+        game.state.lastBoughtPid = nil  // 필드 없는 옛 세이브는 로그 대체
+        game.state.log = [LogEntry(cid: 1, source: db.packs[1].pid, date: Date())]
         #expect(game.lastBoughtPack == 1)
     }
 
