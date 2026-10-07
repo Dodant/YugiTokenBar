@@ -120,8 +120,7 @@ struct DexView: View {
                 if let deckID {
                     let picked = selectedCards.filter { model.game.deck(deckID)?.cards[$0] != nil }
                     Button {
-                        model.removeFromDeck(deckID, picked)
-                        selectedCards = selectedCards.filter { model.game.deck(deckID)?.cards[$0] != nil }  // 0장이 된 카드는 선택에서도 뺀다
+                        removeFromDeck(deckID, picked)
                     } label: {
                         Label("덱에서 빼기", systemImage: "minus.circle")
                     }
@@ -343,27 +342,27 @@ struct DexView: View {
         let many = cids.count > 1 ? " (\(cids.count)장)" : ""
         if let deck {
             Button("덱에서 1장씩 빼기\(many)") {
-                model.removeFromDeck(deck, cids)
-                selectedCards = selectedCards.filter { model.game.deck(deck)?.cards[$0] != nil }  // 0장이 된 카드는 선택에서도 뺀다
+                removeFromDeck(deck, cids)
             }
         } else {
             let decks = model.game.state.decks
             if decks.isEmpty {
-                Button("새 덱에 추가\(many)") { add(model.addDeck().id, cids) }
+                Button("새 덱에 추가\(many)") { model.addToDeckOrBeep(model.addDeck().id, cids) }
             } else {
                 Menu("덱에 추가\(many)") {
                     ForEach(decks) { d in
                         let p = model.game.deckProgress(d)
-                        Button("\(d.name) · \(p.owned)/\(p.total)") { add(d.id, cids) }
+                        Button("\(d.name) · \(p.owned)/\(p.total)") { model.addToDeckOrBeep(d.id, cids) }
                     }
                 }
             }
         }
     }
 
-    /// 덱에 1장씩 넣고, 하나도 못 넣으면(3장 한도) 비프.
-    private func add(_ deck: UUID, _ cids: Set<Int>) {
-        if model.addToDeck(deck, cids) == 0 { NSSound.beep() }
+    /// 덱에서 1장씩 빼고, 0장이 된 카드는 선택에서도 뺀다.
+    private func removeFromDeck(_ deck: UUID, _ cids: Set<Int>) {
+        model.removeFromDeck(deck, cids)
+        selectedCards = selectedCards.filter { model.game.deck(deck)?.cards[$0] != nil }
     }
 
     /// 즐겨찾기 별: 체크된 카드는 항상, 아니면 마우스를 올렸을 때만.

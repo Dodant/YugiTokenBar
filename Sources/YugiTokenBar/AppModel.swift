@@ -228,6 +228,14 @@ final class AppModel {
         return added
     }
 
+    /// 덱에 1장씩 넣고, 하나도 못 넣으면(3장 한도) 비프. 반환: 넣은 장 수.
+    @discardableResult
+    func addToDeckOrBeep(_ id: UUID, _ cids: some Sequence<Int>) -> Int {
+        let added = addToDeck(id, cids)
+        if added == 0 { NSSound.beep() }
+        return added
+    }
+
     func toggleFavorite(_ cid: Int) {
         if game.state.favorites.remove(cid) == nil { game.state.favorites.insert(cid) }
         save()

@@ -187,8 +187,7 @@ private struct DeckRow: View {
         }
         .listRowBackground(targeted ? Color.accentColor.opacity(0.25) : nil)
         .dropDestination(for: String.self) { items, _ in
-            let added = model.addToDeck(deck.id, items.flatMap { $0.split(separator: ",") }.compactMap { Int($0) })
-            if added == 0 { NSSound.beep() }
+            let added = model.addToDeckOrBeep(deck.id, items.flatMap { $0.split(separator: ",") }.compactMap { Int($0) })
             return added > 0
         } isTargeted: { targeted = $0 }
     }
