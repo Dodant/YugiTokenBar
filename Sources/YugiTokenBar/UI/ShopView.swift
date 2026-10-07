@@ -57,8 +57,8 @@ private struct EraSection: View {
         let game = model.game
         // 시대 범위를 줄이면 부모가 이 섹션을 없애기 전에 몸체가 먼저 다시 그려질 수 있다 → 범위를 지금 DB 에 맞춰 자른다
         let packs = packs.clamped(to: game.db.packs.indices)
-        let owned = packs.reduce(0) { $0 + game.progress($1).owned }
-        let total = packs.reduce(0) { $0 + game.progress($1).total }
+        let progress = packs.map { game.progress($0) }
+        let owned = progress.reduce(0) { $0 + $1.owned }, total = progress.reduce(0) { $0 + $1.total }
         VStack(alignment: .leading, spacing: 10) {
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
@@ -109,7 +109,7 @@ struct PackTile: View {
 
     private func image(_ pack: Pack, _ game: Game) -> some View {
         let p = game.progress(index)
-        let complete = game.isComplete(index)
+        let complete = p.owned == p.total
         return PackImageView(pack: pack)
             .blur(radius: hover ? 6 : 0)
             .overlay {
@@ -150,16 +150,17 @@ struct PackRow: View {
         let game = model.game
         let pack = game.db.packs[index]
         let p = game.progress(index)
+        let complete = p.owned == p.total
         HStack(spacing: 12) {
             PackImageView(pack: pack)
                 .frame(height: 50)
                 .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
             VStack(alignment: .leading, spacing: 4) {
                 Text(pack.name).font(.callout.weight(.medium)).lineLimit(1)
-                Text(game.isComplete(index) ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
+                Text(complete ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                     .font(.caption).foregroundStyle(.secondary).monospacedDigit()
                 ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
-                    .tint(game.isComplete(index) ? .green : .accentColor)
+                    .tint(complete ? .green : .accentColor)
             }
             Spacer(minLength: 4)
             BuyButton(index: index)
