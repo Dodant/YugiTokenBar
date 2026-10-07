@@ -10,7 +10,7 @@ struct SettingsView: View {
     /// 업데이트 확인 상태 (확인 전 / 확인 중 / 최신 버전을 받음 / 실패)
     private enum UpdateCheck { case idle, checking, found(String), failed }
     @State private var update = UpdateCheck.idle
-    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var launchAtLogin = Self.isRegistered(SMAppService.mainApp)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -180,15 +180,20 @@ struct SettingsView: View {
 
     // MARK: 동작
 
+    /// 승인 대기(.requiresApproval)도 등록된 상태다. 아니면 그 상태에서 끄거나 다시 열 때 해제가 빠진다
+    private static func isRegistered(_ service: SMAppService) -> Bool {
+        service.status == .enabled || service.status == .requiresApproval
+    }
+
     private func setLaunchAtLogin() {
         let service = SMAppService.mainApp
-        guard launchAtLogin != (service.status == .enabled) else { return }
+        guard launchAtLogin != Self.isRegistered(service) else { return }
         do {
             try launchAtLogin ? service.register() : service.unregister()
             // 시스템이 승인을 요구하면 로그인 항목 설정을 열어 준다
             if service.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
         } catch {
-            launchAtLogin = service.status == .enabled
+            launchAtLogin = Self.isRegistered(service)
             alert("로그인 항목을 바꾸지 못했어요", error.localizedDescription, .warning)
         }
     }
