@@ -65,6 +65,15 @@ enum Rarity {
     /// 아직 획득하지 못한 카드 (밝은 회색, N 회청색과 구분)
     static let locked = Color(red: 0xA0 / 255, green: 0xA0 / 255, blue: 0xA0 / 255)
 
+    /// 알약 바탕. 밝은 등급 색 위 검정 글자는 탁해 보여서, SR 말고는 한 단계 진하게 하고 흰 글자(5.1:1 이상)
+    static let pillColors: [Color] = [
+        Color(red: 0x5C / 255, green: 0x64 / 255, blue: 0x70 / 255),
+        Color(red: 0x2F / 255, green: 0x6D / 255, blue: 0xB5 / 255),
+        Color(red: 0xF5 / 255, green: 0xC4 / 255, blue: 0x51 / 255),
+        Color(red: 0x8A / 255, green: 0x3F / 255, blue: 0xD6 / 255),
+        Color(red: 0xD2 / 255, green: 0x1E / 255, blue: 0x5F / 255),
+    ]
+
     static func color(tier: Int) -> Color { colors[min(max(tier, 1), colors.count) - 1] }
     static func color(label: String, owned: Bool = true) -> Color {
         guard owned else { return locked }
@@ -77,8 +86,6 @@ enum Rarity {
 enum Palette {
     /// 다크에서는 그림자가 안 보여서 카드 가장자리에 얇은 밝은 테두리
     static let cardRim = Color(light: .clear, dark: .white.opacity(0.2))
-    /// 라이트 N 알약(어두운 회청)엔 흰 글자, 다크 N(밝힌 회청)엔 검정 글자 (7:1)
-    static let onN = Color(light: .white, dark: .black)
     /// 주의 글자 (새 버전, 한도 60% 이상). 시스템 주황은 흰 바탕에서 2.2:1
     static let warning = Color(light: Color(red: 0xB2 / 255, green: 0x50 / 255, blue: 0), dark: .orange)
     /// 위험 글자 (한도 85% 이상)
@@ -105,10 +112,11 @@ struct RarityPill: View {
     var size: CGFloat = 9
 
     var body: some View {
-        let color = Rarity.color(label: label, owned: owned)
+        let tier = (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1
+        let color = owned ? Rarity.pillColors[min(max(tier, 1), Rarity.pillColors.count) - 1] : Rarity.locked
         Text(label)
             .font(.system(size: size, weight: .bold))
-            .foregroundStyle(owned && label == "N" ? Palette.onN : .black)  // 흰 글자는 라이트의 어두운 N 바탕에서만 4.5:1 이 넘는다(R·UR·SE 는 3.3~3.6, 검정이면 5.8 이상)
+            .foregroundStyle(owned && tier != 3 ? .white : .black)  // 금색 SR·미획득 회색만 검정 글자
             .padding(.horizontal, size * 0.6)
             .padding(.vertical, size * 0.15)
             .background(color, in: Capsule())
