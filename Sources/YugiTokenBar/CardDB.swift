@@ -80,6 +80,8 @@ struct CardDB: Sendable {
     private(set) var cidSet: Set<Int>
     /// 범위 안 융합 몬스터의 소재로 필요한 최대 장 수 (사이버 드래곤 → 3, 사이버 엔드 드래곤). 중복 판매에서 그만큼 남긴다.
     private(set) var materialNeed: [Int: Int]
+    /// 범위 안 융합 몬스터(소재를 아는 카드) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
+    private(set) var fusionCount: Int
 
     /// 등급은 1~5 로 자른다. cards.json 에 범위 밖 등급이 있어도 뽑기(티어 1~5 만 찾음)·판매가·등급 표시가 어긋나거나 죽지 않게.
     init(packs: [Pack], cards: [Int: CardInfo]) {
@@ -93,6 +95,7 @@ struct CardDB: Sendable {
         self.allCIDs = cards.keys.sorted()
         self.cidSet = Set(cards.keys)
         self.materialNeed = Self.materialNeeds(allCIDs, cards)
+        self.fusionCount = Self.fusionCount(allCIDs, cards)
     }
 
     /// 컬렉션 이름순 정렬 키: cid → 이름 순위(Finder 순서, 같은 이름은 같은 순위). 정렬마다 문자열을 비교하지 않으려고 쓴다
@@ -114,6 +117,10 @@ struct CardDB: Sendable {
         }
     }
 
+    private static func fusionCount(_ cids: [Int], _ cards: [Int: CardInfo]) -> Int {
+        cids.filter { cards[$0]?.fusionMaterials != nil }.count
+    }
+
     /// 앞 n 팩만 쓰는 DB (설정의 "시대 범위"). cards 는 그대로 두어 범위 밖 보유·기록 카드도 이름·이미지를 찾는다.
     func prefix(packs n: Int) -> CardDB {
         var db = self
@@ -121,6 +128,7 @@ struct CardDB: Sendable {
         db.cidSet = Set(db.packs.flatMap(\.cards))
         db.allCIDs = db.cidSet.sorted()
         db.materialNeed = Self.materialNeeds(db.allCIDs, cards)
+        db.fusionCount = Self.fusionCount(db.allCIDs, cards)
         return db
     }
 

@@ -66,7 +66,7 @@ struct SettingsView: View {
         section("카드") {
             toggleRow("중복 카드 자동 판매", hint: "이미 가진 카드가 나오면 바로 코인으로 바꿔요",
                       isOn: Bindable(model).autoSellDuplicates)
-            let n = model.db.allCIDs.filter { model.game.fusionMaterials($0) != nil }.count
+            let n = model.db.fusionCount
             toggleRow("융합 몬스터는 융합으로만", hint: "소재를 다 아는 융합 몬스터 \(n)종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요",
                       isOn: Bindable(model).fusionOnly)
             toggleRow("애니메이션 끄기", hint: "카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요",

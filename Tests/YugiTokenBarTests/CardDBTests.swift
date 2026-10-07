@@ -59,6 +59,10 @@ import Testing
         #expect(db.packs[0].cards.contains(CardDB.fusionSpell))
         #expect(db.materialNeed[6390] == 3 && db.materialNeed[4007] == 2)  // 사이버 드래곤(사이버 엔드 드래곤), 푸른 눈의 백룡(쌍폭렬룡)
         #expect(db.prefix(packs: 11).materialNeed[6390] == nil)  // DM 범위엔 사이버 드래곤을 쓰는 융합이 없다
+        // fusionCount 는 소재를 아는 카드 수를 미리 센 값이라 전체·시대 범위 DB 모두 필터 식과 같아야 한다
+        for d in [db, db.prefix(packs: 30)] {
+            #expect(d.fusionCount == d.allCIDs.filter { d.cards[$0]?.fusionMaterials != nil }.count && d.fusionCount > 0)
+        }
         // 소재를 다 아는 융합(융합 전용 후보)의 소재는 어느 시대 범위에서도 그 융합과 같은 범위 안에 있다 → Game.isFusionOnly 가 범위 검사를 안 한다
         for era in db.eras {
             let sub = db.prefix(packs: era.packs.upperBound)
