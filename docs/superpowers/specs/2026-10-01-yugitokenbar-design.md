@@ -52,6 +52,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량을 보�
    `kind`는 KO `attr`가 마법·함정일 때 `spell`·`trap`, `summons`는 몬스터 `type`의 의식·융합·싱크로·엑시즈·펜듈럼·링크를 시대 순 코드로 바꾼 배열. 앱 로직(종류·소환법 필터, 레벨/랭크/링크)은 이 코드만 본다.
 5. 검증 출력: 팩 수(100), 팩별 카드 수/레어도 분포, 고유 카드 수, **이미지 미매칭 카드 목록**(미매칭은 수동 확인). 실패 시 non-zero 종료.
 6. Konami 요청은 1초 간격.
+7. **JP·EN** (`--lang ja|en`, 기본 `all`이면 KO 다음에 차례로): `cards_KO.json`의 cid마다 상세 페이지 `card_search.action?ope=2&cid=<cid>&request_locale=<ja|en>`(1초 간격)에서 이름(`h1`, ja의 루비·영문 병기 제외)·속성(마법·함정은 아이콘 칸)·종족/타입·효과·펜듈럼 효과·수록 팩 목록을 읽는다. 결과는 `tools/cache/<lang>.jsonl`(gitignore)에 한 줄씩 바로 덧붙여 끊겨도 같은 명령으로 이어 받는다. 공유 필드(`tier`·`imageId`·`level`·`atk`·`def`·`scale`·`kind`·`summons`, 팩의 `pid`·`date`·`cards`·`setCode`·`imageURL`)는 KO 값을 쓴다. 대체 규칙(이름이 빈 카드는 언어별 필드 전부를 EN→JP→KO), 소재 줄, 원판 팩명 매핑(겹친 수 최다, 동률은 발매일 빠른 쪽, `PACK_NAME_OVERRIDES`)은 `2026-10-07-i18n-design.md` 3절 그대로다. 끝에 세 파일의 팩·cid 순서·공유 필드·이름을 검증하고 어긋나면 non-zero로 끝난다. 자체 검사는 `python3 tools/test_build_cards.py`.
 
 ## 4. 앱 구조
 
