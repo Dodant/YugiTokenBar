@@ -7,9 +7,9 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     /// 창 열기 (패치노트·라이선스)
     let open: (String) -> Void
-    @State private var checking = false
-    @State private var latest: String?
-    @State private var checkFailed = false
+    /// 업데이트 확인 상태 (확인 전 / 확인 중 / 최신 버전을 받음 / 실패)
+    private enum UpdateCheck { case idle, checking, found(String), failed }
+    @State private var update = UpdateCheck.idle
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -104,14 +104,14 @@ struct SettingsView: View {
             row {
                 Text("최신 버전")
                 Spacer()
-                if checking {
+                if case .checking = update {
                     ProgressView().controlSize(.small)
                 } else {
-                    if let latest { Text("v\(latest)").foregroundStyle(.secondary).monospacedDigit() }
+                    if case .found(let latest) = update { Text("v\(latest)").foregroundStyle(.secondary).monospacedDigit() }
                     Button("업데이트 확인") { checkUpdate() }.controlSize(.small)
                 }
             }
-            if let latest, !checking {
+            if case .found(let latest) = update {
                 Divider()
                 if AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -127,7 +127,7 @@ struct SettingsView: View {
                 } else {
                     row { Text("최신 버전이에요").font(.callout).foregroundStyle(.secondary); Spacer() }
                 }
-            } else if checkFailed, !checking {
+            } else if case .failed = update {
                 Divider()
                 row { Text("확인하지 못했어요. 네트워크를 확인해 주세요.").font(.callout).foregroundStyle(.secondary); Spacer() }
             }
@@ -194,11 +194,9 @@ struct SettingsView: View {
     }
 
     private func checkUpdate() {
-        checking = true
+        update = .checking
         Task {
-            latest = await AppInfo.fetchLatestVersion()
-            checkFailed = latest == nil
-            checking = false
+            if let latest = await AppInfo.fetchLatestVersion() { update = .found(latest) } else { update = .failed }
         }
     }
 
