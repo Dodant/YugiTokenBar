@@ -42,6 +42,7 @@ scripts/build-app.sh --install                        # /Applications 에 설치
 `Resources/cards_KO.json`은 `python3 tools/build-cards.py`로 만든다.
 
 - 팩·카드 목록, 한국어 카드명·효과, 레어도: [Konami 공식 카드 DB](https://www.db.yugioh-card.com/yugiohdb/?request_locale=ko)
+- 일본어·영어 카드명·효과(`cards_JP.json`·`cards_EN.json`): 같은 Konami DB 카드 상세 페이지(`request_locale=ja|en`)
 - 카드 이미지: [YGOPRODeck](https://ygoprodeck.com/) (실행 중에 받아서 캐시)
 - 한글판 팩 이미지: [Yugipedia](https://yugipedia.com/)
 

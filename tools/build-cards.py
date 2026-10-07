@@ -311,6 +311,13 @@ PACK_NAME_OVERRIDES = {
     "ja": {**EARLY_TCG, "71105000": "サイバネティック・レボリューション"},
     "en": {"71105000": "CYBERNETIC REVOLUTION"},
 }
+# 소재 줄 조각 수가 KO 와 달라 자동으로 못 맞추는 카드의 그 언어 소재. {lang: {cid: [소재...]}}
+MATERIALS_OVERRIDES = {
+    "en": {
+        7301: [{"rule": "Gemini Monster", "count": 2}],
+        11207: [{"rule": "Synchro or Xyz Monster"}, {"rule": "Synchro or Xyz Monster"}],
+    },
+}
 
 
 def short_pack_name(name):
@@ -360,7 +367,7 @@ def split_lang_materials(text, ko_mats):
     return rest.strip(), out, True
 
 
-def localize(ko, recs, fallback=None, fallback_missing=()):
+def localize(ko, recs, fallback=None, lang=None):
     """KO 를 틀로 언어 파일을 만든다. 그 언어에 없는 카드(이름이 빈 카드)는 언어별 필드 전부를 fallback(이미 만든 JP)
     또는 KO 에서 통째로 가져온다. → (out, 대체된 cid 목록, 소재 줄이 안 맞은 cid 목록)"""
     out = {"packs": [dict(p) for p in ko["packs"]], "cards": {}}
@@ -375,7 +382,11 @@ def localize(ko, recs, fallback=None, fallback_missing=()):
         if "materials" in base:
             info["text"], info["materials"], ok = split_lang_materials(info["text"], base["materials"])
             if not ok and any("cid" not in m for m in base["materials"]):
-                mismatched.append(cid)
+                override = MATERIALS_OVERRIDES.get(lang, {}).get(int(cid))
+                if override:
+                    info["materials"] = override
+                else:
+                    mismatched.append(cid)
         out["cards"][cid] = info
     return out, missing, mismatched
 
@@ -563,7 +574,7 @@ def build_lang(lang):
     if lang == "en" and os.path.exists(out_path("ja")):
         fallback = load(out_path("ja"))
         fallback_missing = {cid for cid, c in fallback["cards"].items() if c.get("name") == ko["cards"][cid].get("name")}
-    out, missing, mismatched = localize(ko, recs, fallback, fallback_missing)
+    out, missing, mismatched = localize(ko, recs, fallback, lang)
     for p, (name, n) in zip(out["packs"], pack_names(ko, recs).values()):
         override = PACK_NAME_OVERRIDES[lang].get(p["pid"])
         print(f"  팩 {p['name']} → {override or name} ({n}/{len(p['cards'])}){' [덮어씀]' if override else ''}")

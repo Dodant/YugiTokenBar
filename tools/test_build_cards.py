@@ -166,7 +166,7 @@ def test_localize_falls_back_whole_card():
     assert jp["cards"]["12"]["name"] == "다"  # 캐시에 없는 카드도 KO
     assert missing == ["11", "12"]
     en_recs = {10: rec(10, "Ka", "Desc"), 11: rec(11, "Na", "Eff"), 12: rec(12, "", "")}
-    en, missing, _ = bc.localize(KO, en_recs, fallback=jp, fallback_missing=["11", "12"])
+    en, missing, _ = bc.localize(KO, en_recs, fallback=jp)
     assert en["cards"]["12"]["name"] == "다"  # EN 없음 → JP(이것도 KO 대체)
     assert missing == ["12"]
     assert list(en["cards"]) == list(KO["cards"]) and en["packs"][0]["cards"] == [10, 11, 12]
@@ -210,8 +210,16 @@ def test_verify():
     assert any("cid" in p for p in problems) and any("tier" in p for p in problems), problems
 
 
+def test_materials_override():
+    ko = {"packs": [], "cards": {"7301": {"name": "라", "materials": [{"rule": "듀얼 몬스터", "count": 2}]}}}
+    recs = {7301: rec(7301, "Raptinus", "a + b\ny")}  # 소재 줄 조각 수 불일치
+    out, _, mismatched = bc.localize(ko, recs, lang="en")
+    assert out["cards"]["7301"]["materials"] == [{"rule": "Gemini Monster", "count": 2}] and mismatched == []
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
             fn()
             print("ok", name)
+

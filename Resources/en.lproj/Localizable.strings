@@ -73,11 +73,11 @@
 /* PopoverView.swift:49 */
 "폴더 열기" = "Open folder";
 /* PopoverView.swift:75 */
-"무료 팩 %lld개" = "%lld free packs";
+"무료 팩 %lld개" = "Free packs: %lld";
 /* PopoverView.swift:76 */
 "열기" = "Open";
 /* PopoverView.swift:81 */
-"무료 카드 %lld장" = "%lld free cards";
+"무료 카드 %lld장" = "Free cards: %lld";
 /* PopoverView.swift:82 */
 "%lld장 열기" = "Open %lld";
 /* PopoverView.swift:55 */
@@ -139,7 +139,7 @@
 /* SettingsView.swift:102 */
 "시대 범위" = "Era range";
 /* SettingsView.swift:99 */
-"%lld팩 · %@장" = "%lld packs · %@ cards";
+"%lld팩 · %@장" = "Packs: %lld · Cards: %@";
 /* SettingsView.swift:97 */
 "카드·상점·컬렉션이 설정한 시대까지 나와요.\n시대를 옮겨도 카드는 그대로 남아요." = "Cards, the shop, and the collection include eras up to this one.\nChanging the era keeps your cards.";
 /* SettingsView.swift:103 */
@@ -195,7 +195,7 @@
 /* SettingsView.swift:190 */
 "사용량 읽기 코드 · © 2026 chattymin · MIT" = "Usage reading code · © 2026 chattymin · MIT";
 /* ShopView.swift:72 */
-"%lld팩" = "%lld packs";
+"%lld팩" = "Packs: %lld";
 /* ShopView.swift:160 */
 "완료 · %lld/%lld" = "Complete · %lld/%lld";
 /* UsageView.swift:39 */
@@ -289,7 +289,7 @@
 /* DexSidebar.swift:90 */
 "새 덱" = "New Deck";
 /* DexSidebar.swift:155 */
-"%@ · %lld팩" = "%@ · %lld packs";
+"%@ · %lld팩" = "%@ · Packs: %lld";
 /* DexView.swift:103 */
 "카드 이름" = "Card name";
 /* DexView.swift:75 */
@@ -373,15 +373,15 @@
 /* DexView.swift:403 */
 "카드를 선택하세요" = "Select a card";
 /* DexView.swift:394 */
-"%lld장 선택됨" = "%lld cards selected";
+"%lld장 선택됨" = "Selected: %lld";
 /* DexView.swift:396 */
 "왼쪽 덱 이름으로 끌어다 놓거나 아래에서 덱을 고르세요" = "Drag onto a Deck name on the left, or choose a Deck below";
 /* DexView.swift:454 */
-"카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card, keeping as many Fusion Materials as needed (%lld cards · +%@)";
+"카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card, keeping as many Fusion Materials as needed (Cards: %lld · +%@)";
 /* DexView.swift:455 */
-"카드마다 1장만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card (%lld cards · +%@)";
+"카드마다 1장만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card (Cards: %lld · +%@)";
 /* DexView.swift:457 */
-"중복 %lld장을 팔까요?" = "Sell %lld duplicates?";
+"중복 %lld장을 팔까요?" = "Sell duplicates (%lld)?";
 /* DexView.swift:451 */
 "중복 모두 팔기" = "Sell all duplicates";
 /* DexView.swift:460 */

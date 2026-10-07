@@ -84,7 +84,14 @@ import Testing
             #expect(db.packs.allSatisfy { !$0.name.isEmpty })
             guard lang != "ko" else { continue }
             let same = ko.cards.filter { db.cards[$0.key]?.name == $0.value.name }.count
-            #expect(same < ko.cards.count / 10, "\(lang): KO 와 이름이 같은 카드가 \(same)장 (대체가 너무 많음)")
+            // 대체는 0장이고, 같은 이름은 'NEXT'·'E.M.R.' 같은 원래 같은 이름뿐 (JP 26, EN 11장). 대체가 생기면 아래 한글 검사가 잡는다
+            #expect(same <= 30, "\(lang): KO 와 이름이 같은 카드가 \(same)장 (대체가 너무 많음)")
+            // 소재·이름·효과에 한글이 남으면 안 된다 (소재 줄 조각 수가 달라 KO 소재가 새는 경우)
+            let hangul = { (s: String) in s.unicodeScalars.contains { (0xAC00...0xD7A3).contains($0.value) } }
+            for (cid, c) in db.cards {
+                #expect(!hangul(c.name) && !hangul(c.text), "\(lang) \(cid): 이름·효과에 한글")
+                #expect(!(c.materials ?? []).contains { hangul($0.name ?? "") || hangul($0.rule ?? "") }, "\(lang) \(cid): 소재에 한글")
+            }
         }
         #expect(Self.dbs["en"]!.cards[4007]?.name == "Blue-Eyes White Dragon")
         #expect(Self.dbs["ja"]!.cards[4007]?.name == "青眼の白龍")

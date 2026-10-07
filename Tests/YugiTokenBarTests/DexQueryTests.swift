@@ -24,6 +24,11 @@ import Testing
         #expect(DexQuery(scope: .pack(1)).entries(in: game).visible.map(\.cid) == [1, 2])
     }
 
+    @Test func searchIgnoresSpacesAndMiddleDot() {
+        #expect(DexQuery.squash("ブラック・マジシャン").localizedStandardContains(DexQuery.squash("ブラックマジシャン")))
+        #expect(DexQuery.squash("Dark Magician") == "DarkMagician")
+    }
+
     /// 즐겨찾기·덱 범위는 그 카드만, 팩 순서대로
     @MainActor @Test func favoritesAndDeckScopes() {
         var game = Game(db: makeDB([[(3, 1), (1, 4)], [(2, 2)]]), state: GameState())
