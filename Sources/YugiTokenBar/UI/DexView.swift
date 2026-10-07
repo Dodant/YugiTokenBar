@@ -325,16 +325,21 @@ struct DexView: View {
 
     /// 덱 화면의 빼기 단추: 마우스를 올렸을 때만.
     private func minus(_ deck: UUID, _ cid: Int) -> some View {
-        Button { model.removeFromDeck(deck, [cid]) } label: {
-            Image(systemName: "minus")
+        overlayButton(systemImage: "minus", color: .white, help: "덱에서 1장 빼기") { model.removeFromDeck(deck, [cid]) }
+    }
+
+    /// 카드 모서리에 얹는 22×22 어두운 원형 아이콘 단추.
+    private func overlayButton(systemImage: String, color: Color, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(color)
                 .frame(width: 22, height: 22)
                 .background(.black.opacity(0.45), in: Circle())
         }
         .buttonStyle(.plain)
         .padding(3)
-        .help("덱에서 1장 빼기")
+        .help(help)
     }
 
     /// 우클릭·선택 메뉴: 덱 화면이면 빼기, 아니면 덱에 넣기(미보유도 가능). 여러 장이면 장 수를 붙인다.
@@ -369,16 +374,8 @@ struct DexView: View {
     @ViewBuilder private func star(_ cid: Int, hovered: Bool) -> some View {
         let on = model.game.state.favorites.contains(cid)
         if on || hovered {
-            Button { model.toggleFavorite(cid) } label: {
-                Image(systemName: on ? "star.fill" : "star")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(on ? .yellow : .white)
-                    .frame(width: 22, height: 22)
-                    .background(.black.opacity(0.45), in: Circle())
-            }
-            .buttonStyle(.plain)
-            .padding(3)
-            .help(on ? "즐겨찾기 해제" : "즐겨찾기")
+            overlayButton(systemImage: on ? "star.fill" : "star", color: on ? .yellow : .white,
+                          help: on ? "즐겨찾기 해제" : "즐겨찾기") { model.toggleFavorite(cid) }
         }
     }
 
