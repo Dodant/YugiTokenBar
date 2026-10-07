@@ -299,7 +299,8 @@ struct DexView: View {
                   let a = entries.firstIndex(where: { $0.cid == anchor }),
                   let b = entries.firstIndex(where: { $0.cid == cid }) {
             selectedCards.formUnion(entries[min(a, b)...max(a, b)].map(\.cid))
-            return  // 앵커는 그대로
+            showInspector = true  // 앵커는 그대로
+            return
         } else {
             selectedCards = [cid]
         }
