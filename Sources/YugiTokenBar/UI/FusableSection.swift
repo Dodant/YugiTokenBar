@@ -7,15 +7,28 @@ struct FusableSection: View {
     let selected: Set<Int>
     let cache: FusableCache
     let jump: (Int) -> Void
+    @AppStorage("dex.fusableExpanded") private var expanded = true
 
     var body: some View {
         let cids = cache.list(model.game)
         if !cids.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
-                Label("융합 가능 · \(cids.count)", systemImage: "arrow.triangle.merge")
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Label("융합 가능 · \(cids.count)", systemImage: "arrow.triangle.merge")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .rotationEffect(.degrees(expanded ? 90 : 0))
+                    }
                     .font(.headline)
                     .foregroundStyle(Palette.fusion)
-                ScrollView {
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                if expanded { ScrollView {
                     VStack(spacing: 2) {
                         ForEach(cids, id: \.self) { cid in
                             Button { jump(cid) } label: {
@@ -33,7 +46,7 @@ struct FusableSection: View {
                         }
                     }
                 }
-                .frame(maxHeight: min(CGFloat(cids.count) * 38, 190))
+                .frame(maxHeight: min(CGFloat(cids.count) * 38, 190)) }
             }
             .padding(12)
             Divider()

@@ -15,10 +15,10 @@ struct CardDetailView: View {
     var body: some View {
         let n = model.game.copies(cid)
         Form {
-            CardImageView(db: model.db, cid: cid, size: .full, owned: n > 0)
+            // 미보유도 컬러로, 호버 기울기 없이
+            CardImageView(db: model.db, cid: cid, size: .full)
                 .frame(maxWidth: .infinity)
                 .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
-                .cardTilt(tier: model.db.tier(cid))
                 .listRowSeparator(.hidden)
             Section {
                 Text(card.name).font(.title3.weight(.semibold))
