@@ -17,6 +17,20 @@ import Testing
         #expect(model.saveError == nil)
     }
 
+    /// 저장 실패 경고가 떠 있어도 가져오기 저장이 성공하면 사라진다
+    @MainActor @Test func importSaveClearsSaveError() throws {
+        let dir = tempDir()
+        let url = dir.appendingPathComponent("state.json")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        try Data().write(to: url.appendingPathComponent("x"))  // 비어 있지 않은 폴더가 파일 자리를 막는다
+        let model = AppModel(db: makeDB([[(1, 1)]]), store: StateStore(url: url), partner: PartnerModel(sheet: nil))
+        model.toggleFavorite(1)
+        #expect(model.saveError != nil)
+        try FileManager.default.removeItem(at: url)
+        _ = try model.importSave(SaveEnvelope(appVersion: "0.4.3", exportedAt: Date(), state: GameState()))
+        #expect(model.saveError == nil)
+    }
+
     @Test func roundTrip() throws {
         let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
         var state = GameState()

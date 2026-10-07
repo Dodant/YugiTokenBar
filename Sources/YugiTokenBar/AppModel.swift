@@ -273,6 +273,7 @@ final class AppModel {
         imported.state = envelope.state.withLedger(of: game.state)
         imported.unlockPartnerIfOwned()  // 가져온 세이브에 날개 크리보가 있으면 해금 (한 번만 써서 .bak 은 가져오기 전 세이브로 남는다)
         try store.save(imported.state)
+        saveError = nil
         game.state = imported.state
         partnerSeen = imported.state
         updatePartner()
