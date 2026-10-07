@@ -253,11 +253,12 @@ def load_cache(path):
 
 
 def get_card_page(url, retries=4):
-    """상세 페이지를 받는다. 네트워크 오류나 카드 페이지가 아닌 응답(점검·오류 페이지)은 쉬었다 다시 받고, 끝내 안 되면 예외."""
+    """상세 페이지를 받는다. 네트워크 오류나 카드·\"없음\" 페이지가 아닌 응답(점검·오류 페이지)은 쉬었다 다시 받고, 끝내 안 되면 예외."""
     for attempt in range(1, retries + 1):
         try:
             page = get(url)
-            if '<div id="cardname"' in page:
+            # 카드 페이지, 또는 그 언어 DB 에 없는 카드의 "Card information not found."(ja: カード情報がありません。) 페이지 → name "" 으로 대체
+            if '<div id="cardname"' in page or '<div class="no_data"' in page:
                 return page
             err = "카드 페이지가 아닌 응답"
         except OSError as e:  # URLError·타임아웃·연결 끊김

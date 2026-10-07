@@ -52,6 +52,13 @@ EN_SPELL = """
 <div id="update_list" class="list"><div class="t_body"></div></div>
 """
 EN_MISSING = '<div id="cardname" class="pc cardname"><h1>\n</h1></div><div id="CardSet"></div>'
+# 실제 not-found 응답(cid=99999, 2026-10-07)을 줄인 것: 200 이고 cardname 없음
+EN_NOT_FOUND = """<nav id="pan_nav"><div><ul><li><a href="/yugiohdb/">HOME</a></li><li>&raquo;</li>
+<li>Card information not found.</li></ul></div></nav><div id="main980"><article><div id="article_body">
+<div class="no_data" >
+  Card information not found.
+</div></article></div>"""
+JA_NOT_FOUND = EN_NOT_FOUND.replace("HOME", "ホーム").replace("Card information not found.", "カード情報がありません。")
 
 
 def test_parse_detail_monster():
@@ -102,6 +109,11 @@ def test_get_card_page_retries():
     bc.get, bc.time.sleep = fake_get, sleeps.append
     try:
         assert bc.get_card_page("u") == EN_SPELL and len(calls) == 3 and sleeps == [30, 60]
+        for nf in (EN_NOT_FOUND, JA_NOT_FOUND):  # 그 언어에 없는 카드: 재시도 없이 name "" 로
+            calls.clear()
+            pages = iter([nf])
+            assert bc.get_card_page("u") == nf and len(calls) == 1
+            assert bc.parse_detail(nf)[0]["name"] == ""
         pages = iter(["x"] * 4)
         try:
             bc.get_card_page("u")
