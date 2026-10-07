@@ -299,8 +299,23 @@ def fetch_lang(lang, ko):
     return recs
 
 
-# 원판 팩명 매핑이 틀렸을 때 고치는 표: {"ja": {KO pid: 이름}, "en": {...}}
-PACK_NAME_OVERRIDES = {"ja": {}, "en": {}}
+# 원판 팩명 매핑이 틀렸을 때 고치는 표: {"ja": {KO pid: 이름}, "en": {...}}. 기준: 같은 세트의 OCG 이름,
+# OCG 에 같은 세트가 없으면(초기 11팩은 일본 팩 두 개를 합친 TCG 세트, Yugipedia) TCG 영어 이름. 가장 흔한 팩이 재록 모음집인 경우를 고친다.
+EARLY_TCG = {
+    "71101000": "LEGEND OF BLUE EYES WHITE DRAGON", "71102000": "METAL RAIDERS", "71102001": "SPELL RULER",
+    "71102002": "PHARAOH'S SERVANT", "71102003": "LABYRINTH OF NIGHTMARE", "71102004": "LEGACY OF DARKNESS",
+    "71102005": "MAGICIAN'S FORCE", "71102006": "PHARAONIC GUARDIAN", "71103000": "DARK CRISIS",
+    "71103001": "INVASION OF CHAOS", "71103002": "ANCIENT SANCTUARY",
+}
+PACK_NAME_OVERRIDES = {
+    "ja": {**EARLY_TCG, "71105000": "サイバネティック・レボリューション"},
+    "en": {"71105000": "CYBERNETIC REVOLUTION"},
+}
+
+
+def short_pack_name(name):
+    """JP DB 팩명 뒤의 영어 병기("…[ SOUL OF THE DUELIST ]", 띄어쓰기가 제각각)를 뗀다."""
+    return re.sub(r"\s*\[[^\]]*\]\s*$", "", name)
 MAT_COUNT = re.compile(r"(.+?)\s*[×xX]\s*([0-9０-９]+)")
 QUOTED = re.compile(r'"(.+)"|「(.+)」')
 
@@ -552,7 +567,7 @@ def build_lang(lang):
     for p, (name, n) in zip(out["packs"], pack_names(ko, recs).values()):
         override = PACK_NAME_OVERRIDES[lang].get(p["pid"])
         print(f"  팩 {p['name']} → {override or name} ({n}/{len(p['cards'])}){' [덮어씀]' if override else ''}")
-        p["name"] = override or name or p["name"]
+        p["name"] = override or (short_pack_name(name) if name and lang == "ja" else name) or p["name"]
     dump(out, out_path(lang))
     label = lambda cid: "KO" if fallback is None or cid in fallback_missing else "JP"
     print(f"{lang}: 대체 {len(missing)}장, 소재 줄 불일치 {len(mismatched)}장")

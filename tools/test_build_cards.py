@@ -193,6 +193,13 @@ def test_pack_names():
     assert bc.pack_names(KO, {}) == {"1": (None, 0)}
 
 
+def test_short_pack_name():
+    for raw in ["ソウル・オブ・ザ・デュエリスト [ SOUL OF THE DUELIST ]", "ソウル・オブ・ザ・デュエリスト[ SOUL OF THE DUELIST]",
+                "ソウル・オブ・ザ・デュエリスト [SOUL OF THE DUELIST]"]:
+        assert bc.short_pack_name(raw) == "ソウル・オブ・ザ・デュエリスト", raw
+    assert bc.short_pack_name("CHAOS ORIGINS") == "CHAOS ORIGINS"
+
+
 def test_verify():
     jp, _, _ = bc.localize(KO, {10: rec(10, "カ")})
     assert bc.verify({"ko": KO, "ja": jp}) == []
