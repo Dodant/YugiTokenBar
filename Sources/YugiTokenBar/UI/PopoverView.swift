@@ -59,7 +59,7 @@ struct PopoverView: View {
                             .frame(width: 54)
                             .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
                             .cardTilt(tier: game.db.tier(entry.cid), angleScale: 0.5)
-                            .hoverHint(game.db.cards[entry.cid]?.name ?? "")
+                            .hoverHint(verbatim: game.db.cards[entry.cid]?.name ?? "")
                             .accessibilityElement(children: .ignore)
                             .accessibilityLabel(game.db.cards[entry.cid]?.name ?? "")
                             .accessibilityAddTraits(.isImage)
@@ -73,12 +73,12 @@ struct PopoverView: View {
 
             if freeRows?.pack ?? (state.freePacks > 0) {
                 FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",
-                        hint: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩", button: "열기") { model.openFreePack() }
+                        hint: String(localized: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩"), button: "열기") { model.openFreePack() }
                     .panelCard()
             }
 
             if freeRows?.card ?? (state.pendingFree > 0) {
-                FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: "토큰으로 모은 카드예요",
+                FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: String(localized: "토큰으로 모은 카드예요"),
                         button: state.pendingFree > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기") { model.openFree() }
                     .panelCard()
             }
@@ -126,7 +126,7 @@ struct PopoverView: View {
         }
     }
 
-    private func caption(_ text: String) -> some View {
+    private func caption(_ text: LocalizedStringKey) -> some View {
         Text(text).font(.caption.weight(.medium)).foregroundStyle(.secondary)
     }
 
@@ -173,9 +173,10 @@ extension PanelHeader where Trailing == EmptyView {
 /// 쌓인 무료 카드·무료 팩 한 줄.
 private struct FreeRow: View {
     let systemImage: String
-    let title: String
+    let title: LocalizedStringKey
+    /// 저장 오류 메시지(데이터)도 받으므로 String
     let hint: String
-    let button: String
+    let button: LocalizedStringKey
     let action: () -> Void
 
     var body: some View {
@@ -195,7 +196,7 @@ private struct FreeRow: View {
 
 /// 제어 센터·Wi-Fi 메뉴 같은 한 줄 버튼. 마우스를 올리면 배경이 생긴다.
 private struct MenuRow: View {
-    let title: String
+    let title: LocalizedStringKey
     let systemImage: String
     let trailing: String?
     let chevron: Bool

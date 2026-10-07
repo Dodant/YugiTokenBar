@@ -49,15 +49,15 @@ struct UsageView: View {
 
     static func claudeMeters(_ s: LimitStatus) -> [Meter] {
         var meters: [Meter] = []
-        if let u = s.fiveHour?.utilization { meters.append(Meter(label: "5시간", percent: u, resetsAt: s.fiveHour?.resetDate)) }
-        if let u = s.sevenDay?.utilization { meters.append(Meter(label: "주간", percent: u, resetsAt: s.sevenDay?.resetDate)) }
+        if let u = s.fiveHour?.utilization { meters.append(Meter(label: String(localized: "5시간"), percent: u, resetsAt: s.fiveHour?.resetDate)) }
+        if let u = s.sevenDay?.utilization { meters.append(Meter(label: String(localized: "주간"), percent: u, resetsAt: s.sevenDay?.resetDate)) }
         for e in s.scopedLimitEntries {
             guard let p = e.percent else { continue }
             // 신형 응답만 오면 session·weekly_all 도 여기로 온다
             let label = switch e.kind {
-            case "session": "5시간"
-            case "weekly_all": "주간"
-            default: e.scope?.model?.displayName ?? "모델"
+            case "session": String(localized: "5시간")
+            case "weekly_all": String(localized: "주간")
+            default: e.scope?.model?.displayName ?? String(localized: "모델")
             }
             meters.append(Meter(label: label, percent: p, resetsAt: e.resetDate))
         }
@@ -73,13 +73,13 @@ struct UsageView: View {
     static func resetText(_ date: Date, now: Date = Date()) -> String {
         let mins = max(0, Int(date.timeIntervalSince(now) / 60))
         let h = mins / 60, m = mins % 60
-        if h >= 24 { return "\(h / 24)일 \(h % 24)시간 후 초기화" }
-        return h > 0 ? "\(h)시간 \(m)분 후 초기화" : "\(m)분 후 초기화"
+        if h >= 24 { return String(localized: "\(h / 24)일 \(h % 24)시간 후 초기화") }
+        return h > 0 ? String(localized: "\(h)시간 \(m)분 후 초기화") : String(localized: "\(m)분 후 초기화")
     }
 
     static func codexMeters(_ s: CodexRateLimitSnapshot) -> [Meter] {
-        [s.primary.map { Meter(label: "5시간", percent: Double($0.usedPercent), resetsAt: $0.resetDate) },
-         s.secondary.map { Meter(label: "주간", percent: Double($0.usedPercent), resetsAt: $0.resetDate) }].compactMap { $0 }
+        [s.primary.map { Meter(label: String(localized: "5시간"), percent: Double($0.usedPercent), resetsAt: $0.resetDate) },
+         s.secondary.map { Meter(label: String(localized: "주간"), percent: Double($0.usedPercent), resetsAt: $0.resetDate) }].compactMap { $0 }
     }
 }
 

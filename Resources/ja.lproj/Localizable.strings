@@ -2,3 +2,217 @@
 "시스템 따르기" = "システムに従う";
 "언어" = "言語";
 "다시 시작하면 적용돼요" = "再起動後に反映されます";
+/* App.swift:27 */
+"컬렉션" = "コレクション";
+/* App.swift:32 */
+"패치노트" = "パッチノート";
+/* App.swift:35 */
+"라이선스" = "ライセンス";
+/* AppInfo.swift:20 */
+"개발 빌드" = "開発ビルド";
+/* AppInfo.swift:31 */
+"%@를 읽지 못했어요." = "%@を読み込めませんでした。";
+/* AppModel.swift:145 */
+"무료 팩 · %@" = "無料パック · %@";
+/* AppModel.swift:258 */
+"무료 카드" = "無料カード";
+/* CardDB.swift:44 */
+"의식" = "儀式";
+/* CardDB.swift:45 */
+"융합" = "融合";
+/* CardDB.swift:46 */
+"싱크로" = "シンクロ";
+/* CardDB.swift:47 */
+"엑시즈" = "エクシーズ";
+/* CardDB.swift:48 */
+"펜듈럼" = "ペンデュラム";
+/* CardDB.swift:49 */
+"링크" = "リンク";
+/* CardDB.swift:50 */
+"지원" = "サポート";
+/* CardDB.swift:77 */
+"몬스터" = "モンスター";
+/* CardDB.swift:78 */
+"마법" = "魔法";
+/* CardDB.swift:79 */
+"함정" = "罠";
+/* DexSidebar.swift:44 */
+"취소" = "キャンセル";
+/* Game.swift:210 */
+"새 덱 %lld" = "新しいデッキ %lld";
+/* PackOpenView.swift:35 */
+"확인" = "OK";
+/* PackOpenView.swift:40 */
+"모두 뒤집기" = "すべてめくる";
+/* PackOpenView.swift:104 */
+"한 팩 더 · %@" = "もう1パック · %@";
+/* PackOpenView.swift:107 */
+"다음 %lld장 열기" = "次の%lld枚を開封";
+/* PackOpenView.swift:81 */
+"새 카드" = "新しいカード";
+/* PackOpenView.swift:82 */
+"+%@ 자동 판매" = "+%@ 自動売却";
+/* PackOpenView.swift:79 */
+"카드 %lld, 뒤집기 전" = "カード %lld、裏側表示";
+/* PackOpenView.swift:65 */
+"판매 취소" = "売却を取り消す";
+/* PackOpenView.swift:133 */
+"판매 취소: 코인을 돌려주고 카드를 가져요" = "売却の取り消し: コインを返してカードを受け取ります";
+/* PackOpenView.swift:133 */
+"코인이 모자라 취소할 수 없어요" = "コインが足りないため取り消せません";
+/* PackOpenView.swift:128 */
+"✕ 안 팔기" = "✕ 売らない";
+/* PartnerPanel.swift:100 */
+"숨기기" = "隠す";
+/* PopoverView.swift:76 */
+"%lld팩마다 랜덤 부스터 1팩" = "%lldパックごとにランダムなブースターパック1パック";
+/* PopoverView.swift:81 */
+"토큰으로 모은 카드예요" = "トークンで集めたカードです";
+/* PopoverView.swift:48 */
+"진행 상황을 저장하지 못했어요" = "進行状況を保存できませんでした";
+/* PopoverView.swift:49 */
+"폴더 열기" = "フォルダを開く";
+/* PopoverView.swift:75 */
+"무료 팩 %lld개" = "無料パック %lld個";
+/* PopoverView.swift:76 */
+"열기" = "開封";
+/* PopoverView.swift:81 */
+"무료 카드 %lld장" = "無料カード %lld枚";
+/* PopoverView.swift:82 */
+"%lld장 열기" = "%lld枚開封";
+/* PopoverView.swift:55 */
+"최근 획득" = "最近入手したカード";
+/* PopoverView.swift:68 */
+"아직 카드가 없어요" = "まだカードがありません";
+/* PopoverView.swift:90 */
+"상점" = "ショップ";
+/* PopoverView.swift:96 */
+"설정" = "設定";
+/* PopoverView.swift:97 */
+"종료" = "終了";
+/* PopoverView.swift:112 */
+"토큰 %@ = %@" = "トークン %1$@ = %2$@";
+/* PopoverView.swift:115 */
+"다음 무료 카드 · 팩" = "次の無料カード · パック";
+/* PopoverView.swift:161 */
+"뒤로" = "戻る";
+/* SettingsView.swift:42 */
+"일반" = "一般";
+/* SettingsView.swift:82 */
+"카드" = "カード";
+/* SettingsView.swift:67 */
+"파트너 (베타)" = "パートナー（ベータ）";
+/* SettingsView.swift:113 */
+"업데이트" = "アップデート";
+/* SettingsView.swift:154 */
+"백업 & 이전" = "バックアップと移行";
+/* SettingsView.swift:176 */
+"정보 & 지원" = "情報とサポート";
+/* SettingsView.swift:43 */
+"로그인 시 자동 실행" = "ログイン時に自動起動";
+/* SettingsView.swift:43 */
+"Mac에 로그인하면 메뉴바에 바로 떠요" = "Macにログインするとすぐメニューバーに表示されます";
+/* SettingsView.swift:43 */
+"설치한 앱(.app)에서만 켤 수 있어요" = "インストールしたアプリ（.app）でのみオンにできます";
+/* SettingsView.swift:213 */
+"로그인 항목을 바꾸지 못했어요" = "ログイン項目を変更できませんでした";
+/* SettingsView.swift:68 */
+"바탕화면 파트너" = "デスクトップパートナー";
+/* SettingsView.swift:68 */
+"날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요" = "ハネクリボーがデスクトップで一緒にいます。ドラッグで移動、右クリックで隠せます";
+/* SettingsView.swift:69 */
+"「날개 크리보」 카드를 얻으면 파트너로 함께해요" = "「ハネクリボー」のカードを手に入れるとパートナーになります";
+/* SettingsView.swift:73 */
+"크기" = "サイズ";
+/* SettingsView.swift:83 */
+"중복 카드 자동 판매" = "重複カードを自動売却";
+/* SettingsView.swift:83 */
+"이미 가진 카드가 나오면 바로 코인으로 바꿔요" = "すでに持っているカードが出たらすぐコインに換えます";
+/* SettingsView.swift:86 */
+"융합 몬스터는 융합으로만" = "融合モンスターは融合召喚のみ";
+/* SettingsView.swift:86 */
+"소재를 다 아는 융합 몬스터 %lld종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요" = "素材がすべて判明している融合モンスター%lld種はパック・無料カードから出ません。「融合」と素材を集めて、コレクションで融合召喚してください";
+/* SettingsView.swift:88 */
+"애니메이션 끄기" = "アニメーションをオフ";
+/* SettingsView.swift:88 */
+"카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요" = "カードの傾き・めくり・レア演出・融合演出なしですぐに表示します";
+/* SettingsView.swift:102 */
+"시대 범위" = "時代の範囲";
+/* SettingsView.swift:99 */
+"%lld팩 · %@장" = "%lldパック · %@枚";
+/* SettingsView.swift:97 */
+"카드·상점·컬렉션이 설정한 시대까지 나와요.\n시대를 옮겨도 카드는 그대로 남아요." = "カード・ショップ・コレクションは設定した時代まで表示されます。\n時代を変えてもカードはそのまま残ります。";
+/* SettingsView.swift:103 */
+"%@(%@)까지" = "%@（%@）まで";
+/* SettingsView.swift:115 */
+"현재 버전" = "現在のバージョン";
+/* SettingsView.swift:121 */
+"최신 버전" = "最新バージョン";
+/* SettingsView.swift:127 */
+"업데이트 확인" = "アップデートを確認";
+/* SettingsView.swift:135 */
+"새 버전 v%@이 있어요" = "新しいバージョン v%@ があります";
+/* SettingsView.swift:137 */
+"GitHub에서 받기" = "GitHubで入手";
+/* SettingsView.swift:144 */
+"최신 버전이에요" = "最新バージョンです";
+/* SettingsView.swift:148 */
+"확인하지 못했어요. 네트워크를 확인해 주세요." = "確認できませんでした。ネットワークを確認してください。";
+/* SettingsView.swift:156 */
+"세이브 내보내기" = "セーブをエクスポート";
+/* SettingsView.swift:156 */
+"다른 Mac으로 옮기거나 보관할 파일" = "別のMacへの移行や保管用のファイル";
+/* SettingsView.swift:158 */
+"내보내기" = "エクスポート";
+/* SettingsView.swift:235 */
+"내보내지 못했어요" = "エクスポートできませんでした";
+/* SettingsView.swift:162 */
+"세이브 가져오기" = "セーブをインポート";
+/* SettingsView.swift:162 */
+"지금 세이브는 먼저 자동 백업돼요" = "現在のセーブは先に自動バックアップされます";
+/* SettingsView.swift:164 */
+"가져오기" = "インポート";
+/* SettingsView.swift:255 */
+"세이브를 바꿀까요?" = "セーブを置き換えますか？";
+/* SettingsView.swift:256 */
+"가져올 세이브: 카드 %lld종 · %@\n(%@, v%@)\n지금 세이브: 카드 %lld종 · %@\n\n지금 세이브는 세이브 폴더에 자동 백업돼요." = "インポートするセーブ: カード%lld種 · %@\n(%@, v%@)\n現在のセーブ: カード%lld種 · %@\n\n現在のセーブはセーブフォルダに自動バックアップされます。";
+/* SettingsView.swift:263 */
+"바꾸기" = "置き換える";
+/* SettingsView.swift:272 */
+"가져왔어요" = "インポートしました";
+/* SettingsView.swift:272 */
+"이전 세이브는 %@로 백업했어요." = "以前のセーブは %@ にバックアップしました。";
+/* SettingsView.swift:248 */
+"가져오지 못했어요" = "インポートできませんでした";
+/* SettingsView.swift:168 */
+"세이브 폴더" = "セーブフォルダ";
+/* SettingsView.swift:168 */
+"자동 백업도 여기 있어요" = "自動バックアップもここにあります";
+/* SettingsView.swift:180 */
+"보기" = "表示";
+/* SettingsView.swift:190 */
+"PokeTokenBar 크레딧" = "PokeTokenBar クレジット";
+/* SettingsView.swift:190 */
+"사용량 읽기 코드 · © 2026 chattymin · MIT" = "使用量読み取りコード · © 2026 chattymin · MIT";
+/* ShopView.swift:72 */
+"%lld팩" = "%lldパック";
+/* ShopView.swift:160 */
+"완료 · %lld/%lld" = "コンプリート · %lld/%lld";
+/* UsageView.swift:39 */
+"눌러서 공식 한도를 다시 불러와요" = "クリックで公式の上限を再読み込みします";
+/* UsageView.swift:52 */
+"5시간" = "5時間";
+/* UsageView.swift:53 */
+"주간" = "週間";
+/* UsageView.swift:60 */
+"모델" = "モデル";
+/* UsageView.swift:76 */
+"%lld일 %lld시간 후 초기화" = "%lld日%lld時間後にリセット";
+/* UsageView.swift:77 */
+"%lld시간 %lld분 후 초기화" = "%lld時間%lld分後にリセット";
+/* UsageView.swift:77 */
+"%lld분 후 초기화" = "%lld分後にリセット";
+/* UsageView.swift:125 */
+"한도 불러오는 중…" = "上限を読み込み中…";
+/* UsageView.swift:125 */
+"한도 정보 없음 · 눌러서 불러오기" = "上限情報なし · クリックで読み込み";

@@ -97,7 +97,7 @@ final class PartnerHostingView: NSHostingView<PartnerView> {
     override func rightMouseDown(with event: NSEvent) {
         let menu = NSMenu()
         menu.autoenablesItems = false  // NSHostingView 의 검증이 사용자 액션을 꺼 버린다
-        let item = NSMenuItem(title: "숨기기", action: #selector(hidePartner), keyEquivalent: "")
+        let item = NSMenuItem(title: String(localized: "숨기기"), action: #selector(hidePartner), keyEquivalent: "")
         item.target = self
         menu.addItem(item)
         NSMenu.popUpContextMenu(menu, with: event, for: self)

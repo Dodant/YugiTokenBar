@@ -76,10 +76,10 @@ struct OpeningView: View {
 
     /// 뒤집기 전 "카드 3, 뒤집기 전", 뒤집은 뒤 "푸른 눈의 백룡, UR, 새 카드" (자동 판매면 "+ⓒ 10 자동 판매")
     private func accessibilityLabel(_ pull: Pull, _ i: Int) -> String {
-        guard flipped.contains(i) else { return "카드 \(i + 1), 뒤집기 전" }
+        guard flipped.contains(i) else { return String(localized: "카드 \(i + 1), 뒤집기 전") }
         var parts = [model.db.cards[pull.cid]?.name ?? "", pull.label]
-        if pull.isNew { parts.append("새 카드") }
-        if let coins = pull.soldFor { parts.append("+\(coinText(coins)) 자동 판매") }
+        if pull.isNew { parts.append(String(localized: "새 카드")) }
+        if let coins = pull.soldFor { parts.append(String(localized: "+\(coinText(coins)) 자동 판매")) }
         return parts.joined(separator: ", ")
     }
 
@@ -101,10 +101,10 @@ struct OpeningView: View {
     /// 다 뒤집은 뒤 한 번 더: 팩(무료 팩 포함)이면 같은 팩을 코인으로, 무료 카드면 남은 장을. 둘 다 아니면 nil.
     private var again: (title: String, enabled: Bool, action: () -> Void)? {
         if let pack = model.openingPack {
-            return ("한 팩 더 · \(coinText(Balance.packPrice))", model.game.canAffordPack, { model.buy(pack: pack) })
+            return (String(localized: "한 팩 더 · \(coinText(Balance.packPrice))"), model.game.canAffordPack, { model.buy(pack: pack) })
         }
         let left = model.game.state.pendingFree
-        return left > 0 ? ("다음 \(min(left, Balance.freeOpenBatch))장 열기", true, { model.openFree() }) : nil
+        return left > 0 ? (String(localized: "다음 \(min(left, Balance.freeOpenBatch))장 열기"), true, { model.openFree() }) : nil
     }
 }
 
@@ -144,7 +144,7 @@ struct FlipCard: View {
         .cardTilt(tier: pull.tier, enabled: flipped)  // 뒤집기 회전 바깥에서 기운다
     }
 
-    private func tag(_ text: String, _ color: Color) -> some View {
+    private func tag(_ text: LocalizedStringKey, _ color: Color) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .bold))
             .foregroundStyle(.white)

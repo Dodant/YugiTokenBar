@@ -80,6 +80,7 @@ Resources/card-back.jpg 카드 뒷면(923×1351, 로고 없음. tools/clean-card
 Tests/YugiTokenBarTests/
 tools/build-cards.py
 tools/clean-card-back.py  Yugipedia Back-KR.png 에서 로고를 지워 card-back.jpg 를 만듦
+tools/sync-strings.py  UI 문구 키 추출(swiftc -emit-localized-strings)·en/ja 파일 맞추기·검사
 Resources/{ko,en,ja}.lproj/Localizable.strings  UI 문구(키는 한국어 문장, ko는 빈 파일)
 ```
 

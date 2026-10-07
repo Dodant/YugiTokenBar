@@ -207,8 +207,8 @@ struct Game: Sendable {
     mutating func addDeck() -> Deck {
         let names = Set(state.decks.map(\.name))
         var n = state.decks.count + 1
-        while names.contains("새 덱 \(n)") { n += 1 }
-        let deck = Deck(name: "새 덱 \(n)")
+        while names.contains(String(localized: "새 덱 \(n)")) { n += 1 }
+        let deck = Deck(name: String(localized: "새 덱 \(n)"))
         state.decks.append(deck)
         return deck
     }

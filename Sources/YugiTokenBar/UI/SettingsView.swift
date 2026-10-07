@@ -15,7 +15,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            PanelHeader(title: "설정") { model.screen = .summary }
+            PanelHeader(title: String(localized: "설정")) { model.screen = .summary }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     generalSection
@@ -210,7 +210,7 @@ struct SettingsView: View {
             if service.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
         } catch {
             launchAtLogin = Self.isRegistered(service)
-            alert("로그인 항목을 바꾸지 못했어요", error.localizedDescription, .warning)
+            alert(String(localized: "로그인 항목을 바꾸지 못했어요"), error.localizedDescription, .warning)
         }
     }
 
@@ -232,7 +232,7 @@ struct SettingsView: View {
             try model.exportedSave().write(to: url, options: .atomic)
             NSWorkspace.shared.activateFileViewerSelecting([url])
         } catch {
-            alert("내보내지 못했어요", error.localizedDescription, .warning)
+            alert(String(localized: "내보내지 못했어요"), error.localizedDescription, .warning)
         }
     }
 
@@ -245,23 +245,23 @@ struct SettingsView: View {
 
         let envelope: SaveEnvelope
         do { envelope = try SaveEnvelope.decode(Data(contentsOf: url)) } catch {
-            alert("가져오지 못했어요", error.localizedDescription, .warning)
+            alert(String(localized: "가져오지 못했어요"), error.localizedDescription, .warning)
             return
         }
         // 무엇이 바뀌는지 수치로 보여주고 한 번 더 확인받는다
         let current = model.game.state
         let confirm = NSAlert()
         confirm.alertStyle = .warning
-        confirm.messageText = "세이브를 바꿀까요?"
-        confirm.informativeText = """
+        confirm.messageText = String(localized: "세이브를 바꿀까요?")
+        confirm.informativeText = String(localized: """
             가져올 세이브: 카드 \(envelope.state.distinctOwned)종 · \(coinText(envelope.state.coins))
             (\(envelope.exportedAt.formatted(date: .abbreviated, time: .shortened)), v\(envelope.appVersion))
             지금 세이브: 카드 \(current.distinctOwned)종 · \(coinText(current.coins))
 
             지금 세이브는 세이브 폴더에 자동 백업돼요.
-            """
-        confirm.addButton(withTitle: "바꾸기")
-        confirm.addButton(withTitle: "취소")
+            """)
+        confirm.addButton(withTitle: String(localized: "바꾸기"))
+        confirm.addButton(withTitle: String(localized: "취소"))
         // 파괴적 동작을 기본 버튼으로 두지 않는다 (Return = 취소)
         confirm.buttons[0].keyEquivalent = ""
         confirm.buttons[1].keyEquivalent = "\r"
@@ -269,9 +269,9 @@ struct SettingsView: View {
 
         do {
             let backup = try model.importSave(envelope)
-            alert("가져왔어요", "이전 세이브는 \(backup.lastPathComponent)로 백업했어요.", .informational)
+            alert(String(localized: "가져왔어요"), String(localized: "이전 세이브는 \(backup.lastPathComponent)로 백업했어요."), .informational)
         } catch {
-            alert("가져오지 못했어요", error.localizedDescription, .warning)
+            alert(String(localized: "가져오지 못했어요"), error.localizedDescription, .warning)
         }
     }
 
@@ -286,7 +286,7 @@ struct SettingsView: View {
 
     // MARK: 공용
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.caption.weight(.medium)).foregroundStyle(.secondary).padding(.leading, 4)
             VStack(spacing: 0) { content() }
@@ -301,7 +301,7 @@ struct SettingsView: View {
     }
 
     /// 이름·설명 + 오른쪽 스위치 한 줄. VoiceOver 는 스위치에서 설명까지 읽는다
-    private func toggleRow(_ title: String, hint: String, isOn: Binding<Bool>) -> some View {
+    private func toggleRow(_ title: LocalizedStringKey, hint: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
         row {
             labeled(title, hint: hint)
             Spacer()
@@ -313,7 +313,7 @@ struct SettingsView: View {
         }
     }
 
-    private func labeled(_ title: String, hint: String) -> some View {
+    private func labeled(_ title: LocalizedStringKey, hint: LocalizedStringKey) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(title)
             Text(hint).font(.caption2).foregroundStyle(.secondary)

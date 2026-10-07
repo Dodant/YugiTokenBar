@@ -2,3 +2,217 @@
 "시스템 따르기" = "Follow System";
 "언어" = "Language";
 "다시 시작하면 적용돼요" = "Takes effect after restart";
+/* App.swift:27 */
+"컬렉션" = "Collection";
+/* App.swift:32 */
+"패치노트" = "Patch notes";
+/* App.swift:35 */
+"라이선스" = "License";
+/* AppInfo.swift:20 */
+"개발 빌드" = "Development build";
+/* AppInfo.swift:31 */
+"%@를 읽지 못했어요." = "Couldn't read %@.";
+/* AppModel.swift:145 */
+"무료 팩 · %@" = "Free pack · %@";
+/* AppModel.swift:258 */
+"무료 카드" = "Free cards";
+/* CardDB.swift:44 */
+"의식" = "Ritual";
+/* CardDB.swift:45 */
+"융합" = "Fusion";
+/* CardDB.swift:46 */
+"싱크로" = "Synchro";
+/* CardDB.swift:47 */
+"엑시즈" = "Xyz";
+/* CardDB.swift:48 */
+"펜듈럼" = "Pendulum";
+/* CardDB.swift:49 */
+"링크" = "Link";
+/* CardDB.swift:50 */
+"지원" = "Support";
+/* CardDB.swift:77 */
+"몬스터" = "Monster";
+/* CardDB.swift:78 */
+"마법" = "Spell";
+/* CardDB.swift:79 */
+"함정" = "Trap";
+/* DexSidebar.swift:44 */
+"취소" = "Cancel";
+/* Game.swift:210 */
+"새 덱 %lld" = "New Deck %lld";
+/* PackOpenView.swift:35 */
+"확인" = "OK";
+/* PackOpenView.swift:40 */
+"모두 뒤집기" = "Flip all";
+/* PackOpenView.swift:104 */
+"한 팩 더 · %@" = "One more pack · %@";
+/* PackOpenView.swift:107 */
+"다음 %lld장 열기" = "Open next %lld";
+/* PackOpenView.swift:81 */
+"새 카드" = "New card";
+/* PackOpenView.swift:82 */
+"+%@ 자동 판매" = "+%@ auto-sold";
+/* PackOpenView.swift:79 */
+"카드 %lld, 뒤집기 전" = "Card %lld, face-down";
+/* PackOpenView.swift:65 */
+"판매 취소" = "Undo sale";
+/* PackOpenView.swift:133 */
+"판매 취소: 코인을 돌려주고 카드를 가져요" = "Undo sale: give back the coins and keep the card";
+/* PackOpenView.swift:133 */
+"코인이 모자라 취소할 수 없어요" = "Not enough coins to undo";
+/* PackOpenView.swift:128 */
+"✕ 안 팔기" = "✕ Keep";
+/* PartnerPanel.swift:100 */
+"숨기기" = "Hide";
+/* PopoverView.swift:76 */
+"%lld팩마다 랜덤 부스터 1팩" = "1 random Booster Pack every %lld packs";
+/* PopoverView.swift:81 */
+"토큰으로 모은 카드예요" = "Cards earned with tokens";
+/* PopoverView.swift:48 */
+"진행 상황을 저장하지 못했어요" = "Couldn't save progress";
+/* PopoverView.swift:49 */
+"폴더 열기" = "Open folder";
+/* PopoverView.swift:75 */
+"무료 팩 %lld개" = "%lld free packs";
+/* PopoverView.swift:76 */
+"열기" = "Open";
+/* PopoverView.swift:81 */
+"무료 카드 %lld장" = "%lld free cards";
+/* PopoverView.swift:82 */
+"%lld장 열기" = "Open %lld";
+/* PopoverView.swift:55 */
+"최근 획득" = "Recently obtained";
+/* PopoverView.swift:68 */
+"아직 카드가 없어요" = "No cards yet";
+/* PopoverView.swift:90 */
+"상점" = "Shop";
+/* PopoverView.swift:96 */
+"설정" = "Settings";
+/* PopoverView.swift:97 */
+"종료" = "Quit";
+/* PopoverView.swift:112 */
+"토큰 %@ = %@" = "%1$@ tokens = %2$@";
+/* PopoverView.swift:115 */
+"다음 무료 카드 · 팩" = "Next free card · pack";
+/* PopoverView.swift:161 */
+"뒤로" = "Back";
+/* SettingsView.swift:42 */
+"일반" = "General";
+/* SettingsView.swift:82 */
+"카드" = "Cards";
+/* SettingsView.swift:67 */
+"파트너 (베타)" = "Partner (beta)";
+/* SettingsView.swift:113 */
+"업데이트" = "Updates";
+/* SettingsView.swift:154 */
+"백업 & 이전" = "Backup & transfer";
+/* SettingsView.swift:176 */
+"정보 & 지원" = "About & support";
+/* SettingsView.swift:43 */
+"로그인 시 자동 실행" = "Launch at login";
+/* SettingsView.swift:43 */
+"Mac에 로그인하면 메뉴바에 바로 떠요" = "Appears in the menu bar when you log in to your Mac";
+/* SettingsView.swift:43 */
+"설치한 앱(.app)에서만 켤 수 있어요" = "Only available in the installed app (.app)";
+/* SettingsView.swift:213 */
+"로그인 항목을 바꾸지 못했어요" = "Couldn't change the login item";
+/* SettingsView.swift:68 */
+"바탕화면 파트너" = "Desktop partner";
+/* SettingsView.swift:68 */
+"날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요" = "Winged Kuriboh keeps you company on the desktop. Drag to move, right-click to hide";
+/* SettingsView.swift:69 */
+"「날개 크리보」 카드를 얻으면 파트너로 함께해요" = "Get the \"Winged Kuriboh\" card to unlock your partner";
+/* SettingsView.swift:73 */
+"크기" = "Size";
+/* SettingsView.swift:83 */
+"중복 카드 자동 판매" = "Auto-sell duplicates";
+/* SettingsView.swift:83 */
+"이미 가진 카드가 나오면 바로 코인으로 바꿔요" = "Cards you already own are turned into coins right away";
+/* SettingsView.swift:86 */
+"융합 몬스터는 융합으로만" = "Fusion Monsters by Fusion Summon only";
+/* SettingsView.swift:86 */
+"소재를 다 아는 융합 몬스터 %lld종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요" = "The %lld Fusion Monsters with known materials won't appear in packs or free cards. Collect \"Polymerization\" and the materials, then Fusion Summon in the collection";
+/* SettingsView.swift:88 */
+"애니메이션 끄기" = "Turn off animations";
+/* SettingsView.swift:88 */
+"카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요" = "Shows cards right away without tilt, flip, rare, or Fusion effects";
+/* SettingsView.swift:102 */
+"시대 범위" = "Era range";
+/* SettingsView.swift:99 */
+"%lld팩 · %@장" = "%lld packs · %@ cards";
+/* SettingsView.swift:97 */
+"카드·상점·컬렉션이 설정한 시대까지 나와요.\n시대를 옮겨도 카드는 그대로 남아요." = "Cards, the shop, and the collection include eras up to this one.\nChanging the era keeps your cards.";
+/* SettingsView.swift:103 */
+"%@(%@)까지" = "Up to %@ (%@)";
+/* SettingsView.swift:115 */
+"현재 버전" = "Current version";
+/* SettingsView.swift:121 */
+"최신 버전" = "Latest version";
+/* SettingsView.swift:127 */
+"업데이트 확인" = "Check for updates";
+/* SettingsView.swift:135 */
+"새 버전 v%@이 있어요" = "New version v%@ is available";
+/* SettingsView.swift:137 */
+"GitHub에서 받기" = "Get it on GitHub";
+/* SettingsView.swift:144 */
+"최신 버전이에요" = "You're up to date";
+/* SettingsView.swift:148 */
+"확인하지 못했어요. 네트워크를 확인해 주세요." = "Couldn't check. Please check your network.";
+/* SettingsView.swift:156 */
+"세이브 내보내기" = "Export save";
+/* SettingsView.swift:156 */
+"다른 Mac으로 옮기거나 보관할 파일" = "A file to move to another Mac or keep";
+/* SettingsView.swift:158 */
+"내보내기" = "Export";
+/* SettingsView.swift:235 */
+"내보내지 못했어요" = "Couldn't export";
+/* SettingsView.swift:162 */
+"세이브 가져오기" = "Import save";
+/* SettingsView.swift:162 */
+"지금 세이브는 먼저 자동 백업돼요" = "Your current save is backed up first";
+/* SettingsView.swift:164 */
+"가져오기" = "Import";
+/* SettingsView.swift:255 */
+"세이브를 바꿀까요?" = "Replace your save?";
+/* SettingsView.swift:256 */
+"가져올 세이브: 카드 %lld종 · %@\n(%@, v%@)\n지금 세이브: 카드 %lld종 · %@\n\n지금 세이브는 세이브 폴더에 자동 백업돼요." = "Save to import: %lld cards · %@\n(%@, v%@)\nCurrent save: %lld cards · %@\n\nYour current save will be backed up to the save folder automatically.";
+/* SettingsView.swift:263 */
+"바꾸기" = "Replace";
+/* SettingsView.swift:272 */
+"가져왔어요" = "Imported";
+/* SettingsView.swift:272 */
+"이전 세이브는 %@로 백업했어요." = "Your previous save was backed up as %@.";
+/* SettingsView.swift:248 */
+"가져오지 못했어요" = "Couldn't import";
+/* SettingsView.swift:168 */
+"세이브 폴더" = "Save folder";
+/* SettingsView.swift:168 */
+"자동 백업도 여기 있어요" = "Automatic backups are here too";
+/* SettingsView.swift:180 */
+"보기" = "View";
+/* SettingsView.swift:190 */
+"PokeTokenBar 크레딧" = "PokeTokenBar credits";
+/* SettingsView.swift:190 */
+"사용량 읽기 코드 · © 2026 chattymin · MIT" = "Usage reading code · © 2026 chattymin · MIT";
+/* ShopView.swift:72 */
+"%lld팩" = "%lld packs";
+/* ShopView.swift:160 */
+"완료 · %lld/%lld" = "Complete · %lld/%lld";
+/* UsageView.swift:39 */
+"눌러서 공식 한도를 다시 불러와요" = "Click to reload the official limits";
+/* UsageView.swift:52 */
+"5시간" = "5h";
+/* UsageView.swift:53 */
+"주간" = "Weekly";
+/* UsageView.swift:60 */
+"모델" = "Model";
+/* UsageView.swift:76 */
+"%lld일 %lld시간 후 초기화" = "Resets in %lldd %lldh";
+/* UsageView.swift:77 */
+"%lld시간 %lld분 후 초기화" = "Resets in %lldh %lldm";
+/* UsageView.swift:77 */
+"%lld분 후 초기화" = "Resets in %lldm";
+/* UsageView.swift:125 */
+"한도 불러오는 중…" = "Loading limits…";
+/* UsageView.swift:125 */
+"한도 정보 없음 · 눌러서 불러오기" = "No limit info · click to load";
