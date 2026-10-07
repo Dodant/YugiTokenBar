@@ -15,7 +15,7 @@ struct UsageView: View {
             ProviderUsageRow(
                 name: "Claude", symbol: "staroflife.fill", tint: .orange,
                 tokens: model.todayTokens[Provider.claude.rawValue] ?? 0, cost: model.todayCost[Provider.claude.rawValue] ?? 0,
-                reset: claude?.fiveHour?.resetDate,
+                reset: claude.flatMap(Self.claudeReset),
                 meters: claude.map(Self.claudeMeters) ?? [], loading: loading)
             ProviderUsageRow(
                 name: "Codex", symbol: "hexagon.fill", tint: .teal,
@@ -53,9 +53,20 @@ struct UsageView: View {
         if let u = s.sevenDay?.utilization { meters.append(Meter(label: "주간", percent: u, resetsAt: s.sevenDay?.resetDate)) }
         for e in s.scopedLimitEntries {
             guard let p = e.percent else { continue }
-            meters.append(Meter(label: e.scope?.model?.displayName ?? "모델", percent: p, resetsAt: e.resetDate))
+            // 신형 응답만 오면 session·weekly_all 도 여기로 온다
+            let label = switch e.kind {
+            case "session": "5시간"
+            case "weekly_all": "주간"
+            default: e.scope?.model?.displayName ?? "모델"
+            }
+            meters.append(Meter(label: label, percent: p, resetsAt: e.resetDate))
         }
         return meters
+    }
+
+    /// 위 줄 5시간 창 초기화 시각. 신형 응답만 오면 session 엔트리의 것.
+    static func claudeReset(_ s: LimitStatus) -> Date? {
+        s.fiveHour?.resetDate ?? s.limits?.first { $0.kind == "session" }?.resetDate
     }
 
     /// "48분 후 초기화", "2시간 6분 후 초기화"
@@ -114,7 +125,7 @@ private struct ProviderUsageRow: View {
                     Text(loading ? "한도 불러오는 중…" : "한도 정보 없음 · 눌러서 불러오기").font(.caption).foregroundStyle(.tertiary)
                 } else if let meters {
                     HStack(spacing: 10) {
-                        ForEach(meters, id: \.label) { MeterView(meter: $0) }
+                        ForEach(Array(meters.enumerated()), id: \.offset) { MeterView(meter: $0.element) }  // 라벨이 겹쳐도 안전하게
                     }
                 }
             }
