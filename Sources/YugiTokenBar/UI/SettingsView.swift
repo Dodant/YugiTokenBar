@@ -115,6 +115,10 @@ struct SettingsView: View {
                 Text("현재 버전")
                 Spacer()
                 Text(AppInfo.versionText).foregroundStyle(.secondary).monospacedDigit()
+                if case .found(let latest) = update,
+                   !AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
+                    Text("(latest)").font(.caption).foregroundStyle(.secondary)
+                }
             }
             Divider()
             row {
@@ -127,22 +131,19 @@ struct SettingsView: View {
                     Button("업데이트 확인") { checkUpdate() }.controlSize(.small)
                 }
             }
-            if case .found(let latest) = update {
+            if case .found(let latest) = update,
+               AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
                 Divider()
-                if AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
-                            Spacer()
-                            Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.callout)
-                        }
-                        Text("git pull && scripts/build-app.sh --install")
-                            .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
+                        Spacer()
+                        Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.callout)
                     }
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                } else {
-                    row { Text("최신 버전이에요").font(.callout).foregroundStyle(.secondary); Spacer() }
+                    Text("git pull && scripts/build-app.sh --install")
+                        .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                 }
+                .padding(.horizontal, 12).padding(.vertical, 8)
             } else if case .failed = update {
                 Divider()
                 row { Text("확인하지 못했어요. 네트워크를 확인해 주세요.").font(.callout).foregroundStyle(.secondary); Spacer() }
