@@ -34,7 +34,9 @@ struct CardImageView: View {
             // 캐시에 있으면 뒷면을 거치지 않고 바로 바꾼다
             if let hit = ImageCache.shared.cached(imageId, size: size) { image = hit; return }
             image = nil
-            image = await ImageCache.shared.image(imageId, size: size)
+            let loaded = await ImageCache.shared.image(imageId, size: size)
+            guard !Task.isCancelled else { return }  // cid 가 바뀌어 취소됐으면 새 카드의 이미지를 덮어쓰지 않는다
+            image = loaded
         }
     }
 }
@@ -123,6 +125,11 @@ struct PackImageView: View {
     let pack: Pack
     @State private var image: NSImage?
 
+    init(pack: Pack) {
+        self.pack = pack
+        _image = State(initialValue: ImageCache.shared.cachedPack(pack))
+    }
+
     var body: some View {
         // 봉투 비율이 원본마다 0.52~0.56 이라 0.53 칸에 채우고 넘치는 가장자리만 자른다
         Color.clear
@@ -136,8 +143,12 @@ struct PackImageView: View {
             }
             .clipShape(.rect(cornerRadius: 6))
         .task(id: pack.pid) {
+            // 캐시에 있으면 그라데이션을 거치지 않고 바로 바꾼다
+            if let hit = ImageCache.shared.cachedPack(pack) { image = hit; return }
             image = nil
-            image = await ImageCache.shared.packImage(pack)
+            let loaded = await ImageCache.shared.packImage(pack)
+            guard !Task.isCancelled else { return }
+            image = loaded
         }
     }
 }

@@ -46,6 +46,15 @@ import Testing
         #expect(cache.cached(over, size: .full) === o)
     }
 
+    /// cachedPack 은 packImage 로 메모리에 올라온 팩 이미지만 바로 준다
+    @MainActor @Test func cachedPackReturnsOnlyWhatIsInMemory() async throws {
+        let cache = ImageCache(dir: tempDir()) { _, _, _ in onePixel() }
+        let pack = Pack(pid: "p1", name: "p", date: "", cards: [], imageURL: "https://example.com/a/pack1.jpg")
+        #expect(cache.cachedPack(pack) == nil)
+        let loaded = try #require(await cache.packImage(pack))
+        #expect(cache.cachedPack(pack) === loaded)
+    }
+
     @MainActor @Test func removesGarbageCacheFileAndRetriesNextCall() async throws {
         let dir = tempDir()
         let cacheFile = dir.appendingPathComponent("cards_small-456.jpg")

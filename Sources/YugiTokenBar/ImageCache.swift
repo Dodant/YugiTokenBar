@@ -79,6 +79,12 @@ final class ImageCache {
         return await image(key: "pack-\(url.lastPathComponent)", url: url, maxPixels: 480)
     }
 
+    /// packImage 의 메모리 캐시 조회 (cached 와 같은 목적)
+    func cachedPack(_ pack: Pack) -> NSImage? {
+        guard let s = pack.imageURL, let url = URL(string: s) else { return nil }
+        return memory.object(forKey: "pack-\(url.lastPathComponent)" as NSString)
+    }
+
     /// 카드 뒷면(tools/clean-card-back.py 산출물). .app 안에서는 Contents/Resources/card-back.jpg, `swift run`·테스트에서는 저장소의 Resources/card-back.jpg.
     static let cardBack = NSImage(contentsOf: Bundle.main.url(forResource: "card-back", withExtension: "jpg")
         ?? AppInfo.repoRoot.appendingPathComponent("Resources/card-back.jpg"))
