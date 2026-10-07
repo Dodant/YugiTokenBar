@@ -96,6 +96,21 @@ def test_load_cache_survives_cut_multibyte():
         assert list(bc.load_cache(path)) == [1]
 
 
+def test_end_line_after_cut_multibyte():
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, "ja.jsonl")
+        with open(path, "wb") as f:
+            f.write((json.dumps({"cid": 1, "info": {"name": "A"}, "packs": []}) + "\n").encode())
+            f.write('{"cid": 2, "info": {"name": "召'.encode("utf-8")[:-1])
+        bc.end_line(path)
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"cid": 3, "info": {"name": "C"}, "packs": []}) + "\n")
+        assert sorted(bc.load_cache(path)) == [1, 3]
+        bc.end_line(path)  # 이미 줄바꿈으로 끝나면 그대로
+        bc.end_line(os.path.join(d, "none.jsonl"))  # 없는 파일도 무사
+        assert open(path, "rb").read().count(b"\n") == 3
+
+
 def test_get_card_page_retries():
     calls, sleeps = [], []
     pages = iter([OSError("reset"), "<html>점검 중</html>", EN_SPELL])

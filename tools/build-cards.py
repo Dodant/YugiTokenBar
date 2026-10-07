@@ -7,6 +7,7 @@
 """
 import argparse
 import html
+import http.client
 import json
 import os
 import re
@@ -252,6 +253,15 @@ def load_cache(path):
     return recs
 
 
+def end_line(path):
+    """캐시가 줄바꿈 없이 끝나면(Ctrl-C 로 끊김) 줄바꿈을 붙여, 이어 쓰는 첫 줄이 끊긴 줄에 붙지 않게 한다. 바이트로 봐서 글자 중간에서 끊겨도 된다."""
+    if os.path.exists(path) and os.path.getsize(path):
+        with open(path, "rb+") as b:
+            b.seek(-1, os.SEEK_END)
+            if b.read(1) != b"\n":
+                b.write(b"\n")
+
+
 def get_card_page(url, retries=4):
     """상세 페이지를 받는다. 네트워크 오류나 카드·\"없음\" 페이지가 아닌 응답(점검·오류 페이지)은 쉬었다 다시 받고, 끝내 안 되면 예외."""
     for attempt in range(1, retries + 1):
@@ -261,7 +271,7 @@ def get_card_page(url, retries=4):
             if '<div id="cardname"' in page or '<div class="no_data"' in page:
                 return page
             err = "카드 페이지가 아닌 응답"
-        except OSError as e:  # URLError·타임아웃·연결 끊김
+        except (OSError, http.client.IncompleteRead) as e:  # URLError·타임아웃·연결 끊김·본문 중간 끊김
             err = repr(e)
         print(f"  재시도 {attempt}/{retries}: {err} {url}", flush=True)
         if attempt == retries:
@@ -276,12 +286,8 @@ def fetch_lang(lang, ko):
     todo = [int(c) for c in ko["cards"] if int(c) not in recs]
     print(f"{lang}: 캐시 {len(recs)}장, 받을 카드 {len(todo)}장 (약 {len(todo) * 1.5 / 3600:.1f}시간)", flush=True)
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "a+", encoding="utf-8") as f:
-        f.seek(0, os.SEEK_END)
-        if f.tell():  # 끊긴 줄 뒤에 이어 붙이면 새 줄이 깨진다
-            f.seek(f.tell() - 1)
-            if f.read(1) != "\n":
-                f.write("\n")
+    end_line(path)
+    with open(path, "a", encoding="utf-8") as f:
         for i, cid in enumerate(todo, 1):
             info, packs = parse_detail(get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale={lang}"))
             recs[cid] = {"cid": cid, "info": info, "packs": packs}
