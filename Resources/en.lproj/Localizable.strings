@@ -1,0 +1,4 @@
+/* 키 = 코드의 한국어 문장. tools/sync-strings.py 가 키를 맞추고, 값만 번역한다. */
+"시스템 따르기" = "Follow System";
+"언어" = "Language";
+"다시 시작하면 적용돼요" = "Takes effect after restart";

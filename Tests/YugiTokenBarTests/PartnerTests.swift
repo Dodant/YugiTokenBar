@@ -184,7 +184,7 @@ import Testing
     // MARK: 해금·저장
 
     @Test func partnerCardIsWingedKuriboh() throws {
-        #expect(try CardDB.bundled().cards[CardDB.partnerCard]?.name == "날개 크리보")
+        #expect(try CardDB.bundled(lang: "ko").cards[CardDB.partnerCard]?.name == "날개 크리보")
     }
 
     @Test func unlockIsPermanent() {

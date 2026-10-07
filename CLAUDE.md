@@ -29,4 +29,5 @@ python3 tools/test_build_cards.py                     # build-cards.py 자체 �
 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (공식 한도는 안 읽음)
 PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도까지 실제로 읽기
 scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명, 버전은 CHANGELOG.md)
+scripts/build-app.sh && YTB_STATE_DIR=$PWD/qa-state build/YugiTokenBar.app/Contents/MacOS/YugiTokenBar -AppleLanguages '(en)'  # 언어별 QA (번역은 .app 에서만 보임, 실행 인자라 설정에 저장 안 됨)
 ```

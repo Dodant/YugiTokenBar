@@ -10,6 +10,7 @@ struct SettingsView: View {
     /// 업데이트 확인 상태 (확인 전 / 확인 중 / 최신 버전을 받음 / 실패)
     private enum UpdateCheck { case idle, checking, found(String), failed }
     @State private var update = UpdateCheck.idle
+    @State private var language = AppLanguage.stored()
     @State private var launchAtLogin = Self.isRegistered(SMAppService.mainApp)
 
     var body: some View {
@@ -43,6 +44,21 @@ struct SettingsView: View {
                       isOn: $launchAtLogin)
                 .disabled(!installed)
                 .onChange(of: launchAtLogin) { setLaunchAtLogin() }
+            row {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("언어")
+                    if language != AppLanguage.launchChoice {
+                        Text("다시 시작하면 적용돼요").font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Picker("언어", selection: $language) {
+                    ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
+                }
+                .labelsHidden()
+                .fixedSize()
+                .onChange(of: language) { AppLanguage.store(language) }
+            }
         }
     }
 

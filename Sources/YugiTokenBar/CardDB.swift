@@ -201,7 +201,7 @@ struct CardDB: Sendable {
     static func fileName(_ lang: String) -> String { "cards_" + (["ko": "KO", "ja": "JP"][lang] ?? "EN") }
 
     /// .app 안에서는 Contents/Resources/cards_XX.json, `swift run`·테스트에서는 저장소의 Resources/cards_XX.json.
-    static func bundled(lang: String = "ko") throws -> CardDB {
+    static func bundled(lang: String = AppLanguage.current) throws -> CardDB {
         if let url = Bundle.main.url(forResource: fileName(lang), withExtension: "json") {
             return try load(from: url)
         }
