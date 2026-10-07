@@ -233,7 +233,7 @@ struct DexView: View {
         } else {
             jumpTarget = cid; scope = .all
         }
-        scrollTarget = entries.first { $0.cid == cid }?.number
+        scrollTarget = entries.first { $0.cid == cid }?.id
     }
 
     /// 끌기·우클릭이 적용되는 카드들: 선택된 카드면 선택 전체, 아니면 그 카드만.

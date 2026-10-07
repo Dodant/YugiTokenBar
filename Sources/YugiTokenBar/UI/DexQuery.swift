@@ -1,11 +1,12 @@
 import Foundation
 
-/// 그리드 한 칸. number 는 등급 필터·정렬과 상관없이 팩(또는 전체) 안 순번이라 id 로 쓴다.
+/// 그리드 한 칸. id 는 위치가 아니라 카드(cid)라 목록이 바뀌어도 칸 뷰가 다른 카드로 재사용되지 않는다 (한 목록 안 cid 는 유일).
+/// number 는 등급 필터·정렬과 상관없이 팩(또는 전체) 안 순번으로, 같은 값일 때 정렬 기준으로만 쓴다.
 struct DexEntry: Identifiable {
     let number: Int
     let cid: Int
     let label: String
-    var id: Int { number }
+    var id: Int { cid }
 }
 
 /// 사이드바 선택: 전체 · 즐겨찾기 · 팩 · 덱

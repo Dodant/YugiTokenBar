@@ -34,4 +34,17 @@ import Testing
         _ = game.addToDeck(deck.id, 1)
         #expect(DexQuery(scope: .deck(deck.id)).entries(in: game).visible.map(\.cid) == [1, 2])
     }
+
+    /// 그리드 칸 id 는 위치가 아니라 카드(cid)라, 목록이 바뀌어도 같은 칸 뷰가 다른 카드를 보여 주지 않는다
+    @MainActor @Test func idIsCidAndUnique() {
+        var game = Game(db: makeDB([[(3, 1), (1, 4)], [(1, 4), (2, 2)]]), state: GameState())
+        let deck = game.addDeck()
+        _ = game.addToDeck(deck.id, 2)
+        _ = game.addToDeck(deck.id, 1)
+        for scope in [DexScope?.none, .pack(1), .deck(deck.id)] {
+            let ids = DexQuery(scope: scope).entries(in: game).visible.map(\.id)
+            #expect(ids == DexQuery(scope: scope).entries(in: game).visible.map(\.cid))
+            #expect(Set(ids).count == ids.count)
+        }
+    }
 }
