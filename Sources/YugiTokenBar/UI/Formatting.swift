@@ -4,11 +4,23 @@ import SwiftUI
 // ponytail: 메뉴바 패널(.window)에서는 .help 툴팁이 뜨지 않아 hover + popover 로 대신한다. 일반 창(컬렉션)은 .help 그대로.
 private struct HoverHint: ViewModifier {
     let text: Text
+    @State private var hovered = false
     @State private var shown = false
 
     func body(content: Content) -> some View {
         content
-            .onHover { shown = $0 }
+            .onHover {
+                hovered = $0
+                if !$0 { shown = false }
+            }
+            .task(id: hovered) {
+                guard hovered else { return }
+                // 기울기 진입과 재질 팝오버 생성을 같은 순간에 시작하지 않는다.
+                do { try await Task.sleep(for: .milliseconds(350)) }
+                catch { return }
+                guard !Task.isCancelled, hovered else { return }
+                shown = true
+            }
             .popover(isPresented: $shown, arrowEdge: .top) {
                 text.font(.callout).padding(10).fixedSize()
                     .presentationBackground(.thickMaterial)  // 기본 유리보다 덜 비치게

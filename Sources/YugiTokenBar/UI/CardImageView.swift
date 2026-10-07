@@ -192,7 +192,7 @@ struct PackImageView: View {
     }
 }
 
-/// 마우스를 올리고 움직이면 실물 카드를 빛에 비춰 보듯 커서 쪽으로 기울고(스프링이라 살짝 출렁임), 빛 반사가 커서를 따라간다.
+/// 마우스를 올리고 움직이면 실물 카드를 빛에 비춰 보듯 커서 쪽으로 기울고, 빛 반사가 커서를 따라간다. 진입·이탈만 스프링으로 움직인다.
 /// N·R 흰 반사, SR 더 밝게, UR·SE 무지개 홀로그램을 덧입힌다. 동작 줄이기·애니메이션 끄기면 기울기 없이 반사만 약하게.
 private struct CardTilt: ViewModifier {
     let tier: Int
@@ -219,8 +219,15 @@ private struct CardTilt: ViewModifier {
             .overlay { if enabled { reflection(p).opacity(on ? (reduceMotion ? 0.5 : 1) : 0).allowsHitTesting(false) } }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
             .onContinuousHover { phase in
-                guard case .active(let loc) = phase, size.width > 0, size.height > 0 else { point = nil; return }
-                point = CGPoint(x: min(max(loc.x / size.width * 2 - 1, -1), 1), y: min(max(loc.y / size.height * 2 - 1, -1), 1))
+                guard enabled, case .active(let loc) = phase, size.width > 0, size.height > 0 else {
+                    if point != nil { point = nil }
+                    return
+                }
+                let next = CGPoint(x: min(max(loc.x / size.width * 2 - 1, -1), 1), y: min(max(loc.y / size.height * 2 - 1, -1), 1))
+                // 1pt 미만의 이동은 무시해 작은 썸네일의 과도한 갱신을 줄인다.
+                if let point, abs(next.x - point.x) * size.width < 2,
+                   abs(next.y - point.y) * size.height < 2 { return }
+                point = next
             }
             // 커서 쪽 가장자리가 안으로 눌린다
             .rotation3DEffect(.degrees(-p.y * angle), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
@@ -228,7 +235,7 @@ private struct CardTilt: ViewModifier {
             .scaleEffect(lift ? Self.hoverScale : 1)
             .shadow(color: .black.opacity(lift ? 0.25 : 0), radius: 8,
                     x: -p.x * Self.shadowShift * angleScale, y: -p.y * Self.shadowShift * angleScale + 2)
-            .animation(reduceMotion ? .easeOut(duration: 0.15) : Self.spring, value: point)
+            .animation(reduceMotion ? .easeOut(duration: 0.15) : Self.spring, value: on)
     }
 
     private func reflection(_ p: CGPoint) -> some View {
@@ -241,10 +248,8 @@ private struct CardTilt: ViewModifier {
                                 center: center, angle: .degrees(p.x * 60 + p.y * 30))
                     .opacity(Self.holoOpacity)
             }
-            GeometryReader { g in
-                RadialGradient(colors: [.white.opacity(glare), .clear], center: center,
-                               startRadius: 0, endRadius: max(g.size.width, g.size.height) * 0.7)
-            }
+            RadialGradient(colors: [.white.opacity(glare), .clear], center: center,
+                           startRadius: 0, endRadius: max(size.width, size.height) * 0.7)
         }
         .blendMode(.plusLighter)
         .clipShape(.rect(cornerRadius: 7))
