@@ -86,7 +86,7 @@ private struct FusionScene {
         var gc = root
         let W = size.width, H = size.height
         let dt = t - Self.reveal
-        let s = clamp((t - Self.float) / (Self.swirl - Self.float))
+        let s = progress(at: t)
         gc.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black.opacity(0.85 * clamp(t / 0.3))))
         let R = min(W * 0.33, H * 0.36, 200)
         let cw = clamp(R * 0.6, 64, 112)
@@ -134,7 +134,7 @@ private struct FusionScene {
         var g = gc
         g.blendMode = .plusLighter
         let fadeIn = clamp(t / 0.8)
-        let s = clamp((t - Self.float) / (Self.swirl - Self.float))
+        let s = progress(at: t)
         let pull = s * s * (dt < 0 ? 1 : max(0, 1 - dt / 0.6))
         let nebulae: [(P, Double, Double)] = [(.purple, -0.35, -0.2), (.blue, 0.4, 0.25), (.pink, 0.1, -0.4), (.blue, -0.3, 0.35)]
         for (k, (p, nx, ny)) in nebulae.enumerated() {
@@ -307,12 +307,15 @@ private struct FusionScene {
 
     // MARK: 부품
 
+    /// 회오리 진행도 0~1 (떠오름이 끝나는 때부터 회오리 끝까지)
+    private func progress(at t: Double) -> Double { clamp((t - Self.float) / (Self.swirl - Self.float)) }
+
     struct MatState { var x, y, rot, sx, scale, whiten, alpha, s: Double }
 
     /// 소재 i 의 시각 t 상태 (잔상도 같은 함수로 과거 t 를 그린다). sx 는 Y축 회전의 cos(음수면 뒷면)
     private func mat(_ i: Int, _ t: Double, _ R: Double) -> MatState {
         let n = Double(materials.count), fi = Double(i)
-        let s = clamp((t - Self.float) / (Self.swirl - Self.float)), e = s * s
+        let s = progress(at: t), e = s * s
         let angle = fi / n * 2 * .pi - .pi / 2 + t * 0.3 + e * 7 * .pi
         let r = R * (1 - e)
         let appear = clamp((t - 0.1 - fi * 0.12) / 0.45)
