@@ -55,6 +55,9 @@ enum Rarity {
         Color(red: 0xFF / 255, green: 0x3D / 255, blue: 0x7F / 255),
     ]
 
+    /// 연출(팩 개봉·융합)용 금빛. SR 등급색과는 다른 값이다.
+    static let gold = Color(red: 1, green: 0.8, blue: 0.25)
+
     /// 아직 획득하지 못한 카드 (밝은 회색, N 회청색과 구분)
     static let locked = Color(red: 0xA0 / 255, green: 0xA0 / 255, blue: 0xA0 / 255)
 

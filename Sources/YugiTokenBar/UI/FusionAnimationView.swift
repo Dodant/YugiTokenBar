@@ -61,7 +61,7 @@ private struct FusionScene {
     /// 빛 점 색 (Canvas 심볼 번호와 같다)
     enum P: Int { case purple, orange, gold, blue, pink, white }
     static let palette: [Color] = [
-        Color(red: 0.59, green: 0.35, blue: 1), Color(red: 1, green: 0.59, blue: 0.24), Color(red: 1, green: 0.8, blue: 0.25),
+        Color(red: 0.59, green: 0.35, blue: 1), Color(red: 1, green: 0.59, blue: 0.24), Rarity.gold,
         Color(red: 0.31, green: 0.55, blue: 1), Color(red: 1, green: 0.35, blue: 0.78), .white,
     ]
 
@@ -76,7 +76,7 @@ private struct FusionScene {
     /// 등급 색 두 가지 (광택 가장자리·반짝임·빛무리)
     private var tierColors: (Color, Color) {
         switch tier {
-        case 5: (Color(red: 1, green: 0.8, blue: 0.25), Color(red: 1, green: 0.6, blue: 0.24))
+        case 5: (Rarity.gold, Color(red: 1, green: 0.6, blue: 0.24))
         case 4: (Color(red: 1, green: 0.42, blue: 0.84), Color(red: 0.42, green: 0.89, blue: 1))
         default: (Color(red: 1, green: 0.83, blue: 0.3), .white)
         }
