@@ -104,9 +104,7 @@ struct Game: Sendable {
         while state.pendingFree > 0, pulls.count < Balance.freeOpenBatch {
             state.pendingFree -= 1
             guard let cid = drawFree(using: &rng) else { state.pendingFree = 0; break }
-            let isNew = copies(cid) == 0
-            give(cid, source: LogEntry.free)
-            pulls.append(Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid)))
+            pulls.append(pull(cid, source: LogEntry.free))
         }
         return pulls
     }
@@ -344,11 +342,16 @@ struct Game: Sendable {
         for (i, tier) in tiers.enumerated() {
             let kind: CardKind? = i < Balance.monstersPerPack ? .monster : nil
             guard let cid = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), kind: kind, using: &rng) else { continue }
-            let isNew = copies(cid) == 0
-            give(cid, source: db.packs[pack].pid)
-            pulls.append(Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid)))
+            pulls.append(pull(cid, source: db.packs[pack].pid))
         }
         return pulls
+    }
+
+    /// 카드 1장 지급: isNew는 지급 전에 계산하고, 지급 뒤 자동 판매까지 처리한다.
+    private mutating func pull(_ cid: Int, source: String) -> Pull {
+        let isNew = copies(cid) == 0
+        give(cid, source: source)
+        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid))
     }
 
     /// 설정이 켜져 있고 `keep` 장을 넘으면 바로 1장 판다. 반환: 받은 코인.
