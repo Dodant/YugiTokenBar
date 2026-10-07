@@ -216,3 +216,187 @@
 "한도 불러오는 중…" = "Loading limits…";
 /* UsageView.swift:125 */
 "한도 정보 없음 · 눌러서 불러오기" = "No limit info · click to load";
+/* CardDetailView.swift:37 */
+"펜듈럼 효과" = "Pendulum Effect";
+/* CardDetailView.swift:40 */
+"융합 소재" = "Fusion Materials";
+/* CardDetailView.swift:113 */
+"수록 팩" = "Packs";
+/* CardDetailView.swift:131 */
+"랭크 %lld" = "Rank %lld";
+/* CardDetailView.swift:132 */
+"링크 %lld" = "Link %lld";
+/* CardDetailView.swift:136 */
+"P스케일 %lld" = "Pendulum Scale %lld";
+/* CardDetailView.swift:58 */
+"「융합」 마법 카드가 있어야 해요" = "You need the \"Polymerization\" Spell Card";
+/* CardDetailView.swift:58 */
+"소재 카드를 소비해 1장 만들어요" = "Uses up the materials to make 1 copy";
+/* CardDetailView.swift:58 */
+"소재 카드가 모자라요" = "Not enough materials";
+/* CardDetailView.swift:50 */
+"정규 부스터 100팩에 없는 카드예요" = "Not in the 100 regular Booster Packs";
+/* CardDetailView.swift:47 */
+"보유 %lld" = "Owned %lld";
+/* CardDetailView.swift:64 */
+"「융합」 마법 카드가 1장 있어야 해요 (소비되지 않아요)" = "Requires 1 \"Polymerization\" Spell Card (not used up)";
+/* CardDetailView.swift:73 */
+"%@ 융합" = "Fusion Summon \"%@\"";
+/* CardDetailView.swift:80 */
+"%@을 소비해요. 소재는 1장씩 남아 컬렉션에서 빠지지 않아요." = "Uses %@. 1 copy of each material stays, so your collection is unchanged.";
+/* CardDetailView.swift:95 */
+"보유 %lld장" = "Owned %lld";
+/* CardDetailView.swift:106 */
+"마지막 1장을 팔까요?" = "Sell your last copy?";
+/* CardDetailView.swift:100 */
+"1장 판매 · +%@" = "Sell 1 · +%@";
+/* CardDetailView.swift:107 */
+"+%@에 판매" = "Sell for +%@";
+/* CardDetailView.swift:109 */
+"컬렉션에서 빠지고 다시 모아야 해요." = "It will leave your collection and you'll have to collect it again.";
+/* CardDetailView.swift:150 */
+"%@ %lld장" = "%@ × %lld";
+/* DexQuery.swift:45 */
+"팩 순서" = "Pack order";
+/* DexQuery.swift:46 */
+"높은 등급순" = "Rarity: high to low";
+/* DexQuery.swift:47 */
+"낮은 등급순" = "Rarity: low to high";
+/* DexQuery.swift:48 */
+"이름순" = "Name";
+/* DexQuery.swift:49 */
+"보유 많은 순" = "Most owned";
+/* DexSidebar.swift:41 */
+"덱 이름" = "Deck name";
+/* DexSidebar.swift:46 */
+"'%@' 덱을 지울까요?" = "Delete the Deck \"%@\"?";
+/* DexSidebar.swift:16 */
+"전체" = "All";
+/* DexSidebar.swift:26 */
+"즐겨찾기" = "Favorites";
+/* DexSidebar.swift:42 */
+"이름" = "Name";
+/* DexSidebar.swift:43 */
+"저장" = "Save";
+/* DexSidebar.swift:48 */
+"삭제" = "Delete";
+/* DexSidebar.swift:54 */
+"카드는 컬렉션에 그대로 있어요." = "The cards stay in your collection.";
+/* DexSidebar.swift:82 */
+"이름 바꾸기" = "Rename";
+/* DexSidebar.swift:88 */
+"덱" = "Decks";
+/* DexSidebar.swift:90 */
+"새 덱" = "New Deck";
+/* DexSidebar.swift:155 */
+"%@ · %lld팩" = "%@ · %lld packs";
+/* DexView.swift:103 */
+"카드 이름" = "Card name";
+/* DexView.swift:75 */
+"팩에서 카드를 왼쪽 덱 이름으로 끌어다 놓거나, 카드를 우클릭해 추가하세요" = "Drag cards from a pack onto a Deck name on the left, or right-click a card to add it";
+/* DexView.swift:78 */
+"카드에 마우스를 올리고 오른쪽 위 ☆를 눌러 보세요" = "Hover over a card and click ☆ in the top-right corner";
+/* DexView.swift:74 */
+"덱이 비었어요" = "This Deck is empty";
+/* DexView.swift:77 */
+"즐겨찾기한 카드가 없어요" = "No favorite cards";
+/* DexView.swift:89 */
+"조건에 맞는 카드가 없어요" = "No matching cards";
+/* DexView.swift:89 */
+"보유한 카드가 없어요" = "No owned cards";
+/* DexView.swift:91 */
+"다른 팩이나 종류·등급을 골라 보세요" = "Try another pack, card type, or rarity";
+/* DexView.swift:91 */
+"미보유 카드 포함을 켜면 전부 보여요" = "Turn on \"Include unowned cards\" to see them all";
+/* DexView.swift:82 */
+"'%@' 카드가 여기엔 없어요" = "No \"%@\" cards here";
+/* DexView.swift:84 */
+"다른 팩에 있을 수 있어요" = "It may be in another pack";
+/* DexView.swift:86 */
+"전체에서 찾기" = "Search all";
+/* DexView.swift:191 */
+"%lld / %lld장 보유 · 메인 덱 %lld~%lld장" = "%lld / %lld owned · Main Deck %lld–%lld cards";
+/* DexView.swift:194 */
+"%lld / %lld장 보유" = "%lld / %lld owned";
+/* DexView.swift:118 */
+"지금 보이는 카드 모두 선택 (⌘A)" = "Select all visible cards (⌘A)";
+/* DexView.swift:128 */
+"선택한 카드를 덱에서 1장씩 빼기 (Delete)" = "Remove 1 copy of each selected card from the Deck (Delete)";
+/* DexView.swift:115 */
+"전체 선택" = "Select all";
+/* DexView.swift:125 */
+"덱에서 빼기" = "Remove from Deck";
+/* DexView.swift:131 */
+"정보" = "Info";
+/* DexView.swift:145 */
+"종류" = "Card type";
+/* DexView.swift:153 */
+"등급" = "Rarity";
+/* DexView.swift:163 */
+"정렬" = "Sort";
+/* DexView.swift:168 */
+"미보유 카드 포함" = "Include unowned cards";
+/* DexView.swift:170 */
+"끄면 가진 카드만 보여요" = "When off, only cards you own are shown";
+/* DexView.swift:146 */
+"모든 종류" = "All card types";
+/* DexView.swift:154 */
+"모든 등급" = "All rarities";
+/* DexView.swift:156 */
+"N 노멀" = "N Common";
+/* DexView.swift:157 */
+"R 레어" = "R Rare";
+/* DexView.swift:158 */
+"SR 슈퍼" = "SR Super Rare";
+/* DexView.swift:159 */
+"UR 울트라" = "UR Ultra Rare";
+/* DexView.swift:160 */
+"SE 시크릿" = "SE Secret Rare";
+/* DexView.swift:379 */
+"즐겨찾기 해제" = "Remove from favorites";
+/* DexView.swift:329 */
+"덱에서 1장 빼기" = "Remove 1 from Deck";
+/* DexView.swift:348 */
+" (%lld장)" = " (%lld cards)";
+/* DexView.swift:350 */
+"덱에서 1장씩 빼기%@" = "Remove 1 of each from Deck%@";
+/* DexView.swift:356 */
+"새 덱에 추가%@" = "Add to new Deck%@";
+/* DexView.swift:358 */
+"덱에 추가%@" = "Add to Deck%@";
+/* DexView.swift:289 */
+"덱 %lld장, 보유 %lld장" = "%lld in Deck, %lld owned";
+/* DexView.swift:289 */
+"미보유" = "Not owned";
+/* DexView.swift:404 */
+"카드를 누르면 자세한 정보가 여기 나와요" = "Click a card to see its details here";
+/* DexView.swift:403 */
+"카드를 선택하세요" = "Select a card";
+/* DexView.swift:394 */
+"%lld장 선택됨" = "%lld cards selected";
+/* DexView.swift:396 */
+"왼쪽 덱 이름으로 끌어다 놓거나 아래에서 덱을 고르세요" = "Drag onto a Deck name on the left, or choose a Deck below";
+/* DexView.swift:454 */
+"카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card, keeping as many Fusion Materials as needed (%lld cards · +%@)";
+/* DexView.swift:455 */
+"카드마다 1장만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card (%lld cards · +%@)";
+/* DexView.swift:457 */
+"중복 %lld장을 팔까요?" = "Sell %lld duplicates?";
+/* DexView.swift:451 */
+"중복 모두 팔기" = "Sell all duplicates";
+/* DexView.swift:460 */
+"카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남아서 컬렉션은 그대로예요." = "1 copy of each card and the Fusion Materials you need stay, so your collection is unchanged.";
+/* DexView.swift:460 */
+"카드마다 1장씩은 남아서 컬렉션은 그대로예요." = "1 copy of each card stays, so your collection is unchanged.";
+/* FusableSection.swift:15 */
+"융합 가능 · %lld" = "Can Fusion Summon · %lld";
+/* FusionAnimationView.swift:47 */
+"%@ 융합. 눌러서 닫기" = "Fusion Summoned \"%@\". Click to close";
+/* FusionAnimationView.swift:305 */
+"눌러서 닫기" = "Click to close";
+/* SaveTransfer.swift:46 */
+"YugiTokenBar 세이브 파일이 아니에요." = "Not a YugiTokenBar save file.";
+/* SaveTransfer.swift:47 */
+"더 새 버전 앱에서 만든 세이브예요. 앱을 업데이트한 뒤 가져와 주세요." = "This save was made with a newer version of the app. Update the app, then import it.";
+/* SaveTransfer.swift:48 */
+"세이브 파일로 보기엔 너무 커요." = "Too large to be a save file.";

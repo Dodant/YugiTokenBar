@@ -42,11 +42,11 @@ enum DexSort: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .pack: "팩 순서"
-        case .tierDesc: "높은 등급순"
-        case .tierAsc: "낮은 등급순"
-        case .name: "이름순"
-        case .copies: "보유 많은 순"
+        case .pack: String(localized: "팩 순서")
+        case .tierDesc: String(localized: "높은 등급순")
+        case .tierAsc: String(localized: "낮은 등급순")
+        case .name: String(localized: "이름순")
+        case .copies: String(localized: "보유 많은 순")
         }
     }
 }

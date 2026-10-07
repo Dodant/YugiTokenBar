@@ -55,7 +55,7 @@ struct CardDetailView: View {
                     // 설정이 켜져 있고 소재를 다 아는 융합이면 여기서 만든다
                     if model.game.state.fusionOnly, model.game.fusionMaterials(cid) != nil {
                         let can = model.game.canFuse(cid)
-                        let why = !model.game.hasFusionSpell ? "「융합」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
+                        let why: LocalizedStringKey = !model.game.hasFusionSpell ? "「융합」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
                         HStack(spacing: 4) {
                             Spacer()
                             if !model.game.hasFusionSpell {  // 누르면 「융합」 카드로 이동
@@ -147,7 +147,7 @@ struct CardDetailView: View {
 
     /// 융합 확인창: "사이버 드래곤 3장, 커스 오브 드래곤 1장"
     private func consumed(_ materials: [Material]) -> String {
-        grouped(materials).compactMap { g in g.material.cid.flatMap { model.db.cards[$0]?.name }.map { "\($0) \(g.n)장" } }
+        grouped(materials).compactMap { g in g.material.cid.flatMap { model.db.cards[$0]?.name }.map { String(localized: "\($0) \(g.n)장") } }
             .joined(separator: ", ")
     }
 

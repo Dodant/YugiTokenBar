@@ -178,20 +178,20 @@ struct DexView: View {
 
     private var title: String {
         switch scope {
-        case .favorites?: "즐겨찾기"
+        case .favorites?: String(localized: "즐겨찾기")
         case .pack(let i)? where model.db.packs.indices.contains(i): model.db.packs[i].name
-        case .deck(let id)?: model.game.deck(id)?.name ?? "덱"
-        default: "전체"
+        case .deck(let id)?: model.game.deck(id)?.name ?? String(localized: "덱")
+        default: String(localized: "전체")
         }
     }
 
     private func subtitle(_ all: [DexEntry]) -> String {
         if case .deck(let id)? = scope, let deck = model.game.deck(id) {
             let p = model.game.deckProgress(deck)
-            return "\(p.owned) / \(p.total)장 보유 · 메인 덱 \(Balance.deckSize.lowerBound)~\(Balance.deckSize.upperBound)장"
+            return String(localized: "\(p.owned) / \(p.total)장 보유 · 메인 덱 \(Balance.deckSize.lowerBound)~\(Balance.deckSize.upperBound)장")
         }
         let owned = all.filter { model.game.copies($0.cid) > 0 }.count
-        return "\(owned) / \(all.count)장 보유"
+        return String(localized: "\(owned) / \(all.count)장 보유")
     }
 
     /// 화면에 보일 카드 (body 밖 동작용. 조건이 같으면 캐시를 그대로 쓴다)
@@ -286,7 +286,7 @@ struct DexView: View {
     /// "푸른 눈의 백룡, UR, 보유 2장" (덱 화면이면 "덱 3장, 보유 2장")
     private func cellLabel(_ cid: Int, label: String, inDeck: Int?) -> String {
         let n = model.game.copies(cid)
-        let status = inDeck.map { "덱 \($0)장, 보유 \(n)장" } ?? (n > 0 ? "보유 \(n)장" : "미보유")
+        let status = inDeck.map { String(localized: "덱 \($0)장, 보유 \(n)장") } ?? (n > 0 ? String(localized: "보유 \(n)장") : String(localized: "미보유"))
         return "\(model.db.cards[cid]?.name ?? ""), \(label), \(status)"
     }
 
@@ -330,7 +330,7 @@ struct DexView: View {
     }
 
     /// 카드 모서리에 얹는 22×22 어두운 원형 아이콘 단추.
-    private func overlayButton(systemImage: String, color: Color, help: String, action: @escaping () -> Void) -> some View {
+    private func overlayButton(systemImage: String, color: Color, help: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .bold))
@@ -345,7 +345,7 @@ struct DexView: View {
 
     /// 우클릭·선택 메뉴: 덱 화면이면 빼기, 아니면 덱에 넣기(미보유도 가능). 여러 장이면 장 수를 붙인다.
     @ViewBuilder private func deckMenu(_ cids: Set<Int>, inDeck deck: UUID?) -> some View {
-        let many = cids.count > 1 ? " (\(cids.count)장)" : ""
+        let many = cids.count > 1 ? String(localized: " (\(cids.count)장)") : ""
         if let deck {
             Button("덱에서 1장씩 빼기\(many)") {
                 removeFromDeck(deck, cids)
@@ -450,7 +450,9 @@ private struct SellDuplicatesButton: View {
         Button { confirm = true } label: {
             Label("중복 모두 팔기", systemImage: "c.circle").labelStyle(.titleAndIcon)
         }
-        .help("카드마다 1장\(model.game.state.fusionOnly ? ", 융합 소재는 필요한 장 수" : "")만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
+        .help(model.game.state.fusionOnly
+              ? "카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))"
+              : "카드마다 1장만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
         .disabled(dup.count == 0)
         .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirm) {
             Button("+\(coinText(dup.coins))에 판매") { model.sellDuplicates() }

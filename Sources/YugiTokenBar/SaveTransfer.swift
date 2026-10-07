@@ -43,9 +43,9 @@ enum SaveTransferError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .notASaveFile: "YugiTokenBar 세이브 파일이 아니에요."
-        case .newerSchema: "더 새 버전 앱에서 만든 세이브예요. 앱을 업데이트한 뒤 가져와 주세요."
-        case .tooLarge: "세이브 파일로 보기엔 너무 커요."
+        case .notASaveFile: String(localized: "YugiTokenBar 세이브 파일이 아니에요.")
+        case .newerSchema: String(localized: "더 새 버전 앱에서 만든 세이브예요. 앱을 업데이트한 뒤 가져와 주세요.")
+        case .tooLarge: String(localized: "세이브 파일로 보기엔 너무 커요.")
         }
     }
 }
