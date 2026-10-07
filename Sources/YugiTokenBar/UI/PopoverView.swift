@@ -47,8 +47,7 @@ struct PopoverView: View {
             if let error = model.saveError {
                 FreeRow(systemImage: "exclamationmark.triangle.fill", title: "진행 상황을 저장하지 못했어요",
                         hint: error, button: "폴더 열기") { NSWorkspace.shared.activateFileViewerSelecting([model.saveFolder]) }
-                    .padding(12)
-                    .background(.fill.quinary, in: .rect(cornerRadius: 16))
+                    .panelCard()
                     .tint(.orange)
             }
 
@@ -75,20 +74,17 @@ struct PopoverView: View {
             if freeRows?.pack ?? (state.freePacks > 0) {
                 FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",
                         hint: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩", button: "열기") { model.openFreePack() }
-                    .padding(12)
-                    .background(.fill.quinary, in: .rect(cornerRadius: 16))
+                    .panelCard()
             }
 
             if freeRows?.card ?? (state.pendingFree > 0) {
                 FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: "토큰으로 모은 카드예요",
                         button: state.pendingFree > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기") { model.openFree() }
-                    .padding(12)
-                    .background(.fill.quinary, in: .rect(cornerRadius: 16))
+                    .panelCard()
             }
 
             PackRow(index: game.lastBoughtPack)
-                .padding(12)
-                .background(.fill.quinary, in: .rect(cornerRadius: 16))
+                .panelCard()
 
             VStack(spacing: 2) {
                 MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.screen = .shop }
@@ -225,5 +221,12 @@ private struct MenuRow: View {
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
+    }
+}
+
+private extension View {
+    /// 팝오버 패널의 둥근 카드 배경.
+    func panelCard() -> some View {
+        padding(12).background(.fill.quinary, in: .rect(cornerRadius: 16))
     }
 }
