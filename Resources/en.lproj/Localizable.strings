@@ -400,3 +400,11 @@
 "더 새 버전 앱에서 만든 세이브예요. 앱을 업데이트한 뒤 가져와 주세요." = "This save was made with a newer version of the app. Update the app, then import it.";
 /* SaveTransfer.swift:48 */
 "세이브 파일로 보기엔 너무 커요." = "Too large to be a save file.";
+/* ShopView.swift:178 */
+"다 모은 팩" = "Completed pack";
+/* ShopView.swift:193 */
+"그래도 사기" = "Buy anyway";
+/* ShopView.swift:124 */
+"융합 %lld장 남음" = "%lld left to fuse";
+/* ShopView.swift:161 */
+"%lld/%lld · 융합 %lld장 남음" = "%lld/%lld · %lld left to fuse";

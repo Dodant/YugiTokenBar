@@ -140,6 +140,16 @@ struct Game: Sendable {
         db.packs[pack].cards.allSatisfy { copies($0) > 0 }
     }
 
+    /// 팩에서 더 받을 카드가 없다: 다 모았거나 남은 미보유가 융합 전용뿐(설정 [융합 몬스터는 융합으로만]). 상점 CLEAR 도장·구매 막기
+    func isCleared(_ pack: Int) -> Bool {
+        db.packs[pack].cards.allSatisfy { copies($0) > 0 || isFusionOnly($0) }
+    }
+
+    /// 팩에 남은 미보유 융합 전용 카드 수 (융합으로만 채울 수 있다)
+    func fusionLeft(_ pack: Int) -> Int {
+        db.packs[pack].cards.filter { copies($0) == 0 && isFusionOnly($0) }.count
+    }
+
     var canAffordPack: Bool { state.coins >= Balance.packPrice }
 
     // MARK: 판매
@@ -333,16 +343,31 @@ struct Game: Sendable {
     }
 
     /// 봉투 하나 열기: 노멀 3 + 슬롯4(노멀, `slot4RareChance`로 레어) + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
+    /// 팩에 아직 없는 카드가 남아 있으면 1장 이상은 새 카드다(`ensureNew`).
     private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         let slot4 = Double.random(in: 0..<1, using: &rng) < Balance.slot4RareChance ? 2 : 1
         let tiers = [1, 1, 1, slot4, pickTier(Balance.slot5Weights, using: &rng)]
-        var pulls: [Pull] = []
+        var slots: [(tier: Int, kind: CardKind?, cid: Int)] = []
         for (i, tier) in tiers.enumerated() {
             let kind: CardKind? = i < Balance.monstersPerPack ? .monster : nil
-            guard let cid = draw(pack: pack, tier: tier, excluding: Set(pulls.map(\.cid)), kind: kind, using: &rng) else { continue }
-            pulls.append(pull(cid, source: db.packs[pack].pid))
+            guard let cid = draw(pack: pack, tier: tier, excluding: Set(slots.map(\.cid)), kind: kind, using: &rng) else { continue }
+            slots.append((tier, kind, cid))
         }
-        return pulls
+        ensureNew(pack: pack, slots: &slots, using: &rng)
+        return slots.map { pull($0.cid, source: db.packs[pack].pid) }
+    }
+
+    /// 새 카드가 하나도 없으면 한 칸을 팩의 미보유 카드로 바꾼다. 앞 칸부터 그 칸의 등급·종류에 맞는 미보유 카드를 찾고,
+    /// 어느 칸에도 안 맞으면(남은 미보유가 다른 등급뿐) 마지막 칸을 가장 낮은 등급의 미보유 카드로 바꾼다.
+    private func ensureNew<R: RandomNumberGenerator>(pack: Int, slots: inout [(tier: Int, kind: CardKind?, cid: Int)], using rng: inout R) {
+        guard !slots.isEmpty, !slots.contains(where: { copies($0.cid) == 0 }) else { return }
+        let unowned = db.packs[pack].cards.filter { copies($0) == 0 && !isFusionOnly($0) }
+        guard let lowest = unowned.map(db.tier).min() else { return }
+        for i in slots.indices {
+            let fits = unowned.filter { db.tier($0) == slots[i].tier && (slots[i].kind == nil || db.cards[$0]?.kind == slots[i].kind) }
+            if let cid = fits.randomElement(using: &rng) { slots[i].cid = cid; return }
+        }
+        slots[slots.count - 1].cid = unowned.filter { db.tier($0) == lowest }.randomElement(using: &rng)!
     }
 
     /// 카드 1장 지급: isNew는 지급 전에 계산하고, 지급 뒤 자동 판매까지 처리한다.

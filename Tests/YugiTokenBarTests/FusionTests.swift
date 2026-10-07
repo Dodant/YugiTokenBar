@@ -95,4 +95,15 @@ import Testing
         for _ in 0..<300 { if let cid = game.drawFree(using: &rng) { free.insert(cid) } }
         #expect(free.contains(10))
     }
+
+    /// 남은 미보유가 융합 전용뿐이면 상점에선 다 모은 팩(CLEAR)이고, 융합 남은 장 수를 센다. 설정을 끄면 아니다.
+    @Test func packClearedWhenOnlyFusionOnlyLeft() {
+        var game = Game(db: db, state: GameState())
+        game.state.owned = [1: 1, 2: 1, 3: 1, CardDB.fusionSpell: 1, 11: 1]
+        #expect(!game.isCleared(0) && game.fusionLeft(0) == 0)
+        game.state.fusionOnly = true
+        #expect(game.isCleared(0) && game.fusionLeft(0) == 1)
+        game.state.owned[10] = 1
+        #expect(game.isCleared(0) && game.fusionLeft(0) == 0)
+    }
 }
