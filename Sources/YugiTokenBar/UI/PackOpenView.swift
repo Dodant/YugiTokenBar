@@ -101,7 +101,7 @@ struct OpeningView: View {
     /// 다 뒤집은 뒤 한 번 더: 팩(무료 팩 포함)이면 같은 팩을 코인으로, 무료 카드면 남은 장을. 둘 다 아니면 nil.
     private var again: (title: String, enabled: Bool, action: () -> Void)? {
         if let pack = model.openingPack {
-            return ("한 팩 더 · \(coinText(Balance.packPrice))", model.game.canBuy(pack), { model.buy(pack: pack) })
+            return ("한 팩 더 · \(coinText(Balance.packPrice))", model.game.canAffordPack, { model.buy(pack: pack) })
         }
         let left = model.game.state.pendingFree
         return left > 0 ? ("다음 \(min(left, Balance.freeOpenBatch))장 열기", true, { model.openFree() }) : nil

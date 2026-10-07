@@ -73,13 +73,13 @@ import Testing
         var any = rich()
         #expect(!any.buy(pack: 2, using: &rng).isEmpty)  // 해금 없이 아무 팩이나
         var poor = Game(db: db, state: GameState())
-        #expect(poor.canBuy(0) == false)
+        #expect(poor.canAffordPack == false)
         #expect(poor.buy(pack: 0, using: &rng).isEmpty)
         var almost = rich()
         almost.state.coins = Balance.packPrice - 1
-        #expect(almost.canBuy(0) == false)
+        #expect(almost.canAffordPack == false)
         almost.state.coins = Balance.packPrice
-        #expect(almost.canBuy(0))
+        #expect(almost.canAffordPack)
     }
 
     @Test func lastBoughtPackSkipsFreeCards() {

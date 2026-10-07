@@ -123,7 +123,7 @@ struct Game: Sendable {
     var tierProgress: [(owned: Int, total: Int)] {
         var out = Array(repeating: (owned: 0, total: 0), count: CardInfo.rarities.count)
         for cid in db.allCIDs {
-            let i = min(max(db.tier(cid), 1), out.count) - 1
+            let i = db.tier(cid) - 1
             out[i].total += 1
             if copies(cid) > 0 { out[i].owned += 1 }
         }
@@ -140,9 +140,7 @@ struct Game: Sendable {
         db.packs[pack].cards.allSatisfy { copies($0) > 0 }
     }
 
-    func canBuy(_ pack: Int) -> Bool {
-        state.coins >= Balance.packPrice
-    }
+    var canAffordPack: Bool { state.coins >= Balance.packPrice }
 
     // MARK: 판매
 
@@ -300,10 +298,6 @@ struct Game: Sendable {
         return nil
     }
 
-    func slot5Tier<R: RandomNumberGenerator>(using rng: inout R) -> Int {
-        pickTier(Balance.slot5Weights, using: &rng)
-    }
-
     func pickTier<R: RandomNumberGenerator>(_ weights: [(tier: Int, weight: Double)], using rng: inout R) -> Int {
         var r = Double.random(in: 0..<1, using: &rng)
         for (tier, weight) in weights {
@@ -316,7 +310,7 @@ struct Game: Sendable {
     /// 1팩 구매. 코인으로 산 팩 `packsPerFreePack`개마다 무료 팩 1장이 쌓인다. 코인이 부족하면 빈 배열.
     mutating func buy<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         // 시대 범위를 줄인 뒤 남아 있는 옛 인덱스(개봉 화면의 [한 팩 더] 등)는 거절
-        guard db.packs.indices.contains(pack), canBuy(pack) else { return [] }
+        guard db.packs.indices.contains(pack), canAffordPack else { return [] }
         state.coins -= Balance.packPrice
         state.packStamp += 1
         if state.packStamp >= Balance.packsPerFreePack {
@@ -337,7 +331,7 @@ struct Game: Sendable {
     /// 봉투 하나 열기: 노멀 3 + 슬롯4(노멀, `slot4RareChance`로 레어) + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
     private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         let slot4 = Double.random(in: 0..<1, using: &rng) < Balance.slot4RareChance ? 2 : 1
-        let tiers = [1, 1, 1, slot4, slot5Tier(using: &rng)]
+        let tiers = [1, 1, 1, slot4, pickTier(Balance.slot5Weights, using: &rng)]
         var pulls: [Pull] = []
         for (i, tier) in tiers.enumerated() {
             let kind: CardKind? = i < Balance.monstersPerPack ? .monster : nil

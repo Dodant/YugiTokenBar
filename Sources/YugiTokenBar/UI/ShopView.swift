@@ -179,6 +179,6 @@ struct BuyButton: View {
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .monospacedDigit()
-        .disabled(!model.game.canBuy(index))
+        .disabled(!model.game.canAffordPack)
     }
 }
