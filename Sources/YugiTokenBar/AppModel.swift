@@ -269,7 +269,8 @@ final class AppModel {
     /// 현재 세이브를 백업한 뒤 바꾼다. 백업 파일 URL 을 돌려준다.
     func importSave(_ envelope: SaveEnvelope) throws -> URL {
         let backup = try store.backupBeforeImport(game.state, appVersion: AppInfo.currentVersion)
-        var imported = Game(db: db, state: envelope.state.withLedger(of: game.state))
+        var imported = game
+        imported.state = envelope.state.withLedger(of: game.state)
         imported.unlockPartnerIfOwned()  // 가져온 세이브에 날개 크리보가 있으면 해금 (한 번만 써서 .bak 은 가져오기 전 세이브로 남는다)
         try store.save(imported.state)
         game.state = imported.state
