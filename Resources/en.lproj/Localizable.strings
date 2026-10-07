@@ -389,7 +389,7 @@
 /* DexView.swift:460 */
 "카드마다 1장씩은 남아서 컬렉션은 그대로예요." = "1 copy of each card stays, so your collection is unchanged.";
 /* FusableSection.swift:15 */
-"융합 가능 · %lld" = "Can Fusion Summon · %lld";
+"융합 가능 · %lld" = "Fusion Summonable · %lld";
 /* FusionAnimationView.swift:47 */
 "%@ 융합. 눌러서 닫기" = "Fusion Summoned \"%@\". Click to close";
 /* FusionAnimationView.swift:305 */
