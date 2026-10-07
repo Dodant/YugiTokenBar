@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Konami 한국 DB + YGOPRODeck → Resources/cards.json
+"""Konami 카드 DB + YGOPRODeck → Resources/cards_KO.json · cards_JP.json · cards_EN.json
 
 한국 정발 정규 부스터 팩 중 『카오스 오리진즈』(2026-07-14)까지 100팩을 수집한다(76번째부터 VRAINS 이후 Modern).
 같은 분류의 미니 팩(＋1 어시스트·익스팬션 팩, 얼티미트 스페셜 팩: 20장 이하, 노멀 없음)은 뺀다.
-사용: python3 tools/build-cards.py [출력경로]
+사용: python3 tools/build-cards.py [--lang ko|ja|en|all] [--reformat]
 """
+import argparse
 import html
 import json
+import os
 import re
 import sys
 import time
@@ -16,10 +18,18 @@ TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미�
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
 CUTOFF = "2026/07/15"  # 『카오스 오리진즈』까지
 MINI = re.compile(r"어시스트 팩|익스팬션 팩|얼티미트 스페셜 팩")
-# --reformat: 받아 오지 않고 기존 파일을 지금 형식으로만 다시 쓴다
-REFORMAT = "--reformat" in sys.argv
-ARGS = [a for a in sys.argv[1:] if a != "--reformat"]
-OUT = ARGS[0] if ARGS else "Resources/cards.json"
+LANGS = {"ko": "KO", "ja": "JP", "en": "EN"}
+# 세 파일이 같은 카드 필드(KO 기준)와 언어마다 다른 카드 필드
+SHARED = ("tier", "imageId", "level", "atk", "def", "scale", "kind", "summons")
+TEXT_FIELDS = ("name", "attr", "type", "text", "pendulum")
+KINDS = {"마법": "spell", "함정": "trap"}
+SUMMONS = {"의식": "ritual", "융합": "fusion", "싱크로": "synchro", "엑시즈": "xyz", "펜듈럼": "pendulum", "링크": "link"}  # 시대 순
+
+
+def out_path(lang):
+    return f"Resources/cards_{LANGS[lang]}.json"
+
+
 # 팩 표지 몬스터는 어느 팩에서 나오든 SE (Yugipedia cover_card 기준. 표지가 마법·함정인 악몽의 미궁·어둠의 유산,
 # 「영원한 화염」의 마의 덱 파괴 바이러스, 한글판에 없는 「장렬한 전투」 표지 2장은 뺀다)
 COVER_SE = [
@@ -248,19 +258,42 @@ def move_tiers(out):
         p["cards"] = [c["cid"] if isinstance(c, dict) else c for c in p["cards"]]
 
 
-def write(out):
-    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게. 등급 이식·표지 SE·융합 소재 분리도 여기서 한다."""
+def add_codes(cards):
+    """언어와 상관없는 코드 필드: 마법·함정은 kind, 몬스터는 type 칸의 소환법을 summons(시대 순)로. 앱 로직은 이것만 본다."""
+    for info in cards.values():
+        info.pop("kind", None)
+        info.pop("summons", None)
+        if kind := KINDS.get(info.get("attr")):
+            info["kind"] = kind
+            continue
+        parts = (info.get("type") or "").split("/")
+        if summons := [code for name, code in SUMMONS.items() if name in parts]:
+            info["summons"] = summons
+
+
+def normalize_ko(out):
+    """KO 전용 후처리: 등급 이식·표지 SE·융합 소재 분리·코드 필드. 이미 한 것은 그대로(--reformat)."""
     move_tiers(out)
     for cid in COVER_SE:
         out["cards"][str(cid)]["tier"] = 5
     split_materials(out["cards"])
-    dump = lambda x: json.dumps(x, ensure_ascii=False, separators=(",", ":"))
-    with open(OUT, "w", encoding="utf-8") as f:
-        f.write('{"packs":[\n' + ",\n".join(dump(p) for p in out["packs"]) + '\n],"cards":{\n'
-                + ",\n".join(f"{dump(k)}:{dump(v)}" for k, v in out["cards"].items()) + "\n}}\n")
+    add_codes(out["cards"])
 
 
-def main():
+def dump(out, path):
+    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게."""
+    line = lambda x: json.dumps(x, ensure_ascii=False, separators=(",", ":"))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write('{"packs":[\n' + ",\n".join(line(p) for p in out["packs"]) + '\n],"cards":{\n'
+                + ",\n".join(f"{line(k)}:{line(v)}" for k, v in out["cards"].items()) + "\n}}\n")
+
+
+def load(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def build_ko():
     products = parse_products(get(BASE + "card_list.action?request_locale=ko"))
     packs, infos = [], {}
     for date, name, pid in products:
@@ -304,7 +337,8 @@ def main():
 
     # 빈 칸(None)은 빼서 용량을 줄인다 — 앱은 없는 키를 nil 로 읽는다
     out = {"packs": packs, "cards": {str(k): {f: x for f, x in v.items() if x is not None} for k, v in sorted(infos.items())}}
-    write(out)
+    normalize_ko(out)
+    dump(out, out_path("ko"))
     print(f"packs={len(packs)} distinct={len(infos)} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
@@ -312,9 +346,40 @@ def main():
         sys.exit("검증 실패: 팩 수가 100이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 
+def reformat(langs):
+    """받아 오지 않고 있는 파일만 지금 형식으로 다시 쓴다. JP·EN 은 KO 와 같은 필드를 KO 에서 다시 맞춘다."""
+    ko = load(out_path("ko"))
+    normalize_ko(ko)
+    if "ko" in langs:
+        dump(ko, out_path("ko"))
+    for lang in ("ja", "en"):
+        if lang in langs and os.path.exists(out_path(lang)):
+            out = load(out_path(lang))
+            sync_shared(ko, out)
+            dump(out, out_path(lang))
+
+
+def sync_shared(ko, out):
+    """언어 파일의 팩(이름 빼고)과 카드 공유 필드를 KO 값으로 맞춘다."""
+    for p, k in zip(out["packs"], ko["packs"]):
+        p.update({f: v for f, v in k.items() if f != "name"})
+    for cid, info in out["cards"].items():
+        base = ko["cards"][cid]
+        for f in SHARED:
+            if f in base:
+                info[f] = base[f]
+            else:
+                info.pop(f, None)
+
+
 if __name__ == "__main__":
-    if REFORMAT:
-        with open(OUT, encoding="utf-8") as f:
-            write(json.load(f))
+    ap = argparse.ArgumentParser(description="Konami 카드 DB → Resources/cards_XX.json")
+    ap.add_argument("--lang", choices=["ko", "ja", "en", "all"], default="all")
+    ap.add_argument("--reformat", action="store_true", help="받아 오지 않고 있는 파일을 지금 형식으로만 다시 쓴다")
+    args = ap.parse_args()
+    langs = ["ko", "ja", "en"] if args.lang == "all" else [args.lang]
+    if args.reformat:
+        reformat(langs)
     else:
-        main()
+        if "ko" in langs:
+            build_ko()

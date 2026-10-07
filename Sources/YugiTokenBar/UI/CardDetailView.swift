@@ -125,8 +125,15 @@ struct CardDetailView: View {
     private func summary(_ card: CardInfo) -> String {
         var parts: [String] = []
         if let attr = card.attr { parts.append(attr) }
-        if let level = card.level { parts.append(card.levelName == "레벨" ? "★\(level)" : "\(card.levelName) \(level)") }
-        if let scale = card.scale { parts.append("P스케일 \(scale)") }
+        if let level = card.level {
+            let text = switch card.levelKind {
+            case .level: "★\(level)"
+            case .rank: String(localized: "랭크 \(level)")
+            case .link: String(localized: "링크 \(level)")
+            }
+            parts.append(text)
+        }
+        if let scale = card.scale { parts.append(String(localized: "P스케일 \(scale)")) }
         if let type = card.type { parts.append(type) }
         return parts.joined(separator: " · ")
     }

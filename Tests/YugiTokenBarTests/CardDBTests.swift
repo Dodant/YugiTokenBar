@@ -4,7 +4,7 @@ import Testing
 
 @Suite struct CardDBTests {
     @Test func bundledDataMatchesKoreanBoostersThroughModern() throws {
-        let db = try CardDB.load(from: CardDB.repoCardsURL)
+        let db = try CardDB.load(from: CardDB.repoURL("ko"))
         #expect(db.packs.count == 100)
         #expect(db.packs.first?.name == "푸른 눈의 백룡의 전설")
         #expect(db.packs.last?.name == "카오스 오리진즈")
@@ -37,17 +37,18 @@ import Testing
         #expect(db.cards.values.allSatisfy { !$0.name.isEmpty && $0.imageId != nil })
         #expect(db.cards[4007]?.name == "푸른 눈의 백룡")
         #expect(db.cards[4007]?.imageId == 89631139)
-        #expect(db.cards[13042]?.levelName == "레벨")
-        #expect(db.cards.values.first { $0.name == "파이어월 드래곤" }.map { [$0.levelName, "\($0.level!)"] } == ["링크", "4"])
+        #expect(db.cards[13042]?.levelKind == .level)
+        #expect(db.cards.values.first { $0.name == "파이어월 드래곤" }.map { $0.levelKind == .link && $0.level == 4 } == true)
+        #expect(db.cards[11835]?.levelKind == .rank)  // 엑시즈 펜듈럼은 랭크
         #expect(db.cards.values.first { $0.name == "파이어월 드래곤" }?.def == nil)
         #expect(db.cards[11786]?.scale == 2 && db.cards[11786]?.pendulum?.isEmpty == false)  // 소환사 라이즈벨트
         #expect(db.cards.values.allSatisfy { $0.pendulum?.isEmpty != true && !$0.text.contains("<br>") })
         // 종류 메뉴의 소환법: 의식 마법(댄스의 유혹)은 "의식"에 안 잡히고, 엑시즈 펜듈럼(패왕흑룡)은 둘 다
-        #expect(db.cards[4682]?.matches(kind: "의식") == false && db.cards[4682]?.matches(kind: "마법") == true)
-        #expect(["몬스터", "엑시즈", "펜듈럼"].allSatisfy { db.cards[11835]?.matches(kind: $0) == true })
-        #expect(db.cards.values.filter { $0.matches(kind: "융합") }.count == 286)
+        #expect(db.cards[4682]?.matches(kind: "ritual") == false && db.cards[4682]?.matches(kind: "spell") == true)
+        #expect(["monster", "xyz", "pendulum"].allSatisfy { db.cards[11835]?.matches(kind: $0) == true })
+        #expect(db.cards.values.filter { $0.matches(kind: "fusion") }.count == 286)
         // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): NEX 2종·베어트론 빼고 283종, 전부 100팩 카드인 건 83종
-        let fusions = db.cards.values.filter { $0.matches(kind: "융합") }
+        let fusions = db.cards.values.filter { $0.matches(kind: "fusion") }
         #expect(fusions.filter { $0.materials != nil }.count == 283)
         #expect(fusions.filter { $0.materials?.allSatisfy { $0.cid != nil } == true }.count == 83)
         #expect(db.cards[20769]?.materials?.first == Material(rule: "\"엘리멘틀 히어로 페더맨\"이나 \"엘리멘틀 히어로 버스트 레이디\""))  // "A"이나 "B" 는 조건
@@ -60,6 +61,10 @@ import Testing
         #expect(db.materialNeed[6390] == 3 && db.materialNeed[4007] == 2)  // 사이버 드래곤(사이버 엔드 드래곤), 푸른 눈의 백룡(쌍폭렬룡)
         #expect(db.prefix(packs: 11).materialNeed[6390] == nil)  // DM 범위엔 사이버 드래곤을 쓰는 융합이 없다
         // fusionCount 는 소재를 아는 카드 수를 미리 센 값이라 전체·시대 범위 DB 모두 필터 식과 같아야 한다
+        // 언어 무관 코드: 마법·함정만 kind 가 있고, summons 는 몬스터에만, 시대 순 코드만
+        #expect(db.cards.values.allSatisfy { [nil, "spell", "trap"].contains($0.kindCode) })
+        #expect(db.cards.values.allSatisfy { $0.summons == nil || ($0.kind == .monster && $0.summons!.allSatisfy(CardInfo.summonCodes.contains)) })
+        #expect(db.cards[11835]?.summons == ["xyz", "pendulum"])
         for d in [db, db.prefix(packs: 30)] {
             #expect(d.fusionCount == d.allCIDs.filter { d.cards[$0]?.fusionMaterials != nil }.count && d.fusionCount > 0)
         }
@@ -84,7 +89,7 @@ import Testing
     #expect(r[2] == r[4])
 }
 
-/// cards.json 에 범위 밖 등급이 있어도 1~5 로 잘라 읽는다 (Pull.label 등이 죽지 않게)
+/// cards_XX.json 에 범위 밖 등급이 있어도 1~5 로 잘라 읽는다 (Pull.label 등이 죽지 않게)
 @Test func outOfRangeTiersAreClamped() {
     func card(_ tier: Int) -> CardInfo {
         CardInfo(name: "", attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "", imageId: nil, tier: tier)
@@ -92,4 +97,10 @@ import Testing
     let db = CardDB(packs: [], cards: [1: card(0), 2: card(9), 3: card(3)])
     #expect([1, 2, 3].map(db.tier) == [1, 5, 3])
     #expect(Pull(cid: 2, tier: db.tier(2), isNew: true).label == "SE")
+}
+
+/// 언어별 카드 파일 이름: ko → KO, ja → JP, en → EN (모르는 언어는 EN)
+@Test func cardFileNamePerLanguage() {
+    #expect(["ko", "ja", "en", "fr"].map(CardDB.fileName) == ["cards_KO", "cards_JP", "cards_EN", "cards_EN"])
+    #expect(CardDB.repoURL("ko").lastPathComponent == "cards_KO.json")
 }

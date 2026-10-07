@@ -17,7 +17,7 @@ import Testing
     }
 
     @Test func sheetRejectsNonImage() {
-        #expect(PartnerSheet(url: CardDB.repoCardsURL) == nil)
+        #expect(PartnerSheet(url: CardDB.repoURL("ko")) == nil)
     }
 
     // MARK: 상태 판정

@@ -10,7 +10,7 @@ import Testing
         }
         let cards: [Int: CardInfo] = [
             1: info("소재1"), 2: info("소재2"), 3: info("다른 카드"),
-            CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, tier: 3),
+            CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, tier: 3, kindCode: "spell"),
             10: info("융합", [Material(cid: 1), Material(cid: 2), Material(cid: 2)]),
             11: info("조건 융합", [Material(cid: 1), Material(name: "없는 카드")]),
         ]

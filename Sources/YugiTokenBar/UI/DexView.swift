@@ -19,7 +19,7 @@ struct DexView: View {
     @State private var fusing: FusionShow?
     /// 0 = 모든 등급, 1~5 = CardInfo.tier
     @State private var tierFilter = 0
-    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 (CardInfo.matches)
+    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 코드 (CardInfo.matches)
     @State private var kindFilter = ""
     @State private var search = ""
     /// 검색창에 글자를 치는 중엔 ⌘A·Delete 를 검색창에 넘긴다 (안 그러면 툴바 단축키가 가로챈다)
@@ -145,9 +145,9 @@ struct DexView: View {
             Picker("종류", selection: $kindFilter) {
                 Text("모든 종류").tag("")
                 Divider()
-                ForEach(CardKind.allCases, id: \.self) { Text($0.rawValue).tag($0.rawValue) }
+                ForEach(CardKind.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
                 Divider()
-                ForEach(CardInfo.summons, id: \.self) { Text($0).tag($0) }
+                ForEach(CardInfo.summonCodes, id: \.self) { Text(CardInfo.summonTitle($0)).tag($0) }
             }
             .fixedSize()
             Picker("등급", selection: $tierFilter) {

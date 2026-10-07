@@ -6,7 +6,7 @@ enum AppInfo {
     static let repoURL = URL(string: "https://github.com/Dodant/YugiTokenBar")!
     static let latestChangelogURL = URL(string: "https://raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md")!
 
-    /// 저장소 루트. `swift run`·테스트에서 번들 대신 읽는 파일(cards.json·partner.png·문서)의 기준
+    /// 저장소 루트. `swift run`·테스트에서 번들 대신 읽는 파일(cards_XX.json·partner.png·문서)의 기준
     static let repoRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()  // Sources/YugiTokenBar
         .deletingLastPathComponent()  // Sources

@@ -56,7 +56,7 @@ struct DexQuery: Equatable {
     var scope: DexScope?
     /// 0 = 모든 등급, 1~5 = CardInfo.tier
     var tier = 0
-    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 (CardInfo.matches)
+    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 코드 (CardInfo.matches)
     var kind = ""
     /// 띄어쓰기를 뺀 검색어 ("푸른눈" 으로도 "푸른 눈의 백룡" 이 찾아진다)
     var search = ""

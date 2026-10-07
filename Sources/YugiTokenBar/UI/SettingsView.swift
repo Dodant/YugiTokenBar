@@ -84,7 +84,7 @@ struct SettingsView: View {
                 }
                 Spacer()
                 Picker("시대 범위", selection: Bindable(model).eraLimit) {
-                    ForEach(db.eras, id: \.name) { era in Text("\(era.name)(\(CardDB.eraSummons[era.name] ?? ""))까지").tag(era.name) }
+                    ForEach(db.eras, id: \.name) { era in Text("\(era.name)(\(CardInfo.summonTitle(CardDB.eraSummons[era.name] ?? "")))까지").tag(era.name) }
                 }
                 .labelsHidden()
                 .fixedSize()
