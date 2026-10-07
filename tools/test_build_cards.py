@@ -80,6 +80,38 @@ def test_load_cache_skips_partial_line():
         assert bc.load_cache(os.path.join(d, "none.jsonl")) == {}
 
 
+def test_load_cache_survives_cut_multibyte():
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, "ja.jsonl")
+        with open(path, "wb") as f:
+            f.write((json.dumps({"cid": 1, "info": {"name": "A"}, "packs": []}) + "\n").encode())
+            f.write('{"cid": 2, "info": {"name": "召'.encode("utf-8")[:-1])  # 글자 중간에서 끊김
+        assert list(bc.load_cache(path)) == [1]
+
+
+def test_get_card_page_retries():
+    calls, sleeps = [], []
+    pages = iter([OSError("reset"), "<html>점검 중</html>", EN_SPELL])
+    def fake_get(url):
+        calls.append(url)
+        p = next(pages)
+        if isinstance(p, Exception):
+            raise p
+        return p
+    real_get, real_sleep = bc.get, bc.time.sleep
+    bc.get, bc.time.sleep = fake_get, sleeps.append
+    try:
+        assert bc.get_card_page("u") == EN_SPELL and len(calls) == 3 and sleeps == [30, 60]
+        pages = iter(["x"] * 4)
+        try:
+            bc.get_card_page("u")
+            assert False
+        except RuntimeError:
+            pass
+    finally:
+        bc.get, bc.time.sleep = real_get, real_sleep
+
+
 KO = {
     "packs": [{"pid": "1", "name": "한국팩", "date": "2004-01-01", "cards": [10, 11, 12]}],
     "cards": {

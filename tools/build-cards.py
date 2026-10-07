@@ -242,7 +242,7 @@ def load_cache(path):
     recs = {}
     if not os.path.exists(path):
         return recs
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8", errors="replace") as f:  # 끊긴 줄이 글자 중간일 수 있다
         for line in f:
             try:
                 r = json.loads(line)
@@ -252,6 +252,22 @@ def load_cache(path):
     return recs
 
 
+def get_card_page(url, retries=4):
+    """상세 페이지를 받는다. 네트워크 오류나 카드 페이지가 아닌 응답(점검·오류 페이지)은 쉬었다 다시 받고, 끝내 안 되면 예외."""
+    for attempt in range(1, retries + 1):
+        try:
+            page = get(url)
+            if '<div id="cardname"' in page:
+                return page
+            err = "카드 페이지가 아닌 응답"
+        except OSError as e:  # URLError·타임아웃·연결 끊김
+            err = repr(e)
+        print(f"  재시도 {attempt}/{retries}: {err} {url}", flush=True)
+        if attempt == retries:
+            raise RuntimeError(f"{url}: {err}")
+        time.sleep(30 * attempt)
+
+
 def fetch_lang(lang, ko):
     """KO 에 있는 cid 만 상세 페이지를 1초 간격으로 받는다. 받은 것은 바로 캐시에 덧붙여, 끊기면 같은 명령으로 이어 받는다."""
     path = cache_path(lang)
@@ -259,9 +275,14 @@ def fetch_lang(lang, ko):
     todo = [int(c) for c in ko["cards"] if int(c) not in recs]
     print(f"{lang}: 캐시 {len(recs)}장, 받을 카드 {len(todo)}장 (약 {len(todo) * 1.5 / 3600:.1f}시간)", flush=True)
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "a", encoding="utf-8") as f:
+    with open(path, "a+", encoding="utf-8") as f:
+        f.seek(0, os.SEEK_END)
+        if f.tell():  # 끊긴 줄 뒤에 이어 붙이면 새 줄이 깨진다
+            f.seek(f.tell() - 1)
+            if f.read(1) != "\n":
+                f.write("\n")
         for i, cid in enumerate(todo, 1):
-            info, packs = parse_detail(get(BASE + f"card_search.action?ope=2&cid={cid}&request_locale={lang}"))
+            info, packs = parse_detail(get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale={lang}"))
             recs[cid] = {"cid": cid, "info": info, "packs": packs}
             f.write(json.dumps(recs[cid], ensure_ascii=False) + "\n")
             f.flush()
