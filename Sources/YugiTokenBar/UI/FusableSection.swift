@@ -14,7 +14,7 @@ struct FusableSection: View {
             VStack(alignment: .leading, spacing: 6) {
                 Label("융합 가능 · \(cids.count)", systemImage: "arrow.triangle.merge")
                     .font(.headline)
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(Palette.fusion)
                 ScrollView {
                     VStack(spacing: 2) {
                         ForEach(cids, id: \.self) { cid in

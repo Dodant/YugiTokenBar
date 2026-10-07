@@ -122,10 +122,10 @@ struct FlipCard: View {
             CardImageView(db: db, cid: pull.cid, size: .full)
                 .overlay(alignment: .bottomLeading) { RarityPill(label: pull.label, size: 10).padding(4) }
                 .overlay(alignment: .topTrailing) {
-                    if pull.isNew { tag("NEW", .pink) }
+                    if pull.isNew { tag("NEW", Palette.badgeNew) }
                     else if let coins = pull.soldFor {
                         Button { onUnsell?() } label: {
-                            tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+\(coinText(coins))", hoverSold && canUnsell ? .red : .green)
+                            tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+\(coinText(coins))", hoverSold && canUnsell ? Palette.badgeLoss : Palette.badgeGain)
                         }
                         .buttonStyle(.plain)
                         .disabled(!canUnsell)

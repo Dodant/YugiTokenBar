@@ -104,7 +104,7 @@ struct DexSidebar: View {
                 let ratio = p.total > 0 ? Double(p.owned) / Double(p.total) : 0
                 GridRow {
                     RarityPill(label: label).gridColumnAlignment(.center)
-                    ProgressView(value: ratio).tint(Rarity.color(label: label)).controlSize(.small)
+                    TintBar(value: ratio, tint: Rarity.color(label: label), height: 5)
                     Text("\(p.owned) / \(p.total)").foregroundStyle(.secondary).gridColumnAlignment(.trailing)
                     Text(ratio, format: .percent.precision(.fractionLength(1))).gridColumnAlignment(.trailing)
                 }
@@ -176,8 +176,7 @@ private struct DeckRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(deck.name).lineLimit(1)
                 HStack {
-                    ProgressView(value: Double(p.owned), total: Double(max(p.total, 1))).controlSize(.mini)
-                        .tint(p.total > 0 && p.owned == p.total ? .green : .accentColor)
+                    TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.total > 0 && p.owned == p.total ? .green : .accentColor)
                     Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }

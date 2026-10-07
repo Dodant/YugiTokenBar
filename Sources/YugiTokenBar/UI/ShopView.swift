@@ -159,8 +159,7 @@ struct PackRow: View {
                 Text(pack.name).font(.callout.weight(.medium)).lineLimit(1)
                 Text(complete ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                     .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
-                    .tint(complete ? .green : .accentColor)
+                TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: complete ? .green : .accentColor)
             }
             Spacer(minLength: 4)
             BuyButton(index: index)

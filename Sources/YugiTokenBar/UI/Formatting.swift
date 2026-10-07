@@ -34,6 +34,21 @@ extension View {
     }
 }
 
+/// 색을 넣는 진행 막대. ProgressView 는 .tint 가 외관(라이트·다크)을 바꾸면 풀려 기본 강조색이 되어서 직접 그린다.
+struct TintBar: View {
+    let value: Double
+    let tint: Color
+    var height: CGFloat = 4
+
+    var body: some View {
+        Capsule().fill(.quaternary)
+            .overlay(alignment: .leading) {
+                GeometryReader { g in Capsule().fill(tint).frame(width: g.size.width * min(max(value, 0), 1)) }
+            }
+            .frame(height: height)
+    }
+}
+
 /// 코인 표기: ⓒ 1,000
 /// 만 단위부터 K·M (12,345 → 12.3K, 1,000,000 → 1M). 메뉴바와 `coinText`가 같이 쓴다
 func shortCoins(_ n: Int) -> String {

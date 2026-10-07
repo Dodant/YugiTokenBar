@@ -419,7 +419,7 @@ private struct DragPreview: View {
                     Text("\(cids.count)")
                         .font(.caption.weight(.bold)).foregroundStyle(.white)
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(.red, in: Capsule())
+                        .background(Palette.badgeLoss, in: Capsule())
                         .offset(x: 6, y: -6)
                 }
             }

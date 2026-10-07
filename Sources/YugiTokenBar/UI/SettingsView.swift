@@ -80,7 +80,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                             .hoverHint("카드·상점·컬렉션이 설정한 시대까지 나와요.\n시대를 옮겨도 카드는 그대로 남아요.")
                     }
-                    Text("\(model.db.packs.count)팩 · \(model.db.allCIDs.count.formatted())장").font(.caption2).foregroundStyle(.tertiary)
+                    Text("\(model.db.packs.count)팩 · \(model.db.allCIDs.count.formatted())장").font(.caption2).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Picker("시대 범위", selection: Bindable(model).eraLimit) {
@@ -116,7 +116,7 @@ struct SettingsView: View {
                 if AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(.orange)
+                            Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
                             Spacer()
                             Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.callout)
                         }
@@ -274,7 +274,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.caption.weight(.medium)).foregroundStyle(.secondary).padding(.leading, 4)
             VStack(spacing: 0) { content() }
-                .background(.fill.quinary, in: .rect(cornerRadius: 16))
+                .background(Color.primary.opacity(0.07), in: .rect(cornerRadius: 16))  // .fill 은 panelScrollBottom 의 .mask 안에서 다크일 때 검게 그려진다
         }
     }
 
@@ -300,7 +300,7 @@ struct SettingsView: View {
     private func labeled(_ title: String, hint: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(title)
-            Text(hint).font(.caption2).foregroundStyle(.tertiary)
+            Text(hint).font(.caption2).foregroundStyle(.secondary)
         }
     }
 }

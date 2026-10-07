@@ -29,6 +29,7 @@ struct CardImageView: View {
         }
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 7))
+        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.cardRim, lineWidth: 1))
         .task(id: cid) {
             guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
             // 캐시에 있으면 뒷면을 거치지 않고 바로 바꾼다
@@ -50,7 +51,8 @@ extension EnvironmentValues {
 /// 등급 색 (N 회청색 · R 파랑 · SR 금색 · UR 보라 · SE 진분홍).
 enum Rarity {
     static let colors: [Color] = [
-        Color(red: 0x5C / 255, green: 0x64 / 255, blue: 0x70 / 255),
+        // N 은 다크 배경에서 묻히지 않게 밝힌다 (#2A2A2C 위 4.8:1)
+        Color(light: Color(red: 0x5C / 255, green: 0x64 / 255, blue: 0x70 / 255), dark: Color(red: 0x8E / 255, green: 0x96 / 255, blue: 0xA3 / 255)),
         Color(red: 0x4A / 255, green: 0x90 / 255, blue: 0xE2 / 255),
         Color(red: 0xF5 / 255, green: 0xC4 / 255, blue: 0x51 / 255),
         Color(red: 0xB0 / 255, green: 0x5C / 255, blue: 0xFF / 255),
@@ -70,6 +72,32 @@ enum Rarity {
     }
 }
 
+/// 등급 외에 라이트·다크 값을 같이 두는 색. 화면에서 colorScheme 으로 나누지 않고 여기서 고른다.
+/// 글자색은 라이트는 흰 바탕, 다크는 #2A2A2C 바탕에서 4.5:1 이상.
+enum Palette {
+    /// 다크에서는 그림자가 안 보여서 카드 가장자리에 얇은 밝은 테두리
+    static let cardRim = Color(light: .clear, dark: .white.opacity(0.2))
+    /// 라이트 N 알약(어두운 회청)엔 흰 글자, 다크 N(밝힌 회청)엔 검정 글자 (7:1)
+    static let onN = Color(light: .white, dark: .black)
+    /// 주의 글자 (새 버전, 한도 60% 이상). 시스템 주황은 흰 바탕에서 2.2:1
+    static let warning = Color(light: Color(red: 0xB2 / 255, green: 0x50 / 255, blue: 0), dark: .orange)
+    /// 위험 글자 (한도 85% 이상)
+    static let danger = Color(light: Color(red: 0xC4 / 255, green: 0x28 / 255, blue: 0x1C / 255), dark: Color(red: 1, green: 0x7B / 255, blue: 0x72 / 255))
+    /// 융합 강조 글자
+    static let fusion = Color(light: Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255), dark: Color(red: 0xD8 / 255, green: 0x8C / 255, blue: 1))
+    /// 카드 위 흰 글자 배지 바탕. 카드 이미지 위라 외관과 상관없이 고정, 흰 글자 5:1 이상
+    static let badgeNew = Color(red: 0xC2 / 255, green: 0x18 / 255, blue: 0x5B / 255)
+    static let badgeGain = Color(red: 0x1B / 255, green: 0x7F / 255, blue: 0x3B / 255)
+    static let badgeLoss = Color(red: 0xC6 / 255, green: 0x28 / 255, blue: 0x28 / 255)
+}
+
+extension Color {
+    /// 라이트·다크 값을 같이 갖는 색. 외관이 바뀌면 다시 그릴 때 알아서 바뀐다
+    init(light: Color, dark: Color) {
+        self.init(nsColor: NSColor(name: nil) { $0.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? NSColor(dark) : NSColor(light) })
+    }
+}
+
 /// 등급 알약. 등급 색으로 채우고, 미보유면 미획득 색.
 struct RarityPill: View {
     let label: String
@@ -80,7 +108,7 @@ struct RarityPill: View {
         let color = Rarity.color(label: label, owned: owned)
         Text(label)
             .font(.system(size: size, weight: .bold))
-            .foregroundStyle(owned && label == "N" ? .white : .black)  // 흰 글자는 어두운 N 바탕에서만 4.5:1 이 넘는다(R·UR·SE 는 3.3~3.6, 검정이면 5.8 이상)
+            .foregroundStyle(owned && label == "N" ? Palette.onN : .black)  // 흰 글자는 라이트의 어두운 N 바탕에서만 4.5:1 이 넘는다(R·UR·SE 는 3.3~3.6, 검정이면 5.8 이상)
             .padding(.horizontal, size * 0.6)
             .padding(.vertical, size * 0.15)
             .background(color, in: Capsule())
@@ -142,6 +170,7 @@ struct PackImageView: View {
                 }
             }
             .clipShape(.rect(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.cardRim, lineWidth: 1))
         .task(id: pack.pid) {
             // 캐시에 있으면 그라데이션을 거치지 않고 바로 바꾼다
             if let hit = ImageCache.shared.cachedPack(pack) { image = hit; return }

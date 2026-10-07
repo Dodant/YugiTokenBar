@@ -122,7 +122,7 @@ private struct ProviderUsageRow: View {
                         .font(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
                 if let meters, meters.isEmpty {
-                    Text(loading ? "한도 불러오는 중…" : "한도 정보 없음 · 눌러서 불러오기").font(.caption).foregroundStyle(.tertiary)
+                    Text(loading ? "한도 불러오는 중…" : "한도 정보 없음 · 눌러서 불러오기").font(.caption).foregroundStyle(.secondary)
                 } else if let meters {
                     HStack(spacing: 10) {
                         ForEach(Array(meters.enumerated()), id: \.offset) { MeterView(meter: $0.element) }  // 라벨이 겹쳐도 안전하게
@@ -140,7 +140,7 @@ private struct MeterView: View {
 
     var body: some View {
         let p = min(100, max(0, meter.percent))
-        let color: Color = p >= 85 ? .red : p >= 60 ? .orange : .primary
+        let color: Color = p >= 85 ? Palette.danger : p >= 60 ? Palette.warning : .primary
         HStack(spacing: 4) {
             Text(meter.label).font(.caption).foregroundStyle(.secondary).lineLimit(1)
             Capsule().fill(.quaternary)
