@@ -33,6 +33,15 @@ import Testing
         #expect(store.load().decks.first?.cards == [1: 2])
     }
 
+    @Test func newDeckNameSkipsExisting() {
+        var game = Game(db: makeDB([[(1, 1)]]), state: GameState())
+        let first = game.addDeck()
+        _ = game.addDeck()
+        game.deleteDeck(first.id)
+        #expect(game.addDeck().name == "새 덱 3")  // 남은 "새 덱 2"와 겹치지 않는다
+        #expect(Set(game.state.decks.map(\.name)).count == game.state.decks.count)
+    }
+
     @Test func removeRenameDelete() {
         var game = Game(db: makeDB([[(1, 1)]]), state: GameState())
         let deck = game.addDeck()

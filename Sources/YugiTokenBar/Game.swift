@@ -202,10 +202,13 @@ struct Game: Sendable {
         return (cards.reduce(0) { $0 + min(copies($1.key), $1.value) }, cards.values.reduce(0, +))
     }
 
-    /// 새 덱 "새 덱 N".
+    /// 새 덱 "새 덱 N" (덱 수 + 1부터, 이미 있는 이름이면 겹치지 않는 첫 번호).
     @discardableResult
     mutating func addDeck() -> Deck {
-        let deck = Deck(name: "새 덱 \(state.decks.count + 1)")
+        let names = Set(state.decks.map(\.name))
+        var n = state.decks.count + 1
+        while names.contains("새 덱 \(n)") { n += 1 }
+        let deck = Deck(name: "새 덱 \(n)")
         state.decks.append(deck)
         return deck
     }
