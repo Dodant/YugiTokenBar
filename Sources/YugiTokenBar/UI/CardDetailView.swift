@@ -15,10 +15,10 @@ struct CardDetailView: View {
     var body: some View {
         let n = model.game.copies(cid)
         Form {
-            CardImageView(db: model.db, cid: cid, size: .full, owned: n > 0)
+            // 미보유도 컬러로, 호버 기울기 없이
+            CardImageView(db: model.db, cid: cid, size: .full)
                 .frame(maxWidth: .infinity)
                 .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
-                .cardTilt(tier: model.db.tier(cid))
                 .listRowSeparator(.hidden)
             Section {
                 Text(card.name).font(.title3.weight(.semibold))
@@ -55,7 +55,7 @@ struct CardDetailView: View {
                     // 설정이 켜져 있고 소재를 다 아는 융합이면 여기서 만든다
                     if model.game.state.fusionOnly, model.game.fusionMaterials(cid) != nil {
                         let can = model.game.canFuse(cid)
-                        let why = !model.game.hasFusionSpell ? "「융합」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
+                        let why: LocalizedStringKey = !model.game.hasFusionSpell ? "「융합」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
                         HStack(spacing: 4) {
                             Spacer()
                             if !model.game.hasFusionSpell {  // 누르면 「융합」 카드로 이동
@@ -125,8 +125,15 @@ struct CardDetailView: View {
     private func summary(_ card: CardInfo) -> String {
         var parts: [String] = []
         if let attr = card.attr { parts.append(attr) }
-        if let level = card.level { parts.append(card.levelName == "레벨" ? "★\(level)" : "\(card.levelName) \(level)") }
-        if let scale = card.scale { parts.append("P스케일 \(scale)") }
+        if let level = card.level {
+            let text = switch card.levelKind {
+            case .level: "★\(level)"
+            case .rank: String(localized: "랭크 \(level)")
+            case .link: String(localized: "링크 \(level)")
+            }
+            parts.append(text)
+        }
+        if let scale = card.scale { parts.append(String(localized: "P스케일 \(scale)")) }
         if let type = card.type { parts.append(type) }
         return parts.joined(separator: " · ")
     }
@@ -140,7 +147,7 @@ struct CardDetailView: View {
 
     /// 융합 확인창: "사이버 드래곤 3장, 커스 오브 드래곤 1장"
     private func consumed(_ materials: [Material]) -> String {
-        grouped(materials).compactMap { g in g.material.cid.flatMap { model.db.cards[$0]?.name }.map { "\($0) \(g.n)장" } }
+        grouped(materials).compactMap { g in g.material.cid.flatMap { model.db.cards[$0]?.name }.map { String(localized: "\($0) \(g.n)장") } }
             .joined(separator: ", ")
     }
 

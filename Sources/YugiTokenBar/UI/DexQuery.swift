@@ -42,21 +42,23 @@ enum DexSort: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .pack: "팩 순서"
-        case .tierDesc: "높은 등급순"
-        case .tierAsc: "낮은 등급순"
-        case .name: "이름순"
-        case .copies: "보유 많은 순"
+        case .pack: String(localized: "팩 순서")
+        case .tierDesc: String(localized: "높은 등급순")
+        case .tierAsc: String(localized: "낮은 등급순")
+        case .name: String(localized: "이름순")
+        case .copies: String(localized: "보유 많은 순")
         }
     }
 }
 
 /// 그리드 목록을 정하는 조건. 같으면 결과도 같다.
 struct DexQuery: Equatable {
+    /// 검색 비교용: 공백과 가운뎃점(・)은 무시한다 ("ブラックマジシャン" 으로 "ブラック・マジシャン" 을 찾는다)
+    static func squash(_ s: String) -> String { s.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "・", with: "") }
     var scope: DexScope?
     /// 0 = 모든 등급, 1~5 = CardInfo.tier
     var tier = 0
-    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 (CardInfo.matches)
+    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 코드 (CardInfo.matches)
     var kind = ""
     /// 띄어쓰기를 뺀 검색어 ("푸른눈" 으로도 "푸른 눈의 백룡" 이 찾아진다)
     var search = ""
@@ -85,10 +87,11 @@ struct DexQuery: Equatable {
             { let inDeck = game.deck(id)?.cards ?? [:]; return all().filter { inDeck[$0] != nil } }()
         default: all()
         }
+        let needle = Self.squash(search)
         let tiered = cards.enumerated()
             .filter { tier == 0 || db.tier($0.element) == tier }
             .filter { kind.isEmpty || db.cards[$0.element]?.matches(kind: kind) == true }
-            .filter { search.isEmpty || (db.cards[$0.element]?.name ?? "").replacingOccurrences(of: " ", with: "").localizedStandardContains(search) }
+            .filter { search.isEmpty || Self.squash(db.cards[$0.element]?.name ?? "").localizedStandardContains(needle) }
             .map { DexEntry(number: $0.offset + 1, cid: $0.element, label: db.cards[$0.element]?.rarity ?? "N") }
         let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
         guard sort != .pack else { return (tiered, list) }  // 이미 팩 순번 순

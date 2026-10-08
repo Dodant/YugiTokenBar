@@ -11,7 +11,7 @@ struct ShopView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            PanelHeader(title: "상점", back: { model.screen = .summary }) {
+            PanelHeader(title: String(localized: "상점"), back: { model.screen = .summary }) {
                 Text(coinText(model.game.state.coins))
                     .font(.callout).monospacedDigit().foregroundStyle(.secondary)
             }
@@ -109,7 +109,6 @@ struct PackTile: View {
 
     private func image(_ pack: Pack, _ game: Game) -> some View {
         let p = game.progress(index)
-        let complete = p.owned == p.total
         return PackImageView(pack: pack)
             .blur(radius: hover ? 6 : 0)
             .overlay {
@@ -120,7 +119,8 @@ struct PackTile: View {
                             .multilineTextAlignment(.center)
                         Text("\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                             .font(.caption2).monospacedDigit().opacity(0.85)
-                        BuyButton(index: index)
+                        if p.fusionLeft > 0 { Text("융합 \(p.fusionLeft)장 남음").font(.caption2).opacity(0.85) }
+                        BuyButton(index: index, cleared: p.cleared)
                     }
                     .foregroundStyle(.white)
                     .padding(6)
@@ -129,10 +129,8 @@ struct PackTile: View {
                     .transition(.opacity)
                 }
             }
-            .overlay(alignment: .topTrailing) {
-                if complete && !hover {
-                    Image(systemName: "checkmark.seal.fill").foregroundStyle(.white, .green).padding(5)
-                }
+            .overlay {
+                if p.cleared && !hover { ClearStamp() }
             }
             .clipShape(.rect(cornerRadius: 10))
             .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
@@ -150,32 +148,52 @@ struct PackRow: View {
         let game = model.game
         let pack = game.db.packs[index]
         let p = game.progress(index)
-        let complete = p.owned == p.total
         HStack(spacing: 12) {
             PackImageView(pack: pack)
                 .frame(height: 50)
                 .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
             VStack(alignment: .leading, spacing: 4) {
                 Text(pack.name).font(.callout.weight(.medium)).lineLimit(1)
-                Text(complete ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
+                Text(p.fusionLeft > 0 ? "\(p.owned)/\(p.total) · 융합 \(p.fusionLeft)장 남음" : p.complete ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                     .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: complete ? .green : .accentColor)
+                TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
             }
             Spacer(minLength: 4)
-            BuyButton(index: index)
+            // 바로 구매 줄은 계속 떠 있고 팩만 바뀌므로, 팩이 바뀌면 "그래도 사기" 상태를 버린다
+            BuyButton(index: index, cleared: p.cleared).id(index)
         }
     }
 }
 
+/// 팩에서 더 받을 카드가 없는 팩 위에 비스듬히 찍는 도장
+private struct ClearStamp: View {
+    var body: some View {
+        Text(verbatim: "CLEAR")
+            .font(.system(size: 15, weight: .heavy)).kerning(2)
+            .foregroundStyle(Palette.stamp)
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(.white.opacity(0.75), in: .rect(cornerRadius: 4))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Palette.stamp, lineWidth: 2.5))
+            .rotationEffect(.degrees(-24))
+            .accessibilityLabel("새 카드가 더 나오지 않는 팩")
+    }
+}
+
 /// 1팩 구매 버튼. 가격(코인)을 그대로 보여준다.
+/// 더 받을 카드가 없는 팩(`PackProgress.cleared`)은 한 번 막는다: 처음 누르면 "그래도 사기"로 바뀌고, 한 번 더 눌러야 산다.
+// ponytail: 메뉴바 패널에선 확인창 대신 버튼을 두 번 누르게 한다(.help 툴팁처럼 시트·알림이 패널에서 불안정)
 struct BuyButton: View {
     @Environment(AppModel.self) private var model
     let index: Int
+    let cleared: Bool
+    @State private var armed = false
 
     var body: some View {
-        Button(coinText(Balance.packPrice)) {
-            model.buy(pack: index)
+        let warn = cleared && armed
+        Button(warn ? String(localized: "그래도 사기") : coinText(Balance.packPrice)) {
+            if cleared && !armed { armed = true } else { armed = false; model.buy(pack: index) }
         }
+        .tint(warn ? Palette.stamp : nil)
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .monospacedDigit()

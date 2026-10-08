@@ -13,7 +13,8 @@ swift build -c release
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp ".build/release/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
-cp Resources/cards.json "$APP/Contents/Resources/cards.json"
+cp Resources/cards_*.json "$APP/Contents/Resources/"
+cp -R Resources/ko.lproj Resources/en.lproj Resources/ja.lproj "$APP/Contents/Resources/"
 cp Resources/partner.png "$APP/Contents/Resources/partner.png"
 cp Resources/card-back.jpg "$APP/Contents/Resources/card-back.jpg"
 cp CHANGELOG.md "$APP/Contents/Resources/CHANGELOG.md"
@@ -31,6 +32,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleVersion</key><string>$BUILD</string>
     <key>LSMinimumSystemVersion</key><string>26.0</string>
     <key>LSUIElement</key><true/>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key><array><string>en</string><string>ko</string><string>ja</string></array>
 </dict>
 </plist>
 PLIST

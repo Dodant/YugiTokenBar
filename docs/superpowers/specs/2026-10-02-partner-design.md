@@ -18,7 +18,7 @@ PokeTokenBar의 바탕화면 동료처럼, 토큰 사용 상태에 반응하는 
 
 ## 3. 에셋
 
-- `Resources/partner.png` — 날개 크리보 스프라이트 시트(1536×1872, RGBA, 사용자 제공, 개인용). `build-app.sh`가 `cards.json`처럼 `Contents/Resources/`로 복사하고, 찾는 순서도 `CardDB.bundled`와 같다(번들 → 저장소 `Resources/`).
+- `Resources/partner.png` — 날개 크리보 스프라이트 시트(1536×1872, RGBA, 사용자 제공, 개인용). `build-app.sh`가 `cards_KO.json`처럼 `Contents/Resources/`로 복사하고, 찾는 순서도 `CardDB.bundled`와 같다(번들 → 저장소 `Resources/`).
 - 격자: 셀 192×208, 8열 × 9행. 행 정의(행 번호는 0부터):
 
 | 행 | 동작 | 프레임 |

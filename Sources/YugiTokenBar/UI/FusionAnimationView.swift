@@ -7,7 +7,7 @@ struct FusionShow: Identifiable, Equatable {
     var id: Int { cid }
 }
 
-/// 컬렉션 창 위에 겹치는 우주 느낌의 융합 연출. 아무 데나 누르면 닫힌다(도중이면 건너뛴다).
+/// 컬렉션 창 위에 겹치는 우주 느낌의 융합 연출. 도중에 누르면 융합 카드가 다 나온 장면으로 건너뛰고, 그다음 누르면 닫힌다.
 /// 떠오름(0–3초): 성운·별 배경 위로 소재 카드가 떠다니고 뒤에서 은하 소용돌이가 생긴다.
 /// 회오리(3–4.4초): 소용돌이가 빨라지고 카드가 뒤집히며 잔상을 남기고 빨려 든다. 별 알갱이도 같이 빨려 든다.
 /// 폭발(4.6초): 가운데 빛이 오그라들었다 번쩍이고, 빛 고리·별 파편이 퍼진다.
@@ -42,9 +42,12 @@ struct FusionAnimationView: View {
         }
         .ignoresSafeArea()
         .contentShape(.rect)
-        .onTapGesture { onDone() }
+        .onTapGesture {
+            let t = Date.now.timeIntervalSince(start)
+            if reduceMotion || t >= FusionScene.done { onDone() } else { start = .now.addingTimeInterval(-FusionScene.done) }
+        }
         .accessibilityElement()
-        .accessibilityLabel("\(db.cards[show.cid]?.name ?? "") 융합. 눌러서 닫기")
+        .accessibilityLabel("\(db.cards[show.cid]?.name ?? "") 융합. 누르면 건너뛰고, 한 번 더 누르면 닫기")
         .accessibilityAddTraits(.isButton)
         .task {
             for cid in Set(show.materials + [show.cid]) {
@@ -57,6 +60,8 @@ struct FusionAnimationView: View {
 
 private struct FusionScene {
     static let float = 3.0, swirl = 4.4, reveal = 4.6
+    /// 카드가 다 돌고 섬광이 걷혀 이름이 뜬 때. 도중에 누르면 여기로 건너뛴다
+    static let done = reveal + 1.2
 
     /// 빛 점 색 (Canvas 심볼 번호와 같다)
     enum P: Int { case purple, orange, gold, blue, pink, white }

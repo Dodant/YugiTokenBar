@@ -17,20 +17,43 @@ struct CardInfo: Codable, Sendable, Equatable {
     /// 융합 몬스터만: 효과 첫 줄(소재 줄)을 build-cards.py 가 떼어 둔 것. NEX 로만 소환하는 2종은 없다.
     var materials: [Material]? = nil
 
+    /// 언어와 상관없는 종류 코드(JSON "kind"): 마법 "spell"·함정 "trap", 몬스터는 nil. build-cards.py 가 KO attr 로 정한다
+    var kindCode: String? = nil
+    /// 몬스터의 소환법 코드(시대 순, CardInfo.summonCodes 중). build-cards.py 가 KO type 으로 정한다
+    var summons: [String]? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case name, attr, level, type, atk, def, text, imageId, tier, scale, pendulum, materials, summons
+        case kindCode = "kind"
+    }
+
     static let rarities = ["N", "R", "SR", "UR", "SE"]
     var rarity: String { Self.rarities[min(max(tier, 1), Self.rarities.count) - 1] }
 
-    /// level 칸의 이름: 엑시즈는 랭크, 링크는 링크 수
-    var levelName: String { type?.contains("엑시즈") == true ? "랭크" : type?.contains("링크") == true ? "링크" : "레벨" }
+    /// level 칸의 뜻: 엑시즈는 랭크, 링크는 링크 수
+    enum LevelKind { case level, rank, link }
+    var levelKind: LevelKind { summons?.contains("xyz") == true ? .rank : summons?.contains("link") == true ? .link : .level }
 
-    /// 마법·함정은 attr 칸에 "마법"·"함정"이 들어 있고, 나머지(속성)는 몬스터.
-    var kind: CardKind { attr.flatMap(CardKind.init(rawValue:)) ?? .monster }
+    var kind: CardKind { kindCode.flatMap(CardKind.init(rawValue:)) ?? .monster }
 
-    /// 컬렉션 종류 메뉴의 소환법 (시대 순)
-    static let summons = ["의식", "융합", "싱크로", "엑시즈", "펜듈럼", "링크"]
-    /// 종류 메뉴 값과 맞는지: 몬스터·마법·함정은 kind, 소환법은 몬스터의 type 칸 (의식 마법은 아님, 엑시즈 펜듈럼은 둘 다)
+    /// 컬렉션 종류 메뉴의 소환법 코드 (시대 순)
+    static let summonCodes = ["ritual", "fusion", "synchro", "xyz", "pendulum", "link"]
+    /// 소환법·시대 대표 코드의 화면 이름
+    static func summonTitle(_ code: String) -> String {
+        switch code {
+        case "ritual": String(localized: "의식")
+        case "fusion": String(localized: "융합")
+        case "synchro": String(localized: "싱크로")
+        case "xyz": String(localized: "엑시즈")
+        case "pendulum": String(localized: "펜듈럼")
+        case "link": String(localized: "링크")
+        case "support": String(localized: "지원")
+        default: code
+        }
+    }
+    /// 종류 메뉴 값과 맞는지: 몬스터·마법·함정은 kind, 소환법은 몬스터의 summons (의식 마법은 아님, 엑시즈 펜듈럼은 둘 다)
     func matches(kind filter: String) -> Bool {
-        kind.rawValue == filter || (kind == .monster && type?.components(separatedBy: "/").contains(filter) == true)
+        kind.rawValue == filter || (kind == .monster && summons?.contains(filter) == true)
     }
 
     /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 100팩 카드인 융합 몬스터만, 조건이나 없는 카드가 섞이면 nil.
@@ -45,9 +68,17 @@ struct CardInfo: Codable, Sendable, Equatable {
     }
 }
 
-/// 카드 종류. rawValue 는 컬렉션 종류 메뉴 값이자 cards.json attr 칸 값(마법·함정).
+/// 카드 종류. rawValue 는 컬렉션 종류 메뉴 값이자 cards_XX.json "kind" 값(마법·함정, 몬스터는 생략).
 enum CardKind: String, CaseIterable, Sendable {
-    case monster = "몬스터", spell = "마법", trap = "함정"
+    case monster, spell, trap
+
+    var title: String {
+        switch self {
+        case .monster: String(localized: "몬스터")
+        case .spell: String(localized: "마법")
+        case .trap: String(localized: "함정")
+        }
+    }
 }
 
 /// 융합 소재 하나: cid 는 100팩의 카드, name 은 100팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
@@ -71,7 +102,7 @@ struct Pack: Codable, Sendable, Identifiable, Equatable {
     var id: String { pid }
 }
 
-/// cards.json (tools/build-cards.py 산출물). packs 는 발매일 오름차순.
+/// cards_XX.json (tools/build-cards.py 산출물). packs 는 발매일 오름차순.
 struct CardDB: Sendable {
     private(set) var packs: [Pack]
     let cards: [Int: CardInfo]
@@ -82,8 +113,10 @@ struct CardDB: Sendable {
     private(set) var materialNeed: [Int: Int]
     /// 범위 안 융합 몬스터(소재를 아는 카드) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
     private(set) var fusionCount: Int
+    /// 소재를 다 아는 융합 몬스터 전체 (`fusionMaterials` 는 부를 때마다 사전을 만들어서, 상점이 그릴 때 쓰지 않게)
+    let fusionCIDs: Set<Int>
 
-    /// 등급은 1~5 로 자른다. cards.json 에 범위 밖 등급이 있어도 뽑기(티어 1~5 만 찾음)·판매가·등급 표시가 어긋나거나 죽지 않게.
+    /// 등급은 1~5 로 자른다. cards_XX.json 에 범위 밖 등급이 있어도 뽑기(티어 1~5 만 찾음)·판매가·등급 표시가 어긋나거나 죽지 않게.
     init(packs: [Pack], cards: [Int: CardInfo]) {
         self.packs = packs
         let cards = cards.mapValues { card in
@@ -96,6 +129,7 @@ struct CardDB: Sendable {
         self.cidSet = Set(cards.keys)
         self.materialNeed = Self.materialNeeds(allCIDs, cards)
         self.fusionCount = Self.fusionCount(allCIDs, cards)
+        self.fusionCIDs = Set(cards.keys.filter { cards[$0]?.fusionMaterials != nil })
     }
 
     /// 컬렉션 이름순 정렬 키: cid → 이름 순위(Finder 순서, 같은 이름은 같은 순위). 정렬마다 문자열을 비교하지 않으려고 쓴다
@@ -135,14 +169,14 @@ struct CardDB: Sendable {
     /// 시대별 첫 팩(발매순 인덱스): DM 푸른 눈의 백룡의 전설, GX 듀얼리스트의 투혼, 5D's 듀얼리스트의 태동(싱크로),
     /// ZEXAL 리턴 오브 더 듀얼리스트(엑시즈), ARC-V 더 듀얼리스트 어드벤트(펜듈럼), VRAINS 코드 오브 더 듀얼리스트(링크),
     /// Modern 라이즈 오브 더 듀얼리스트(VRAINS 이후).
-    // ponytail: 팩 목록이 고정(cards.json)이라 인덱스로 나눈다. 팩을 더 넣으면 여기도 고친다.
+    // ponytail: 팩 목록이 고정(cards_XX.json)이라 인덱스로 나눈다. 팩을 더 넣으면 여기도 고친다.
     static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63), ("Modern", 75)]
     /// 「융합」 마법 카드 (푸른 눈의 백룡의 전설 SR). 1장 이상 있어야 융합할 수 있고 소비되지 않는다.
     static let fusionSpell = 4837
     /// 「날개 크리보」(잃어버린 천년 SR). 가지면 파트너가 해금된다.
     static let partnerCard = 6314
-    /// 시대를 대표하는 소환법 (설정의 시대 범위 메뉴 표시용)
-    static let eraSummons = ["DM": "의식", "GX": "융합", "5D's": "싱크로", "ZEXAL": "엑시즈", "ARC-V": "펜듈럼", "VRAINS": "링크", "Modern": "지원"]
+    /// 시대를 대표하는 소환법 코드 (설정의 시대 범위 메뉴 표시용, 이름은 CardInfo.summonTitle)
+    static let eraSummons = ["DM": "ritual", "GX": "fusion", "5D's": "synchro", "ZEXAL": "xyz", "ARC-V": "pendulum", "VRAINS": "link", "Modern": "support"]
 
     /// (시대 이름, 팩 인덱스 범위). 테스트용 작은 DB 에선 빈 시대를 뺀다.
     var eras: [(name: String, packs: Range<Int>)] {
@@ -166,13 +200,18 @@ struct CardDB: Sendable {
         return CardDB(packs: file.packs, cards: cards)
     }
 
-    /// .app 안에서는 Contents/Resources/cards.json, `swift run`·테스트에서는 저장소의 Resources/cards.json.
-    static func bundled() throws -> CardDB {
-        if let url = Bundle.main.url(forResource: "cards", withExtension: "json") {
+    /// 언어별 카드 파일 이름(확장자 없음): ko → cards_KO, ja → cards_JP, 그 밖 → cards_EN
+    static func fileName(_ lang: String) -> String { "cards_" + (["ko": "KO", "ja": "JP"][lang] ?? "EN") }
+
+    /// .app 안에서는 Contents/Resources/cards_XX.json, `swift run`·테스트에서는 저장소의 Resources/cards_XX.json.
+    static func bundled(lang: String = AppLanguage.current) throws -> CardDB {
+        if let url = Bundle.main.url(forResource: fileName(lang), withExtension: "json") {
             return try load(from: url)
         }
-        return try load(from: repoCardsURL)
+        return try load(from: repoURL(lang))
     }
 
-    static let repoCardsURL = AppInfo.repoRoot.appendingPathComponent("Resources/cards.json")
+    static func repoURL(_ lang: String) -> URL {
+        AppInfo.repoRoot.appendingPathComponent("Resources/\(fileName(lang)).json")
+    }
 }

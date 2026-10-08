@@ -3,3 +3,4 @@
 .DS_Store
 build/
 qa-state/
+tools/cache/

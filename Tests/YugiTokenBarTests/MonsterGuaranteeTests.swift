@@ -5,7 +5,8 @@ import Testing
     /// 마법·함정이 대부분인 팩이라도 한 봉투에 몬스터가 최소 `monstersPerPack` 장 나온다.
     @Test func packHasAtLeastTwoMonsters() {
         func info(_ attr: String, _ tier: Int) -> CardInfo {
-            CardInfo(name: "", attr: attr, level: nil, type: nil, atk: nil, def: nil, text: "", imageId: nil, tier: tier)
+            CardInfo(name: "", attr: attr, level: nil, type: nil, atk: nil, def: nil, text: "", imageId: nil, tier: tier,
+                     kindCode: ["마법": "spell", "함정": "trap"][attr])
         }
         var cards: [Int: CardInfo] = [:]
         var list: [Int] = []

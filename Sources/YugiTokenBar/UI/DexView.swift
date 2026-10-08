@@ -19,7 +19,7 @@ struct DexView: View {
     @State private var fusing: FusionShow?
     /// 0 = 모든 등급, 1~5 = CardInfo.tier
     @State private var tierFilter = 0
-    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 (CardInfo.matches)
+    /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 코드 (CardInfo.matches)
     @State private var kindFilter = ""
     @State private var search = ""
     /// 검색창에 글자를 치는 중엔 ⌘A·Delete 를 검색창에 넘긴다 (안 그러면 툴바 단축키가 가로챈다)
@@ -103,7 +103,8 @@ struct DexView: View {
             .searchable(text: $search, placement: .toolbar, prompt: "카드 이름")
             .searchFocused($searchFocused)
             .inspector(isPresented: $showInspector) {
-                detail.inspectorColumnWidth(min: 240, ideal: 260)
+                // 폭 고정: 구분선을 끌어 바꿀 수 있게 하면 끄는 도중 분할 뷰 레이아웃이 끝나지 않고 앱이 죽는다
+                detail.inspectorColumnWidth(260)
             }
             .toolbar {
                 SellDuplicatesButton()
@@ -141,33 +142,10 @@ struct DexView: View {
     }
 
     private var filterBar: some View {
-        HStack(spacing: 14) {
-            Picker("종류", selection: $kindFilter) {
-                Text("모든 종류").tag("")
-                Divider()
-                ForEach(CardKind.allCases, id: \.self) { Text($0.rawValue).tag($0.rawValue) }
-                Divider()
-                ForEach(CardInfo.summons, id: \.self) { Text($0).tag($0) }
-            }
-            .fixedSize()
-            Picker("등급", selection: $tierFilter) {
-                Text("모든 등급").tag(0)
-                Divider()
-                Text("N 노멀").tag(1)
-                Text("R 레어").tag(2)
-                Text("SR 슈퍼").tag(3)
-                Text("UR 울트라").tag(4)
-                Text("SE 시크릿").tag(5)
-            }
-            .fixedSize()
-            Picker("정렬", selection: $sort) {
-                ForEach(DexSort.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-            .fixedSize()
-            Spacer()
-            Toggle("미보유 카드 포함", isOn: $showUnowned)
-                .toggleStyle(.checkbox)
-                .help("끄면 가진 카드만 보여요")
+        // 영어·일본어는 메뉴 이름까지 넣으면 기본 창 폭에서 넘친다 → 넘칠 때만 메뉴 이름을 숨긴다(값이 "모든 종류"처럼 스스로 설명)
+        ViewThatFits(in: .horizontal) {
+            filterRow(labels: true)
+            filterRow(labels: false)
         }
         .pickerStyle(.menu)
         .controlSize(.small)
@@ -176,22 +154,58 @@ struct DexView: View {
         .background(.bar)
     }
 
+    private func filterRow(labels: Bool) -> some View {
+        HStack(spacing: 14) {
+            filterPickers.labelsVisibility(labels ? .automatic : .hidden)
+            Spacer()
+            Toggle("미보유 카드 포함", isOn: $showUnowned)
+                .toggleStyle(.checkbox)
+                .lineLimit(1)
+                .help("끄면 가진 카드만 보여요")
+        }
+    }
+
+    @ViewBuilder private var filterPickers: some View {
+        Picker("종류", selection: $kindFilter) {
+            Text("모든 종류").tag("")
+            Divider()
+            ForEach(CardKind.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
+            Divider()
+            ForEach(CardInfo.summonCodes, id: \.self) { Text(CardInfo.summonTitle($0)).tag($0) }
+        }
+        .fixedSize()
+        Picker("등급", selection: $tierFilter) {
+            Text("모든 등급").tag(0)
+            Divider()
+            Text("N 노멀").tag(1)
+            Text("R 레어").tag(2)
+            Text("SR 슈퍼").tag(3)
+            Text("UR 울트라").tag(4)
+            Text("SE 시크릿").tag(5)
+        }
+        .fixedSize()
+        Picker("정렬", selection: $sort) {
+            ForEach(DexSort.allCases, id: \.self) { Text($0.title).tag($0) }
+        }
+        .fixedSize()
+    }
+
     private var title: String {
         switch scope {
-        case .favorites?: "즐겨찾기"
+        case .favorites?: String(localized: "즐겨찾기")
         case .pack(let i)? where model.db.packs.indices.contains(i): model.db.packs[i].name
-        case .deck(let id)?: model.game.deck(id)?.name ?? "덱"
-        default: "전체"
+        case .deck(let id)?: model.game.deck(id)?.name ?? String(localized: "덱")
+        default: String(localized: "전체")
         }
     }
 
     private func subtitle(_ all: [DexEntry]) -> String {
         if case .deck(let id)? = scope, let deck = model.game.deck(id) {
             let p = model.game.deckProgress(deck)
-            return "\(p.owned) / \(p.total)장 보유 · 메인 덱 \(Balance.deckSize.lowerBound)~\(Balance.deckSize.upperBound)장"
+            return String(localized: "\(p.owned) / \(p.total)장 보유 · 메인 덱 \(Balance.deckSize.lowerBound)~\(Balance.deckSize.upperBound)장")
         }
         let owned = all.filter { model.game.copies($0.cid) > 0 }.count
-        return "\(owned) / \(all.count)장 보유"
+        return String(localized: "\(owned) / \(all.count)장 보유")
     }
 
     /// 화면에 보일 카드 (body 밖 동작용. 조건이 같으면 캐시를 그대로 쓴다)
@@ -254,8 +268,7 @@ struct DexView: View {
                 .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
                 .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }
             HStack(spacing: 4) {
-                Text(model.db.cards[cid]?.name ?? "")
-                    .lineLimit(1).truncationMode(.tail)
+                MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
                     .foregroundStyle(owned ? .primary : .secondary)
                 Spacer(minLength: 0)
                 if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
@@ -263,7 +276,6 @@ struct DexView: View {
             .font(.caption2)
         }
         .contentShape(Rectangle()) }
-        .help(model.db.cards[cid]?.name ?? "")
         .onTapGesture { select(cid) }
         // VoiceOver: 셀 하나를 카드 한 장으로 읽고, 마우스를 올려야 보이는 ☆·− 는 동작으로 둔다
         .accessibilityElement(children: .ignore)
@@ -286,7 +298,7 @@ struct DexView: View {
     /// "푸른 눈의 백룡, UR, 보유 2장" (덱 화면이면 "덱 3장, 보유 2장")
     private func cellLabel(_ cid: Int, label: String, inDeck: Int?) -> String {
         let n = model.game.copies(cid)
-        let status = inDeck.map { "덱 \($0)장, 보유 \(n)장" } ?? (n > 0 ? "보유 \(n)장" : "미보유")
+        let status = inDeck.map { String(localized: "덱 \($0)장, 보유 \(n)장") } ?? (n > 0 ? String(localized: "보유 \(n)장") : String(localized: "미보유"))
         return "\(model.db.cards[cid]?.name ?? ""), \(label), \(status)"
     }
 
@@ -330,7 +342,7 @@ struct DexView: View {
     }
 
     /// 카드 모서리에 얹는 22×22 어두운 원형 아이콘 단추.
-    private func overlayButton(systemImage: String, color: Color, help: String, action: @escaping () -> Void) -> some View {
+    private func overlayButton(systemImage: String, color: Color, help: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .bold))
@@ -345,7 +357,7 @@ struct DexView: View {
 
     /// 우클릭·선택 메뉴: 덱 화면이면 빼기, 아니면 덱에 넣기(미보유도 가능). 여러 장이면 장 수를 붙인다.
     @ViewBuilder private func deckMenu(_ cids: Set<Int>, inDeck deck: UUID?) -> some View {
-        let many = cids.count > 1 ? " (\(cids.count)장)" : ""
+        let many = cids.count > 1 ? String(localized: " (\(cids.count)장)") : ""
         if let deck {
             Button("덱에서 1장씩 빼기\(many)") {
                 removeFromDeck(deck, cids)
@@ -435,6 +447,51 @@ private struct Hovering<Content: View>: View {
     var body: some View { content(hovered).onHover { hovered = $0 } }
 }
 
+/// 한 줄 글자. 넘치면 …로 줄이고, `active`(마우스 올림)인 동안 옆으로 흘러가며 전체를 보여준다.
+private struct MarqueeText: View {
+    let text: String
+    let active: Bool
+    @State private var full: CGFloat = 0
+    @State private var box: CGFloat = 0
+
+    var body: some View {
+        let scrolling = active && full > box + 0.5
+        Text(verbatim: text).lineLimit(1).truncationMode(.tail)
+            .opacity(scrolling ? 0 : 1)
+            // 마우스를 올린 셀만 잰다. 늘 재면 칸 폭을 끄는 동안 보이는 셀마다 상태를 써서 레이아웃을 다시 돌린다.
+            .overlay {
+                if active {
+                    Color.clear
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { box = $0 }
+                        .background { Text(verbatim: text).fixedSize().hidden()
+                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { full = $0 } }
+                }
+            }
+            .overlay(alignment: .leading) { if scrolling { Scroller(text: text, width: full) } }
+            .clipped()
+    }
+
+    /// 두 벌을 이어 붙여 한 벌 길이만큼 왼쪽으로 흘린 뒤 처음으로 돌아가 끊김 없이 반복한다.
+    /// 마우스를 떼면 뷰가 사라지며 위치도 초기화된다.
+    private struct Scroller: View {
+        let text: String
+        let width: CGFloat
+        @State private var offset: CGFloat = 0
+        private let gap: CGFloat = 24
+
+        var body: some View {
+            HStack(spacing: gap) { Text(verbatim: text); Text(verbatim: text) }
+                .fixedSize()
+                .offset(x: offset)
+                .onAppear {
+                    withAnimation(.linear(duration: (width + gap) / 30).delay(1).repeatForever(autoreverses: false)) {
+                        offset = -(width + gap)
+                    }
+                }
+        }
+    }
+}
+
 /// 화면에 보이는 셀의 프레임 (러버밴드 선택용). 클래스라 갱신해도 뷰를 다시 그리지 않는다.
 private final class FrameStore {
     var map: [Int: CGRect] = [:]
@@ -450,7 +507,9 @@ private struct SellDuplicatesButton: View {
         Button { confirm = true } label: {
             Label("중복 모두 팔기", systemImage: "c.circle").labelStyle(.titleAndIcon)
         }
-        .help("카드마다 1장\(model.game.state.fusionOnly ? ", 융합 소재는 필요한 장 수" : "")만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
+        .help(model.game.state.fusionOnly
+              ? "카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))"
+              : "카드마다 1장만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
         .disabled(dup.count == 0)
         .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirm) {
             Button("+\(coinText(dup.coins))에 판매") { model.sellDuplicates() }

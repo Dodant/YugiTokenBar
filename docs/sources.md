@@ -2,11 +2,12 @@
 
 앱이 쓰는 데이터·이미지·코드의 출처를 모은 문서. 카드 이미지와 텍스트는 Konami 저작물이고, 이 앱은 개인용으로만 쓰며 배포하지 않는다(스펙). 이미지는 번들에 넣지 않고 런타임에 받아 캐시한다.
 
-## 카드 데이터 (`Resources/cards.json`, `tools/build-cards.py`)
+## 카드 데이터 (`Resources/cards_KO.json`·`cards_JP.json`·`cards_EN.json`, `tools/build-cards.py`)
 
 | 무엇 | 출처 |
 |---|---|
-| 팩 목록·수록 카드·한국어 이름·텍스트·레어도 | Konami 공식 카드 DB 한국어판 https://www.db.yugioh-card.com/yugiohdb/ (1초 간격) |
+| 팩 목록·수록 카드·한국어 이름·텍스트·레어도 | Konami 공식 카드 DB 한국어판 https://www.db.yugioh-card.com/yugiohdb/ `request_locale=ko` (1초 간격) |
+| 일본어·영어 이름·텍스트·원판 팩 이름 (`cards_JP.json`·`cards_EN.json`) | 같은 DB의 카드 상세 페이지 `card_search.action?ope=2&cid=<cid>&request_locale=ja` · `request_locale=en` (1초 간격). 영어가 없는 카드는 일본어, 일본어도 없으면 한국어. 재록 모음집이 뽑힌 팩명은 Yugipedia 세트 문서(일본 팩 합본 여부·`ja_name`)로 확인해 덮어씀 |
 | 이미지 ID(passcode)·영문 세트 코드 | YGOPRODeck API https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes · https://db.ygoprodeck.com/api/v7/cardsets.php |
 | 팩 표지 몬스터(`cover_card`)·한글판 봉투 이미지(`<setCode>-BoosterKR.*`) | Yugipedia API https://yugipedia.com/api.php |
 
@@ -20,7 +21,7 @@
 
 ### 오버프레임 (`ImageCache.overframe`)
 
-오버프레임(Over-Frame, TCG 이름 Extended art)은 일러스트가 카드 테두리 밖으로 뻗어 나오는 공식 카드 처리다. OCG에서는 LIMIT OVER COLLECTION(2026)에 처음 나왔다. 대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(약 100종)을 passcode로 `cards.json`과 맞춰 뽑았고, 100팩 안에 든 21종 전부를 넣었다(2026-10-06 기준).
+오버프레임(Over-Frame, TCG 이름 Extended art)은 일러스트가 카드 테두리 밖으로 뻗어 나오는 공식 카드 처리다. OCG에서는 LIMIT OVER COLLECTION(2026)에 처음 나왔다. 대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(약 100종)을 passcode로 `cards_KO.json`과 맞춰 뽑았고, 100팩 안에 든 21종 전부를 넣었다(2026-10-06 기준).
 
 이미지는 SAMPLE 워터마크가 없는 것만 쓴다. Yugipedia 이미지를 먼저 쓰고(영문 RA05 UR, 일본판 LOSP PScR, CF02 공식 이미지), Yugipedia에 워터마크 판이나 이름 없는 마스터 듀얼 렌더만 있거나 이미지가 없는 9장은 일본 카드숍 상품 스캔을 쓴다(사용자 제공).
 

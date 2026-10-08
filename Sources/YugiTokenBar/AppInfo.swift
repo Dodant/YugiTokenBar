@@ -6,7 +6,7 @@ enum AppInfo {
     static let repoURL = URL(string: "https://github.com/Dodant/YugiTokenBar")!
     static let latestChangelogURL = URL(string: "https://raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md")!
 
-    /// 저장소 루트. `swift run`·테스트에서 번들 대신 읽는 파일(cards.json·partner.png·문서)의 기준
+    /// 저장소 루트. `swift run`·테스트에서 번들 대신 읽는 파일(cards_XX.json·partner.png·문서)의 기준
     static let repoRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()  // Sources/YugiTokenBar
         .deletingLastPathComponent()  // Sources
@@ -17,7 +17,7 @@ enum AppInfo {
     static var buildNumber: String? { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String }
 
     static var versionText: String {
-        bundleVersion.map { "v\($0) (\(buildNumber ?? "?"))" } ?? "개발 빌드"
+        bundleVersion.map { "v\($0) (\(buildNumber ?? "?"))" } ?? String(localized: "개발 빌드")
     }
 
     /// 업데이트 비교에 쓰는 현재 버전. 개발 빌드는 로컬 CHANGELOG 기준.
@@ -28,7 +28,7 @@ enum AppInfo {
 
     private static func text(_ name: String, repoPath: String) -> String {
         let url = Bundle.main.url(forResource: name, withExtension: "md") ?? repoRoot.appendingPathComponent(repoPath)
-        return (try? String(contentsOf: url, encoding: .utf8)) ?? "\(repoPath)를 읽지 못했어요."
+        return (try? String(contentsOf: url, encoding: .utf8)) ?? String(localized: "\(repoPath)를 읽지 못했어요.")
     }
 
     /// CHANGELOG 의 첫 `## x.y.z` 제목. build-app.sh 의 awk 와 같은 규칙.

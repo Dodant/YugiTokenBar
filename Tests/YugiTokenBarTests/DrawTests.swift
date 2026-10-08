@@ -22,7 +22,7 @@ import Testing
         var rng = SeededRNG(seed: 7)
         for _ in 0..<50 { _ = game.buy(pack: 0, using: &rng) }
         #expect(game.state.owned.values.contains { $0 > 2 })  // 상한 없음
-        #expect(game.isComplete(0))
+        #expect(game.progress(0).complete)
         #expect(game.buy(pack: 0, using: &rng).count == 5)  // 완료 팩도 계속 산다
     }
 
@@ -65,7 +65,7 @@ import Testing
         var game = rich()
         var rng = SeededRNG(seed: 5)
         #expect(game.buy(pack: 2, using: &rng).count == 2)
-        #expect(game.isComplete(2))
+        #expect(game.progress(2).complete)
         #expect(game.state.coins == 1_000_000 - Balance.packPrice)
     }
 

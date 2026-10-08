@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Konami 한국 DB + YGOPRODeck → Resources/cards.json
+"""Konami 카드 DB + YGOPRODeck → Resources/cards_KO.json · cards_JP.json · cards_EN.json
 
 한국 정발 정규 부스터 팩 중 『카오스 오리진즈』(2026-07-14)까지 100팩을 수집한다(76번째부터 VRAINS 이후 Modern).
 같은 분류의 미니 팩(＋1 어시스트·익스팬션 팩, 얼티미트 스페셜 팩: 20장 이하, 노멀 없음)은 뺀다.
-사용: python3 tools/build-cards.py [출력경로]
+사용: python3 tools/build-cards.py [--lang ko|ja|en|all] [--reformat]
 """
+import argparse
 import html
+import http.client
 import json
+import os
 import re
 import sys
 import time
@@ -16,10 +19,18 @@ TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미�
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
 CUTOFF = "2026/07/15"  # 『카오스 오리진즈』까지
 MINI = re.compile(r"어시스트 팩|익스팬션 팩|얼티미트 스페셜 팩")
-# --reformat: 받아 오지 않고 기존 파일을 지금 형식으로만 다시 쓴다
-REFORMAT = "--reformat" in sys.argv
-ARGS = [a for a in sys.argv[1:] if a != "--reformat"]
-OUT = ARGS[0] if ARGS else "Resources/cards.json"
+LANGS = {"ko": "KO", "ja": "JP", "en": "EN"}
+# 세 파일이 같은 카드 필드(KO 기준)와 언어마다 다른 카드 필드
+SHARED = ("tier", "imageId", "level", "atk", "def", "scale", "kind", "summons")
+TEXT_FIELDS = ("name", "attr", "type", "text", "pendulum")
+KINDS = {"마법": "spell", "함정": "trap"}
+SUMMONS = {"의식": "ritual", "융합": "fusion", "싱크로": "synchro", "엑시즈": "xyz", "펜듈럼": "pendulum", "링크": "link"}  # 시대 순
+
+
+def out_path(lang):
+    return f"Resources/cards_{LANGS[lang]}.json"
+
+
 # 팩 표지 몬스터는 어느 팩에서 나오든 SE (Yugipedia cover_card 기준. 표지가 마법·함정인 악몽의 미궁·어둠의 유산,
 # 「영원한 화염」의 마의 덱 파괴 바이러스, 한글판에 없는 「장렬한 전투」 표지 2장은 뺀다)
 COVER_SE = [
@@ -196,6 +207,225 @@ def parse_pack(page):
     return cards
 
 
+def parse_detail(page):
+    """카드 상세 페이지(ja·en) → (TEXT_FIELDS 사전, [[수록 팩 이름, 날짜], …]). 그 언어에 없는 카드는 name 이 ""."""
+    name = ""
+    if h1 := re.search(r'<div id="cardname"[^>]*>\s*<h1>(.*?)</h1>', page, re.S):
+        body = re.sub(r'<span class="ruby">.*?</span>', "", h1.group(1), flags=re.S)
+        body = re.sub(r"<span>.*?</span>", "", body, flags=re.S)  # ja 의 영문 병기
+        name = clean(body)
+    start = page.find('<div class="CardText">', max(page.find('<div id="CardSet"'), 0))
+    end = page.find("<!-- #CardTextSet -->")
+    head = page[start:end] if 0 <= start < end else ""
+    rest = page[end:] if end >= 0 else ""
+    first_value = first(r'<span class="item_box_value">(.*?)</span>', head)  # 몬스터는 속성, 마법·함정은 아이콘(Normal Spell 등)
+    species = first(r'<p class="species">(.*?)</p>', head)
+    info = {
+        "name": name,
+        "attr": first_value or None,
+        "type": re.sub(r"\s*／\s*", "/", species) if species else None,
+        "text": first(r'<div class="CardText">\s*<div class="item_box_text">.*?<div class="text_linebreak">(.*?)</div>', rest, ""),
+        "pendulum": first(r'<div class="frame pen_effect">.*?<div class="text_linebreak">(.*?)</div>', rest) or None,
+    }
+    packs = []
+    if (i := page.find('<div id="update_list"')) >= 0:
+        for date, pack in re.findall(r'<div class="time">\s*([\d-]+)\s*</div>.*?<div class="pack_name[^"]*"\s*>(.*?)</div>', page[i:], re.S):
+            packs.append([clean(pack), date])
+    return info, packs
+
+
+def cache_path(lang):
+    return f"tools/cache/{lang}.jsonl"
+
+
+def load_cache(path):
+    """이어 받기용 캐시(한 줄에 카드 하나). 끊겨서 반쯤 써진 줄은 건너뛴다 → 그 카드는 다시 받는다."""
+    recs = {}
+    if not os.path.exists(path):
+        return recs
+    with open(path, encoding="utf-8", errors="replace") as f:  # 끊긴 줄이 글자 중간일 수 있다
+        for line in f:
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            recs[r["cid"]] = r
+    return recs
+
+
+def end_line(path):
+    """캐시가 줄바꿈 없이 끝나면(Ctrl-C 로 끊김) 줄바꿈을 붙여, 이어 쓰는 첫 줄이 끊긴 줄에 붙지 않게 한다. 바이트로 봐서 글자 중간에서 끊겨도 된다."""
+    if os.path.exists(path) and os.path.getsize(path):
+        with open(path, "rb+") as b:
+            b.seek(-1, os.SEEK_END)
+            if b.read(1) != b"\n":
+                b.write(b"\n")
+
+
+def get_card_page(url, retries=4):
+    """상세 페이지를 받는다. 네트워크 오류나 카드·\"없음\" 페이지가 아닌 응답(점검·오류 페이지)은 쉬었다 다시 받고, 끝내 안 되면 예외."""
+    for attempt in range(1, retries + 1):
+        try:
+            page = get(url)
+            # 카드 페이지, 또는 그 언어 DB 에 없는 카드의 "Card information not found."(ja: カード情報がありません。) 페이지 → name "" 으로 대체
+            if '<div id="cardname"' in page or '<div class="no_data"' in page:
+                return page
+            err = "카드 페이지가 아닌 응답"
+        except (OSError, http.client.IncompleteRead) as e:  # URLError·타임아웃·연결 끊김·본문 중간 끊김
+            err = repr(e)
+        print(f"  재시도 {attempt}/{retries}: {err} {url}", flush=True)
+        if attempt == retries:
+            raise RuntimeError(f"{url}: {err}")
+        time.sleep(30 * attempt)
+
+
+def fetch_lang(lang, ko):
+    """KO 에 있는 cid 만 상세 페이지를 1초 간격으로 받는다. 받은 것은 바로 캐시에 덧붙여, 끊기면 같은 명령으로 이어 받는다."""
+    path = cache_path(lang)
+    recs = load_cache(path)
+    todo = [int(c) for c in ko["cards"] if int(c) not in recs]
+    print(f"{lang}: 캐시 {len(recs)}장, 받을 카드 {len(todo)}장 (약 {len(todo) * 1.5 / 3600:.1f}시간)", flush=True)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    end_line(path)
+    with open(path, "a", encoding="utf-8") as f:
+        for i, cid in enumerate(todo, 1):
+            info, packs = parse_detail(get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale={lang}"))
+            recs[cid] = {"cid": cid, "info": info, "packs": packs}
+            f.write(json.dumps(recs[cid], ensure_ascii=False) + "\n")
+            f.flush()
+            if i % 100 == 0 or i == len(todo):
+                print(f"{lang} {i}/{len(todo)} {cid} {info['name']}", flush=True)
+            time.sleep(1)
+    return recs
+
+
+# 원판 팩명 매핑이 틀렸을 때 고치는 표: {"ja": {KO pid: 이름}, "en": {...}}. 기준: 같은 세트의 OCG 이름,
+# OCG 에 같은 세트가 없으면(초기 11팩은 일본 팩 두 개를 합친 TCG 세트, Yugipedia) TCG 영어 이름. 가장 흔한 팩이 재록 모음집인 경우를 고친다.
+EARLY_TCG = {
+    "71101000": "LEGEND OF BLUE EYES WHITE DRAGON", "71102000": "METAL RAIDERS", "71102001": "SPELL RULER",
+    "71102002": "PHARAOH'S SERVANT", "71102003": "LABYRINTH OF NIGHTMARE", "71102004": "LEGACY OF DARKNESS",
+    "71102005": "MAGICIAN'S FORCE", "71102006": "PHARAONIC GUARDIAN", "71103000": "DARK CRISIS",
+    "71103001": "INVASION OF CHAOS", "71103002": "ANCIENT SANCTUARY",
+}
+PACK_NAME_OVERRIDES = {
+    "ja": {**EARLY_TCG, "71105000": "サイバネティック・レボリューション"},
+    "en": {"71105000": "CYBERNETIC REVOLUTION"},
+}
+# 소재 줄 조각 수가 KO 와 달라 자동으로 못 맞추는 카드의 그 언어 소재. {lang: {cid: [소재...]}}
+MATERIALS_OVERRIDES = {
+    "en": {
+        7301: [{"rule": "Gemini Monster", "count": 2}],
+        11207: [{"rule": "Synchro or Xyz Monster"}, {"rule": "Synchro or Xyz Monster"}],
+    },
+}
+
+
+def short_pack_name(name):
+    """JP DB 팩명 뒤의 영어 병기("…[ SOUL OF THE DUELIST ]", 띄어쓰기가 제각각)를 뗀다."""
+    return re.sub(r"\s*\[[^\]]*\]\s*$", "", name)
+MAT_COUNT = re.compile(r"(.+?)\s*[×xX]\s*([0-9０-９]+)")
+QUOTED = re.compile(r'"(.+)"|「(.+)」')
+
+
+def merge(base, text):
+    """KO 카드(base)의 키 순서대로 두되, 언어별 필드는 text 값으로(그 언어에 없는 칸은 뺀다). text 는 늘 둔다."""
+    out = {}
+    for k, v in base.items():
+        if k == "text":
+            out[k] = text.get("text") or ""
+        elif k in TEXT_FIELDS:
+            if text.get(k):
+                out[k] = text[k]
+        else:
+            out[k] = v
+    for k in TEXT_FIELDS:
+        if k not in out and text.get(k):
+            out[k] = text[k]
+    return out
+
+
+def split_lang_materials(text, ko_mats):
+    """언어 텍스트 첫 줄(소재 줄)을 떼고 KO 소재와 같은 자리끼리 맞춘다. cid 소재는 KO 그대로,
+    name·rule 소재는 그 언어 조각(따옴표는 name 에서 벗기고 끝의 × N 은 count). 조각 수가 다르면 KO 소재 그대로 (ok=False)."""
+    first_line, _, rest = text.partition("\n")
+    parts = [p.strip() for p in re.split(r"\s+\+\s+|\s*＋\s*", first_line) if p.strip()]
+    if len(parts) != len(ko_mats):
+        return rest.strip(), ko_mats, False
+    out = []
+    for part, m in zip(parts, ko_mats):
+        if "cid" in m:
+            out.append(m)
+            continue
+        c = MAT_COUNT.fullmatch(part)
+        body, count = (c.group(1), int(c.group(2))) if c else (part, None)
+        if "name" in m:
+            q = QUOTED.fullmatch(body)
+            entry = {"name": (q.group(1) or q.group(2)) if q else body}
+        else:
+            entry = {"rule": body}
+        out.append(entry | ({"count": count} if count else {}))
+    return rest.strip(), out, True
+
+
+def localize(ko, recs, fallback=None, lang=None):
+    """KO 를 틀로 언어 파일을 만든다. 그 언어에 없는 카드(이름이 빈 카드)는 언어별 필드 전부를 fallback(이미 만든 JP)
+    또는 KO 에서 통째로 가져온다. → (out, 대체된 cid 목록, 소재 줄이 안 맞은 cid 목록)"""
+    out = {"packs": [dict(p) for p in ko["packs"]], "cards": {}}
+    missing, mismatched = [], []
+    for cid, base in ko["cards"].items():
+        r = recs.get(int(cid))
+        if not r or not r["info"].get("name"):
+            out["cards"][cid] = dict((fallback or ko)["cards"][cid])
+            missing.append(cid)
+            continue
+        info = merge(base, r["info"])
+        if "materials" in base:
+            info["text"], info["materials"], ok = split_lang_materials(info["text"], base["materials"])
+            if not ok and any("cid" not in m for m in base["materials"]):
+                override = MATERIALS_OVERRIDES.get(lang, {}).get(int(cid))
+                if override:
+                    info["materials"] = override
+                else:
+                    mismatched.append(cid)
+        out["cards"][cid] = info
+    return out, missing, mismatched
+
+
+def pack_names(ko, recs):
+    """KO 팩마다 수록 카드들의 그 언어 수록 팩 이름을 세어 가장 많은 것 (동률이면 발매일이 빠른 쪽). → {pid: (이름|None, 겹친 수)}"""
+    names = {}
+    for p in ko["packs"]:
+        count, earliest = {}, {}
+        for cid in p["cards"]:
+            for name, date in {tuple(x) for x in recs.get(cid, {}).get("packs", [])}:
+                count[name] = count.get(name, 0) + 1
+                earliest[name] = min(earliest.get(name, date), date)
+        best = min(count, key=lambda n: (-count[n], earliest[n]), default=None)
+        names[p["pid"]] = (best, count.get(best, 0))
+    return names
+
+
+def verify(files):
+    """세 파일이 같은 팩·같은 카드·같은 공유 필드인지, 모든 카드에 이름이 있는지. 문제 문장 목록(비면 통과)."""
+    ko, problems = files["ko"], []
+    mat_ids = lambda c: [(m.get("cid"), m.get("count")) if "cid" in m else None for m in c.get("materials", [])]
+    for lang, f in files.items():
+        if [(p["pid"], p["cards"]) for p in f["packs"]] != [(p["pid"], p["cards"]) for p in ko["packs"]]:
+            problems.append(f"{lang}: 팩 pid·카드 목록이 KO 와 다름")
+        if list(f["cards"]) != list(ko["cards"]):
+            problems.append(f"{lang}: 카드 cid 목록·순서가 KO 와 다름")
+        for cid, c in f["cards"].items():
+            k = ko["cards"].get(cid, {})
+            if not c.get("name"):
+                problems.append(f"{lang}: {cid} 이름 없음")
+            for field in SHARED:
+                if c.get(field) != k.get(field):
+                    problems.append(f"{lang}: {cid} {field} 가 KO 와 다름")
+            if mat_ids(c) != mat_ids(k):
+                problems.append(f"{lang}: {cid} 소재가 KO 와 다름")
+    return problems
+
+
 def korean_pack_image(set_code):
     """Yugipedia 의 한글판 봉투 이미지 `<code>-BoosterKR.*` 를 폭 600px 썸네일로(원본이 더 작으면 원본). 없으면 None."""
     api = "https://yugipedia.com/api.php?format=json&action=query&"
@@ -248,19 +478,42 @@ def move_tiers(out):
         p["cards"] = [c["cid"] if isinstance(c, dict) else c for c in p["cards"]]
 
 
-def write(out):
-    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게. 등급 이식·표지 SE·융합 소재 분리도 여기서 한다."""
+def add_codes(cards):
+    """언어와 상관없는 코드 필드: 마법·함정은 kind, 몬스터는 type 칸의 소환법을 summons(시대 순)로. 앱 로직은 이것만 본다."""
+    for info in cards.values():
+        info.pop("kind", None)
+        info.pop("summons", None)
+        if kind := KINDS.get(info.get("attr")):
+            info["kind"] = kind
+            continue
+        parts = (info.get("type") or "").split("/")
+        if summons := [code for name, code in SUMMONS.items() if name in parts]:
+            info["summons"] = summons
+
+
+def normalize_ko(out):
+    """KO 전용 후처리: 등급 이식·표지 SE·융합 소재 분리·코드 필드. 이미 한 것은 그대로(--reformat)."""
     move_tiers(out)
     for cid in COVER_SE:
         out["cards"][str(cid)]["tier"] = 5
     split_materials(out["cards"])
-    dump = lambda x: json.dumps(x, ensure_ascii=False, separators=(",", ":"))
-    with open(OUT, "w", encoding="utf-8") as f:
-        f.write('{"packs":[\n' + ",\n".join(dump(p) for p in out["packs"]) + '\n],"cards":{\n'
-                + ",\n".join(f"{dump(k)}:{dump(v)}" for k, v in out["cards"].items()) + "\n}}\n")
+    add_codes(out["cards"])
 
 
-def main():
+def dump(out, path):
+    """팩 하나·카드 하나가 한 줄 — diff 를 읽을 수 있게."""
+    line = lambda x: json.dumps(x, ensure_ascii=False, separators=(",", ":"))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write('{"packs":[\n' + ",\n".join(line(p) for p in out["packs"]) + '\n],"cards":{\n'
+                + ",\n".join(f"{line(k)}:{line(v)}" for k, v in out["cards"].items()) + "\n}}\n")
+
+
+def load(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def build_ko():
     products = parse_products(get(BASE + "card_list.action?request_locale=ko"))
     packs, infos = [], {}
     for date, name, pid in products:
@@ -304,7 +557,8 @@ def main():
 
     # 빈 칸(None)은 빼서 용량을 줄인다 — 앱은 없는 키를 nil 로 읽는다
     out = {"packs": packs, "cards": {str(k): {f: x for f, x in v.items() if x is not None} for k, v in sorted(infos.items())}}
-    write(out)
+    normalize_ko(out)
+    dump(out, out_path("ko"))
     print(f"packs={len(packs)} distinct={len(infos)} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
@@ -312,9 +566,70 @@ def main():
         sys.exit("검증 실패: 팩 수가 100이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 
+def build_lang(lang):
+    """cards_KO.json 을 틀로 JP·EN 파일을 만든다. EN 은 cards_JP.json 을 대체로 쓴다."""
+    ko = load(out_path("ko"))
+    recs = fetch_lang(lang, ko)
+    fallback, fallback_missing = None, ()
+    if lang == "en" and os.path.exists(out_path("ja")):
+        fallback = load(out_path("ja"))
+        fallback_missing = {cid for cid, c in fallback["cards"].items() if c.get("name") == ko["cards"][cid].get("name")}
+    out, missing, mismatched = localize(ko, recs, fallback, lang)
+    for p, (name, n) in zip(out["packs"], pack_names(ko, recs).values()):
+        override = PACK_NAME_OVERRIDES[lang].get(p["pid"])
+        print(f"  팩 {p['name']} → {override or name} ({n}/{len(p['cards'])}){' [덮어씀]' if override else ''}")
+        p["name"] = override or (short_pack_name(name) if name and lang == "ja" else name) or p["name"]
+    dump(out, out_path(lang))
+    label = lambda cid: "KO" if fallback is None or cid in fallback_missing else "JP"
+    print(f"{lang}: 대체 {len(missing)}장, 소재 줄 불일치 {len(mismatched)}장")
+    for cid in missing:
+        print(f"  대체: {cid} {ko['cards'][cid]['name']} (→ {label(cid)})")
+    for cid in mismatched:
+        print(f"  소재 줄 불일치(KO 소재 유지): {cid} {ko['cards'][cid]['name']}")
+
+
+def reformat(langs):
+    """받아 오지 않고 있는 파일만 지금 형식으로 다시 쓴다. JP·EN 은 KO 와 같은 필드를 KO 에서 다시 맞춘다."""
+    ko = load(out_path("ko"))
+    normalize_ko(ko)
+    if "ko" in langs:
+        dump(ko, out_path("ko"))
+    for lang in ("ja", "en"):
+        if lang in langs and os.path.exists(out_path(lang)):
+            out = load(out_path(lang))
+            sync_shared(ko, out)
+            dump(out, out_path(lang))
+
+
+def sync_shared(ko, out):
+    """언어 파일의 팩(이름 빼고)과 카드 공유 필드를 KO 값으로 맞춘다."""
+    for p, k in zip(out["packs"], ko["packs"]):
+        p.update({f: v for f, v in k.items() if f != "name"})
+    for cid, info in out["cards"].items():
+        base = ko["cards"][cid]
+        for f in SHARED:
+            if f in base:
+                info[f] = base[f]
+            else:
+                info.pop(f, None)
+
+
 if __name__ == "__main__":
-    if REFORMAT:
-        with open(OUT, encoding="utf-8") as f:
-            write(json.load(f))
+    ap = argparse.ArgumentParser(description="Konami 카드 DB → Resources/cards_XX.json")
+    ap.add_argument("--lang", choices=["ko", "ja", "en", "all"], default="all")
+    ap.add_argument("--reformat", action="store_true", help="받아 오지 않고 있는 파일을 지금 형식으로만 다시 쓴다")
+    args = ap.parse_args()
+    langs = ["ko", "ja", "en"] if args.lang == "all" else [args.lang]
+    if args.reformat:
+        reformat(langs)
     else:
-        main()
+        if "ko" in langs:
+            build_ko()
+        for lang in ("ja", "en"):
+            if lang in langs:
+                build_lang(lang)
+    files = {lang: load(out_path(lang)) for lang in LANGS if os.path.exists(out_path(lang))}
+    if problems := verify(files):
+        print("\n".join(problems[:50]))
+        sys.exit(f"검증 실패: {len(problems)}건")
+    print(f"검증 통과: {', '.join(files)}")

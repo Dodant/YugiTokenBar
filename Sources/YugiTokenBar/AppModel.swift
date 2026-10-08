@@ -142,7 +142,7 @@ final class AppModel {
     @discardableResult
     func openFreePack() -> Bool {
         guard let (pack, pulls) = game.openFreePack(using: &rng) else { return false }
-        show(pulls, title: "무료 팩 · \(db.packs[pack].name)", pack: pack)
+        show(pulls, title: String(localized: "무료 팩 · \(db.packs[pack].name)"), pack: pack)
         return true
     }
 
@@ -255,7 +255,7 @@ final class AppModel {
     func openFree() -> Bool {
         let opened = game.openFree(using: &rng)
         guard !opened.isEmpty else { return false }
-        show(opened, title: "무료 카드")
+        show(opened, title: String(localized: "무료 카드"))
         return true
     }
 

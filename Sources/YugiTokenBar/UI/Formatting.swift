@@ -3,21 +3,23 @@ import SwiftUI
 /// 마우스를 올리면 말풍선으로 설명을 띄운다.
 // ponytail: 메뉴바 패널(.window)에서는 .help 툴팁이 뜨지 않아 hover + popover 로 대신한다. 일반 창(컬렉션)은 .help 그대로.
 private struct HoverHint: ViewModifier {
-    let text: String
+    let text: Text
     @State private var shown = false
 
     func body(content: Content) -> some View {
         content
             .onHover { shown = $0 }
             .popover(isPresented: $shown, arrowEdge: .top) {
-                Text(text).font(.callout).padding(10).fixedSize()
+                text.font(.callout).padding(10).fixedSize()
                     .presentationBackground(.thickMaterial)  // 기본 유리보다 덜 비치게
             }
     }
 }
 
 extension View {
-    func hoverHint(_ text: String) -> some View { modifier(HoverHint(text: text)) }
+    func hoverHint(_ text: LocalizedStringKey) -> some View { modifier(HoverHint(text: Text(text))) }
+    /// 카드 이름처럼 이미 그 언어인 데이터 문자열 (키로 찾지 않는다)
+    func hoverHint(verbatim text: String) -> some View { modifier(HoverHint(text: Text(verbatim: text))) }
 
     /// 패널 안 스크롤의 아래 끝. 살짝 흐려지며(재질 띠) 투명해져서 글자가 반 토막으로 잘려 보이지 않는다.
     /// 끝까지 내리면 마지막 줄이 띠 위에 오도록 내용 아래에 띠 높이만큼 여백을 둔다.
