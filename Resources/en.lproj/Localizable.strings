@@ -402,8 +402,6 @@
 "%lld/%lld · 융합 %lld장 남음" = "%lld/%lld · %lld left to fuse";
 /* FusionAnimationView.swift:50 */
 "%@ 융합. 누르면 건너뛰고, 한 번 더 누르면 닫기" = "Fusion Summoned \"%@\". Click to skip, click again to close";
-/* ShopView.swift:178 */
-"새 카드가 더 나오지 않는 팩" = "No new cards left in this pack";
 /* SettingsView.swift:67 */
 "파트너" = "Partner";
 /* SettingsView.swift:120 */
@@ -412,3 +410,7 @@
 "베타 기능" = "Beta feature";
 /* PackOpenView.swift:105 */
 "다음 무료 팩 열기 · %lld개 남음" = "Open next free pack · %lld left";
+/* ShopView.swift:181 */
+"다 모은 팩" = "Completed pack";
+/* ShopView.swift:181 */
+"남은 카드는 융합으로만 얻는 팩" = "Pack whose remaining cards come only from fusion";

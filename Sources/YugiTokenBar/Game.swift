@@ -32,7 +32,7 @@ struct PackProgress {
     var fusionLeft = 0
     /// 모든 카드를 1장 이상 가졌다
     var complete: Bool { owned == total }
-    /// 팩에서 더 받을 카드가 없다: 다 모았거나 남은 미보유가 융합 전용뿐. 상점 CLEAR 도장·구매 막기
+    /// 팩에서 더 받을 카드가 없다: 다 모았거나 남은 미보유가 융합 전용뿐. 상점 도장(COMPLETE·FUSION ONLY)·구매 막기
     var cleared: Bool { owned + fusionLeft == total }
 }
 

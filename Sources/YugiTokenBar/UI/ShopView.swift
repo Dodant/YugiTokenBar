@@ -130,7 +130,7 @@ struct PackTile: View {
                 }
             }
             .overlay {
-                if p.cleared && !hover { ClearStamp() }
+                if p.cleared && !hover { PackStamp(complete: p.complete) }
             }
             .clipShape(.rect(cornerRadius: 10))
             .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
@@ -165,17 +165,22 @@ struct PackRow: View {
     }
 }
 
-/// 팩에서 더 받을 카드가 없는 팩 위에 비스듬히 찍는 도장
-private struct ClearStamp: View {
+/// 팩에서 더 받을 카드가 없는 팩 위에 비스듬히 찍는 도장: 다 모았으면 COMPLETE(초록), 융합 전용만 남았으면 FUSION ONLY(보라)
+private struct PackStamp: View {
+    let complete: Bool
+
     var body: some View {
-        Text(verbatim: "CLEAR")
-            .font(.system(size: 15, weight: .heavy)).kerning(2)
-            .foregroundStyle(Palette.stamp)
-            .padding(.horizontal, 8).padding(.vertical, 3)
+        let color = complete ? Palette.stampComplete : Palette.stampFusion
+        // 3열 칸(폭 약 96pt)에 기울여도 들어가게: 12pt, FUSION ONLY는 두 줄
+        Text(verbatim: complete ? "COMPLETE" : "FUSION\nONLY")
+            .font(.system(size: 12, weight: .heavy)).kerning(1)
+            .multilineTextAlignment(.center).fixedSize()
+            .foregroundStyle(color)
+            .padding(.horizontal, 6).padding(.vertical, 3)
             .background(.white.opacity(0.75), in: .rect(cornerRadius: 4))
-            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Palette.stamp, lineWidth: 2.5))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(color, lineWidth: 2.5))
             .rotationEffect(.degrees(-24))
-            .accessibilityLabel("새 카드가 더 나오지 않는 팩")
+            .accessibilityLabel(complete ? "다 모은 팩" : "남은 카드는 융합으로만 얻는 팩")
     }
 }
 
@@ -193,7 +198,7 @@ struct BuyButton: View {
         Button(warn ? String(localized: "그래도 사기") : coinText(Balance.packPrice)) {
             if cleared && !armed { armed = true } else { armed = false; model.buy(pack: index) }
         }
-        .tint(warn ? Palette.stamp : nil)
+        .tint(warn ? Palette.badgeLoss : nil)
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .monospacedDigit()

@@ -96,8 +96,9 @@ enum Palette {
     static let badgeNew = Color(red: 0xC2 / 255, green: 0x18 / 255, blue: 0x5B / 255)
     static let badgeGain = Color(red: 0x1B / 255, green: 0x7F / 255, blue: 0x3B / 255)
     static let badgeLoss = Color(red: 0xC6 / 255, green: 0x28 / 255, blue: 0x28 / 255)
-    /// 상점의 다 모은 팩 CLEAR 도장. 팩 이미지 위 흰 바탕이라 외관과 상관없이 고정
-    static let stamp = Color(red: 0xC6 / 255, green: 0x28 / 255, blue: 0x28 / 255)
+    /// 상점 팩 도장(COMPLETE·FUSION ONLY). 팩 이미지 위 흰 바탕이라 외관과 상관없이 고정
+    static let stampComplete = Color(red: 0x1B / 255, green: 0x7F / 255, blue: 0x3B / 255)
+    static let stampFusion = Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255)
 }
 
 extension Color {
