@@ -63,9 +63,13 @@ import Testing
         // 마스크 체인지·마스크드 히어로 10종은 한국 첫 수록일 직전 팩에: 마스크 체인지(익스트림 빅토리), 아토믹(듀얼리스트 어드밴스)
         #expect(db.packs.firstIndex { $0.cards.contains(CardDB.maskChange) } == 38 && db.cards[CardDB.maskChange]?.kind == .spell)
         #expect(db.packs.firstIndex { $0.cards.contains(21614) } == 95 && db.cards.values.filter { $0.mask == true }.count == 10)
-        #expect(db.cards.values.filter { $0.hero == true }.count == 87 && db.fusionCIDs.count == 128)
+        #expect(db.cards.values.filter { $0.hero == true }.count == 87 && db.fusionCIDs.count == 285)
         #expect(db.cards.values.filter { $0.materials?.contains { $0.name != nil } == true }.count == 6)  // 조건이 섞인 융합의 소재는 그대로
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
+        // 조건 소재가 단순한(테마 포함) 융합 157종은 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
+        #expect(db.cards.values.filter { $0.picks != nil }.count == 157)
+        #expect(db.cards[12777]?.picks?.first?.any.contains(6315) == true)  // 앤틱 기어 데블의 "앤틱 기어" 몬스터에 앤틱 기어 골렘
+        #expect(db.cards[19728]?.picks?.map(\.any.count) == [437, 74] && db.cards[19728]?.picks?[0].any.contains(4007) == true)
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
         #expect(db.cards[CardDB.fusionSpell].map { ($0.name, $0.kind) } ?? ("", .monster) == ("융합", .spell))
         #expect(db.packs[0].cards.contains(CardDB.fusionSpell))
@@ -90,6 +94,11 @@ import Testing
             #expect(sub.allCIDs.filter { sub.cards[$0]?.mask == true }.allSatisfy { cid in
                 sub.cidSet.contains(CardDB.maskChange) && sub.allCIDs.contains { $0 != cid && sub.cards[$0]?.hero == true && sub.cards[$0]?.attr == sub.cards[cid]?.attr }
             }, "\(era.name)까지: 마스크 체인지나 같은 속성 HERO 가 범위 밖인 마스크드 히어로가 있음")
+            // 조건 소재 융합도 소재 줄의 카드와 조건마다 맞는 카드가 같은 범위 안에 있다 (한 카드를 여러 장 모으면 장 수는 채운다)
+            #expect(sub.allCIDs.allSatisfy { cid in
+                guard let card = sub.cards[cid], let picks = card.picks else { return true }
+                return card.cardMaterials.keys.allSatisfy(sub.cidSet.contains) && picks.allSatisfy { !$0.any.isDisjoint(with: sub.cidSet) }
+            }, "\(era.name)까지: 조건에 맞는 카드가 범위 밖인 조건 소재 융합이 있음")
         }
     }
 }

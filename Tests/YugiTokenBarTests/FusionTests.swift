@@ -61,6 +61,28 @@ import Testing
         #expect(made && game.state.owned[2] == 2 && game.state.owned[1] == 2 && game.state.owned[20] == 1 && game.state.owned[CardDB.maskChange] == 1)
     }
 
+    /// 조건 소재: 소재 줄의 카드를 먼저 잡고, 조건마다 맞는 카드 중 남는 장 수가 많은 것부터 채운다 (마지막 장은 남김)
+    @Test func picksUseMostOwnedMatchingCards() {
+        func mon(_ name: String) -> CardInfo { CardInfo(name: name, attr: nil, level: nil, type: "드래곤족", atk: nil, def: nil, text: "", imageId: nil) }
+        var fusion = mon("융합 용")
+        fusion.materials = [Material(cid: 1), Material(rule: "드래곤족 몬스터", count: 2)]
+        fusion.picks = [Pick(any: [1, 2, 3], count: 2)]
+        let cards: [Int: CardInfo] = [1: mon("용 1"), 2: mon("용 2"), 3: mon("용 3"), 4: mon("다른 몬스터"), 20: fusion,
+                                      CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
+        let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
+        var game = Game(db: db, state: GameState())
+        game.state.owned = [1: 1, 4: 9, CardDB.fusionSpell: 1]
+        game.state.fusionOnly = true
+        #expect(game.pickMaterials(20) == nil && !game.canFuse(20))  // 용 1 은 소재 줄 몫이라 조건에 못 쓴다
+        game.state.owned[1] = 2
+        game.state.owned[2] = 1
+        #expect(game.pickMaterials(20) == [[1: 1, 2: 1]])  // 장 수가 모자라면 다른 카드로 나눠 채운다
+        game.state.owned[3] = 4
+        #expect(game.pickMaterials(20) == [[3: 2]] && game.fusable == [20] && db.fusionCIDs.contains(20))
+        let made = game.fuse(20)
+        #expect(made && game.state.owned[1] == 1 && game.state.owned[3] == 2 && game.state.owned[20] == 1)
+    }
+
     /// 오른쪽 "융합 가능" 목록: 설정·「융합」·소재가 다 있어야 나온다
     @Test func fusableListsOnlyReadyFusions() {
         var game = Game(db: db, state: GameState())

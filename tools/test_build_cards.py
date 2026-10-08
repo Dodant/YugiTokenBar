@@ -310,6 +310,29 @@ def test_add_codes_hero():
     assert cards["1"].get("hero") and "hero" not in cards["2"] and "hero" not in cards["3"]
 
 
+def test_make_picks():
+    cards = {"1": {"name": "용", "attr": "빛", "level": 8, "type": "드래곤족/일반", "text": ""},
+             "2": {"name": "엑시즈 용", "attr": "빛", "level": 8, "type": "드래곤족/엑시즈/효과", "text": ""},
+             "3": {"name": "전사", "attr": "화염", "level": 4, "type": "전사족/효과", "text": ""},
+             "4": {"name": "융합 용", "type": "드래곤족/융합/효과", "text": "",
+                   "materials": [{"cid": 1}, {"rule": "레벨 8 이상의 빛 / 땅 속성 몬스터 1장 이상"}, {"rule": "전사족 / 화염 속성 몬스터", "count": 2}]},
+             "5": {"name": "테마", "type": "전사족/융합/효과", "text": "", "materials": [{"rule": '"DD(디디)" 몬스터'}, {"rule": "전사족 몬스터"}]},
+             "6": {"name": "마법", "attr": "마법", "type": "일반", "text": ""}}
+    bc.add_codes(cards)
+    picks = bc.make_picks(cards)
+    assert picks["4"] == [{"any": [1]}, {"any": [3], "count": 2}], picks["4"]
+    cards["7"] = {"name": "DDD 왕", "type": "악마족/효과", "level": 7, "text": ""}
+    cards["8"] = {"name": "히어로 키즈", "type": "전사족/효과", "text": ""}
+    cards["9"] = {"name": "이블 히어로 테마", "type": "악마족/융합/효과", "text": "",
+                  "materials": [{"rule": '레벨 6 이상의 "DD(디디)" 몬스터'}, {"rule": '"히어로" 몬스터'}]}
+    bc.add_codes(cards)
+    picks = bc.make_picks(cards)
+    assert picks["5"] == [{"any": [7]}, {"any": [3, 8]}]  # "DD" 테마에 DDD 도 든다
+    assert "9" not in picks  # "히어로" 에 맞는 카드가 없다: 히어로 키즈는 "HERO" 가 아니고, 자기 자신은 뺀다
+    assert bc.parse_rule('"A"이나 "B"') is None and bc.parse_rule('"포톤"이라는 이름이 붙은 몬스터')[0]["theme"] == "포톤"
+    assert bc.parse_rule("드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장") is None
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

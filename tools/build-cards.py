@@ -37,6 +37,9 @@ def out_path(lang):
     return f"Resources/cards_{LANGS[lang]}.json"
 
 
+PICKS_PATH = "Resources/picks.json"  # 언어 공용: 조건 소재 융합의 맞는 카드 목록 (make_picks)
+
+
 # 팩 표지 몬스터는 어느 팩에서 나오든 SE (Yugipedia cover_card 기준. 표지가 마법·함정인 악몽의 미궁·어둠의 유산,
 # 「영원한 화염」의 마의 덱 파괴 바이러스, 한글판에 없는 「장렬한 전투」 표지 2장은 뺀다)
 COVER_SE = [
@@ -615,9 +618,94 @@ def move_tiers(out):
         p["cards"] = [c["cid"] if isinstance(c, dict) else c for c in p["cards"]]
 
 
+ATTRS = {"빛", "어둠", "땅", "물", "화염", "바람", "신"}
+TYPE_WORDS = {"융합", "싱크로", "엑시즈", "링크", "펜듈럼", "의식", "효과", "일반", "튜너", "듀얼", "툰"}
+RULE_NUM = re.compile(r"(레벨|공격력|수비력) (\d+) ?(이상|이하)?(?:의|인)? ?")
+
+
+def parse_rule(rule):
+    """테마 하나와 종족·속성·몬스터 종류·레벨·공격력·수비력만으로 된 조건 소재("레벨 6 이상의 천사족 / 어둠 속성 몬스터",
+    `"DD(디디)" 몬스터`)를 (같은 칸끼리는 OR·다른 칸끼리는 AND 인 집합들과 테마, 수치 조건)으로. 테마는 KO 이름에 든 문자열
+    (괄호 읽기·띄어쓰기 빼고. JP 이름은 한자에 테마 읽기가 붙어 이름만으로 못 찾는다). 테마가 둘 이상("A"이나 "B")·필드·
+    "카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로 친다."""
+    rule = re.sub(r" ?\d+장 이상$", "", rule).removeprefix("토큰 이외의 ")
+    theme = None
+    if rule.count('"') == 2:
+        q = re.search(r'"([^"]+)"(?:이?라는 이름이 붙은)? ?', rule)
+        theme = re.sub(r"\(.*?\)", "", q.group(1)).replace(" ", "")
+        rule = rule[:q.start()] + rule[q.end():]
+    elif '"' in rule:
+        return None
+    if not rule.endswith("몬스터"):
+        return None
+    body = rule.removesuffix("몬스터")
+    nums = [(k, int(v), op) for k, v, op in RULE_NUM.findall(body)]
+    body = RULE_NUM.sub(" ", body).replace("속성의", "속성").replace("족의", "족")
+    f = {"race": set(), "attr": set(), "type": set(), "theme": theme}
+    for t in re.split(r"\s*/\s*|\s+또는\s+|\s+", body):
+        t = t.removesuffix("속성")
+        if not t:
+            continue
+        if t.endswith("족"):
+            f["race"].add(t)
+        elif t in ATTRS:
+            f["attr"].add(t)
+        elif t in TYPE_WORDS:
+            f["type"].add(t)
+        else:
+            return None
+    return f, nums
+
+
+def rule_matches(rule, info):
+    """parse_rule 결과에 KO 카드가 맞는지. 레벨은 엑시즈·링크에 없고, 수비력은 링크에 없다. "히어로" 테마는 NOT_HERO 를 뺀다."""
+    f, nums = rule
+    parts = (info.get("type") or "").split("/")
+    summons = set(info.get("summons") or ())
+    if info.get("kind") or f["race"] and parts[0] not in f["race"] or f["attr"] and info.get("attr") not in f["attr"] \
+            or f["type"] and not f["type"] & set(parts[1:]) \
+            or f["theme"] and (f["theme"] not in info["name"].replace(" ", "") or f["theme"] == "히어로" and info["name"] in NOT_HERO):
+        return False
+    for k, v, op in nums:
+        if k == "레벨" and summons & {"xyz", "link"} or k == "수비력" and "link" in summons:
+            return False
+        try:
+            x = int(info.get({"레벨": "level", "공격력": "atk", "수비력": "def"}[k]))
+        except (TypeError, ValueError):  # "?"
+            return False
+        if not (x >= v if op == "이상" else x <= v if op == "이하" else x == v):
+            return False
+    return True
+
+
+def make_picks(cards):
+    """조건 소재가 parse_rule 로 다 읽히는 융합 몬스터(이름 소재가 100팩 밖이면 뺀다)마다 조건 소재별
+    {"any": 맞는 카드 cid 목록(자기 자신 빼고), "count"} → {cid: [...]}. 소재 줄 순서의 조건 소재와 짝이 맞다.
+    맞는 카드가 없는 조건이 있으면 뺀다. KO 카드(summons 가 있어야 함)로 정하고 PICKS_PATH 하나에 둔다(세 언어 공용)."""
+    out = {}
+    for cid, info in cards.items():
+        mats = info.get("materials") or []
+        if not any("rule" in m for m in mats) or any("name" in m for m in mats):
+            continue
+        rules = [(parse_rule(m["rule"]), m.get("count")) for m in mats if "rule" in m]
+        if not all(r for r, _ in rules):
+            continue
+        picks = [{"any": [int(k) for k, c in cards.items() if k != cid and rule_matches(r, c)]} | ({"count": n} if n else {})
+                 for r, n in rules]
+        if all(p["any"] for p in picks):  # 맞는 카드가 자기뿐이면("성령수기" 몬스터) 못 만든다
+            out[cid] = picks
+    return out
+
+
+def dump_picks(cards):
+    """한 융합이 한 줄."""
+    with open(PICKS_PATH, "w", encoding="utf-8") as f:
+        f.write("{\n" + ",\n".join(f'"{k}":{json.dumps(v, separators=(",", ":"))}' for k, v in make_picks(cards).items()) + "\n}\n")
+
+
 def add_codes(cards):
     """언어와 상관없는 코드 필드: 마법·함정은 kind, 몬스터는 type 칸의 소환법을 summons(시대 순)로,
-    "HERO" 몬스터는 hero, 마스크 체인지로만 소환하는 몬스터는 mask. 앱 로직은 이것만 본다."""
+    "HERO" 몬스터는 hero, 마스크 체인지로만 소환하는 몬스터는 mask. 앱 로직은 이것만 본다(조건 소재는 따로 make_picks)."""
     for info in cards.values():
         for f in ("kind", "summons", "hero", "mask"):
             info.pop(f, None)
@@ -707,6 +795,7 @@ def build_ko():
     add_mask_change(out, by_konami)
     add_codes(out["cards"])
     dump(out, out_path("ko"))
+    dump_picks(out["cards"])
     missing += [f"{k} {v['name']}" for k, v in out["cards"].items() if "imageId" not in v and int(k) not in infos]
     print(f"packs={len(packs)} distinct={len(out['cards'])} missingImages={len(missing)}")
     for m in missing:
@@ -743,6 +832,7 @@ def reformat(langs):
     normalize_ko(ko)
     if "ko" in langs:
         dump(ko, out_path("ko"))
+        dump_picks(ko["cards"])
     for lang in ("ja", "en"):
         if lang in langs and os.path.exists(out_path(lang)):
             out = load(out_path(lang))

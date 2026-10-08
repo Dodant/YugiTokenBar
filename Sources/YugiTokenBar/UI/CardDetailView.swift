@@ -45,22 +45,25 @@ struct CardDetailView: View {
                         Text("같은 속성(\(card.attr ?? ""))의 \"히어로\" 몬스터 1장").foregroundStyle(.secondary)
                             .help("가진 것 중 가장 많은 카드를 써요")
                     }
-                    ForEach(Array(grouped(materials).enumerated()), id: \.offset) { _, g in
+                    let groups = grouped(materials)
+                    let picked = picked(groups)
+                    ForEach(Array(groups.enumerated()), id: \.offset) { i, g in
                         let suffix = g.n > 1 ? " × \(g.n)" : ""
-                        if let mcid = g.material.cid, let name = model.db.cards[mcid]?.name {
-                            HStack {
-                                Button(name + suffix) { jump(mcid) }.buttonStyle(.link)
-                                Spacer()
-                                Text("보유 \(model.game.copies(mcid))").foregroundStyle(.secondary).monospacedDigit()
-                            }
+                        if let mcid = g.material.cid {
+                            materialRow(mcid, suffix)
                         } else if let name = g.material.name {
                             Text(name + suffix).foregroundStyle(.secondary).help("정규 부스터 100팩에 없는 카드예요")
                         } else {
                             Text((g.material.rule ?? "") + suffix).foregroundStyle(.secondary)
+                                .help(card.picks != nil ? "가진 것 중 가장 많은 카드를 써요" : "")
+                            // 조건 소재는 지금 고른 카드를 밑에 보여 준다
+                            ForEach(picked[i].keys.sorted(), id: \.self) { mcid in
+                                materialRow(mcid, picked[i][mcid].map { $0 > 1 ? " × \($0)" : "" } ?? "")
+                            }
                         }
                     }
                     // 설정이 켜져 있고 소재를 다 아는 융합(또는 마스크드 히어로)이면 여기서 만든다
-                    if model.game.state.fusionOnly, model.game.fusionMaterials(cid) != nil || mask {
+                    if model.game.state.fusionOnly, card.craftable {
                         let can = model.game.canFuse(cid)
                         let spell = model.game.craftSpell(cid)
                         let hasSpell = model.game.copies(spell) > 0
@@ -82,12 +85,12 @@ struct CardDetailView: View {
                                 .help(why)
                                 .confirmationDialog("\(card.name) 융합", isPresented: $confirmFuse) {
                                     Button("융합") {
-                                        let mats = materials.flatMap { m in m.cid.map { Array(repeating: $0, count: m.count ?? 1) } ?? [] }  // 연출은 소재 줄 순서대로
+                                        let mats = craftRows(materials).flatMap { m in m.cid.map { Array(repeating: $0, count: m.count ?? 1) } ?? [] }  // 연출은 소재 줄 순서대로
                                         model.fuse(cid)
                                         fused(FusionShow(cid: cid, materials: mats))
                                     }
                                 } message: {
-                                    Text("\(consumed(materials))을 소비해요. 소재는 1장씩 남아 컬렉션에서 빠지지 않아요.")
+                                    Text("\(consumed(craftRows(materials)))을 소비해요. 소재는 1장씩 남아 컬렉션에서 빠지지 않아요.")
                                 }
                         }
                     }
@@ -152,6 +155,34 @@ struct CardDetailView: View {
     private func grouped(_ materials: [Material]) -> [(material: Material, n: Int)] {
         materials.reduce(into: []) { acc, m in
             if acc.last?.material == m { acc[acc.count - 1].n += m.count ?? 1 } else { acc.append((m, m.count ?? 1)) }
+        }
+    }
+
+    private func materialRow(_ mcid: Int, _ suffix: String) -> some View {
+        HStack {
+            Button((model.db.cards[mcid]?.name ?? "") + suffix) { jump(mcid) }.buttonStyle(.link)
+            Spacer()
+            Text("보유 \(model.game.copies(mcid))").foregroundStyle(.secondary).monospacedDigit()
+        }
+    }
+
+    /// 묶은 소재 줄마다 그 조건 소재로 고른 카드 (cid → 장 수). 조건 소재가 아니거나 다 못 고르면 빈 사전
+    private func picked(_ groups: [(material: Material, n: Int)]) -> [[Int: Int]] {
+        var picks = model.game.pickMaterials(cid) ?? []
+        return groups.map { g in
+            guard g.material.rule != nil, !picks.isEmpty else { return [:] }
+            return (0..<g.n / (g.material.count ?? 1)).reduce(into: [:]) { got, _ in
+                if !picks.isEmpty { got.merge(picks.removeFirst(), uniquingKeysWith: +) }
+            }
+        }
+    }
+
+    /// 실제로 소비할 소재 줄: 조건 소재를 고른 카드로 바꾼다
+    private func craftRows(_ materials: [Material]) -> [Material] {
+        guard var picks = model.game.pickMaterials(cid) else { return materials }
+        return materials.flatMap { m -> [Material] in
+            guard m.rule != nil, !picks.isEmpty else { return [m] }
+            return picks.removeFirst().sorted { $0.key < $1.key }.map { Material(cid: $0.key, count: $0.value) }
         }
     }
 

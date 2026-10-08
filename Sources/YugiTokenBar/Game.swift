@@ -255,7 +255,7 @@ struct Game: Sendable {
     /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통)
     func keep(_ cid: Int) -> Int { state.fusionOnly ? max(1, db.materialNeed[cid] ?? 1) : 1 }
 
-    /// 설정이 켜져 있으면 소재를 아는 융합 몬스터·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
+    /// 설정이 켜져 있으면 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
     func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) }
 
     /// 「융합」 마법 카드가 있어야 융합이 열린다 (소비하지 않는다)
@@ -272,9 +272,34 @@ struct Game: Sendable {
             .max { (copies($0), -$0) < (copies($1), -$1) }
     }
 
-    /// 만들 때 쓸 소재 (cid → 장 수): 융합은 소재 줄, 마스크드 히어로는 고른 HERO 1장
+    /// 조건 소재 융합(picks)의 소재: 소재 줄의 카드를 먼저 잡고, 조건마다 가진 카드 중 남는 장 수가 많은 것부터(같으면 cid 가 작은 것) 채운다.
+    /// 조건 소재 순서대로 고른 카드 (cid → 장 수). 하나라도 못 채우면 nil.
+    func pickMaterials(_ cid: Int) -> [[Int: Int]]? {
+        guard let card = db.cards[cid], let picks = card.picks else { return nil }
+        var used = card.cardMaterials
+        var out: [[Int: Int]] = []
+        for pick in picks {
+            var need = pick.count ?? 1, got: [Int: Int] = [:]
+            let left = { (c: Int) in copies(c) - (used[c] ?? 0) }
+            let pool = state.owned.keys.filter { $0 != cid && pick.any.contains($0) && left($0) > 0 }
+            for c in pool.sorted(by: { (left($0), -$0) > (left($1), -$1) }) where need > 0 {
+                let k = min(need, left(c))
+                got[c] = k
+                used[c, default: 0] += k
+                need -= k
+            }
+            guard need == 0 else { return nil }
+            out.append(got)
+        }
+        return out
+    }
+
+    /// 만들 때 쓸 소재 (cid → 장 수): 융합은 소재 줄(조건 소재는 고른 카드), 마스크드 히어로는 고른 HERO 1장
     func craftMaterials(_ cid: Int) -> [Int: Int]? {
-        db.cards[cid]?.mask == true ? maskMaterial(cid).map { [$0: 1] } : fusionMaterials(cid)
+        guard let card = db.cards[cid] else { return nil }
+        if card.mask == true { return maskMaterial(cid).map { [$0: 1] } }
+        if card.picks != nil { return pickMaterials(cid)?.reduce(card.cardMaterials) { $0.merging($1, uniquingKeysWith: +) } }
+        return card.fusionMaterials
     }
 
     func canFuse(_ cid: Int) -> Bool {

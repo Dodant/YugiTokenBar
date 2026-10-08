@@ -25,6 +25,9 @@ struct CardInfo: Codable, Sendable, Equatable {
     var hero: Bool? = nil
     /// 「마스크 체인지」로만 소환하는 마스크드 히어로: 같은 속성 hero 몬스터 1장으로 만든다
     var mask: Bool? = nil
+    /// 조건 소재가 테마·종족·속성·레벨 같은 단순 조건뿐인 융합만: 소재 줄의 조건 소재마다(순서대로) 맞는 카드.
+    /// build-cards.py 가 KO 로 정해 Resources/picks.json(세 언어 공용)에 두고, load 가 채운다 (카드 파일에는 없다)
+    var picks: [Pick]? = nil
 
     enum CodingKeys: String, CodingKey {
         case name, attr, level, type, atk, def, text, imageId, tier, scale, pendulum, materials, summons, hero, mask
@@ -60,19 +63,21 @@ struct CardInfo: Codable, Sendable, Equatable {
         kind.rawValue == filter || (kind == .monster && summons?.contains(filter) == true)
     }
 
-    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 100팩 카드인 융합 몬스터만, 조건이나 없는 카드가 섞이면 nil.
-    var fusionMaterials: [Int: Int]? {
-        guard let materials else { return nil }
-        var need: [Int: Int] = [:]
-        for m in materials {
-            guard let cid = m.cid else { return nil }
-            need[cid, default: 0] += m.count ?? 1
+    /// 소재 줄의 100팩 카드 소재만 (cid → 장 수)
+    var cardMaterials: [Int: Int] {
+        (materials ?? []).reduce(into: [:]) { need, m in
+            if let cid = m.cid { need[cid, default: 0] += m.count ?? 1 }
         }
-        return need
     }
 
-    /// 융합(소재를 다 아는 융합 몬스터)이나 마스크 체인지로 만들 수 있는 카드
-    var craftable: Bool { fusionMaterials != nil || mask == true }
+    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 100팩 카드인 융합 몬스터만, 조건이나 없는 카드가 섞이면 nil.
+    var fusionMaterials: [Int: Int]? {
+        guard let materials, materials.allSatisfy({ $0.cid != nil }) else { return nil }
+        return cardMaterials
+    }
+
+    /// 융합(소재를 다 알거나 조건이 단순한 융합 몬스터)이나 마스크 체인지로 만들 수 있는 카드
+    var craftable: Bool { fusionMaterials != nil || picks != nil || mask == true }
 }
 
 /// 카드 종류. rawValue 는 컬렉션 종류 메뉴 값이자 cards_XX.json "kind" 값(마법·함정, 몬스터는 생략).
@@ -93,6 +98,12 @@ struct Material: Codable, Sendable, Equatable {
     var cid: Int? = nil
     var name: String? = nil
     var rule: String? = nil
+    var count: Int? = nil
+}
+
+/// 조건 소재 하나: 맞는 카드(any) 중에서 count 장(장 수가 다른 카드끼리 나눠도 된다)
+struct Pick: Codable, Sendable, Equatable {
+    var any: Set<Int>
     var count: Int? = nil
 }
 
@@ -118,9 +129,9 @@ struct CardDB: Sendable {
     private(set) var cidSet: Set<Int>
     /// 범위 안 융합 몬스터의 소재로 필요한 최대 장 수 (사이버 드래곤 → 3, 사이버 엔드 드래곤). 중복 판매에서 그만큼 남긴다.
     private(set) var materialNeed: [Int: Int]
-    /// 범위 안 융합 몬스터(소재를 아는 카드·마스크드 히어로) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
+    /// 범위 안 융합 몬스터(소재를 알거나 조건이 단순한 카드·마스크드 히어로) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
     private(set) var fusionCount: Int
-    /// 만들 수 있는 카드 전체: 소재를 다 아는 융합 몬스터·마스크드 히어로 (`fusionMaterials` 는 부를 때마다 사전을 만들어서, 상점이 그릴 때 쓰지 않게)
+    /// 만들 수 있는 카드 전체: 소재를 다 알거나 조건이 단순한 융합 몬스터·마스크드 히어로 (`fusionMaterials` 는 부를 때마다 사전을 만들어서, 상점이 그릴 때 쓰지 않게)
     let fusionCIDs: Set<Int>
 
     /// 등급은 1~5 로 자른다. cards_XX.json 에 범위 밖 등급이 있어도 뽑기(티어 1~5 만 찾음)·판매가·등급 표시가 어긋나거나 죽지 않게.
@@ -154,7 +165,8 @@ struct CardDB: Sendable {
 
     private static func materialNeeds(_ cids: [Int], _ cards: [Int: CardInfo]) -> [Int: Int] {
         cids.reduce(into: [:]) { need, cid in
-            for (m, n) in cards[cid]?.fusionMaterials ?? [:] { need[m] = max(need[m] ?? 0, n) }
+            guard let card = cards[cid], card.craftable else { return }
+            for (m, n) in card.cardMaterials { need[m] = max(need[m] ?? 0, n) }
         }
     }
 
@@ -205,6 +217,11 @@ struct CardDB: Sendable {
         var cards: [Int: CardInfo] = [:]
         for (key, info) in file.cards {
             if let cid = Int(key) { cards[cid] = info }
+        }
+        // 조건 소재의 맞는 카드 목록은 세 언어 공용 파일 하나에 (카드 파일 옆 picks.json)
+        let picks = try JSONDecoder().decode([String: [Pick]].self, from: Data(contentsOf: url.deletingLastPathComponent().appendingPathComponent("picks.json")))
+        for (key, p) in picks {
+            if let cid = Int(key) { cards[cid]?.picks = p }
         }
         return CardDB(packs: file.packs, cards: cards)
     }
