@@ -440,7 +440,7 @@ private struct DragPreview: View {
 
 /// 마우스 올림 상태를 셀 안에 둔다. DexView 의 @State 로 두면 스크롤 중 셀이 커서 밑을 지날 때마다
 /// 창 전체(카드 목록 필터·정렬)를 다시 계산해서 버벅인다.
-private struct Hovering<Content: View>: View {
+struct Hovering<Content: View>: View {
     @ViewBuilder let content: (Bool) -> Content
     @State private var hovered = false
 
@@ -448,7 +448,7 @@ private struct Hovering<Content: View>: View {
 }
 
 /// 한 줄 글자. 넘치면 …로 줄이고, `active`(마우스 올림)인 동안 옆으로 흘러가며 전체를 보여준다.
-private struct MarqueeText: View {
+struct MarqueeText: View {
     let text: String
     let active: Bool
     @State private var full: CGFloat = 0

@@ -54,7 +54,7 @@ struct OpeningView: View {
     private func isRare(_ i: Int) -> Bool { model.openingPack != nil && i == model.opening.count - 1 }
 
     private func cell(_ pull: Pull, _ i: Int) -> some View {
-        VStack(spacing: 4) {
+        Hovering { hovered in VStack(spacing: 4) {
             FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
                 .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
                 .accessibilityElement(children: .ignore)
@@ -64,14 +64,14 @@ struct OpeningView: View {
                 .accessibilityActions {
                     if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
                 }
-            // 상점 팩 칸처럼 아래 이름 한 줄. 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
-            Text(model.db.cards[pull.cid]?.name ?? " ")
-                .font(.caption2).lineLimit(1).truncationMode(.tail)
+            // 상점 팩 칸처럼 아래 이름 한 줄(넘치면 마우스를 올린 동안 흘러간다). 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
+            MarqueeText(text: model.db.cards[pull.cid]?.name ?? " ", active: hovered && flipped.contains(i))
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
                 .opacity(flipped.contains(i) ? 1 : 0)
                 .accessibilityHidden(true)  // 위 카드가 이름을 읽는다 (뒤집기 전에 이름이 새지 않게)
-        }
+        } }
     }
 
     /// 뒤집기 전 "카드 3, 뒤집기 전", 뒤집은 뒤 "푸른 눈의 백룡, UR, 새 카드" (자동 판매면 "+ⓒ 10 자동 판매")
