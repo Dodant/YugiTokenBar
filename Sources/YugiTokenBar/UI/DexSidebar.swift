@@ -31,6 +31,7 @@ struct DexSidebar: View {
                 Image(systemName: "star.fill").foregroundStyle(.yellow)
             }
             .tag(DexScope.favorites)
+            Label("최근 획득", systemImage: "clock").tag(DexScope.recent)
             ForEach(game.db.eras, id: \.name) { era in
                 DexEraSection(name: era.name, packs: era.packs) { i in packItem(game, i) }
             }

@@ -7,6 +7,8 @@ struct PopoverView: View {
     /// 무료 팩·무료 카드 줄이 보이는지. 덮여 있는 동안(개봉·상점·설정)에는 새로 생기는 줄은 미뤘다가 돌아왔을 때 보이고
     /// (팩을 까다 무료 팩이 생겨도 개봉 화면이 늘어나지 않게), 다 써서 사라지는 줄은 바로 뺀다(마지막 무료 팩을 열면 원래 높이로)
     @State private var freeRows: (pack: Bool, card: Bool)?
+    /// 바로 구매 줄에 보이는 팩 (스와이프로 넘김)
+    @State private var shownPack: Int?
 
     var body: some View {
         // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점·개봉·설정은 요약 크기 안에 겹쳐 그려 높이를 고정
@@ -40,6 +42,7 @@ struct PopoverView: View {
     private var summary: some View {
         let game = model.game
         let state = game.state
+        let swipeScale = lessMotion ? 1 : 0.88
         return VStack(alignment: .leading, spacing: 16) {
             header(state)
 
@@ -83,8 +86,32 @@ struct PopoverView: View {
                     .panelCard()
             }
 
-            PackRow(index: game.lastBoughtPack)
-                .panelCard()
+            // 트랙패드 좌우 스와이프로 발매순 앞뒤 팩을 넘긴다. 사면 그 팩이 lastBoughtPack 이 되어 그대로 남는다
+            // LazyHStack 가로 스크롤은 높이를 내용에서 못 받아 0이 되므로, 숨긴 한 줄로 높이를 잡는다
+            PackRow(index: game.lastBoughtPack).padding(12).hidden()
+                .overlay {
+                    ScrollView(.horizontal) {
+                        LazyHStack(spacing: 0) {
+                            ForEach(game.db.packs.indices, id: \.self) { i in
+                                PackRow(index: i).padding(12).containerRelativeFrame(.horizontal)
+                                    // 넘어가는 동안 살짝 작아지고 흐려졌다가 자리에 붙는다
+                                    .scrollTransition { row, phase in
+                                        row.scaleEffect(phase.isIdentity ? 1 : swipeScale)
+                                            .opacity(phase.isIdentity ? 1 : 0.4)
+                                    }
+                            }
+                        }
+                        .scrollTargetLayout()
+                    }
+                    .scrollTargetBehavior(.paging)
+                    .scrollIndicators(.never)
+                    .scrollPosition(id: $shownPack)
+                    // 한 팩 넘길 때마다 트랙패드에 톡 (Force Touch 트랙패드)
+                    .sensoryFeedback(.alignment, trigger: shownPack)
+                }
+                .onChange(of: game.lastBoughtPack, initial: true) { shownPack = game.lastBoughtPack }
+                .background(.fill.quinary, in: .rect(cornerRadius: 16))
+            .clipShape(.rect(cornerRadius: 16))
 
             VStack(spacing: 2) {
                 MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.screen = .shop }

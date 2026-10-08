@@ -25,7 +25,12 @@ struct DexView: View {
     /// 검색창에 글자를 치는 중엔 ⌘A·Delete 를 검색창에 넘긴다 (안 그러면 툴바 단축키가 가로챈다)
     @FocusState private var searchFocused: Bool
     @State private var showUnowned = true  // 기억하지 않고 창을 열 때마다 켠다
-    @AppStorage("dex.sort") private var sort = DexSort.pack
+    @AppStorage("dex.sort") private var savedSort = DexSort.pack
+    /// 최근 획득 정렬. 저장된 정렬과 따로, 창을 열 때마다 획득 순서(.pack)로 시작한다
+    @State private var recentSort = DexSort.pack
+    /// 지금 범위의 정렬 (최근 획득이면 recentSort)
+    private var sort: DexSort { scope == .recent ? recentSort : savedSort }
+    private var sortBinding: Binding<DexSort> { scope == .recent ? $recentSort : $savedSort }
     /// 마지막으로 고른 사이드바 항목과 연 시각. 그날 처음 열면 "전체"로 시작한다
     @AppStorage("dex.scope") private var savedScope = ""
     @AppStorage("dex.scopeDay") private var savedDay = 0.0  // 마지막으로 연 시각(timeIntervalSince1970)
@@ -184,8 +189,9 @@ struct DexView: View {
             Text("SE 시크릿").tag(5)
         }
         .fixedSize()
-        Picker("정렬", selection: $sort) {
-            ForEach(DexSort.allCases, id: \.self) { Text($0.title).tag($0) }
+        Picker("정렬", selection: sortBinding) {
+            // 최근 획득에선 "팩 순서" 자리가 획득 순서(최신순)
+            ForEach(DexSort.allCases, id: \.self) { Text(scope == .recent && $0 == .pack ? String(localized: "획득 순서") : $0.title).tag($0) }
         }
         .fixedSize()
     }
@@ -193,6 +199,7 @@ struct DexView: View {
     private var title: String {
         switch scope {
         case .favorites?: String(localized: "즐겨찾기")
+        case .recent?: String(localized: "최근 획득")
         case .pack(let i)? where model.db.packs.indices.contains(i): model.db.packs[i].name
         case .deck(let id)?: model.game.deck(id)?.name ?? String(localized: "덱")
         default: String(localized: "전체")
@@ -220,6 +227,7 @@ struct DexView: View {
             showUnowned: showUnowned, sort: sort, era: state.eraLimit,
             owned: !showUnowned || sort == .copies ? state.owned : nil,
             favorites: scope == .favorites ? state.favorites : nil,
+            recent: scope == .recent ? state.log.map(\.cid) : nil,
             deck: deckID.map { id in Set(model.game.deck(id)?.cards.keys.map { $0 } ?? []) })
     }
 
@@ -231,7 +239,7 @@ struct DexView: View {
         switch restored {
         case .pack(let i)? where model.db.packs.indices.contains(i): scope = restored
         case .deck(let id)? where model.game.deck(id) != nil: scope = restored
-        case .favorites?: scope = restored
+        case .favorites?, .recent?: scope = restored
         default: scope = .all
         }
     }

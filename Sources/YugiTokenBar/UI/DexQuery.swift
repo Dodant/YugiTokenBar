@@ -9,17 +9,18 @@ struct DexEntry: Identifiable {
     var id: Int { cid }
 }
 
-/// 사이드바 선택: 전체 · 즐겨찾기 · 팩 · 덱
+/// 사이드바 선택: 전체 · 즐겨찾기 · 최근 획득 · 팩 · 덱
 enum DexScope: Hashable {
-    case all, favorites
+    case all, favorites, recent
     case pack(Int)
     case deck(UUID)
 
-    /// UserDefaults 저장용: "all", "favorites", "pack:3", "deck:<UUID>"
+    /// UserDefaults 저장용: "all", "favorites", "recent", "pack:3", "deck:<UUID>"
     var key: String {
         switch self {
         case .all: "all"
         case .favorites: "favorites"
+        case .recent: "recent"
         case .pack(let i): "pack:\(i)"
         case .deck(let id): "deck:\(id.uuidString)"
         }
@@ -30,6 +31,7 @@ enum DexScope: Hashable {
         switch (parts.first, parts.count) {
         case ("all", 1): self = .all
         case ("favorites", 1): self = .favorites
+        case ("recent", 1): self = .recent
         case ("pack", 2): guard let i = Int(parts[1]) else { return nil }; self = .pack(i)
         case ("deck", 2): guard let id = UUID(uuidString: parts[1]) else { return nil }; self = .deck(id)
         default: return nil
@@ -65,9 +67,10 @@ struct DexQuery: Equatable {
     var showUnowned = true
     var sort = DexSort.pack
     var era = ""
-    /// 결과에 영향을 줄 때만 채운다: 보유(미보유 숨기기·보유 많은 순), 즐겨찾기(즐겨찾기 범위), 덱 카드(덱 범위)
+    /// 결과에 영향을 줄 때만 채운다: 보유(미보유 숨기기·보유 많은 순), 즐겨찾기(즐겨찾기 범위), 획득 기록(최근 획득 범위), 덱 카드(덱 범위)
     var owned: [Int: Int]?
     var favorites: Set<Int>?
+    var recent: [Int]?
     var deck: Set<Int>?
 
     /// 카드 목록은 바뀌지 않으니 이름 순위는 처음 이름순으로 볼 때 한 번만 만든다 (비교마다 문자열을 대면 6천 장에 ~50ms)
@@ -83,6 +86,10 @@ struct DexQuery: Equatable {
         let cards: [Int] = switch scope {
         case .pack(let i)? where db.packs.indices.contains(i): db.packs[i].cards
         case .favorites?: all().filter { game.state.favorites.contains($0) }
+        // 최근 획득: 획득 기록(최근 50장) 최신순, 같은 카드는 한 번, 시대 범위 안만
+        case .recent?:
+            { let inRange = Set(all()); var once = Set<Int>()
+              return game.state.log.map(\.cid).filter { inRange.contains($0) && once.insert($0).inserted } }()
         case .deck(let id)?:
             { let inDeck = game.deck(id)?.cards ?? [:]; return all().filter { inDeck[$0] != nil } }()
         default: all()
@@ -94,7 +101,7 @@ struct DexQuery: Equatable {
             .filter { search.isEmpty || Self.squash(db.cards[$0.element]?.name ?? "").localizedStandardContains(needle) }
             .map { DexEntry(number: $0.offset + 1, cid: $0.element, label: db.cards[$0.element]?.rarity ?? "N") }
         let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
-        guard sort != .pack else { return (tiered, list) }  // 이미 팩 순번 순
+        guard sort != .pack else { return (tiered, list) }  // 이미 팩 순번 순 (최근 획득은 획득 순서)
         let tierOf = { (e: DexEntry) in db.tier(e.cid) }
         if sort == .name, Self.nameRank.isEmpty { Self.nameRank = CardDB.nameRanks(db.cards) }
         let name = { (cid: Int) in Self.nameRank[cid] ?? .max }

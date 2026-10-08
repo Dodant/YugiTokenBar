@@ -61,7 +61,7 @@ import Testing
 }
 
 @Test func dexScopeKeyRoundTrips() {
-    for scope in [DexScope.all, .favorites, .pack(12), .deck(UUID())] {
+    for scope in [DexScope.all, .favorites, .recent, .pack(12), .deck(UUID())] {
         #expect(DexScope(key: scope.key) == scope)
     }
     #expect(DexScope(key: "") == nil)

@@ -40,6 +40,15 @@ import Testing
         #expect(DexQuery(scope: .deck(deck.id)).entries(in: game).visible.map(\.cid) == [1, 2])
     }
 
+    /// 최근 획득은 획득 기록 최신순, 같은 카드는 한 번, DB 밖 카드는 뺀다
+    @MainActor @Test func recentScope() {
+        var game = Game(db: makeDB([[(3, 1), (1, 4)], [(2, 2)]]), state: GameState())
+        for cid in [1, 2, 99, 1, 3] { game.give(cid, source: LogEntry.free) }
+        #expect(DexQuery(scope: .recent).entries(in: game).visible.map(\.cid) == [3, 1, 2])
+        // 정렬을 고르면 그대로 따른다 (같은 등급이면 획득 순서)
+        #expect(DexQuery(scope: .recent, sort: .tierAsc).entries(in: game).visible.map(\.cid) == [3, 2, 1])
+    }
+
     /// 그리드 칸 id 는 위치가 아니라 카드(cid)라, 목록이 바뀌어도 같은 칸 뷰가 다른 카드를 보여 주지 않는다
     @MainActor @Test func idIsCidAndUnique() {
         var game = Game(db: makeDB([[(3, 1), (1, 4)], [(1, 4), (2, 2)]]), state: GameState())
