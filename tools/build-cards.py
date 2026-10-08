@@ -37,6 +37,7 @@ def out_path(lang):
     return f"Resources/cards_{LANGS[lang]}.json"
 
 
+PICKS_PATH = "Resources/picks.json"  # 언어 공용: 만들 수 있는 융합의 소재 줄마다 맞는 카드 목록 (make_picks)
 
 
 # 팩 표지 몬스터는 어느 팩에서 나오든 SE (Yugipedia cover_card 기준. 표지가 마법·함정인 악몽의 미궁·어둠의 유산,
@@ -354,33 +355,26 @@ def merge(base, text):
 
 
 def split_lang_materials(text, ko_mats):
-    """언어 텍스트 첫 줄(소재 줄)을 떼고 KO 소재와 같은 자리끼리 맞춘다. 카드 소재는 KO 그대로, name·rule 소재는 그 언어
-    조각(따옴표는 name 에서 벗기고 끝의 × N 은 count)에 KO 가 정한 cid 를 붙인다. 같은 조건 글이 이어지는 KO 줄(즈아크의 "1장씩
-    합계 4장")은 조각 하나를 그 줄 수만큼 쓴다. 조각 수가 다르면 KO 소재 그대로 (ok=False)."""
+    """언어 텍스트 첫 줄(소재 줄)을 떼고 KO 소재와 같은 자리끼리 맞춘다. cid 소재는 KO 그대로,
+    name·rule 소재는 그 언어 조각(따옴표는 name 에서 벗기고 끝의 × N 은 count). 조각 수가 다르면 KO 소재 그대로 (ok=False)."""
     first_line, _, rest = text.partition("\n")
     parts = [p.strip() for p in re.split(r"\s+\+\s+|\s*＋\s*", first_line) if p.strip()]
-    groups = material_groups(ko_mats)
-    if len(parts) != len(groups):
+    if len(parts) != len(ko_mats):
         return rest.strip(), ko_mats, False
     out = []
-    for part, g in zip(parts, groups):
-        for m in g:
-            out.append(lang_material(part, m))
+    for part, m in zip(parts, ko_mats):
+        if "cid" in m:
+            out.append(m)
+            continue
+        c = MAT_COUNT.fullmatch(part)
+        body, count = (c.group(1), int(c.group(2))) if c else (part, None)
+        if "name" in m:
+            q = QUOTED.fullmatch(body)
+            entry = {"name": (q.group(1) or q.group(2)) if q else body}
+        else:
+            entry = {"rule": body}
+        out.append(entry | ({"count": count} if count else {}))
     return rest.strip(), out, True
-
-
-def lang_material(part, m):
-    """KO 소재 m 의 그 언어 줄: 카드 소재는 KO 그대로, name·rule 은 조각 글에 KO 의 cid·count."""
-    if "name" not in m and "rule" not in m:
-        return m
-    c = MAT_COUNT.fullmatch(part)
-    body, count = (c.group(1), int(c.group(2))) if c else (part, None)
-    if "name" in m:
-        q = QUOTED.fullmatch(body)
-        entry = {"name": (q.group(1) or q.group(2)) if q else body}
-    else:
-        entry = {"rule": body}
-    return entry | ({"cid": m["cid"]} if "cid" in m else {}) | ({"count": m["count"]} if "count" in m else {})
 
 
 def localize(ko, recs, fallback=None, lang=None):
@@ -395,9 +389,7 @@ def localize(ko, recs, fallback=None, lang=None):
             missing.append(cid)
             continue
         info = merge(base, r["info"])
-        if base.get("mask"):  # 마스크드 히어로는 소재 줄이 없고 assign_materials 가 만든 소재뿐
-            info["materials"] = base["materials"]
-        elif "materials" in base:
+        if "materials" in base:
             info["text"], info["materials"], ok = split_lang_materials(info["text"], base["materials"])
             if not ok and any("cid" not in m for m in base["materials"]):
                 override = MATERIALS_OVERRIDES.get(lang, {}).get(int(cid))
@@ -638,7 +630,6 @@ def move_tiers(out):
         p["cards"] = [c["cid"] if isinstance(c, dict) else c for c in p["cards"]]
 
 
-ERA_STARTS = ("LOB", "SOD", "TDGS", "REDU", "DUEA", "COTD", "ROTD")  # 시대 첫 팩의 setCode (앱의 CardDB.eraStarts 와 같은 7개)
 ATTRS = {"빛", "어둠", "땅", "물", "화염", "바람", "신"}
 TYPE_WORDS = {"융합", "싱크로", "엑시즈", "링크", "펜듈럼", "의식", "효과", "일반", "튜너", "듀얼", "툰"}
 # 필드·패·소환 상태는 보지 않고 가진 카드로 친다
@@ -652,7 +643,7 @@ def parse_rule(rule):
     `"DD(디디)" 몬스터`)를 (같은 칸끼리는 OR·다른 칸끼리는 AND 인 집합들과 테마, 수치 조건)으로. 테마는 KO 이름에 든 문자열
     (괄호 읽기·띄어쓰기 빼고. JP 이름은 한자에 테마 읽기가 붙어 이름만으로 못 찾는다). 테마는 둘 중 하나("A"이나 "B",
     "A" 몬스터 또는 "B" 몬스터)까지 집합으로. 필드·패·소환 상태(LOOSE)는 지운다. `"A"(또는 그 카드명이 쓰여진 융합 몬스터)` 는
-    테마 A 에 "of"(assign_materials 가 A 와 A 가 소재인 융합으로 찾는다). "카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로, "효과 몬스터 이외의" 는 그 종류를 뺀다."""
+    테마 A 에 "of"(make_picks 가 A 와 A 가 소재인 융합으로 찾는다). "카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로, "효과 몬스터 이외의" 는 그 종류를 뺀다."""
     rule = re.sub(r" ?\d+장 이상$", "", rule).removeprefix("토큰 이외의 ")
     for k, v in LOOSE.items():
         rule = rule.replace(k, v)
@@ -728,69 +719,48 @@ def split_each(rule):
     return [rule]
 
 
-def material_groups(mats):
-    """소재 줄에서 같은 조건 글이 이어지는 줄("…1장씩 합계 4장"을 나눈 것)을 한 묶음으로. 다른 줄은 혼자."""
-    groups = []
-    for m in mats:
-        if groups and "rule" in m and m.get("rule") == groups[-1][0].get("rule"):
-            groups[-1].append(m)
-        else:
-            groups.append([m])
-    return groups
-
-
-def assign_materials(out):
-    """만들 수 있는 융합의 소재 줄마다 쓸 카드 하나를 정해 cid 로 적는다(언어 공용). 조건 소재(rule)는 parse_rule 로 맞는 카드 중
-    그 융합이 든 시대(ERA_STARTS)의 마지막 팩까지 나온 카드(→ 그 융합이 든 어느 시대 범위에서도 같이 있다) 가운데 등급이 낮고, 이른 팩의,
-    cid 가 작은 것.
-    마스크드 히어로(mask, 소재 줄 없음)는 같은 속성 hero 몬스터로 소재 줄 하나를 만든다. "드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼
-    몬스터 1장씩 합계 4장" 은 같은 조건 글로 종류마다 한 줄씩 나눈다. 자기 자신은 빼고, 이름 소재·못 읽는 조건·맞는 카드가 없는
-    조건(성령수기 가이아페라이오 등)은 cid 없이 남겨 못 만든다. add_codes 뒤에 돌리고, 다시 돌려도 같다."""
-    cards = out["cards"]
-    first = {}
-    for i, p in enumerate(out["packs"]):
-        for c in p["cards"]:
-            first.setdefault(c, i)
-    starts = [i for i, p in enumerate(out["packs"]) if p.get("setCode") in ERA_STARTS]
-    era_end = lambda i: min((s for s in starts if s > i), default=len(out["packs"])) - 1
-
+def make_picks(cards):
+    """만들 수 있는 융합 몬스터마다 소재 줄 한 줄에 하나씩 {"any": 맞는 카드 cid 목록(자기 자신 빼고), "count"} → {cid: [...]}.
+    카드 소재는 [그 cid], 조건 소재는 parse_rule 로 맞는 카드, 마스크드 히어로(mask, 소재 줄 없음)는 같은 속성 hero 몬스터 하나.
+    "드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장" 은 종류마다 하나씩 나누고, 둘째부터 "join"(앞 것과
+    한 줄) 을 붙인다. 이름 소재(100팩 밖)·못 읽는 조건·맞는 카드가 없는 조건이 있으면 뺀다.
+    KO 카드(add_codes 뒤)로 정하고 PICKS_PATH 하나에 둔다(세 언어 공용)."""
     def match(r, k, c):  # "of": 그 이름의 카드, 또는 그 카드가 소재인 융합
         if not r[0].get("of"):
             return rule_matches(r, c)
         names = {k for k, c in cards.items() if c["name"].replace(" ", "") in r[0]["theme"]}
         return k in names or any(str(m.get("cid")) in names for m in c.get("materials") or [])
 
-    def pick(cid, ok):
-        pool = [int(k) for k, c in cards.items() if k != cid and first[int(k)] <= era_end(first[int(cid)]) and ok(k, c)]
-        return min(pool, key=lambda c: (cards[str(c)].get("tier", 1), first[c], c), default=None)
+    def pool(cid, m):
+        if "cid" in m:
+            return [m["cid"]]
+        return [int(k) for k, c in cards.items() if k != cid and match(m["rule"], k, c)]
 
+    out = {}
     for cid, info in cards.items():
         if info.get("mask"):
-            rep = pick(cid, lambda k, c: c.get("hero") and c.get("attr") == info["attr"])
-            info["materials"] = [{"cid": rep}] if rep else []
+            mats = [{"rule": ({"hero": info["attr"]}, [])}]
+        else:
+            mats = [m | {"rule": parse_rule(r), "join": i > 0} if "rule" in m else m
+                    for m in info.get("materials") or [] for i, r in enumerate(split_each(m["rule"]) if "rule" in m else [None])]
+        if not mats or any("name" in m or "rule" in m and not m["rule"] for m in mats):
             continue
-        mats = []
-        for g in material_groups(info.get("materials") or []):
-            m = g[0]
-            if "rule" not in m:
-                mats += g
-                continue
-            each = split_each(m["rule"])
-            rows = [dict(m) for _ in each] if len(each) > 1 and len(g) == 1 else [dict(x) for x in g]
-            for row, r in zip(rows, each if len(rows) == len(each) else [m["rule"]] * len(rows)):
-                row.pop("cid", None)
-                parsed = parse_rule(r)
-                rep = parsed and pick(cid, lambda k, c: match(parsed, k, c))
-                if rep:
-                    row["cid"] = rep
-            mats += rows
-        if mats:
-            info["materials"] = mats
+        picks = [{"any": pool(cid, m)} | ({"count": m["count"]} if m.get("count") else {}) | ({"join": True} if m.get("join") else {})
+                 for m in mats]
+        if all(p["any"] for p in picks):  # 맞는 카드가 자기뿐이면("성령수기" 몬스터) 못 만든다
+            out[cid] = picks
+    return out
+
+
+def dump_picks(cards):
+    """한 융합이 한 줄."""
+    with open(PICKS_PATH, "w", encoding="utf-8") as f:
+        f.write("{\n" + ",\n".join(f'"{k}":{json.dumps(v, separators=(",", ":"))}' for k, v in make_picks(cards).items()) + "\n}\n")
 
 
 def add_codes(cards):
     """언어와 상관없는 코드 필드: 마법·함정은 kind, 몬스터는 type 칸의 소환법을 summons(시대 순)로,
-    "HERO" 몬스터는 hero, 마스크 체인지로만 소환하는 몬스터는 mask. 앱 로직은 이것만 본다(융합 소재 카드는 assign_materials)."""
+    "HERO" 몬스터는 hero, 마스크 체인지로만 소환하는 몬스터는 mask. 앱 로직은 이것만 본다(융합 소재는 따로 make_picks)."""
     for info in cards.values():
         for f in ("kind", "summons", "hero", "mask"):
             info.pop(f, None)
@@ -807,13 +777,12 @@ def add_codes(cards):
 
 
 def normalize_ko(out):
-    """KO 전용 후처리: 등급 이식·표지 SE·융합 소재 분리·코드 필드·소재 카드. 이미 한 것은 그대로(--reformat)."""
+    """KO 전용 후처리: 등급 이식·표지 SE·융합 소재 분리·코드 필드. 이미 한 것은 그대로(--reformat)."""
     move_tiers(out)
     for cid in COVER_SE:
         out["cards"][str(cid)]["tier"] = 5
     split_materials(out["cards"])
     add_codes(out["cards"])
-    assign_materials(out)
 
 
 def dump(out, path):
@@ -841,7 +810,7 @@ def ygo_cards():
 
 
 def add_extras(out, by_konami):
-    """100팩 밖 카드(융합 소재·100팩 밖 융합·마스크 체인지)를 넣고 코드 필드·소재 카드를 다시 정해 KO 파일을 쓴다.
+    """100팩 밖 카드(융합 소재·100팩 밖 융합·마스크 체인지)를 넣고 코드 필드를 다시 붙여 KO 파일과 picks.json 을 쓴다.
     이미 넣은 카드는 건너뛰어서 있는 KO 파일에 다시 돌려도 된다(--extras)."""
     add_missing_materials(out, by_konami)
     split_materials(out["cards"])  # 새로 넣은 소재 중 융합 몬스터(궁극의 푸른 눈의 백룡)
@@ -849,8 +818,8 @@ def add_extras(out, by_konami):
     add_missing_materials(out, by_konami, rules=True)  # 넣은 융합의 100팩 밖 소재, 조건 소재 융합의 소재
     add_mask_change(out, by_konami)
     add_codes(out["cards"])
-    assign_materials(out)
     dump(out, out_path("ko"))
+    dump_picks(out["cards"])
 
 
 def build_ko():
@@ -929,6 +898,7 @@ def reformat(langs):
     normalize_ko(ko)
     if "ko" in langs:
         dump(ko, out_path("ko"))
+        dump_picks(ko["cards"])
     for lang in ("ja", "en"):
         if lang in langs and os.path.exists(out_path(lang)):
             out = load(out_path(lang))
@@ -947,15 +917,6 @@ def sync_shared(ko, out):
                 info[f] = base[f]
             else:
                 info.pop(f, None)
-        # 소재: 글은 그 언어 것, 카드(cid·count)는 KO 것. 마스크드 히어로는 KO 소재 그대로
-        groups = material_groups(base.get("materials") or [])
-        mine = material_groups(info.get("materials") or [])
-        if "materials" not in base:
-            info.pop("materials", None)
-        elif base.get("mask") or len(mine) != len(groups):
-            info["materials"] = base["materials"]
-        else:
-            info["materials"] = [lang_material(rows[0].get("rule") or rows[0].get("name", ""), m) for rows, g in zip(mine, groups) for m in g]
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ swift build -c release
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp ".build/release/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
-cp Resources/cards_*.json "$APP/Contents/Resources/"
+cp Resources/cards_*.json Resources/picks.json "$APP/Contents/Resources/"
 cp -R Resources/ko.lproj Resources/en.lproj Resources/ja.lproj "$APP/Contents/Resources/"
 cp Resources/partner.png "$APP/Contents/Resources/partner.png"
 cp Resources/card-back.jpg "$APP/Contents/Resources/card-back.jpg"

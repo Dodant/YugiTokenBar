@@ -4,14 +4,16 @@ import Testing
 @Suite struct FusionTests {
     /// 팩0: 노멀 1·2·3, 「융합」 마법(해금 카드), UR 10 = 1 + 2 + 2 (소재를 다 아는 융합), UR 11 = 1 + 100팩에 없는 카드
     let db: CardDB = {
-        func info(_ name: String, _ materials: [Material]? = nil) -> CardInfo {
-            CardInfo(name: name, attr: nil, level: nil, type: materials == nil ? "전사족/일반" : "전사족/융합",
-                     atk: nil, def: nil, text: "", imageId: nil, tier: materials == nil ? 1 : 4, materials: materials)
+        func info(_ name: String, _ materials: [Material]? = nil, picks: [Pick]? = nil) -> CardInfo {
+            var c = CardInfo(name: name, attr: nil, level: nil, type: materials == nil ? "전사족/일반" : "전사족/융합",
+                             atk: nil, def: nil, text: "", imageId: nil, tier: materials == nil ? 1 : 4, materials: materials)
+            c.picks = picks
+            return c
         }
         let cards: [Int: CardInfo] = [
             1: info("소재1"), 2: info("소재2"), 3: info("다른 카드"),
             CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, tier: 3, kindCode: "spell"),
-            10: info("융합", [Material(cid: 1), Material(cid: 2), Material(cid: 2)]),
+            10: info("융합", [Material(cid: 1), Material(cid: 2), Material(cid: 2)], picks: [Pick(any: [1]), Pick(any: [2]), Pick(any: [2])]),
             11: info("조건 융합", [Material(cid: 1), Material(name: "없는 카드")]),
         ]
         let list = [1, 2, 3, CardDB.fusionSpell, 10, 11]
@@ -40,45 +42,53 @@ import Testing
         #expect(game.craftMaterials(11) == nil && !unknown)  // 소재를 모르는 융합은 못 만든다
     }
 
-    /// 마스크드 히어로: 「마스크 체인지」가 있으면 build-cards.py 가 정한 같은 속성 HERO 1장을 소비해(마지막 장은 남김) 만든다
+    /// 마스크드 히어로: 「마스크 체인지」가 있으면 같은 속성 HERO 중 가장 많이 가진 1장을 소비해(마지막 장은 남김) 만든다
     @Test func maskChangeUsesSameAttributeHero() {
         func hero(_ attr: String, mask: Bool? = nil) -> CardInfo {
             CardInfo(name: "히어로", attr: attr, level: nil, type: "전사족", atk: nil, def: nil, text: "", imageId: nil, hero: true, mask: mask)
         }
         var masked = hero("빛", mask: true)
-        masked.materials = [Material(cid: 2)]  // build-cards.py: 자기 빼고 같은 속성 HERO 중 하나
+        masked.picks = [Pick(any: [1, 2])]  // build-cards.py: 자기 빼고 같은 속성 HERO
         let cards: [Int: CardInfo] = [1: hero("빛"), 2: hero("빛"), 3: hero("어둠"), 4: CardInfo(name: "빛 몬스터", attr: "빛", level: nil, type: "전사족", atk: nil, def: nil, text: "", imageId: nil),
                                       20: masked, CardDB.maskChange: CardInfo(name: "마스크 체인지", attr: "마법", level: nil, type: "속공", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
         let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
         var game = Game(db: db, state: GameState())
-        game.state.owned = [1: 5, 3: 5, 4: 5]
+        game.state.owned = [3: 5, 4: 5]
         game.state.fusionOnly = true
-        #expect(game.craftMaterials(20) == [2: 1] && !game.canFuse(20))  // 정해진 HERO(2)가 없다 (다른 빛 HERO·어둠 HERO 로는 안 된다)
+        #expect(game.craftMaterials(20) == nil && !game.canFuse(20))  // 빛 HERO 가 없다 (어둠 HERO·HERO 아닌 빛 몬스터는 안 된다)
+        game.state.owned[1] = 2
         game.state.owned[2] = 3
-        #expect(!game.canFuse(20))  // 「마스크 체인지」가 없으면 잠김
+        #expect(game.craftMaterials(20) == [2: 1] && !game.canFuse(20))  // 「마스크 체인지」가 없으면 잠김
         game.state.owned[CardDB.maskChange] = 1
         #expect(game.fusable == [20] && db.fusionCIDs.contains(20) && game.isFusionOnly(20))
         let made = game.fuse(20)
-        #expect(made && game.state.owned[2] == 2 && game.state.owned[1] == 5 && game.state.owned[20] == 1 && game.state.owned[CardDB.maskChange] == 1)
+        #expect(made && game.state.owned[2] == 2 && game.state.owned[1] == 2 && game.state.owned[20] == 1 && game.state.owned[CardDB.maskChange] == 1)
     }
 
-    /// 조건 소재는 build-cards.py 가 정한 카드 하나를 카드 소재처럼 쓴다(count 도 곱한다). 카드가 안 정해진 조건이 있으면 못 만든다
-    @Test func conditionMaterialsUseTheAssignedCard() {
+    /// 조건 소재: 소재 줄의 카드를 먼저 잡고, 조건마다 맞는 카드 중 남는 장 수가 많은 것부터 채운다 (마지막 장은 남김)
+    @Test func picksUseMostOwnedMatchingCards() {
         func mon(_ name: String) -> CardInfo { CardInfo(name: name, attr: nil, level: nil, type: "드래곤족", atk: nil, def: nil, text: "", imageId: nil) }
         var fusion = mon("융합 용")
-        fusion.materials = [Material(cid: 1), Material(cid: 2, rule: "드래곤족 몬스터", count: 2)]
-        var unknown = mon("못 읽는 조건")
-        unknown.materials = [Material(cid: 1), Material(rule: "카드명이 다른 몬스터", count: 2)]
-        let cards: [Int: CardInfo] = [1: mon("용 1"), 2: mon("용 2"), 20: fusion, 21: unknown,
+        fusion.materials = [Material(cid: 1), Material(rule: "드래곤족 몬스터", count: 2)]
+        fusion.picks = [Pick(any: [1]), Pick(any: [1, 2, 3], count: 2)]
+        var each = mon("패왕")
+        each.materials = [Material(rule: "드래곤족의 일반 / 효과 몬스터 1장씩 합계 2장")]
+        each.picks = [Pick(any: [3]), Pick(any: [4], join: true)]
+        let cards: [Int: CardInfo] = [1: mon("용 1"), 2: mon("용 2"), 3: mon("용 3"), 4: mon("다른 몬스터"), 20: fusion, 21: each,
                                       CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
         let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
         var game = Game(db: db, state: GameState())
-        game.state.owned = [1: 2, 2: 3, CardDB.fusionSpell: 1]
+        game.state.owned = [1: 1, 4: 9, CardDB.fusionSpell: 1]
         game.state.fusionOnly = true
-        #expect(game.craftMaterials(20) == [1: 1, 2: 2] && game.fusable == [20] && db.fusionCIDs == [20] && db.materialNeed == [1: 1, 2: 2])
-        #expect(game.craftMaterials(21) == nil && !game.canFuse(21))
+        #expect(game.pickMaterials(20) == nil && !game.canFuse(20))  // 용 1 은 소재 줄 몫이라 조건에 못 쓴다
+        game.state.owned[1] = 2
+        game.state.owned[2] = 1
+        #expect(game.pickMaterials(20) == [[1: 1], [1: 1, 2: 1]])  // 장 수가 모자라면 다른 카드로 나눠 채운다
+        game.state.owned[3] = 4
+        #expect(game.pickMaterials(20) == [[1: 1], [3: 2]] && Set(game.fusable) == [20, 21] && db.fusionCIDs.contains(20))
         let made = game.fuse(20)
-        #expect(made && game.state.owned[1] == 1 && game.state.owned[2] == 1 && game.state.owned[20] == 1)
+        #expect(made && game.state.owned[1] == 1 && game.state.owned[3] == 2 && game.state.owned[20] == 1)
+        #expect(game.pickMaterials(21) == [[3: 1, 4: 1]])  // "1장씩 합계" 를 나눈 조건은 한 줄로 합친다
     }
 
     /// 오른쪽 "융합 가능" 목록: 설정·「융합」·소재가 다 있어야 나온다
