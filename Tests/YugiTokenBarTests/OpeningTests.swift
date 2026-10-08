@@ -34,4 +34,19 @@ import Testing
         model.closeOpening()  // 개봉 화면이 아니면 그대로
         #expect(model.screen == .shop)
     }
+
+    /// 무료 팩 개봉 화면은 무료 팩임을 알고(한 번 더가 다음 무료 팩), 코인으로 산 팩은 아니다
+    @MainActor @Test func openingFreePackFollowsSource() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        var state = GameState()
+        state.coins = Balance.packPrice
+        state.freePacks = 2
+        try store.save(state)
+        let model = AppModel(db: makeDB([[(1, 1)]]), store: store, partner: PartnerModel(sheet: nil))
+
+        #expect(model.openFreePack())
+        #expect(model.openingFreePack && model.game.state.freePacks == 1)
+        #expect(model.buy(pack: 0))
+        #expect(!model.openingFreePack)
+    }
 }

@@ -8,6 +8,8 @@ final class AppModel {
     private(set) var openingTitle = ""
     /// 지금 개봉 화면의 팩 (무료 카드면 nil). 개봉 화면의 [한 팩 더] 가 쓴다.
     private(set) var openingPack: Int?
+    /// 지금 개봉 화면이 무료 팩인지. 남은 무료 팩이 있으면 한 번 더가 무료 팩을 연다.
+    private(set) var openingFreePack = false
     private(set) var openingID = UUID()
     /// 팝오버 안 지금 화면
     var screen: PanelScreen = .summary
@@ -142,15 +144,16 @@ final class AppModel {
     @discardableResult
     func openFreePack() -> Bool {
         guard let (pack, pulls) = game.openFreePack(using: &rng) else { return false }
-        show(pulls, title: String(localized: "무료 팩 · \(db.packs[pack].name)"), pack: pack)
+        show(pulls, title: String(localized: "무료 팩 · \(db.packs[pack].name)"), pack: pack, freePack: true)
         return true
     }
 
     /// 팝오버 안 개봉 화면으로 보여준다.
-    private func show(_ pulls: [Pull], title: String, pack: Int? = nil) {
+    private func show(_ pulls: [Pull], title: String, pack: Int? = nil, freePack: Bool = false) {
         opening = pulls
         openingTitle = title
         openingPack = pack
+        openingFreePack = freePack
         openingID = UUID()
         // 개봉 중에 또 열면(한 팩 더) 돌아갈 곳은 그대로
         if case .opening = screen {} else { screen = .opening(back: screen) }

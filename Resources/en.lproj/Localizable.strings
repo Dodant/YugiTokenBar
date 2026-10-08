@@ -410,3 +410,5 @@
 "(최신)" = "(latest)";
 /* SettingsView.swift:298 */
 "베타 기능" = "Beta feature";
+/* PackOpenView.swift:105 */
+"다음 무료 팩 열기 · %lld개 남음" = "Open next free pack · %lld left";
