@@ -3,7 +3,7 @@
 
 한국 정발 정규 부스터 팩 중 『카오스 오리진즈』(2026-07-14)까지 100팩을 수집한다(76번째부터 VRAINS 이후 Modern).
 같은 분류의 미니 팩(＋1 어시스트·익스팬션 팩, 얼티미트 스페셜 팩: 20장 이하, 노멀 없음)은 뺀다.
-사용: python3 tools/build-cards.py [--lang ko|ja|en|all] [--reformat]
+사용: python3 tools/build-cards.py [--lang ko|ja|en|all] [--reformat | --extras]
 """
 import argparse
 import bisect
@@ -486,21 +486,28 @@ def first_rarity(page):
 
 @functools.cache
 def find_card(name):
-    """KO DB 이름 검색에서 이름이 같은(띄어쓰기 무시) 카드 행. 한국 미발매면 None."""
-    page = get(BASE + "card_search.action?ope=1&sess=1&rp=100&stype=1&request_locale=ko&keyword=" + urllib.parse.quote(name))
+    """KO DB 이름 검색에서 이름이 같은(띄어쓰기·괄호 읽기 무시: 소재 줄의 "WW(윈드 위치)－윈터 벨" 은 DB 에 "WW－윈터 벨") 카드 행.
+    한국 미발매면 None."""
+    key = lambda n: re.sub(r"\(.*?\)", "", n).replace(" ", "")
+    page = get(BASE + "card_search.action?ope=1&sess=1&rp=100&stype=1&request_locale=ko&keyword="
+               + urllib.parse.quote(re.sub(r"\(.*?\)", "", name)))
     time.sleep(1)
-    hits = [c for c in parse_pack(page, need_rarity=False) if c["info"]["name"].replace(" ", "") == name.replace(" ", "")]
+    hits = [c for c in parse_pack(page, need_rarity=False) if key(c["info"]["name"]) == key(name)]
     assert len(hits) <= 1, (name, [c["info"]["name"] for c in hits])
     return hits[0] if hits else None
 
 
-def add_missing_materials(out, image_ids):
-    """조건 없이 카드로만 된 융합 몬스터의 100팩에 없는 소재({"name"})를 KO DB 에서 찾아 카드로 넣고, 그 소재를 쓰는 융합 몬스터가 든 팩마다 넣는다.
-    등급은 그 카드의 한국 첫 수록판 레어도. 소재는 {"cid"} 로 바꾼다. 이미 넣은 파일은 할 일이 없다."""
+def add_missing_materials(out, image_ids, rules=False):
+    """융합 몬스터의 100팩에 없는 소재({"name"})를 KO DB 에서 찾아 카드로 넣고, 그 소재를 쓰는 융합 몬스터가 든 팩마다 넣는다
+    (이미 그 융합보다 먼저 나오는 카드면 이름만 cid 로 바꾼다: 환상마수 키메라의 유익환상수 키메라).
+    등급은 그 카드의 한국 첫 수록판 레어도. 소재는 {"cid"} 로 바꾼다. 이미 넣은 파일은 할 일이 없다.
+    rules 가 참일 때만 조건 소재 융합의 소재도 본다: add_outside_fusions 뒤에 돌려야 그 소재가 넣은 융합(유익환상수 키메라)이면
+    그 팩에 이미 있다."""
     cards = out["cards"]
-    users = {}  # 소재 이름 → 그 소재를 쓰는 융합 cid. 조건 소재(rule)가 섞인 융합은 넣어도 융합으로 못 만들어서 뺀다
+    users = {}  # 소재 이름 → 그 소재를 쓰는 융합 cid. parse_rule 로 못 읽는 조건이 섞인 융합은 넣어도 융합으로 못 만들어서 뺀다
     for cid, info in cards.items():
-        if any("rule" in m for m in info.get("materials", [])):
+        rule = [m["rule"] for m in info.get("materials", []) if "rule" in m]
+        if rule and not (rules and all(map(parse_rule, rule))):
             continue
         for m in info.get("materials", []):
             if "name" in m:
@@ -517,9 +524,14 @@ def add_missing_materials(out, image_ids):
         info = c["info"] | {"imageId": image_ids.get(c["cid"]), "tier": TIER.get(label, 5)}
         cards[str(c["cid"])] = {f: x for f, x in info.items() if x is not None}
         print(f"  소재 추가: {c['cid']} {name} ({label})")
+    first = {}  # cid → 처음 든 팩 순번
+    for i, p in enumerate(out["packs"]):
+        for c in p["cards"]:
+            first.setdefault(c, i)
+    early = {n for n, fusions in users.items() if first.get(found[n], 999) <= min(first.get(f, 999) for f in fusions)}
     for p in out["packs"]:
         for name, fusions in users.items():
-            if found[name] not in p["cards"] and any(f in p["cards"] for f in fusions):
+            if name not in early and found[name] not in p["cards"] and any(f in p["cards"] for f in fusions):
                 p["cards"].append(found[name])
     for info in cards.values():
         for m in info.get("materials", []):
@@ -627,8 +639,13 @@ def parse_rule(rule):
     """테마 하나와 종족·속성·몬스터 종류·레벨·공격력·수비력만으로 된 조건 소재("레벨 6 이상의 천사족 / 어둠 속성 몬스터",
     `"DD(디디)" 몬스터`)를 (같은 칸끼리는 OR·다른 칸끼리는 AND 인 집합들과 테마, 수치 조건)으로. 테마는 KO 이름에 든 문자열
     (괄호 읽기·띄어쓰기 빼고. JP 이름은 한자에 테마 읽기가 붙어 이름만으로 못 찾는다). 테마가 둘 이상("A"이나 "B")·필드·
-    "카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로 친다."""
+    "카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로, "효과 몬스터 이외의" 는 그 종류를 뺀다."""
     rule = re.sub(r" ?\d+장 이상$", "", rule).removeprefix("토큰 이외의 ")
+    no = set()
+    if q := re.match(r"(\S+) 몬스터 이외의 ", rule):  # "효과 몬스터 이외의 싱크로 몬스터"
+        if q.group(1) not in TYPE_WORDS:
+            return None
+        no, rule = {q.group(1)}, rule[q.end():]
     theme = None
     if rule.count('"') == 2:
         q = re.search(r'"([^"]+)"(?:이?라는 이름이 붙은)? ?', rule)
@@ -641,7 +658,7 @@ def parse_rule(rule):
     body = rule.removesuffix("몬스터")
     nums = [(k, int(v), op) for k, v, op in RULE_NUM.findall(body)]
     body = RULE_NUM.sub(" ", body).replace("속성의", "속성").replace("족의", "족")
-    f = {"race": set(), "attr": set(), "type": set(), "theme": theme}
+    f = {"race": set(), "attr": set(), "type": set(), "no": no, "theme": theme}
     for t in re.split(r"\s*/\s*|\s+또는\s+|\s+", body):
         t = t.removesuffix("속성")
         if not t:
@@ -663,7 +680,7 @@ def rule_matches(rule, info):
     parts = (info.get("type") or "").split("/")
     summons = set(info.get("summons") or ())
     if info.get("kind") or f["race"] and parts[0] not in f["race"] or f["attr"] and info.get("attr") not in f["attr"] \
-            or f["type"] and not f["type"] & set(parts[1:]) \
+            or f["type"] and not f["type"] & set(parts[1:]) or f["no"] & set(parts[1:]) \
             or f["theme"] and (f["theme"] not in info["name"].replace(" ", "") or f["theme"] == "히어로" and info["name"] in NOT_HERO):
         return False
     for k, v, op in nums:
@@ -743,6 +760,30 @@ def load(path):
         return json.load(f)
 
 
+def ygo_cards():
+    """YGOPRODeck 전체 카드 → (Konami cid → 이미지 id, Konami cid → TCG 수록 팩 이름 집합)"""
+    by_konami, sets_of = {}, {}
+    for c in json.loads(get("https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes"))["data"]:
+        for m in c.get("misc_info", []):
+            if m.get("konami_id"):
+                by_konami.setdefault(int(m["konami_id"]), c["card_images"][0]["id"])
+                sets_of.setdefault(int(m["konami_id"]), set()).update(s["set_name"] for s in c.get("card_sets", []))
+    return by_konami, sets_of
+
+
+def add_extras(out, by_konami):
+    """100팩 밖 카드(융합 소재·100팩 밖 융합·마스크 체인지)를 넣고 코드 필드를 다시 붙여 KO 파일과 picks.json 을 쓴다.
+    이미 넣은 카드는 건너뛰어서 있는 KO 파일에 다시 돌려도 된다(--extras)."""
+    add_missing_materials(out, by_konami)
+    split_materials(out["cards"])  # 새로 넣은 소재 중 융합 몬스터(궁극의 푸른 눈의 백룡)
+    add_outside_fusions(out, by_konami)
+    add_missing_materials(out, by_konami, rules=True)  # 넣은 융합의 100팩 밖 소재, 조건 소재 융합의 소재
+    add_mask_change(out, by_konami)
+    add_codes(out["cards"])
+    dump(out, out_path("ko"))
+    dump_picks(out["cards"])
+
+
 def build_ko():
     products = parse_products(get(BASE + "card_list.action?request_locale=ko"))
     packs, infos = [], {}
@@ -759,13 +800,7 @@ def build_ko():
         print(f"{date} {name}: {len(cards)} {dist}", flush=True)
         time.sleep(1)
 
-    ygo = json.loads(get("https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes"))["data"]
-    by_konami, sets_of = {}, {}
-    for c in ygo:
-        for m in c.get("misc_info", []):
-            if m.get("konami_id"):
-                by_konami.setdefault(int(m["konami_id"]), c["card_images"][0]["id"])
-                sets_of.setdefault(int(m["konami_id"]), set()).update(s["set_name"] for s in c.get("card_sets", []))
+    by_konami, sets_of = ygo_cards()
 
     # 팩 이미지: 카드가 가장 많이 겹치는 TCG 팩(겹친 수 / 두 팩 중 큰 쪽 크기 → 재록 모음집은 밀려남)
     sets = {s["set_name"]: s for s in json.loads(get("https://db.ygoprodeck.com/api/v7/cardsets.php"))}
@@ -788,14 +823,7 @@ def build_ko():
     # 빈 칸(None)은 빼서 용량을 줄인다 — 앱은 없는 키를 nil 로 읽는다
     out = {"packs": packs, "cards": {str(k): {f: x for f, x in v.items() if x is not None} for k, v in sorted(infos.items())}}
     normalize_ko(out)
-    add_missing_materials(out, by_konami)
-    split_materials(out["cards"])  # 새로 넣은 소재 중 융합 몬스터(궁극의 푸른 눈의 백룡)
-    add_outside_fusions(out, by_konami)
-    add_missing_materials(out, by_konami)  # 넣은 융합의 100팩 밖 소재
-    add_mask_change(out, by_konami)
-    add_codes(out["cards"])
-    dump(out, out_path("ko"))
-    dump_picks(out["cards"])
+    add_extras(out, by_konami)
     missing += [f"{k} {v['name']}" for k, v in out["cards"].items() if "imageId" not in v and int(k) not in infos]
     print(f"packs={len(packs)} distinct={len(out['cards'])} missingImages={len(missing)}")
     for m in missing:
@@ -857,9 +885,14 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Konami 카드 DB → Resources/cards_XX.json")
     ap.add_argument("--lang", choices=["ko", "ja", "en", "all"], default="all")
     ap.add_argument("--reformat", action="store_true", help="받아 오지 않고 있는 파일을 지금 형식으로만 다시 쓴다")
+    ap.add_argument("--extras", action="store_true",
+                    help="있는 KO 파일에 100팩 밖 카드 넣기만 다시 한다(팩 목록·팩 이미지는 다시 받지 않는다). 뒤이어 --lang ja, en")
     args = ap.parse_args()
     langs = ["ko", "ja", "en"] if args.lang == "all" else [args.lang]
-    if args.reformat:
+    if args.extras:
+        out = load(out_path("ko"))
+        add_extras(out, ygo_cards()[0])
+    elif args.reformat:
         reformat(langs)
     else:
         if "ko" in langs:

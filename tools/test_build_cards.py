@@ -329,6 +329,8 @@ def test_make_picks():
     picks = bc.make_picks(cards)
     assert picks["5"] == [{"any": [7]}, {"any": [3, 8]}]  # "DD" 테마에 DDD 도 든다
     assert "9" not in picks  # "히어로" 에 맞는 카드가 없다: 히어로 키즈는 "HERO" 가 아니고, 자기 자신은 뺀다
+    assert bc.rule_matches(bc.parse_rule("효과 몬스터 이외의 싱크로 몬스터"), {"name": "튠", "type": "드래곤족/싱크로/튜너"})
+    assert not bc.rule_matches(bc.parse_rule("효과 몬스터 이외의 싱크로 몬스터"), {"name": "싱", "type": "드래곤족/싱크로/효과"})
     assert bc.parse_rule('"A"이나 "B"') is None and bc.parse_rule('"포톤"이라는 이름이 붙은 몬스터')[0]["theme"] == "포톤"
     assert bc.parse_rule("드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장") is None
 

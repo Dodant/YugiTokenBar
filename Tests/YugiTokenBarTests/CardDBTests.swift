@@ -14,7 +14,7 @@ import Testing
         #expect(db.packs.first?.setCode == "LOB")
         #expect(db.eras.map(\.name) == ["DM", "GX", "5D's", "ZEXAL", "ARC-V", "VRAINS", "Modern"])
         let kinds = Dictionary(grouping: db.cards.values, by: \.kind).mapValues(\.count)
-        #expect(kinds == [.monster: 5083, .spell: 1720, .trap: 1420])
+        #expect(kinds == [.monster: 5086, .spell: 1720, .trap: 1420])
         // 팩마다 노멀 몬스터가 보장 장 수 이상이라 몬스터 슬롯이 다른 티어로 올라가지 않는다
         #expect(db.packs.allSatisfy { p in p.cards.filter { db.tier($0) == 1 && db.cards[$0]?.kind == .monster }.count >= Balance.monstersPerPack })
         #expect(db.eras.map(\.packs) == [0..<11, 11..<27, 27..<43, 43..<51, 51..<63, 63..<75, 75..<100])
@@ -22,11 +22,11 @@ import Testing
         #expect(db.eras.map { db.packs[$0.packs.lowerBound].setCode } == ["LOB", "SOD", "TDGS", "REDU", "DUEA", "COTD", "ROTD"])
         #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
         #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 100팩 모두 한글판
-        #expect(db.allCIDs.count == 8223)
+        #expect(db.allCIDs.count == 8226)
         // 재수록 카드는 수록 팩 중 가장 높은 등급: 유벨(환영의 어둠 N, 팬텀 나이트메어 QCSE → SE)
         #expect(db.cards.values.first { $0.name == "유벨" }?.rarity == "SE")
         let tiers = Dictionary(grouping: db.cards.values, by: \.tier).mapValues(\.count)
-        #expect(tiers == [1: 4774, 2: 1733, 3: 905, 4: 502, 5: 309])
+        #expect(tiers == [1: 4774, 2: 1733, 3: 907, 4: 502, 5: 310])
         // 팩 표지 몬스터는 SE (악몽의 미궁·어둠의 유산은 표지가 마법·함정이라 빠진다)
         #expect(db.cards[4007]?.rarity == "SE" && db.cards[4223]?.rarity == "SE")  // 푸른 눈의 백룡, 블랙 데몬즈 드래곤
         for pack in db.packs {
@@ -63,11 +63,13 @@ import Testing
         // 마스크 체인지·마스크드 히어로 10종은 한국 첫 수록일 직전 팩에: 마스크 체인지(익스트림 빅토리), 아토믹(듀얼리스트 어드밴스)
         #expect(db.packs.firstIndex { $0.cards.contains(CardDB.maskChange) } == 38 && db.cards[CardDB.maskChange]?.kind == .spell)
         #expect(db.packs.firstIndex { $0.cards.contains(21614) } == 95 && db.cards.values.filter { $0.mask == true }.count == 10)
-        #expect(db.cards.values.filter { $0.hero == true }.count == 87 && db.fusionCIDs.count == 285)
-        #expect(db.cards.values.filter { $0.materials?.contains { $0.name != nil } == true }.count == 6)  // 조건이 섞인 융합의 소재는 그대로
+        #expect(db.cards.values.filter { $0.hero == true }.count == 87 && db.fusionCIDs.count == 292)
+        // 조건이 섞인 융합의 100팩 밖 소재도 그 융합의 팩에 넣어서 이름만 남은 소재가 없다: 지천의 기사 가이아드레이크의 대지의 기사 가이아 나이트(폭풍의 스타스트라이크)
+        #expect(db.cards.values.allSatisfy { $0.materials?.allSatisfy { $0.name == nil } ?? true })
+        #expect(db.cards[9116]?.materials?.first == Material(cid: 7697) && db.packs[36].cards.contains(7697))
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
-        // 조건 소재가 단순한(테마 포함) 융합 157종은 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
-        #expect(db.cards.values.filter { $0.picks != nil }.count == 157)
+        // 조건 소재가 단순한(테마 포함) 융합 164종은 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
+        #expect(db.cards.values.filter { $0.picks != nil }.count == 164)
         #expect(db.cards[12777]?.picks?.first?.any.contains(6315) == true)  // 앤틱 기어 데블의 "앤틱 기어" 몬스터에 앤틱 기어 골렘
         #expect(db.cards[19728]?.picks?.map(\.any.count) == [437, 74] && db.cards[19728]?.picks?[0].any.contains(4007) == true)
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
