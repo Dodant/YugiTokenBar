@@ -415,7 +415,6 @@
 /* CardDetailView.swift:44 */
 "같은 속성(%@)의 \"히어로\" 몬스터 1장" = "同じ属性（%@）の「HERO」モンスター1体";
 /* CardDetailView.swift:45 */
-"가진 것 중 가장 많은 카드를 써요" = "持っている中で一番多いカードを使います";
 /* CardDetailView.swift:67 */
 "「%@」 마법 카드가 있어야 해요" = "「%@」魔法カードが必要です";
 /* CardDetailView.swift:73 */

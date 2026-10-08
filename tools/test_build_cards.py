@@ -179,7 +179,7 @@ def test_split_lang_materials():
     assert ok and text == "①：効果"
     assert out == [{"cid": 10}, {"name": "ミノタウルス"}, {"rule": "「剣闘獣」モンスター", "count": 2}], out
     text, out, ok = bc.split_lang_materials('"Ka" + "Minotaur" + 2 "Gladiator Beast" monsters\nEffect.', mats)
-    assert ok and text == "Effect." and out[1] == {"name": "Minotaur"} and out[2] == {"rule": '2 "Gladiator Beast" monsters'}
+    assert ok and text == "Effect." and out[1] == {"name": "Minotaur"} and out[2] == {"rule": '2 "Gladiator Beast" monsters', "count": 2}  # 장 수는 KO 것
     text, out, ok = bc.split_lang_materials('"Ka" + "Minotaur"\nEffect.', mats)  # 조각 수가 다르면 KO 그대로
     assert not ok and out == mats and text == "Effect."
 
@@ -310,46 +310,63 @@ def test_add_codes_hero():
     assert cards["1"].get("hero") and "hero" not in cards["2"] and "hero" not in cards["3"]
 
 
-def test_make_picks():
-    cards = {"1": {"name": "용", "attr": "빛", "level": 8, "type": "드래곤족/일반", "text": ""},
+def test_assign_materials():
+    cards = {"1": {"name": "용", "attr": "빛", "level": 8, "type": "드래곤족/일반", "text": "", "tier": 3},
              "2": {"name": "엑시즈 용", "attr": "빛", "level": 8, "type": "드래곤족/엑시즈/효과", "text": ""},
              "3": {"name": "전사", "attr": "화염", "level": 4, "type": "전사족/효과", "text": ""},
              "4": {"name": "융합 용", "type": "드래곤족/융합/효과", "text": "",
                    "materials": [{"cid": 1}, {"rule": "레벨 8 이상의 빛 / 땅 속성 몬스터 1장 이상"}, {"rule": "전사족 / 화염 속성 몬스터", "count": 2}]},
              "5": {"name": "테마", "type": "전사족/융합/효과", "text": "", "materials": [{"rule": '"DD(디디)" 몬스터'}, {"rule": "전사족 몬스터"}]},
-             "6": {"name": "마법", "attr": "마법", "type": "일반", "text": ""}}
+             "6": {"name": "마법", "attr": "마법", "type": "일반", "text": ""},
+             "7": {"name": "DDD 왕", "type": "악마족/효과", "level": 7, "text": ""},
+             "8": {"name": "히어로 키즈", "type": "전사족/효과", "text": ""},
+             "9": {"name": "이블 히어로 테마", "type": "악마족/융합/효과", "text": "", "materials": [{"rule": '"히어로" 몬스터'}]},
+             "10": {"name": "패왕", "type": "드래곤족/융합/효과", "text": "", "materials": [{"rule": "드래곤족의 엑시즈 / 일반 몬스터 1장씩 합계 2장"}]},
+             "11": {"name": "네오 로드", "type": "악마족/융합/효과", "text": "",
+                    "materials": [{"rule": '"용"(또는 그 카드명이 쓰여진 융합 몬스터)'}, {"rule": "필드의 효과 몬스터"}]},
+             "12": {"name": "마스크", "attr": "빛", "type": "전사족/융합/효과", "text": bc.MASK_TEXT},  # add_codes 가 mask 를 붙인다
+             "13": {"name": "빛 히어로", "attr": "빛", "type": "전사족/효과", "text": "", "hero": True},
+             "14": {"name": "늦은 용", "attr": "빛", "level": 8, "type": "드래곤족/일반", "text": ""},
+             "15": {"name": "이름 융합", "type": "전사족/융합/효과", "text": "", "materials": [{"cid": 1}, {"name": "없는 카드"}]},
+             "16": {"name": "없는 테마 융합", "type": "전사족/융합/효과", "text": "", "materials": [{"rule": '"성령수기" 몬스터'}]}}
+    out = {"packs": [{"cards": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16], "setCode": "LOB"}, {"cards": [14], "setCode": "SOD"}], "cards": cards}
     bc.add_codes(cards)
-    picks = bc.make_picks(cards)
-    assert picks["4"] == [{"any": [1]}, {"any": [1]}, {"any": [3], "count": 2}], picks["4"]  # 카드 소재도 소재 줄 한 줄
-    cards["7"] = {"name": "DDD 왕", "type": "악마족/효과", "level": 7, "text": ""}
-    cards["8"] = {"name": "히어로 키즈", "type": "전사족/효과", "text": ""}
-    cards["9"] = {"name": "이블 히어로 테마", "type": "악마족/융합/효과", "text": "",
-                  "materials": [{"rule": '레벨 6 이상의 "DD(디디)" 몬스터'}, {"rule": '"히어로" 몬스터'}]}
-    bc.add_codes(cards)
-    picks = bc.make_picks(cards)
-    assert picks["5"] == [{"any": [7]}, {"any": [3, 8]}]  # "DD" 테마에 DDD 도 든다
-    assert "9" not in picks  # "히어로" 에 맞는 카드가 없다: 히어로 키즈는 "HERO" 가 아니고, 자기 자신은 뺀다
+    bc.assign_materials(out)
+    m = lambda k: cards[k]["materials"]
+    # 조건마다 맞는 카드 중 그 융합보다 먼저 나온, 등급 낮은, 이른 팩의, cid 작은 카드 (레벨 조건에 엑시즈 용은 안 맞고, 늦은 용은 다음 시대)
+    assert m("4") == [{"cid": 1}, {"rule": "레벨 8 이상의 빛 / 땅 속성 몬스터 1장 이상", "cid": 1}, {"rule": "전사족 / 화염 속성 몬스터", "count": 2, "cid": 3}], m("4")
+    assert m("5") == [{"rule": '"DD(디디)" 몬스터', "cid": 7}, {"rule": "전사족 몬스터", "cid": 3}]  # "DD" 테마에 DDD 도 든다
+    assert m("9") == [{"rule": '"히어로" 몬스터', "cid": 13}]  # 히어로 키즈(8)는 "HERO" 가 아니라 빛 히어로. 자기 자신은 뺀다
+    assert m("16") == [{"rule": '"성령수기" 몬스터'}]  # 맞는 카드가 없으면 cid 없이 남아 못 만든다
+    assert m("10") == [{"rule": "드래곤족의 엑시즈 / 일반 몬스터 1장씩 합계 2장", "cid": 2}, {"rule": "드래곤족의 엑시즈 / 일반 몬스터 1장씩 합계 2장", "cid": 1}]
+    assert m("11") == [{"rule": '"용"(또는 그 카드명이 쓰여진 융합 몬스터)', "cid": 4}, {"rule": "필드의 효과 몬스터", "cid": 2}]  # 용(SR)·용이 소재인 융합(N) 중 등급 낮은 융합 용
+    assert m("12") == [{"cid": 13}] and m("15") == [{"cid": 1}, {"name": "없는 카드"}]
+    before = json.dumps(cards, sort_keys=True)
+    bc.assign_materials(out)
+    assert json.dumps(cards, sort_keys=True) == before  # 다시 돌려도 같다 (나눈 줄을 또 나누지 않는다)
+    # 언어 파일: 조각은 그 언어 글, 카드는 KO 것. 같은 조건 글이 이어지는 줄은 조각 하나로
+    text, mats, ok = bc.split_lang_materials("Dragon Xyz / Normal Monsters, 1 each\nEffect", m("10"))
+    assert ok and text == "Effect" and mats == [{"rule": "Dragon Xyz / Normal Monsters, 1 each", "cid": 2}, {"rule": "Dragon Xyz / Normal Monsters, 1 each", "cid": 1}]
+    text, mats, ok = bc.split_lang_materials("Dragon + Level 8 LIGHT monster + Warrior × 2\nEffect", m("4"))
+    assert ok and mats == [{"cid": 1}, {"rule": "Level 8 LIGHT monster", "cid": 1}, {"rule": "Warrior", "count": 2, "cid": 3}]
+    en = {"packs": [dict(p) for p in out["packs"]], "cards": {k: dict(v) for k, v in cards.items()}}
+    en["cards"]["10"]["materials"] = [{"rule": "Dragon, 1 each"}]
+    en["cards"]["4"]["materials"] = [{"cid": 1}, {"rule": "Level 8"}, {"rule": "Warrior", "count": 2}]
+    en["cards"]["12"].pop("materials")
+    bc.sync_shared(out, en)
+    assert en["cards"]["10"]["materials"] == [{"rule": "Dragon, 1 each", "cid": 2}, {"rule": "Dragon, 1 each", "cid": 1}]
+    assert en["cards"]["4"]["materials"] == [{"cid": 1}, {"rule": "Level 8", "cid": 1}, {"rule": "Warrior", "count": 2, "cid": 3}]
+    assert en["cards"]["12"]["materials"] == [{"cid": 13}] and "materials" not in en["cards"]["1"]
+    bc.sync_shared(out, en)
+    assert en["cards"]["10"]["materials"] == [{"rule": "Dragon, 1 each", "cid": 2}, {"rule": "Dragon, 1 each", "cid": 1}]  # 두 번 맞춰도 같다
     assert bc.rule_matches(bc.parse_rule("효과 몬스터 이외의 싱크로 몬스터"), {"name": "튠", "type": "드래곤족/싱크로/튜너"})
     assert not bc.rule_matches(bc.parse_rule("효과 몬스터 이외의 싱크로 몬스터"), {"name": "싱", "type": "드래곤족/싱크로/효과"})
     assert bc.parse_rule('"A"이나 "B"')[0]["theme"] == {"A", "B"} and bc.parse_rule('"포톤"이라는 이름이 붙은 몬스터')[0]["theme"] == {"포톤"}
     assert bc.parse_rule('"A" 몬스터 또는 "B" 몬스터 1장 이상')[0]["theme"] == {"A", "B"}
     assert bc.parse_rule("원래 공격력과 원래 수비력이 2500 인 몬스터")[1] == [("공격력", 2500, ""), ("수비력", 2500, "")]
     assert bc.parse_rule("드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장") is None
-    cards["10"] = {"name": "패왕", "type": "드래곤족/융합/효과", "text": "",
-                   "materials": [{"rule": "드래곤족의 엑시즈 / 일반 몬스터 1장씩 합계 2장"}]}
-    assert bc.make_picks(cards)["10"] == [{"any": [2]}, {"any": [1], "join": True}]
     assert bc.parse_rule("엑스트라 덱에서 특수 소환된 몬스터")[0]["type"] == {"융합", "싱크로", "엑시즈", "링크"}
     assert bc.parse_rule("토큰 이외의 필드의 어둠 속성 몬스터")[0]["attr"] == {"어둠"} and bc.parse_rule("패의 몬스터")
-    cards["11"] = {"name": "네오 로드", "type": "악마족/융합/효과", "text": "",
-                   "materials": [{"rule": '"용"(또는 그 카드명이 쓰여진 융합 몬스터)'}, {"rule": "필드의 효과 몬스터"}]}
-    cards["12"] = {"name": "마스크", "attr": "빛", "type": "전사족/융합/효과", "text": "", "mask": True}
-    cards["13"] = {"name": "빛 히어로", "attr": "빛", "type": "전사족/효과", "text": "", "hero": True}
-    cards["14"] = {"name": "카드 융합", "type": "전사족/융합/효과", "text": "", "materials": [{"cid": 1}, {"cid": 3, "count": 2}]}
-    cards["15"] = {"name": "이름 융합", "type": "전사족/융합/효과", "text": "", "materials": [{"cid": 1}, {"name": "없는 카드"}]}
-    picks = bc.make_picks(cards)
-    assert picks["12"] == [{"any": [13]}] and picks["14"] == [{"any": [1]}, {"any": [3], "count": 2}] and "15" not in picks
-    assert picks["11"][0] == {"any": [1, 4, 14, 15]}  # 용, 용이 소재인 융합 (엑시즈 용은 이름만 겹친다)
-
 
 if __name__ == "__main__":
     for name, fn in list(globals().items()):

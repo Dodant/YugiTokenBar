@@ -415,7 +415,6 @@
 /* CardDetailView.swift:44 */
 "같은 속성(%@)의 \"히어로\" 몬스터 1장" = "1 \"HERO\" monster with the same Attribute (%@)";
 /* CardDetailView.swift:45 */
-"가진 것 중 가장 많은 카드를 써요" = "Uses the one you have the most copies of";
 /* CardDetailView.swift:67 */
 "「%@」 마법 카드가 있어야 해요" = "You need the \"%@\" Spell Card";
 /* CardDetailView.swift:73 */

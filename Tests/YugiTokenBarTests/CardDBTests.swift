@@ -47,11 +47,11 @@ import Testing
         #expect(db.cards[4682]?.matches(kind: "ritual") == false && db.cards[4682]?.matches(kind: "spell") == true)
         #expect(["monster", "xyz", "pendulum"].allSatisfy { db.cards[11835]?.matches(kind: $0) == true })
         #expect(db.cards.values.filter { $0.matches(kind: "fusion") }.count == 323)
-        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): 마스크드 히어로 10종·NEX 2종·베어트론 빼고 310종, 전부 카드인 건 118종
+        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다. 마스크드 히어로 10종은 소재 줄이 없어 같은 속성 HERO 1줄을 만든다): NEX 2종·베어트론 빼고 320종, 전부 카드 이름인 건 118종
         let fusions = db.cards.values.filter { $0.matches(kind: "fusion") }
-        #expect(fusions.filter { $0.materials != nil }.count == 310)
-        #expect(fusions.filter { $0.materials?.allSatisfy { $0.cid != nil } == true }.count == 118)
-        #expect(db.cards[20769]?.materials?.first == Material(rule: "\"엘리멘틀 히어로 페더맨\"이나 \"엘리멘틀 히어로 버스트 레이디\""))  // "A"이나 "B" 는 조건
+        #expect(fusions.filter { $0.materials != nil }.count == 320)
+        #expect(fusions.filter { $0.mask != true && $0.materials?.allSatisfy { $0.rule == nil && $0.cid != nil } == true }.count == 118)
+        #expect(db.cards[20769]?.materials?.first == Material(cid: 6310, rule: "\"엘리멘틀 히어로 페더맨\"이나 \"엘리멘틀 히어로 버스트 레이디\""))  // "A"이나 "B" 는 조건, 쓸 카드는 페더맨
         #expect(db.cards[4043]?.materials == [Material(cid: 4044), Material(cid: 4045)] && db.cards[4043]?.text == "")  // 용기사 가이아: 바닐라라 효과가 빈다
         // 조건 없는 융합의 100팩에 없는 소재 8장은 그 융합이 든 팩에 넣는다: 미노켄타우로스의 미노타우로스(스타터 덱 카드, 강철의 습격자)
         #expect(db.cards[4098]?.materials?.first == Material(cid: 4032) && db.packs[1].cards.contains(4032))
@@ -68,12 +68,13 @@ import Testing
         #expect(db.cards.values.allSatisfy { $0.materials?.allSatisfy { $0.name == nil } ?? true })
         #expect(db.cards[9116]?.materials?.first == Material(cid: 7697) && db.packs[36].cards.contains(7697))
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
-        // 만들 수 있는 융합 305종(카드 소재 118·조건 소재 177·마스크드 히어로 10)은 소재 줄마다 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
-        #expect(db.cards.values.filter { $0.picks != nil }.count == 305)
-        #expect(db.cards[12777]?.picks?.first?.any.contains(6315) == true)  // 앤틱 기어 데블의 "앤틱 기어" 몬스터에 앤틱 기어 골렘
-        #expect(db.cards[4043]?.picks == [Pick(any: [4044]), Pick(any: [4045])] && db.cards[21614]?.picks?.first?.any.count == 9)  // 용기사 가이아(카드 소재), 마스크드 히어로 아토믹(화염 HERO)
-        #expect(db.cards[19728]?.picks?.map(\.any.count) == [437, 74] && db.cards[19728]?.picks?[0].any.contains(4007) == true)
-        #expect(db.cards[12953]?.picks?.map { $0.join == true } == [false, true, true, true])  // 패왕룡 즈아크: 종류마다 1장씩
+        // 만들 수 있는 융합 305종(카드 소재 118·조건 소재 177·마스크드 히어로 10)은 소재 줄마다 쓸 카드가 정해져 있다(조건 소재도 cid):
+        // 투의염참룡(드래곤족 → 꼬마용, 전사족 / 화염 속성 → 크림슨 여수호병), 앤틱 기어 데블("앤틱 기어" × 2 → 앤틱 기어 솔저), 마스크드 히어로 아토믹(화염 HERO → 버스트 레이디)
+        #expect(db.cards[19728]?.materials == [Material(cid: 4206, rule: "드래곤족 몬스터"), Material(cid: 5196, rule: "전사족 / 화염 속성 몬스터")])
+        #expect(db.cards[12777]?.materials == [Material(cid: 6317, rule: "\"앤틱 기어\" 몬스터", count: 2)] && db.cards[21614]?.materials == [Material(cid: 6311)])
+        // 패왕룡 즈아크: "1장씩 합계 4장" 은 같은 조건 글로 종류마다 한 줄(융합 투의염참룡·싱크로·엑시즈·펜듈럼 드래곤)
+        #expect(db.cards[12953]?.materials?.map(\.cid) == [19728, 7899, 10072, 11702] && Set(db.cards[12953]?.materials?.map(\.rule) ?? []).count == 1)
+        #expect(db.cards[16845]?.materials == [Material(rule: "카드명이 다른 몬스터", count: 3)] && db.cards[16845]?.craftable == false)  // 못 읽는 조건은 카드 없이 남는다
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
         #expect(db.cards[CardDB.fusionSpell].map { ($0.name, $0.kind) } ?? ("", .monster) == ("융합", .spell))
         #expect(db.packs[0].cards.contains(CardDB.fusionSpell))
@@ -92,8 +93,8 @@ import Testing
         for era in db.eras {
             let sub = db.prefix(packs: era.packs.upperBound)
             #expect(sub.allCIDs.allSatisfy { cid in
-                guard let card = sub.cards[cid], let picks = card.picks else { return true }
-                return picks.allSatisfy { !$0.any.isDisjoint(with: sub.cidSet) } && (card.mask != true || sub.cidSet.contains(CardDB.maskChange))
+                guard let card = sub.cards[cid], let mats = card.fusionMaterials else { return true }
+                return mats.keys.allSatisfy(sub.cidSet.contains) && (card.mask != true || sub.cidSet.contains(CardDB.maskChange))
             }, "\(era.name)까지: 맞는 카드가 범위 밖인 융합 소재가 있음")
         }
     }
