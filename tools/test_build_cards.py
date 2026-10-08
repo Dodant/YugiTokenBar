@@ -217,6 +217,30 @@ def test_materials_override():
     assert out["cards"]["7301"]["materials"] == [{"rule": "Gemini Monster", "count": 2}] and mismatched == []
 
 
+def test_add_missing_materials():
+    # 검색 결과 행(레어도 칸 없음)과 상세 페이지 수록 목록(위가 최신)을 줄인 것
+    search = ('<div class="t_row c_normal open"><span class="card_name"> 격앙한 미노타우로스 </span><input class="cid" value="5884"></div>'
+              '<div class="t_row c_normal open"><span class="card_name"> 미노타우로스 </span><input class="cid" value="4032">'
+              '<span class="box_card_attribute"><span>땅</span></span><dd class="box_card_text c_text">설명</dd></div>')
+    row = lambda d, label: f'<div class="t_row "><div class="time"> {d} </div><div class="lr_icon rid_1"><p>{label}</p></div></div>'
+    detail = '<div id="cardname"></div><div id="update_list">' + row("2010-01-01", "SR") + row("2004-01-01", "R") + "</div>"
+    real_get, real_sleep = bc.get, bc.time.sleep
+    bc.get, bc.time.sleep = (lambda url: detail if "ope=2" in url else search), (lambda s: None)
+    try:
+        out = json.loads(json.dumps(KO))
+        out["packs"][0]["cards"].append(13)
+        out["cards"]["13"] = {"name": "라", "type": "악마족/융합", "text": "", "materials": [{"name": "미노타우로스"}, {"cid": 10}]}
+        out["packs"].append({"pid": "2", "name": "다른 팩", "date": "2005-01-01", "cards": [10]})
+        bc.add_missing_materials(out, {4032: 77})
+    finally:
+        bc.get, bc.time.sleep = real_get, real_sleep
+    assert out["cards"]["4032"] == {"name": "미노타우로스", "attr": "땅", "type": "일반", "text": "설명", "imageId": 77, "tier": 2}
+    assert out["cards"]["13"]["materials"][0] == {"cid": 4032}
+    assert out["cards"]["12"]["materials"][1] == {"cid": 4032}  # 조건이 섞인 융합도 이름이 같으면 cid 로
+    assert out["packs"][0]["cards"] == [10, 11, 12, 13, 4032] and out["packs"][1]["cards"] == [10]  # 융합(13)이 든 팩에만
+    assert list(out["cards"]) == ["10", "11", "12", "13", "4032"]
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

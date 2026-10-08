@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import time
+import urllib.parse
 import urllib.request
 
 TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽 등) = 5 = 앱의 SE
@@ -165,13 +166,14 @@ def parse_products(page):
     return sorted(boosters)
 
 
-def parse_pack(page):
+def parse_pack(page, need_rarity=True):
+    """팩 페이지(또는 need_rarity=False 로 검색 결과 페이지, 레어도 칸 없음)의 카드 행들."""
     cards = []
     seen = set()
     for row in re.split(r'<div class="t_row ', page)[1:]:
         cid = re.search(r'class="cid" value="(\d+)"', row)
         rid = re.search(r'lr_icon rid rid_(\d+)', row)
-        if not cid or not rid:
+        if not cid or (need_rarity and not rid):
             continue
         cid = int(cid.group(1))
         if cid in seen:
@@ -467,6 +469,52 @@ def split_materials(cards):
         info["text"] = rest.strip()
 
 
+def first_rarity(page):
+    """KO 상세 페이지의 수록 목록에서 가장 이른 수록판의 레어도 라벨(같은 날이면 목록 아래쪽, 즉 먼저 적힌 판)."""
+    i = page.find('<div id="update_list"')
+    rows = re.findall(r'<div class="time">\s*([\d-]+)\s*</div>.*?<div class="lr_icon[^"]*"[^>]*>\s*<p>([^<]*)</p>', page[i:], re.S) if i >= 0 else []
+    return min(reversed(rows), key=lambda r: r[0])[1] if rows else None
+
+
+def add_missing_materials(out, image_ids):
+    """조건 없이 카드로만 된 융합 몬스터의 100팩에 없는 소재({"name"})를 KO DB 에서 찾아 카드로 넣고, 그 소재를 쓰는 융합 몬스터가 든 팩마다 넣는다.
+    등급은 그 카드의 한국 첫 수록판 레어도. 소재는 {"cid"} 로 바꾼다. 이미 넣은 파일은 할 일이 없다."""
+    cards = out["cards"]
+    users = {}  # 소재 이름 → 그 소재를 쓰는 융합 cid. 조건 소재(rule)가 섞인 융합은 넣어도 융합으로 못 만들어서 뺀다
+    for cid, info in cards.items():
+        if any("rule" in m for m in info.get("materials", [])):
+            continue
+        for m in info.get("materials", []):
+            if "name" in m:
+                users.setdefault(m["name"], []).append(int(cid))
+    found = {}  # 이름 → cid
+    for name in users:
+        page = get(BASE + "card_search.action?ope=1&sess=1&rp=100&stype=1&request_locale=ko&keyword=" + urllib.parse.quote(name))
+        time.sleep(1)
+        hits = [c for c in parse_pack(page, need_rarity=False) if c["info"]["name"].replace(" ", "") == name.replace(" ", "")]
+        assert len(hits) == 1, (name, [c["info"]["name"] for c in hits])
+        c = hits[0]
+        found[name] = c["cid"]
+        if str(c["cid"]) in cards:
+            continue
+        label = first_rarity(get_card_page(BASE + f"card_search.action?ope=2&cid={c['cid']}&request_locale=ko"))
+        time.sleep(1)
+        info = c["info"] | {"imageId": image_ids.get(c["cid"]), "tier": TIER.get(label, 5)}
+        cards[str(c["cid"])] = {f: x for f, x in info.items() if x is not None}
+        print(f"  소재 추가: {c['cid']} {name} ({label})")
+    for p in out["packs"]:
+        for name, fusions in users.items():
+            if found[name] not in p["cards"] and any(f in p["cards"] for f in fusions):
+                p["cards"].append(found[name])
+    for info in cards.values():
+        for m in info.get("materials", []):
+            if m.get("name") in found:
+                m["cid"] = found[m.pop("name")]
+                if "count" in m:
+                    m["count"] = m.pop("count")  # 키 순서 cid, count
+    out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
+
+
 def move_tiers(out):
     """팩마다 붙은 등급을 카드로 옮긴다: 재수록 카드는 수록 팩 중 가장 높은 등급. 팩에는 cid 목록만 남는다.
     이미 옮긴 파일(--reformat)은 그대로."""
@@ -558,11 +606,15 @@ def build_ko():
     # 빈 칸(None)은 빼서 용량을 줄인다 — 앱은 없는 키를 nil 로 읽는다
     out = {"packs": packs, "cards": {str(k): {f: x for f, x in v.items() if x is not None} for k, v in sorted(infos.items())}}
     normalize_ko(out)
+    add_missing_materials(out, by_konami)
+    split_materials(out["cards"])  # 새로 넣은 소재 중 융합 몬스터(궁극의 푸른 눈의 백룡)
+    add_codes(out["cards"])
     dump(out, out_path("ko"))
-    print(f"packs={len(packs)} distinct={len(infos)} missingImages={len(missing)}")
+    missing += [f"{k} {v['name']}" for k, v in out["cards"].items() if "imageId" not in v and int(k) not in infos]
+    print(f"packs={len(packs)} distinct={len(out['cards'])} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
-    if len(packs) != 100 or any(not i["name"] for i in infos.values()) or any(not p["imageURL"] for p in packs):
+    if len(packs) != 100 or any(not i["name"] for i in out["cards"].values()) or any(not p["imageURL"] for p in packs):
         sys.exit("검증 실패: 팩 수가 100이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 

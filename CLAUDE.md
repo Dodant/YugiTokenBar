@@ -1,6 +1,6 @@
 # YugiTokenBar
 
-Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션(정규 부스터 100팩, 8,172종. 어시스트 팩 같은 미니 팩 제외)을 채우는 macOS 메뉴바 앱. 개인용이며 배포하지 않는다.
+Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션(정규 부스터 100팩, 8,180종. 어시스트 팩 같은 미니 팩 제외, 100팩에 없는 융합 소재 8장은 그 융합의 팩에 넣음)을 채우는 macOS 메뉴바 앱. 개인용이며 배포하지 않는다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
 - 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 21장·복사한 코드. 이미지 출처를 바꾸면 같이 고친다)
