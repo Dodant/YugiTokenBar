@@ -338,6 +338,11 @@ def test_make_picks():
     cards["10"] = {"name": "패왕", "type": "드래곤족/융합/효과", "text": "",
                    "materials": [{"rule": "드래곤족의 엑시즈 / 일반 몬스터 1장씩 합계 2장"}]}
     assert bc.make_picks(cards)["10"] == [{"any": [2]}, {"any": [1], "join": True}]
+    assert bc.parse_rule("엑스트라 덱에서 특수 소환된 몬스터")[0]["type"] == {"융합", "싱크로", "엑시즈", "링크"}
+    assert bc.parse_rule("토큰 이외의 필드의 어둠 속성 몬스터")[0]["attr"] == {"어둠"} and bc.parse_rule("패의 몬스터")
+    cards["11"] = {"name": "네오 로드", "type": "악마족/융합/효과", "text": "",
+                   "materials": [{"rule": '"용"(또는 그 카드명이 쓰여진 융합 몬스터)'}, {"rule": "필드의 효과 몬스터"}]}
+    assert bc.make_picks(cards)["11"][0] == {"any": [1, 4]}  # 용, 용이 소재인 융합 용 (엑시즈 용은 이름만 겹친다)
 
 
 if __name__ == "__main__":

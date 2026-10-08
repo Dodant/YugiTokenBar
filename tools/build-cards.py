@@ -632,6 +632,9 @@ def move_tiers(out):
 
 ATTRS = {"빛", "어둠", "땅", "물", "화염", "바람", "신"}
 TYPE_WORDS = {"융합", "싱크로", "엑시즈", "링크", "펜듈럼", "의식", "효과", "일반", "튜너", "듀얼", "툰"}
+# 필드·패·소환 상태는 보지 않고 가진 카드로 친다
+LOOSE = {"엑스트라 덱에서 특수 소환된 ": "융합 / 싱크로 / 엑시즈 / 링크 ", "이 턴에 특수 소환된 ": "", "자신 필드의 앞면 표시 ": "",
+         "필드의 ": "", "패의 ": ""}
 RULE_NUM = re.compile(r"(레벨|공격력|수비력) (\d+) ?(이상|이하)?(?:의|인)? ?")
 
 
@@ -639,8 +642,13 @@ def parse_rule(rule):
     """테마 하나와 종족·속성·몬스터 종류·레벨·공격력·수비력만으로 된 조건 소재("레벨 6 이상의 천사족 / 어둠 속성 몬스터",
     `"DD(디디)" 몬스터`)를 (같은 칸끼리는 OR·다른 칸끼리는 AND 인 집합들과 테마, 수치 조건)으로. 테마는 KO 이름에 든 문자열
     (괄호 읽기·띄어쓰기 빼고. JP 이름은 한자에 테마 읽기가 붙어 이름만으로 못 찾는다). 테마는 둘 중 하나("A"이나 "B",
-    "A" 몬스터 또는 "B" 몬스터)까지 집합으로. 필드·"카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로, "효과 몬스터 이외의" 는 그 종류를 뺀다."""
+    "A" 몬스터 또는 "B" 몬스터)까지 집합으로. 필드·패·소환 상태(LOOSE)는 지운다. `"A"(또는 그 카드명이 쓰여진 융합 몬스터)` 는
+    테마 A 에 "of"(make_picks 가 A 와 A 가 소재인 융합으로 찾는다). "카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로, "효과 몬스터 이외의" 는 그 종류를 뺀다."""
     rule = re.sub(r" ?\d+장 이상$", "", rule).removeprefix("토큰 이외의 ")
+    for k, v in LOOSE.items():
+        rule = rule.replace(k, v)
+    of = rule.endswith("(또는 그 카드명이 쓰여진 융합 몬스터)")
+    rule = rule.removesuffix("(또는 그 카드명이 쓰여진 융합 몬스터)") + (" 몬스터" if of else "")
     no = set()
     if q := re.match(r"(\S+) 몬스터 이외의 ", rule):  # "효과 몬스터 이외의 싱크로 몬스터"
         if q.group(1) not in TYPE_WORDS:
@@ -675,6 +683,8 @@ def parse_rule(rule):
             f["type"].add(t)
         else:
             return None
+    if of:
+        f["of"] = True
     return f, nums
 
 
@@ -712,6 +722,12 @@ def make_picks(cards):
     {"any": 맞는 카드 cid 목록(자기 자신 빼고), "count"} → {cid: [...]}. 소재 줄 순서의 조건 소재와 짝이 맞다.
     "드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장" 은 종류마다 하나씩 나누고, 둘째부터 "join"(앞 조건 소재와
     한 줄) 을 붙인다. 맞는 카드가 없는 조건이 있으면 뺀다. KO 카드(summons 가 있어야 함)로 정하고 PICKS_PATH 하나에 둔다(세 언어 공용)."""
+    def match(r, k, c):  # "of": 그 이름의 카드, 또는 그 카드가 소재인 융합
+        if not r[0].get("of"):
+            return rule_matches(r, c)
+        names = {k for k, c in cards.items() if c["name"].replace(" ", "") in r[0]["theme"]}
+        return k in names or any(str(m.get("cid")) in names for m in c.get("materials") or [])
+
     out = {}
     for cid, info in cards.items():
         mats = info.get("materials") or []
@@ -720,7 +736,7 @@ def make_picks(cards):
         rules = [(parse_rule(r), m.get("count"), i > 0) for m in mats if "rule" in m for i, r in enumerate(split_each(m["rule"]))]
         if not all(r for r, _, _ in rules):
             continue
-        picks = [{"any": [int(k) for k, c in cards.items() if k != cid and rule_matches(r, c)]} | ({"count": n} if n else {})
+        picks = [{"any": [int(k) for k, c in cards.items() if k != cid and match(r, k, c)]} | ({"count": n} if n else {})
                  | ({"join": True} if join else {}) for r, n, join in rules]
         if all(p["any"] for p in picks):  # 맞는 카드가 자기뿐이면("성령수기" 몬스터) 못 만든다
             out[cid] = picks
