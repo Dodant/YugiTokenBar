@@ -4,6 +4,8 @@ import SwiftUI
 // ponytail: 메뉴바 패널(.window)에서는 .help 툴팁이 뜨지 않아 hover + popover 로 대신한다. 일반 창(컬렉션)은 .help 그대로.
 private struct HoverHint: ViewModifier {
     let text: Text
+    /// 기울기가 있는 카드 썸네일만: 기울기 진입과 재질 팝오버 생성을 같은 순간에 시작하지 않는다
+    var delayed = false
     @State private var hovered = false
     @State private var shown = false
 
@@ -15,10 +17,7 @@ private struct HoverHint: ViewModifier {
             }
             .task(id: hovered) {
                 guard hovered else { return }
-                // 기울기 진입과 재질 팝오버 생성을 같은 순간에 시작하지 않는다.
-                do { try await Task.sleep(for: .milliseconds(350)) }
-                catch { return }
-                guard !Task.isCancelled, hovered else { return }
+                if delayed { do { try await Task.sleep(for: .milliseconds(350)) } catch { return } }
                 shown = true
             }
             .popover(isPresented: $shown, arrowEdge: .top) {
@@ -30,8 +29,8 @@ private struct HoverHint: ViewModifier {
 
 extension View {
     func hoverHint(_ text: LocalizedStringKey) -> some View { modifier(HoverHint(text: Text(text))) }
-    /// 카드 이름처럼 이미 그 언어인 데이터 문자열 (키로 찾지 않는다)
-    func hoverHint(verbatim text: String) -> some View { modifier(HoverHint(text: Text(verbatim: text))) }
+    /// 카드 이름처럼 이미 그 언어인 데이터 문자열 (키로 찾지 않는다). 카드 썸네일에 쓰여 0.35초 늦게 뜬다
+    func hoverHint(verbatim text: String) -> some View { modifier(HoverHint(text: Text(verbatim: text), delayed: true)) }
 
     /// 패널 안 스크롤의 아래 끝. 살짝 흐려지며(재질 띠) 투명해져서 글자가 반 토막으로 잘려 보이지 않는다.
     /// 끝까지 내리면 마지막 줄이 띠 위에 오도록 내용 아래에 띠 높이만큼 여백을 둔다.

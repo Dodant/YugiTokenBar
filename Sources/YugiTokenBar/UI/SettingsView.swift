@@ -115,7 +115,8 @@ struct SettingsView: View {
                 Text("현재 버전")
                 Spacer()
                 Text(AppInfo.versionText).foregroundStyle(.secondary).monospacedDigit()
-                if case .found(let latest) = update,
+                // 개발 빌드는 버전이 정해져 있지 않으니 "(최신)"을 붙이지 않는다
+                if AppInfo.bundleVersion != nil, case .found(let latest) = update,
                    !AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
                     Text("(최신)").font(.caption).foregroundStyle(.secondary)
                 }
