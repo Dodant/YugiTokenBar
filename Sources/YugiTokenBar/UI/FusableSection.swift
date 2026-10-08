@@ -9,10 +9,13 @@ struct FusableSection: View {
     let jump: (Int) -> Void
     @AppStorage("dex.fusableExpanded") private var expanded = true
     @State private var confirmAll = false
+    /// [모두 융합]으로 만든 장 수 (결과 알림)
+    @State private var made = 0
 
     var body: some View {
         let cids = cache.list(model.game)
-        if !cids.isEmpty {
+        // 다 만들면 목록이 사라지므로 결과 알림은 그 바깥에 단다
+        VStack(spacing: 0) { if !cids.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
@@ -57,7 +60,7 @@ struct FusableSection: View {
                         .controlSize(.small)
                         .help("융합 가능한 카드를 한 번에 만들어요")
                         .confirmationDialog("\(cids.count)장을 모두 융합할까요?", isPresented: $confirmAll) {
-                            Button("모두 융합") { model.fuseAll() }
+                            Button("모두 융합") { made = model.fuseAll() }
                         } message: {
                             Text("소재 카드는 1장씩 남아요. 소재가 겹쳐 모자라면 목록 앞 카드부터 만들어요.")
                         }
@@ -65,6 +68,11 @@ struct FusableSection: View {
             }
             .padding(12)
             Divider()
+        } }
+        .alert("\(made)장을 융합했어요", isPresented: Binding(get: { made > 0 }, set: { if !$0 { made = 0 } })) {
+            Button("확인") {}
+        } message: {
+            Text("최근 획득에서 만든 카드를 볼 수 있어요")
         }
     }
 }

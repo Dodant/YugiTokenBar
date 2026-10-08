@@ -1,5 +1,14 @@
 # Patch notes
 
+## 0.5.4 — 2026-10-08
+**🎨 Improvements**
+- When you have no cards yet, the popover now explains how to earn coins (using tokens earns coins, and ⓒ 1,000 buys 1 pack).
+- [Fuse All] in the Collection now tells you how many cards it made.
+- Pack progress bars in the Collection sidebar now match the deck bars, and fully collected packs turn green.
+
+**🐛 Bug fixes**
+- Fixed the fusion animation still fading in and out with [Turn off animations] on.
+
 ## 0.5.3 — 2026-10-08
 **✨ New features**
 - You can now swipe left or right on the trackpad over the popover's quick-buy row to move to the previous or next pack in release order. The incoming pack shrinks slightly before settling into place, with a light trackpad tap for each pack.

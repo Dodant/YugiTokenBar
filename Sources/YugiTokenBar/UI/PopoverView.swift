@@ -68,7 +68,8 @@ struct PopoverView: View {
                             .accessibilityAddTraits(.isImage)
                     }
                     if state.log.isEmpty {
-                        Text("아직 카드가 없어요").font(.callout).foregroundStyle(.secondary)
+                        // 처음엔 코인이 0이라 구매 버튼이 꺼져 있다 → 코인을 얻는 방법을 알려 준다
+                        Text("토큰을 쓰면 코인이 쌓여요 · \(coinText(Balance.packPrice)) = 1팩").font(.callout).foregroundStyle(.secondary)
                     }
                 }
                 .frame(height: 79)

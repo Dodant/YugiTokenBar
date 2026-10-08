@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DexView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.lessMotion) private var lessMotion
     @State private var scope: DexScope? = .all
     /// 여러 장 선택. 클릭 = 한 장, ⌘클릭 = 토글, ⇧클릭 = 범위 추가, 빈 곳에서 끌기 = 러버밴드.
     @State private var selectedCards: Set<Int> = []
@@ -143,7 +144,7 @@ struct DexView: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeOut(duration: 0.25), value: fusing)
+        .animation(lessMotion ? nil : .easeOut(duration: 0.25), value: fusing)
     }
 
     private var filterBar: some View {

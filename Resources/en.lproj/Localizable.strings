@@ -83,7 +83,6 @@
 /* PopoverView.swift:55 */
 "최근 획득" = "Recently obtained";
 /* PopoverView.swift:68 */
-"아직 카드가 없어요" = "No cards yet";
 /* PopoverView.swift:90 */
 "상점" = "Shop";
 /* PopoverView.swift:96 */
@@ -428,3 +427,9 @@
 "모두 융합" = "Fuse All";
 /* FusableSection.swift:62 */
 "소재 카드는 1장씩 남아요. 소재가 겹쳐 모자라면 목록 앞 카드부터 만들어요." = "One copy of each material is kept. If cards share materials and run short, the ones higher in the list are made first.";
+/* FusableSection.swift:72 */
+"%lld장을 융합했어요" = "Fused %lld cards";
+/* FusableSection.swift:75 */
+"최근 획득에서 만든 카드를 볼 수 있어요" = "You can find them under Recently obtained";
+/* PopoverView.swift:72 */
+"토큰을 쓰면 코인이 쌓여요 · %@ = 1팩" = "Using tokens earns coins · %@ = 1 pack";

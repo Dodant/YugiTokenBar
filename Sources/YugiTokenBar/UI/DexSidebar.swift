@@ -65,7 +65,7 @@ struct DexSidebar: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(pack.name).lineLimit(1)
                 HStack {
-                    ProgressView(value: Double(p.owned), total: Double(p.total)).controlSize(.mini)
+                    TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
                     Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
