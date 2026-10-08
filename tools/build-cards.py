@@ -515,6 +515,39 @@ def add_missing_materials(out, image_ids):
     out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
 
 
+def add_outside_fusions(out, image_ids):
+    """100팩 밖 융합 몬스터 중 소재가 조건 없이 전부 100팩 카드인 것을 넣는다. 들어갈 팩은 소재마다 처음 나온 팩 중
+    가장 늦은 팩이라 어느 시대 범위에서도 소재가 같이 있다. 등급은 그 카드의 한국 첫 수록판 레어도."""
+    cards = out["cards"]
+    cand, page_no = {}, 1
+    while True:
+        page = get(BASE + f"card_search.action?ope=1&sess=1&rp=100&page={page_no}&stype=1&ctype=1&other=2&request_locale=ko&keyword=")
+        time.sleep(1)
+        rows = parse_pack(page, need_rarity=False)
+        new = {str(c["cid"]): c["info"] for c in rows if str(c["cid"]) not in cards and str(c["cid"]) not in cand}
+        if not new:
+            break
+        cand |= new
+        page_no += 1
+    merged = cards | cand
+    split_materials(merged)  # 100팩 카드는 이미 뗐으니 후보만 뗀다
+    first_pack = {}
+    for i, p in enumerate(out["packs"]):
+        for c in p["cards"]:
+            first_pack.setdefault(c, i)
+    for cid, info in cand.items():
+        mats = info.get("materials")
+        if not mats or not all(m.get("cid") in first_pack for m in mats):
+            continue
+        label = first_rarity(get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale=ko"))
+        time.sleep(1)
+        cards[cid] = {f: x for f, x in (info | {"imageId": image_ids.get(int(cid)), "tier": TIER.get(label, 5)}).items() if x is not None}
+        pack = out["packs"][max(first_pack[m["cid"]] for m in mats)]
+        pack["cards"].append(int(cid))
+        print(f"  융합 추가: {cid} {info['name']} ({label}) → {pack['name']}")
+    out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
+
+
 def move_tiers(out):
     """팩마다 붙은 등급을 카드로 옮긴다: 재수록 카드는 수록 팩 중 가장 높은 등급. 팩에는 cid 목록만 남는다.
     이미 옮긴 파일(--reformat)은 그대로."""
@@ -608,6 +641,7 @@ def build_ko():
     normalize_ko(out)
     add_missing_materials(out, by_konami)
     split_materials(out["cards"])  # 새로 넣은 소재 중 융합 몬스터(궁극의 푸른 눈의 백룡)
+    add_outside_fusions(out, by_konami)
     add_codes(out["cards"])
     dump(out, out_path("ko"))
     missing += [f"{k} {v['name']}" for k, v in out["cards"].items() if "imageId" not in v and int(k) not in infos]

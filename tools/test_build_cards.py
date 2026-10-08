@@ -241,6 +241,30 @@ def test_add_missing_materials():
     assert list(out["cards"]) == ["10", "11", "12", "13", "4032"]
 
 
+def test_add_outside_fusions():
+    fusion = lambda cid, name, first: (f'<div class="t_row c_fusion open"><span class="card_name">{name}</span><input class="cid" value="{cid}">'
+                                       f'<span class="card_info_species_and_other_item"><span>[악마족／융합]</span></span>'
+                                       f'<dd class="box_card_text c_text">{first}\n효과</dd></div>')
+    search = (fusion(12, "다", "") + fusion(20, "마", '"가"＋"나"') + fusion(21, "바", '"가"＋"없는 카드"')
+              + fusion(22, "사", '"가"＋전사족 몬스터') + fusion(23, "아", '"마"＋"가"'))
+    detail = '<div id="cardname"></div><div id="update_list"><div class="time"> 2010-01-01 </div><div class="lr_icon rid_1"><p>UR</p></div></div>'
+    real_get, real_sleep = bc.get, bc.time.sleep
+    bc.get = lambda url: detail if "ope=2" in url else (search if "page=1&" in url else "")
+    bc.time.sleep = lambda s: None
+    try:
+        out = json.loads(json.dumps(KO))
+        out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "cards": [10, 12]},
+                        {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "cards": [10, 11]}]
+        bc.add_outside_fusions(out, {20: 99})
+    finally:
+        bc.get, bc.time.sleep = real_get, real_sleep
+    # 조건(22)·100팩 밖 소재(21)·후보 융합이 소재(23)인 것은 빼고, 소재가 처음 나온 팩 중 늦은 팩(가 0, 나 1 → 1)에
+    assert list(out["cards"]) == ["10", "11", "12", "20"]
+    assert out["cards"]["20"] == {"name": "마", "type": "악마족/융합", "text": "효과", "imageId": 99, "tier": 4,
+                                  "materials": [{"cid": 10}, {"cid": 11}]}
+    assert out["packs"][0]["cards"] == [10, 12] and out["packs"][1]["cards"] == [10, 11, 20]
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

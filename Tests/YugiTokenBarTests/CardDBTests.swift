@@ -14,7 +14,7 @@ import Testing
         #expect(db.packs.first?.setCode == "LOB")
         #expect(db.eras.map(\.name) == ["DM", "GX", "5D's", "ZEXAL", "ARC-V", "VRAINS", "Modern"])
         let kinds = Dictionary(grouping: db.cards.values, by: \.kind).mapValues(\.count)
-        #expect(kinds == [.monster: 5041, .spell: 1719, .trap: 1420])
+        #expect(kinds == [.monster: 5059, .spell: 1719, .trap: 1420])
         // 팩마다 노멀 몬스터가 보장 장 수 이상이라 몬스터 슬롯이 다른 티어로 올라가지 않는다
         #expect(db.packs.allSatisfy { p in p.cards.filter { db.tier($0) == 1 && db.cards[$0]?.kind == .monster }.count >= Balance.monstersPerPack })
         #expect(db.eras.map(\.packs) == [0..<11, 11..<27, 27..<43, 43..<51, 51..<63, 63..<75, 75..<100])
@@ -22,11 +22,11 @@ import Testing
         #expect(db.eras.map { db.packs[$0.packs.lowerBound].setCode } == ["LOB", "SOD", "TDGS", "REDU", "DUEA", "COTD", "ROTD"])
         #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
         #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 100팩 모두 한글판
-        #expect(db.allCIDs.count == 8180)
+        #expect(db.allCIDs.count == 8198)
         // 재수록 카드는 수록 팩 중 가장 높은 등급: 유벨(환영의 어둠 N, 팬텀 나이트메어 QCSE → SE)
         #expect(db.cards.values.first { $0.name == "유벨" }?.rarity == "SE")
         let tiers = Dictionary(grouping: db.cards.values, by: \.tier).mapValues(\.count)
-        #expect(tiers == [1: 4761, 2: 1730, 3: 897, 4: 491, 5: 301])
+        #expect(tiers == [1: 4762, 2: 1733, 3: 898, 4: 499, 5: 306])
         // 팩 표지 몬스터는 SE (악몽의 미궁·어둠의 유산은 표지가 마법·함정이라 빠진다)
         #expect(db.cards[4007]?.rarity == "SE" && db.cards[4223]?.rarity == "SE")  // 푸른 눈의 백룡, 블랙 데몬즈 드래곤
         for pack in db.packs {
@@ -46,15 +46,17 @@ import Testing
         // 종류 메뉴의 소환법: 의식 마법(댄스의 유혹)은 "의식"에 안 잡히고, 엑시즈 펜듈럼(패왕흑룡)은 둘 다
         #expect(db.cards[4682]?.matches(kind: "ritual") == false && db.cards[4682]?.matches(kind: "spell") == true)
         #expect(["monster", "xyz", "pendulum"].allSatisfy { db.cards[11835]?.matches(kind: $0) == true })
-        #expect(db.cards.values.filter { $0.matches(kind: "fusion") }.count == 287)
-        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): NEX 2종·베어트론 빼고 284종, 전부 카드인 건 93종
+        #expect(db.cards.values.filter { $0.matches(kind: "fusion") }.count == 305)
+        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): NEX 2종·베어트론 빼고 302종, 전부 카드인 건 111종
         let fusions = db.cards.values.filter { $0.matches(kind: "fusion") }
-        #expect(fusions.filter { $0.materials != nil }.count == 284)
-        #expect(fusions.filter { $0.materials?.allSatisfy { $0.cid != nil } == true }.count == 93)
+        #expect(fusions.filter { $0.materials != nil }.count == 302)
+        #expect(fusions.filter { $0.materials?.allSatisfy { $0.cid != nil } == true }.count == 111)
         #expect(db.cards[20769]?.materials?.first == Material(rule: "\"엘리멘틀 히어로 페더맨\"이나 \"엘리멘틀 히어로 버스트 레이디\""))  // "A"이나 "B" 는 조건
         #expect(db.cards[4043]?.materials == [Material(cid: 4044), Material(cid: 4045)] && db.cards[4043]?.text == "")  // 용기사 가이아: 바닐라라 효과가 빈다
         // 조건 없는 융합의 100팩에 없는 소재 8장은 그 융합이 든 팩에 넣는다: 미노켄타우로스의 미노타우로스(스타터 덱 카드, 강철의 습격자)
         #expect(db.cards[4098]?.materials?.first == Material(cid: 4032) && db.packs[1].cards.contains(4032))
+        // 100팩 밖 융합 중 소재가 전부 100팩 카드인 18종은 소재가 처음 나온 팩 중 가장 늦은 팩에 넣는다: 합체마신－게이트 가디언(강철의 습격자)
+        #expect(db.packs[1].cards.contains(18325) && db.cards[18325]?.materials == [Material(cid: 4377), Material(cid: 4378), Material(cid: 4379)])
         #expect(db.cards.values.filter { $0.materials?.contains { $0.name != nil } == true }.count == 6)  // 조건이 섞인 융합의 소재는 그대로
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
