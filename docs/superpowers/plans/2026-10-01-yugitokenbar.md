@@ -1,5 +1,7 @@
 # YugiTokenBar Implementation Plan
 
+> 역사 기록이고 현재 기준은 스펙(`docs/superpowers/specs/2026-10-01-yugitokenbar-design.md`)이다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 토큰 사용량으로 코인과 무료 카드를 적립하고, 싱크로 이전 한국 정발 부스터 27팩을 열어 2,270종 도감을 채우는 macOS 메뉴바 앱.
