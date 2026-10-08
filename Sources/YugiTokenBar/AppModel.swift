@@ -50,7 +50,7 @@ final class AppModel {
 
     var db: CardDB { game.db }
 
-    /// 앱 시작 시 해금 검사 (저장 전 검사와 함께 스펙 §2).
+    /// 앱 시작 시 해금 검사 (저장 전 검사와 함께 스펙 6절 파트너).
     func unlockOnLaunch() {
         if game.unlockPartnerIfOwned() { save() }
     }

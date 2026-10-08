@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 카드 이미지. 로딩 중·실패 시 카드 뒷면 + 한국어 이름, owned=false 면 흑백 실루엣.
+/// 카드 이미지. 로딩 중·실패 시 카드 뒷면 + 고른 언어의 카드 이름, owned=false 면 흑백 실루엣.
 struct CardImageView: View {
     let db: CardDB
     let cid: Int
