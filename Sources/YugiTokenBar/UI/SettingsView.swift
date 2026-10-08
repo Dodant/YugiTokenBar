@@ -117,7 +117,7 @@ struct SettingsView: View {
                 Text(AppInfo.versionText).foregroundStyle(.secondary).monospacedDigit()
                 if case .found(let latest) = update,
                    !AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
-                    Text("(latest)").font(.caption).foregroundStyle(.secondary)
+                    Text("(최신)").font(.caption).foregroundStyle(.secondary)
                 }
             }
             Divider()
@@ -295,7 +295,7 @@ struct SettingsView: View {
                     Text(verbatim: "β")
                         .font(.caption2.italic())
                         .foregroundStyle(.tertiary)
-                        .help("베타 기능")
+                        .hoverHint("베타 기능")  // 메뉴바 패널이라 .help 대신
                         .accessibilityLabel("베타 기능")
                 }
             }

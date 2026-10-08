@@ -100,8 +100,6 @@
 "일반" = "General";
 /* SettingsView.swift:82 */
 "카드" = "Cards";
-/* SettingsView.swift:67 */
-"파트너 (베타)" = "Partner (beta)";
 /* SettingsView.swift:113 */
 "업데이트" = "Updates";
 /* SettingsView.swift:154 */
@@ -154,8 +152,6 @@
 "새 버전 v%@이 있어요" = "New version v%@ is available";
 /* SettingsView.swift:137 */
 "GitHub에서 받기" = "Get it on GitHub";
-/* SettingsView.swift:144 */
-"최신 버전이에요" = "You're up to date";
 /* SettingsView.swift:148 */
 "확인하지 못했어요. 네트워크를 확인해 주세요." = "Couldn't check. Please check your network.";
 /* SettingsView.swift:156 */
@@ -408,3 +404,9 @@
 "%@ 융합. 누르면 건너뛰고, 한 번 더 누르면 닫기" = "Fusion Summoned \"%@\". Click to skip, click again to close";
 /* ShopView.swift:178 */
 "새 카드가 더 나오지 않는 팩" = "No new cards left in this pack";
+/* SettingsView.swift:67 */
+"파트너" = "Partner";
+/* SettingsView.swift:120 */
+"(최신)" = "(latest)";
+/* SettingsView.swift:298 */
+"베타 기능" = "Beta feature";
