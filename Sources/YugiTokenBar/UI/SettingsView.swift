@@ -64,7 +64,7 @@ struct SettingsView: View {
 
     private var partnerSection: some View {
         let unlocked = model.game.state.partnerUnlocked
-        return section("파트너 (베타)") {
+        return section("파트너", beta: true) {
             toggleRow("바탕화면 파트너", hint: unlocked ? "날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요"
                                                  : "「날개 크리보」 카드를 얻으면 파트너로 함께해요",
                       isOn: Bindable(model).partnerEnabled)
@@ -115,6 +115,11 @@ struct SettingsView: View {
                 Text("현재 버전")
                 Spacer()
                 Text(AppInfo.versionText).foregroundStyle(.secondary).monospacedDigit()
+                // 개발 빌드는 버전이 정해져 있지 않으니 "(최신)"을 붙이지 않는다
+                if AppInfo.bundleVersion != nil, case .found(let latest) = update,
+                   !AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
+                    Text("(최신)").font(.caption).foregroundStyle(.secondary)
+                }
             }
             Divider()
             row {
@@ -127,22 +132,19 @@ struct SettingsView: View {
                     Button("업데이트 확인") { checkUpdate() }.controlSize(.small)
                 }
             }
-            if case .found(let latest) = update {
+            if case .found(let latest) = update,
+               AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
                 Divider()
-                if AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
-                            Spacer()
-                            Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.callout)
-                        }
-                        Text("git pull && scripts/build-app.sh --install")
-                            .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
+                        Spacer()
+                        Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.callout)
                     }
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                } else {
-                    row { Text("최신 버전이에요").font(.callout).foregroundStyle(.secondary); Spacer() }
+                    Text("git pull && scripts/build-app.sh --install")
+                        .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                 }
+                .padding(.horizontal, 12).padding(.vertical, 8)
             } else if case .failed = update {
                 Divider()
                 row { Text("확인하지 못했어요. 네트워크를 확인해 주세요.").font(.callout).foregroundStyle(.secondary); Spacer() }
@@ -286,9 +288,19 @@ struct SettingsView: View {
 
     // MARK: 공용
 
-    private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(_ title: LocalizedStringKey, beta: Bool = false, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.caption.weight(.medium)).foregroundStyle(.secondary).padding(.leading, 4)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(title).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                if beta {
+                    Text(verbatim: "β")
+                        .font(.caption2.italic())
+                        .foregroundStyle(.tertiary)
+                        .hoverHint("베타 기능")  // 메뉴바 패널이라 .help 대신
+                        .accessibilityLabel("베타 기능")
+                }
+            }
+            .padding(.leading, 4)
             VStack(spacing: 0) { content() }
                 .background(Color.primary.opacity(0.07), in: .rect(cornerRadius: 16))  // .fill 은 panelScrollBottom 의 .mask 안에서 다크일 때 검게 그려진다
         }
