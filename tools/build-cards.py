@@ -6,6 +6,7 @@
 사용: python3 tools/build-cards.py [--lang ko|ja|en|all] [--reformat]
 """
 import argparse
+import functools
 import html
 import http.client
 import json
@@ -476,6 +477,16 @@ def first_rarity(page):
     return min(reversed(rows), key=lambda r: r[0])[1] if rows else None
 
 
+@functools.cache
+def find_card(name):
+    """KO DB 이름 검색에서 이름이 같은(띄어쓰기 무시) 카드 행. 한국 미발매면 None."""
+    page = get(BASE + "card_search.action?ope=1&sess=1&rp=100&stype=1&request_locale=ko&keyword=" + urllib.parse.quote(name))
+    time.sleep(1)
+    hits = [c for c in parse_pack(page, need_rarity=False) if c["info"]["name"].replace(" ", "") == name.replace(" ", "")]
+    assert len(hits) <= 1, (name, [c["info"]["name"] for c in hits])
+    return hits[0] if hits else None
+
+
 def add_missing_materials(out, image_ids):
     """조건 없이 카드로만 된 융합 몬스터의 100팩에 없는 소재({"name"})를 KO DB 에서 찾아 카드로 넣고, 그 소재를 쓰는 융합 몬스터가 든 팩마다 넣는다.
     등급은 그 카드의 한국 첫 수록판 레어도. 소재는 {"cid"} 로 바꾼다. 이미 넣은 파일은 할 일이 없다."""
@@ -489,11 +500,8 @@ def add_missing_materials(out, image_ids):
                 users.setdefault(m["name"], []).append(int(cid))
     found = {}  # 이름 → cid
     for name in users:
-        page = get(BASE + "card_search.action?ope=1&sess=1&rp=100&stype=1&request_locale=ko&keyword=" + urllib.parse.quote(name))
-        time.sleep(1)
-        hits = [c for c in parse_pack(page, need_rarity=False) if c["info"]["name"].replace(" ", "") == name.replace(" ", "")]
-        assert len(hits) == 1, (name, [c["info"]["name"] for c in hits])
-        c = hits[0]
+        c = find_card(name)
+        assert c, name
         found[name] = c["cid"]
         if str(c["cid"]) in cards:
             continue
@@ -516,8 +524,10 @@ def add_missing_materials(out, image_ids):
 
 
 def add_outside_fusions(out, image_ids):
-    """100팩 밖 융합 몬스터 중 소재가 조건 없이 전부 100팩 카드인 것을 넣는다. 들어갈 팩은 소재마다 처음 나온 팩 중
-    가장 늦은 팩이라 어느 시대 범위에서도 소재가 같이 있다. 등급은 그 카드의 한국 첫 수록판 레어도."""
+    """100팩 밖 융합 몬스터 중 소재에 조건이 없고 100팩 카드가 하나 이상인 것을 넣는다. 들어갈 팩은 100팩 소재마다
+    처음 나온 팩 중 가장 늦은 팩이라 어느 시대 범위에서도 소재가 같이 있다. 100팩 밖 소재는 {"name"} 으로 남겨 뒤이은
+    add_missing_materials 가 그 팩에 넣는다(한국 미발매 소재가 있으면 뺀다). 소재가 100팩 밖 융합이면 조건 융합(극화염의 검사의 투의염참룡)만 받아 같은 팩에
+    넣는다(조건 없는 것은 그 융합부터 이 기준에 맞아야 해서 뺀다: AtoZ 의 ABC). 등급은 그 카드의 한국 첫 수록판 레어도."""
     cards = out["cards"]
     cand, page_no = {}, 1
     while True:
@@ -535,16 +545,28 @@ def add_outside_fusions(out, image_ids):
     for i, p in enumerate(out["packs"]):
         for c in p["cards"]:
             first_pack.setdefault(c, i)
-    for cid, info in cand.items():
-        mats = info.get("materials")
-        if not mats or not all(m.get("cid") in first_pack for m in mats):
-            continue
+    has_rule = lambda info: any("rule" in m for m in info.get("materials", []))
+    outside = lambda m: "cid" in m and m["cid"] not in first_pack and has_rule(cand.get(str(m["cid"]), {}))
+
+    def add(cid, pack):
         label = first_rarity(get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale=ko"))
         time.sleep(1)
-        cards[cid] = {f: x for f, x in (info | {"imageId": image_ids.get(int(cid)), "tier": TIER.get(label, 5)}).items() if x is not None}
-        pack = out["packs"][max(first_pack[m["cid"]] for m in mats)]
+        cards[cid] = {f: x for f, x in (cand[cid] | {"imageId": image_ids.get(int(cid)), "tier": TIER.get(label, 5)}).items() if x is not None}
         pack["cards"].append(int(cid))
-        print(f"  융합 추가: {cid} {info['name']} ({label}) → {pack['name']}")
+        print(f"  융합 추가: {cid} {cand[cid]['name']} ({label}) → {pack['name']}")
+
+    for cid, info in cand.items():
+        mats = info.get("materials") or []
+        inside = [m for m in mats if m.get("cid") in first_pack]
+        if not inside or has_rule(info) or not all(m in inside or "name" in m or outside(m) for m in mats):
+            continue
+        if not all(find_card(m["name"]) for m in mats if "name" in m):  # 한국 미발매 소재(카오스 위저드의 흑마족의 커튼)
+            continue
+        pack = out["packs"][max(first_pack[m["cid"]] for m in inside)]
+        add(cid, pack)
+        for m in mats:
+            if outside(m) and str(m["cid"]) not in cards:
+                add(str(m["cid"]), pack)
     out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
 
 
@@ -642,6 +664,7 @@ def build_ko():
     add_missing_materials(out, by_konami)
     split_materials(out["cards"])  # 새로 넣은 소재 중 융합 몬스터(궁극의 푸른 눈의 백룡)
     add_outside_fusions(out, by_konami)
+    add_missing_materials(out, by_konami)  # 넣은 융합의 100팩 밖 소재
     add_codes(out["cards"])
     dump(out, out_path("ko"))
     missing += [f"{k} {v['name']}" for k, v in out["cards"].items() if "imageId" not in v and int(k) not in infos]

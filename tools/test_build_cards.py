@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 import tempfile
+import urllib.parse
 
 spec = importlib.util.spec_from_file_location("bc", os.path.join(os.path.dirname(__file__), "build-cards.py"))
 bc = importlib.util.module_from_spec(spec)
@@ -246,10 +247,13 @@ def test_add_outside_fusions():
                                        f'<span class="card_info_species_and_other_item"><span>[악마족／융합]</span></span>'
                                        f'<dd class="box_card_text c_text">{first}\n효과</dd></div>')
     search = (fusion(12, "다", "") + fusion(20, "마", '"가"＋"나"') + fusion(21, "바", '"가"＋"없는 카드"')
-              + fusion(22, "사", '"가"＋전사족 몬스터') + fusion(23, "아", '"마"＋"가"'))
+              + fusion(22, "사", '"가"＋전사족 몬스터') + fusion(23, "아", '"마"＋"가"') + fusion(24, "자", '"없는 카드"＋"없는 카드2"')
+              + fusion(25, "차", '"카"＋"가"') + fusion(26, "카", '전사족 몬스터＋"가"') + fusion(27, "타", '"가"＋"미발매"'))
+    found = '<div class="t_row c_normal open"><span class="card_name">없는 카드</span><input class="cid" value="30"></div>' 
     detail = '<div id="cardname"></div><div id="update_list"><div class="time"> 2010-01-01 </div><div class="lr_icon rid_1"><p>UR</p></div></div>'
     real_get, real_sleep = bc.get, bc.time.sleep
-    bc.get = lambda url: detail if "ope=2" in url else (search if "page=1&" in url else "")
+    bc.get = lambda url: (detail if "ope=2" in url else search if "page=1&" in url
+                          else found if url.endswith(urllib.parse.quote("없는 카드")) else "")
     bc.time.sleep = lambda s: None
     try:
         out = json.loads(json.dumps(KO))
@@ -258,11 +262,14 @@ def test_add_outside_fusions():
         bc.add_outside_fusions(out, {20: 99})
     finally:
         bc.get, bc.time.sleep = real_get, real_sleep
-    # 조건(22)·100팩 밖 소재(21)·후보 융합이 소재(23)인 것은 빼고, 소재가 처음 나온 팩 중 늦은 팩(가 0, 나 1 → 1)에
-    assert list(out["cards"]) == ["10", "11", "12", "20"]
+    # 조건(22)·100팩 소재가 없는 것(24)·조건 없는 후보 융합이 소재(23)인 것은 빼고, 100팩 소재가 처음 나온 팩 중 늦은 팩(가 0, 나 1 → 1)에.
+    # 100팩 밖 소재는 이름으로 남기고(21), 한국 미발매 소재(27)면 빼고, 조건 융합 소재(26)는 그 융합(25)과 같은 팩에
+    assert list(out["cards"]) == ["10", "11", "12", "20", "21", "25", "26"]
     assert out["cards"]["20"] == {"name": "마", "type": "악마족/융합", "text": "효과", "imageId": 99, "tier": 4,
                                   "materials": [{"cid": 10}, {"cid": 11}]}
-    assert out["packs"][0]["cards"] == [10, 12] and out["packs"][1]["cards"] == [10, 11, 20]
+    assert out["cards"]["21"]["materials"] == [{"cid": 10}, {"name": "없는 카드"}]
+    assert out["cards"]["25"]["materials"] == [{"cid": 26}, {"cid": 10}]
+    assert out["packs"][0]["cards"] == [10, 12, 21, 25, 26] and out["packs"][1]["cards"] == [10, 11, 20]
 
 
 if __name__ == "__main__":
