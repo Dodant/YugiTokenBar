@@ -75,7 +75,7 @@ Sources/YugiTokenBar/
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
   Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기
   UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않음, "융합 가능" 목록(`FusableSection.swift`)은 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage, CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`), PartnerPanel(바탕화면 파트너)
-CHANGELOG.md           패치노트 겸 버전 원본
+CHANGELOG.md           패치노트(한국어) 겸 버전 원본. CHANGELOG.en.md·CHANGELOG.ja.md는 같은 버전 제목의 번역
 Resources/partner.png  파트너 스프라이트 시트(192×208 셀, 8열 × 9행)
 Resources/card-back.jpg 카드 뒷면(923×1351, 로고 없음. tools/clean-card-back.py 산출물)
 Tests/YugiTokenBarTests/
@@ -218,8 +218,8 @@ VRAINS까지 75팩(6,160종)에서는 "무료 1장 + 1팩" 10,114~11,292회로 �
   - 카드: [시대 범위] 메뉴 `DM(의식)까지`·`GX(융합)까지`·`5D's(싱크로)까지`·`ZEXAL(엑시즈)까지`·`ARC-V(펜듈럼)까지`·`VRAINS(링크)까지`·`Modern(지원)까지`(소환법은 `CardDB.eraSummons`)(기본 `GX(융합)까지` = 싱크로 이전 27팩·2,308종, 옛 세이브도 GX로 시작, 세이브에 저장). 고른 시대까지의 앞 팩만(`CardDB.prefix`) 상점·컬렉션 사이드바·전체 카드 수·`ownedDistinct`(팝오버 [컬렉션 n / 전체])·무료 카드 풀·무료 팩에 쓴다. 범위 밖 보유 카드는 지우지 않고 숨기기만 하며(다시 넓히면 돌아온다), [중복 모두 팔기]는 범위 안 카드만 팔고, 덱 진행도(보유/덱 장 수)와 즐겨찾기 수도 범위 안 카드만 세어 그리드에 보이는 것과 맞춘다. 이름·이미지 조회(`cards`)는 전체를 그대로 쓴다. 이름 옆 ? 동그라미에 마우스를 올리면 말풍선(`hoverHint`)으로 "카드·상점·컬렉션이 설정한 시대까지 나와요. / 시대를 옮겨도 카드는 그대로 남아요.", 아래 설명 줄은 지금 범위의 "27팩 · 2,276장". 보던 팩이 범위 밖이 되면 컬렉션은 "전체"로. 컬렉션·상점의 시대 섹션은 받은 팩 범위를 그릴 때마다 지금 DB 에 맞춰 자른다(SwiftUI 가 없어질 섹션을 지우기 전에 몸체를 먼저 그릴 수 있어서). 범위 밖 팩 인덱스로 구매하면(개봉 화면의 [한 팩 더] 등) 코인을 쓰지 않고 거절한다.
   - 업데이트: 현재 버전(`v<CFBundleShortVersionString> (<CFBundleVersion>)`, `swift run`이면 "개발 빌드". 확인해서 최신이면 그 옆에 흐린 "(최신)", 개발 빌드는 붙이지 않는다), [업데이트 확인]을 누르면 `raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md`의 맨 위 버전과 숫자로 비교하고 "최신 버전" 줄에 `v x.y.z`를 보인다. 릴리스 없이 main 기준이다. 새 버전이면 GitHub 링크와 `git pull && scripts/build-app.sh --install`을 보여준다. 자동 확인·자동 업데이트는 없다.
   - 백업 & 이전: [내보내기], [가져오기](4절 내보내기·가져오기), 세이브 폴더 [Finder].
-  - 정보 & 지원: [패치노트](`CHANGELOG.md` 창), GitHub 링크, PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
-- **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다. `scripts/build-app.sh`가 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣고, `cards_KO/JP/EN.json`·`ko/en/ja.lproj`·`partner.png`·`card-back.jpg`·`CHANGELOG.md`·`Usage/NOTICE.md`를 Resources에 복사하고, Info.plist에 `CFBundleDevelopmentRegion=en`·`CFBundleLocalizations`(en·ko·ja)를 넣는다.
+  - 정보 & 지원: [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
+- **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다. `scripts/build-app.sh`가 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣고, `cards_KO/JP/EN.json`·`ko/en/ja.lproj`·`partner.png`·`card-back.jpg`·`CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md`·`Usage/NOTICE.md`를 Resources에 복사하고, Info.plist에 `CFBundleDevelopmentRegion=en`·`CFBundleLocalizations`(en·ko·ja)를 넣는다.
 
 ## 7. 오류 처리
 

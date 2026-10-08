@@ -17,7 +17,7 @@ cp Resources/cards_*.json "$APP/Contents/Resources/"
 cp -R Resources/ko.lproj Resources/en.lproj Resources/ja.lproj "$APP/Contents/Resources/"
 cp Resources/partner.png "$APP/Contents/Resources/partner.png"
 cp Resources/card-back.jpg "$APP/Contents/Resources/card-back.jpg"
-cp CHANGELOG.md "$APP/Contents/Resources/CHANGELOG.md"
+cp CHANGELOG.md CHANGELOG.en.md CHANGELOG.ja.md "$APP/Contents/Resources/"
 cp Sources/YugiTokenBar/Usage/NOTICE.md "$APP/Contents/Resources/NOTICE.md"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

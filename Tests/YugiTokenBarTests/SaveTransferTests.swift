@@ -49,6 +49,14 @@ import Testing
         #expect(AppInfo.topVersion(ofChangelog: "## 메모\n") == nil)
         #expect(AppInfo.isNewer("0.10.0", than: "0.9.1"))
         #expect(!AppInfo.isNewer("0.2", than: "0.2.0"))
-        #expect(AppInfo.topVersion(ofChangelog: AppInfo.changelog) != nil)
+        #expect(AppInfo.topVersion(ofChangelog: AppInfo.changelog(lang: "ko")) != nil)
+    }
+
+    /// 번역 패치노트가 한국어 원본과 같은 버전 제목을 같은 순서로 갖는다
+    @Test func changelogTranslationsMatchVersions() {
+        func versions(_ text: String) -> [String] { text.split(separator: "\n").filter { $0.hasPrefix("## ") }.map(String.init) }
+        let ko = versions(AppInfo.changelog(lang: "ko"))
+        #expect(!ko.isEmpty)
+        for lang in ["en", "ja"] { #expect(versions(AppInfo.changelog(lang: lang)) == ko, "\(lang)") }
     }
 }

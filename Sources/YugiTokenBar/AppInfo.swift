@@ -1,7 +1,7 @@
 import Foundation
 
-/// 버전·저장소·번들 문서. 버전과 패치노트의 원본은 저장소 루트의 CHANGELOG.md 하나다
-/// (scripts/build-app.sh 가 맨 위 `## x.y.z` 를 Info.plist 에 넣는다).
+/// 버전·저장소·번들 문서. 버전과 패치노트의 원본은 저장소 루트의 CHANGELOG.md(한국어) 하나다
+/// (scripts/build-app.sh 가 맨 위 `## x.y.z` 를 Info.plist 에 넣는다). CHANGELOG.en.md·ja.md 는 그 번역이다.
 enum AppInfo {
     static let repoURL = URL(string: "https://github.com/Dodant/YugiTokenBar")!
     static let latestChangelogURL = URL(string: "https://raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md")!
@@ -21,9 +21,14 @@ enum AppInfo {
     }
 
     /// 업데이트 비교에 쓰는 현재 버전. 개발 빌드는 로컬 CHANGELOG 기준.
-    static var currentVersion: String { bundleVersion ?? topVersion(ofChangelog: changelog) ?? "0" }
+    static var currentVersion: String { bundleVersion ?? topVersion(ofChangelog: text("CHANGELOG", repoPath: "CHANGELOG.md")) ?? "0" }
 
-    static var changelog: String { text("CHANGELOG", repoPath: "CHANGELOG.md") }
+    /// 앱 언어의 패치노트: ko → CHANGELOG.md, en·ja → CHANGELOG.en.md·CHANGELOG.ja.md
+    static var changelog: String { changelog(lang: AppLanguage.current) }
+    static func changelog(lang: String) -> String {
+        let name = lang == "ko" ? "CHANGELOG" : "CHANGELOG.\(lang)"
+        return text(name, repoPath: name + ".md")
+    }
     static var license: String { text("NOTICE", repoPath: "Sources/YugiTokenBar/Usage/NOTICE.md") }
 
     private static func text(_ name: String, repoPath: String) -> String {

@@ -13,7 +13,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
 - `/Applications` 설치(`scripts/build-app.sh --install`)는 사용자에게 먼저 묻는다.
 - 밸런스 수치는 `Game.swift`의 `Balance`에만 둔다. 바꿀 때는 스펙 5절도 같이 고친다.
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 복사본이다. 직접 고치지 말고 `tools/import-usage.sh`(원본 `~/remote-claude-projects/code/PokeTokenBar-carryover`, 커밋 `de617e3`)로 다시 만든다. 바꾼 점은 `Usage/NOTICE.md`에 적는다. 캐시처럼 읽는 쪽 조정은 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
-- 버전과 패치노트는 `CHANGELOG.md` 맨 위에 `## x.y.z — 날짜` 항목을 추가하는 것으로만 올린다. `build-app.sh`(Info.plist)와 앱의 업데이트 확인(main의 raw 파일)이 이 파일을 읽는다.
+- 버전과 패치노트는 `CHANGELOG.md` 맨 위에 `## x.y.z — 날짜` 항목을 추가하는 것으로만 올린다. `build-app.sh`(Info.plist)와 앱의 업데이트 확인(main의 raw 파일)이 이 파일을 읽는다. 같은 항목을 `CHANGELOG.en.md`·`CHANGELOG.ja.md`에도 같은 `## x.y.z — 날짜` 제목으로 번역해 넣는다(앱은 언어별 파일을 보여 주고, 테스트가 세 파일의 제목을 맞춰 본다). 분류 줄은 en `**✨ New features**`·`**🎨 Improvements**`·`**⚖️ Balance**`·`**🐛 Bug fixes**`·`**⚡ Performance**`, ja `**✨ 新機能**`·`**🎨 改善**`·`**⚖️ バランス**`·`**🐛 不具合修正**`·`**⚡ パフォーマンス**`, UI 이름은 `Localizable.strings` 번역, 카드·팩 이름은 `cards_EN/JP.json` 공식 이름을 쓴다.
 - 패치노트는 사용자용 문장(~했습니다)으로, 분류 줄 `**✨ 새로운 기능**`·`**🎨 개선**`·`**⚖️ 밸런스**`·`**🐛 오류 수정**`·`**⚡ 성능**` 중 해당하는 것만 쓴다. 같은 버전 안에서 바뀐 수치는 최종값만, 같은 기능은 모아서, 한 항목엔 한 주제. 내부 구조(카드 데이터 파일 형식, 해상도 등)는 빼고 커밋에만 남긴다. 큰 버전은 제목 아래에 핵심 변화 한 줄.
 - `Resources/cards_KO.json`·`cards_JP.json`·`cards_EN.json`은 `python3 tools/build-cards.py`로만 다시 만든다. 옵션(`--reformat`·`--lang`)과 요청 간격·이어 받기는 스펙 3절. JP·EN은 언어당 5~9시간 걸린다.
 - UI 문구는 ko/en/ja 현지화, 기준 언어는 한국어. 코드에는 한국어 문장을 그대로 쓰고(SwiftUI 리터럴은 자동, `String`으로 만드는 문구는 `String(localized:)`, 문구를 받는 헬퍼는 `LocalizedStringKey`), `python3 tools/sync-strings.py`로 en/ja `Resources/*.lproj/Localizable.strings`에 키를 덧붙여 번역한다. 커밋 전 `python3 tools/sync-strings.py --check`.
