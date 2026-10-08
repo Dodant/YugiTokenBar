@@ -67,7 +67,10 @@ import Testing
         var fusion = mon("융합 용")
         fusion.materials = [Material(cid: 1), Material(rule: "드래곤족 몬스터", count: 2)]
         fusion.picks = [Pick(any: [1, 2, 3], count: 2)]
-        let cards: [Int: CardInfo] = [1: mon("용 1"), 2: mon("용 2"), 3: mon("용 3"), 4: mon("다른 몬스터"), 20: fusion,
+        var each = mon("패왕")
+        each.materials = [Material(rule: "드래곤족의 일반 / 효과 몬스터 1장씩 합계 2장")]
+        each.picks = [Pick(any: [3]), Pick(any: [4], join: true)]
+        let cards: [Int: CardInfo] = [1: mon("용 1"), 2: mon("용 2"), 3: mon("용 3"), 4: mon("다른 몬스터"), 20: fusion, 21: each,
                                       CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
         let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
         var game = Game(db: db, state: GameState())
@@ -78,9 +81,10 @@ import Testing
         game.state.owned[2] = 1
         #expect(game.pickMaterials(20) == [[1: 1, 2: 1]])  // 장 수가 모자라면 다른 카드로 나눠 채운다
         game.state.owned[3] = 4
-        #expect(game.pickMaterials(20) == [[3: 2]] && game.fusable == [20] && db.fusionCIDs.contains(20))
+        #expect(game.pickMaterials(20) == [[3: 2]] && Set(game.fusable) == [20, 21] && db.fusionCIDs.contains(20))
         let made = game.fuse(20)
         #expect(made && game.state.owned[1] == 1 && game.state.owned[3] == 2 && game.state.owned[20] == 1)
+        #expect(game.pickMaterials(21) == [[3: 1, 4: 1]])  // "1장씩 합계" 를 나눈 조건은 한 줄로 합친다
     }
 
     /// 오른쪽 "융합 가능" 목록: 설정·「융합」·소재가 다 있어야 나온다

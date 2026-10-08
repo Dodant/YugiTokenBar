@@ -331,8 +331,13 @@ def test_make_picks():
     assert "9" not in picks  # "히어로" 에 맞는 카드가 없다: 히어로 키즈는 "HERO" 가 아니고, 자기 자신은 뺀다
     assert bc.rule_matches(bc.parse_rule("효과 몬스터 이외의 싱크로 몬스터"), {"name": "튠", "type": "드래곤족/싱크로/튜너"})
     assert not bc.rule_matches(bc.parse_rule("효과 몬스터 이외의 싱크로 몬스터"), {"name": "싱", "type": "드래곤족/싱크로/효과"})
-    assert bc.parse_rule('"A"이나 "B"') is None and bc.parse_rule('"포톤"이라는 이름이 붙은 몬스터')[0]["theme"] == "포톤"
+    assert bc.parse_rule('"A"이나 "B"')[0]["theme"] == {"A", "B"} and bc.parse_rule('"포톤"이라는 이름이 붙은 몬스터')[0]["theme"] == {"포톤"}
+    assert bc.parse_rule('"A" 몬스터 또는 "B" 몬스터 1장 이상')[0]["theme"] == {"A", "B"}
+    assert bc.parse_rule("원래 공격력과 원래 수비력이 2500 인 몬스터")[1] == [("공격력", 2500, ""), ("수비력", 2500, "")]
     assert bc.parse_rule("드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장") is None
+    cards["10"] = {"name": "패왕", "type": "드래곤족/융합/효과", "text": "",
+                   "materials": [{"rule": "드래곤족의 엑시즈 / 일반 몬스터 1장씩 합계 2장"}]}
+    assert bc.make_picks(cards)["10"] == [{"any": [2]}, {"any": [1], "join": True}]
 
 
 if __name__ == "__main__":

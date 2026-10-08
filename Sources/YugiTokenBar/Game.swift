@@ -273,7 +273,7 @@ struct Game: Sendable {
     }
 
     /// 조건 소재 융합(picks)의 소재: 소재 줄의 카드를 먼저 잡고, 조건마다 가진 카드 중 남는 장 수가 많은 것부터(같으면 cid 가 작은 것) 채운다.
-    /// 조건 소재 순서대로 고른 카드 (cid → 장 수). 하나라도 못 채우면 nil.
+    /// 조건 소재 줄 순서대로 고른 카드 (cid → 장 수, join 은 앞 줄에 합친다). 하나라도 못 채우면 nil.
     func pickMaterials(_ cid: Int) -> [[Int: Int]]? {
         guard let card = db.cards[cid], let picks = card.picks else { return nil }
         var used = card.cardMaterials
@@ -289,7 +289,7 @@ struct Game: Sendable {
                 need -= k
             }
             guard need == 0 else { return nil }
-            out.append(got)
+            if pick.join == true, !out.isEmpty { out[out.count - 1].merge(got, uniquingKeysWith: +) } else { out.append(got) }
         }
         return out
     }

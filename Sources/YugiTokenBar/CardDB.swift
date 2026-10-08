@@ -101,10 +101,12 @@ struct Material: Codable, Sendable, Equatable {
     var count: Int? = nil
 }
 
-/// 조건 소재 하나: 맞는 카드(any) 중에서 count 장(장 수가 다른 카드끼리 나눠도 된다)
+/// 조건 소재 하나: 맞는 카드(any) 중에서 count 장(장 수가 다른 카드끼리 나눠도 된다).
+/// join 은 앞 조건과 같은 소재 줄("융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장"을 나눈 둘째부터)
 struct Pick: Codable, Sendable, Equatable {
     var any: Set<Int>
     var count: Int? = nil
+    var join: Bool? = nil
 }
 
 struct Pack: Codable, Sendable, Identifiable, Equatable {

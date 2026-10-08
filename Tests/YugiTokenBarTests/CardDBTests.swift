@@ -63,15 +63,16 @@ import Testing
         // 마스크 체인지·마스크드 히어로 10종은 한국 첫 수록일 직전 팩에: 마스크 체인지(익스트림 빅토리), 아토믹(듀얼리스트 어드밴스)
         #expect(db.packs.firstIndex { $0.cards.contains(CardDB.maskChange) } == 38 && db.cards[CardDB.maskChange]?.kind == .spell)
         #expect(db.packs.firstIndex { $0.cards.contains(21614) } == 95 && db.cards.values.filter { $0.mask == true }.count == 10)
-        #expect(db.cards.values.filter { $0.hero == true }.count == 87 && db.fusionCIDs.count == 292)
+        #expect(db.cards.values.filter { $0.hero == true }.count == 87 && db.fusionCIDs.count == 298)
         // 조건이 섞인 융합의 100팩 밖 소재도 그 융합의 팩에 넣어서 이름만 남은 소재가 없다: 지천의 기사 가이아드레이크의 대지의 기사 가이아 나이트(폭풍의 스타스트라이크)
         #expect(db.cards.values.allSatisfy { $0.materials?.allSatisfy { $0.name == nil } ?? true })
         #expect(db.cards[9116]?.materials?.first == Material(cid: 7697) && db.packs[36].cards.contains(7697))
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
-        // 조건 소재가 단순한(테마 포함) 융합 164종은 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
-        #expect(db.cards.values.filter { $0.picks != nil }.count == 164)
+        // 조건 소재가 단순한(테마 포함) 융합 170종은 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
+        #expect(db.cards.values.filter { $0.picks != nil }.count == 170)
         #expect(db.cards[12777]?.picks?.first?.any.contains(6315) == true)  // 앤틱 기어 데블의 "앤틱 기어" 몬스터에 앤틱 기어 골렘
         #expect(db.cards[19728]?.picks?.map(\.any.count) == [437, 74] && db.cards[19728]?.picks?[0].any.contains(4007) == true)
+        #expect(db.cards[12953]?.picks?.map { $0.join == true } == [false, true, true, true])  // 패왕룡 즈아크: 종류마다 1장씩
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
         #expect(db.cards[CardDB.fusionSpell].map { ($0.name, $0.kind) } ?? ("", .monster) == ("융합", .spell))
         #expect(db.packs[0].cards.contains(CardDB.fusionSpell))

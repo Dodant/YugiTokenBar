@@ -638,18 +638,22 @@ RULE_NUM = re.compile(r"(레벨|공격력|수비력) (\d+) ?(이상|이하)?(?:�
 def parse_rule(rule):
     """테마 하나와 종족·속성·몬스터 종류·레벨·공격력·수비력만으로 된 조건 소재("레벨 6 이상의 천사족 / 어둠 속성 몬스터",
     `"DD(디디)" 몬스터`)를 (같은 칸끼리는 OR·다른 칸끼리는 AND 인 집합들과 테마, 수치 조건)으로. 테마는 KO 이름에 든 문자열
-    (괄호 읽기·띄어쓰기 빼고. JP 이름은 한자에 테마 읽기가 붙어 이름만으로 못 찾는다). 테마가 둘 이상("A"이나 "B")·필드·
-    "카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로, "효과 몬스터 이외의" 는 그 종류를 뺀다."""
+    (괄호 읽기·띄어쓰기 빼고. JP 이름은 한자에 테마 읽기가 붙어 이름만으로 못 찾는다). 테마는 둘 중 하나("A"이나 "B",
+    "A" 몬스터 또는 "B" 몬스터)까지 집합으로. 필드·"카드명이 다른" 같은 조건은 None. "N장 이상" 은 1장으로, "효과 몬스터 이외의" 는 그 종류를 뺀다."""
     rule = re.sub(r" ?\d+장 이상$", "", rule).removeprefix("토큰 이외의 ")
     no = set()
     if q := re.match(r"(\S+) 몬스터 이외의 ", rule):  # "효과 몬스터 이외의 싱크로 몬스터"
         if q.group(1) not in TYPE_WORDS:
             return None
         no, rule = {q.group(1)}, rule[q.end():]
+    rule = re.sub(r"원래 공격력과 원래 수비력이 (\d+) ?인 ", r"공격력 \1 수비력 \1 ", rule)
+    rule = re.sub(r'" 몬스터 또는 "|"이나 "', "|", rule)  # "A" 몬스터 또는 "B" 몬스터 / "A"이나 "B" → "A|B"
+    if "|" in rule and rule.endswith('"'):
+        rule += " 몬스터"
     theme = None
     if rule.count('"') == 2:
         q = re.search(r'"([^"]+)"(?:이?라는 이름이 붙은)? ?', rule)
-        theme = re.sub(r"\(.*?\)", "", q.group(1)).replace(" ", "")
+        theme = {re.sub(r"\(.*?\)", "", t).replace(" ", "") for t in q.group(1).split("|")}
         rule = rule[:q.start()] + rule[q.end():]
     elif '"' in rule:
         return None
@@ -681,7 +685,8 @@ def rule_matches(rule, info):
     summons = set(info.get("summons") or ())
     if info.get("kind") or f["race"] and parts[0] not in f["race"] or f["attr"] and info.get("attr") not in f["attr"] \
             or f["type"] and not f["type"] & set(parts[1:]) or f["no"] & set(parts[1:]) \
-            or f["theme"] and (f["theme"] not in info["name"].replace(" ", "") or f["theme"] == "히어로" and info["name"] in NOT_HERO):
+            or f["theme"] and not any(t in info["name"].replace(" ", "") and not (t == "히어로" and info["name"] in NOT_HERO)
+                                      for t in f["theme"]):
         return False
     for k, v, op in nums:
         if k == "레벨" and summons & {"xyz", "link"} or k == "수비력" and "link" in summons:
@@ -695,20 +700,28 @@ def rule_matches(rule, info):
     return True
 
 
+def split_each(rule):
+    """"드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장" → ["드래곤족 융합 몬스터", ...]. 아니면 [rule]."""
+    if q := re.fullmatch(r"(\S+족)의 (.+) 몬스터 1장씩 합계 \d+장", rule):
+        return [f"{q.group(1)} {t} 몬스터" for t in re.split(r"\s*/\s*", q.group(2))]
+    return [rule]
+
+
 def make_picks(cards):
     """조건 소재가 parse_rule 로 다 읽히는 융합 몬스터(이름 소재가 100팩 밖이면 뺀다)마다 조건 소재별
     {"any": 맞는 카드 cid 목록(자기 자신 빼고), "count"} → {cid: [...]}. 소재 줄 순서의 조건 소재와 짝이 맞다.
-    맞는 카드가 없는 조건이 있으면 뺀다. KO 카드(summons 가 있어야 함)로 정하고 PICKS_PATH 하나에 둔다(세 언어 공용)."""
+    "드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장" 은 종류마다 하나씩 나누고, 둘째부터 "join"(앞 조건 소재와
+    한 줄) 을 붙인다. 맞는 카드가 없는 조건이 있으면 뺀다. KO 카드(summons 가 있어야 함)로 정하고 PICKS_PATH 하나에 둔다(세 언어 공용)."""
     out = {}
     for cid, info in cards.items():
         mats = info.get("materials") or []
         if not any("rule" in m for m in mats) or any("name" in m for m in mats):
             continue
-        rules = [(parse_rule(m["rule"]), m.get("count")) for m in mats if "rule" in m]
-        if not all(r for r, _ in rules):
+        rules = [(parse_rule(r), m.get("count"), i > 0) for m in mats if "rule" in m for i, r in enumerate(split_each(m["rule"]))]
+        if not all(r for r, _, _ in rules):
             continue
         picks = [{"any": [int(k) for k, c in cards.items() if k != cid and rule_matches(r, c)]} | ({"count": n} if n else {})
-                 for r, n in rules]
+                 | ({"join": True} if join else {}) for r, n, join in rules]
         if all(p["any"] for p in picks):  # 맞는 카드가 자기뿐이면("성령수기" 몬스터) 못 만든다
             out[cid] = picks
     return out
