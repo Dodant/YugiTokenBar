@@ -1,13 +1,14 @@
 import SwiftUI
 
 /// "융합 가능" 목록. inspector 클로저는 부모가 다시 그려져도 갱신되지 않을 때가 있어 모델을 직접 구독하는 뷰로 뺐다.
-/// 누르면 그 카드로 이동해 상세(융합 버튼)를 연다
+/// 누르면 그 카드로 이동해 상세(융합 버튼)를 연다. 아래 [모두 융합]은 확인 뒤 목록을 다 만든다
 struct FusableSection: View {
     @Environment(AppModel.self) private var model
     let selected: Set<Int>
     let cache: FusableCache
     let jump: (Int) -> Void
     @AppStorage("dex.fusableExpanded") private var expanded = true
+    @State private var confirmAll = false
 
     var body: some View {
         let cids = cache.list(model.game)
@@ -47,6 +48,20 @@ struct FusableSection: View {
                     }
                 }
                 .frame(maxHeight: min(CGFloat(cids.count) * 38, 190)) }
+                // 일괄 융합: 확인 뒤 목록을 다 만든다 (연출 없이, 만든 융합이 소재인 것도 이어서)
+                HStack {
+                    Spacer()
+                    Button { confirmAll = true } label: { Label("모두 융합", systemImage: "arrow.triangle.merge") }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.capsule)
+                        .controlSize(.small)
+                        .help("융합 가능한 카드를 한 번에 만들어요")
+                        .confirmationDialog("\(cids.count)장을 모두 융합할까요?", isPresented: $confirmAll) {
+                            Button("모두 융합") { model.fuseAll() }
+                        } message: {
+                            Text("소재 카드는 1장씩 남아요. 소재가 겹쳐 모자라면 목록 앞 카드부터 만들어요.")
+                        }
+                }
             }
             .padding(12)
             Divider()

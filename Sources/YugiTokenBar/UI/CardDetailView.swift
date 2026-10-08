@@ -155,7 +155,7 @@ struct CardDetailView: View {
 
     private func materialRow(_ mcid: Int, _ suffix: String) -> some View {
         HStack {
-            Button((model.db.cards[mcid]?.name ?? "") + suffix) { jump(mcid) }.buttonStyle(.link)
+            Button((model.db.cards[mcid]?.name ?? "") + suffix) { jump(mcid) }.buttonStyle(.link).multilineTextAlignment(.leading)  // 긴 이름(EN)이 줄 바뀌어도 왼쪽 정렬
             Spacer()
             Text("보유 \(model.game.copies(mcid))").foregroundStyle(.secondary).monospacedDigit()
         }

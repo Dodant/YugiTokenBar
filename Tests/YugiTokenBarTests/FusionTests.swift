@@ -105,6 +105,27 @@ import Testing
         #expect(game.fusable.isEmpty)
     }
 
+    /// 일괄 융합: 목록을 다 만들고, 만든 융합이 소재인 융합도 이어서 만든다. 소재가 겹쳐 모자라면 앞 것만
+    @Test func fuseAllChainsAndStopsWhenShort() {
+        func mon(_ name: String, _ picks: [Pick]? = nil) -> CardInfo {
+            var c = CardInfo(name: name, attr: nil, level: nil, type: picks == nil ? "전사족" : "전사족/융합", atk: nil, def: nil, text: "", imageId: nil,
+                             materials: picks.map { $0.map { _ in Material(rule: "몬스터") } })
+            c.picks = picks
+            return c
+        }
+        let cards: [Int: CardInfo] = [1: mon("소재"), 20: mon("융합 A", [Pick(any: [1])]), 21: mon("융합 B", [Pick(any: [20])]),
+                                      22: mon("융합 C", [Pick(any: [1], count: 3)]),
+                                      CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
+        let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
+        var game = Game(db: db, state: GameState())
+        game.state.owned = [1: 3, CardDB.fusionSpell: 1]
+        game.state.fusionOnly = true
+        #expect(Set(game.fusable) == [20, 22])
+        #expect(game.fuseAll() == [20, 21])  // A 가 소재1을 써서 C(3장)는 모자라고, A 가 생겨 B 를 이어서 만든다
+        #expect(game.state.owned[1] == 2 && game.state.owned[20] == 1 && game.state.owned[21] == 1 && game.state.owned[22] == nil)
+        #expect(game.fuseAll().isEmpty)
+    }
+
     /// 융합 전용 설정이 켜져 있으면 소재는 필요한 최대 장 수(소재2 → 2장)까지 중복으로 치지 않는다
     @Test func fusionOnlyKeepsMaterialCopiesFromDuplicateSales() {
         var state = GameState()

@@ -307,6 +307,18 @@ struct Game: Sendable {
         return true
     }
 
+    /// "융합 가능" 목록을 다 만든다. 만든 융합이 다른 융합의 소재면 그것도 이어서 만들고(즈아크), 더 만들 게 없을 때까지 돈다. 반환: 만든 순서.
+    @discardableResult
+    mutating func fuseAll() -> [Int] {
+        var made: [Int] = []
+        while case let batch = fusable, !batch.isEmpty {
+            let before = made.count
+            for cid in batch where fuse(cid) { made.append(cid) }  // 앞 융합이 소재를 써서 못 만들게 된 건 건너뛴다
+            if made.count == before { break }
+        }
+        return made
+    }
+
     // MARK: 뽑기
 
     /// 전체 카드에서 `freeWeights`로 티어를 고르고 그 안에서 균등 선택.

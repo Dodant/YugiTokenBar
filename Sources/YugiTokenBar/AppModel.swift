@@ -209,6 +209,14 @@ final class AppModel {
         save()
     }
 
+    /// "융합 가능" 전부를 만들고 한 번만 저장한다. 반환: 만든 장 수
+    @discardableResult
+    func fuseAll() -> Int {
+        let made = game.fuseAll()
+        if !made.isEmpty { save() }
+        return made.count
+    }
+
     // MARK: 덱
 
     @discardableResult
