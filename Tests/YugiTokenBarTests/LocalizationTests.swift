@@ -71,7 +71,7 @@ import Testing
                 let c = db.cards[cid]!
                 #expect(c.tier == k.tier && c.kindCode == k.kindCode && c.summons == k.summons && c.imageId == k.imageId
                         && c.level == k.level && c.atk == k.atk && c.def == k.def && c.scale == k.scale, "\(lang) \(cid)")
-                #expect(c.materials?.map(\.cid) == k.materials?.map(\.cid) && c.fusionMaterials == k.fusionMaterials, "\(lang) \(cid) 소재")
+                #expect(c.materials?.map(\.cid) == k.materials?.map(\.cid), "\(lang) \(cid) 소재")
             }
         }
     }

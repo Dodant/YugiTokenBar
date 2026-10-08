@@ -36,15 +36,10 @@ struct CardDetailView: View {
             if let pendulum = card.pendulum {
                 Section("펜듈럼 효과") { Text(pendulum).font(.callout).textSelection(.enabled) }
             }
-            // 마스크드 히어로는 소재 줄이 없어서 같은 속성 HERO 중 고른 1장을 소재로 보여 준다
-            let mask = card.mask == true
-            let maskRows: [Material]? = mask ? model.game.maskMaterial(cid).map { [Material(cid: $0)] } ?? [] : nil
-            if let materials = card.materials ?? maskRows {
+            // 마스크드 히어로는 소재 줄이 없어서 조건 한 줄로 보여 준다 (picks 는 같은 속성 HERO)
+            let maskRow = Material(rule: String(localized: "같은 속성(\(card.attr ?? ""))의 \"히어로\" 몬스터 1장"))
+            if let materials = card.materials ?? (card.mask == true ? [maskRow] : nil) {
                 Section("융합 소재") {
-                    if mask {
-                        Text("같은 속성(\(card.attr ?? ""))의 \"히어로\" 몬스터 1장").foregroundStyle(.secondary)
-                            .help("가진 것 중 가장 많은 카드를 써요")
-                    }
                     let groups = grouped(materials)
                     let picked = picked(groups)
                     ForEach(Array(groups.enumerated()), id: \.offset) { i, g in
@@ -85,12 +80,12 @@ struct CardDetailView: View {
                                 .help(why)
                                 .confirmationDialog("\(card.name) 융합", isPresented: $confirmFuse) {
                                     Button("융합") {
-                                        let mats = craftRows(materials).flatMap { m in m.cid.map { Array(repeating: $0, count: m.count ?? 1) } ?? [] }  // 연출은 소재 줄 순서대로
+                                        let mats = craftRows().flatMap { m in m.cid.map { Array(repeating: $0, count: m.count ?? 1) } ?? [] }  // 연출은 소재 줄 순서대로
                                         model.fuse(cid)
                                         fused(FusionShow(cid: cid, materials: mats))
                                     }
                                 } message: {
-                                    Text("\(consumed(craftRows(materials)))을 소비해요. 소재는 1장씩 남아 컬렉션에서 빠지지 않아요.")
+                                    Text("\(consumed(craftRows()))을 소비해요. 소재는 1장씩 남아 컬렉션에서 빠지지 않아요.")
                                 }
                         }
                     }
@@ -166,24 +161,19 @@ struct CardDetailView: View {
         }
     }
 
-    /// 묶은 소재 줄마다 그 조건 소재로 고른 카드 (cid → 장 수). 조건 소재가 아니거나 다 못 고르면 빈 사전
+    /// 묶은 소재 줄마다 고른 카드 (cid → 장 수). 다 못 고르면 빈 사전 (화면은 조건 줄 밑에만 보여 준다)
     private func picked(_ groups: [(material: Material, n: Int)]) -> [[Int: Int]] {
-        var picks = model.game.pickMaterials(cid) ?? []
+        var rows = model.game.pickMaterials(cid) ?? []
         return groups.map { g in
-            guard g.material.rule != nil, !picks.isEmpty else { return [:] }
-            return (0..<g.n / (g.material.count ?? 1)).reduce(into: [:]) { got, _ in
-                if !picks.isEmpty { got.merge(picks.removeFirst(), uniquingKeysWith: +) }
+            (0..<g.n / (g.material.count ?? 1)).reduce(into: [:]) { got, _ in
+                if !rows.isEmpty { got.merge(rows.removeFirst(), uniquingKeysWith: +) }
             }
         }
     }
 
-    /// 실제로 소비할 소재 줄: 조건 소재를 고른 카드로 바꾼다
-    private func craftRows(_ materials: [Material]) -> [Material] {
-        guard var picks = model.game.pickMaterials(cid) else { return materials }
-        return materials.flatMap { m -> [Material] in
-            guard m.rule != nil, !picks.isEmpty else { return [m] }
-            return picks.removeFirst().sorted { $0.key < $1.key }.map { Material(cid: $0.key, count: $0.value) }
-        }
+    /// 실제로 소비할 카드를 소재 줄 순서대로
+    private func craftRows() -> [Material] {
+        (model.game.pickMaterials(cid) ?? []).flatMap { $0.sorted { $0.key < $1.key }.map { Material(cid: $0.key, count: $0.value) } }
     }
 
     /// 융합 확인창: "사이버 드래곤 3장, 커스 오브 드래곤 1장"

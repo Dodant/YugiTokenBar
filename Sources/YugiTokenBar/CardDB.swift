@@ -25,8 +25,9 @@ struct CardInfo: Codable, Sendable, Equatable {
     var hero: Bool? = nil
     /// 「마스크 체인지」로만 소환하는 마스크드 히어로: 같은 속성 hero 몬스터 1장으로 만든다
     var mask: Bool? = nil
-    /// 조건 소재가 테마·종족·속성·레벨 같은 단순 조건뿐인 융합만: 소재 줄의 조건 소재마다(순서대로) 맞는 카드.
-    /// build-cards.py 가 KO 로 정해 Resources/picks.json(세 언어 공용)에 두고, load 가 채운다 (카드 파일에는 없다)
+    /// 만들 수 있는 융합 몬스터의 소재 줄마다(순서대로) 맞는 카드: 카드 소재는 그 카드 하나, 조건 소재는 맞는 카드들,
+    /// 마스크드 히어로(소재 줄 없음)는 같은 속성 HERO 하나. build-cards.py 가 KO 로 정해 Resources/picks.json(세 언어 공용)에 두고,
+    /// load 가 채운다 (카드 파일에는 없다)
     var picks: [Pick]? = nil
 
     enum CodingKeys: String, CodingKey {
@@ -63,21 +64,8 @@ struct CardInfo: Codable, Sendable, Equatable {
         kind.rawValue == filter || (kind == .monster && summons?.contains(filter) == true)
     }
 
-    /// 소재 줄의 100팩 카드 소재만 (cid → 장 수)
-    var cardMaterials: [Int: Int] {
-        (materials ?? []).reduce(into: [:]) { need, m in
-            if let cid = m.cid { need[cid, default: 0] += m.count ?? 1 }
-        }
-    }
-
-    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 100팩 카드인 융합 몬스터만, 조건이나 없는 카드가 섞이면 nil.
-    var fusionMaterials: [Int: Int]? {
-        guard let materials, materials.allSatisfy({ $0.cid != nil }) else { return nil }
-        return cardMaterials
-    }
-
-    /// 융합(소재를 다 알거나 조건이 단순한 융합 몬스터)이나 마스크 체인지로 만들 수 있는 카드
-    var craftable: Bool { fusionMaterials != nil || picks != nil || mask == true }
+    /// 융합(마스크드 히어로는 마스크 체인지)으로 만들 수 있는 카드
+    var craftable: Bool { picks != nil }
 }
 
 /// 카드 종류. rawValue 는 컬렉션 종류 메뉴 값이자 cards_XX.json "kind" 값(마법·함정, 몬스터는 생략).
@@ -101,7 +89,7 @@ struct Material: Codable, Sendable, Equatable {
     var count: Int? = nil
 }
 
-/// 조건 소재 하나: 맞는 카드(any) 중에서 count 장(장 수가 다른 카드끼리 나눠도 된다).
+/// 소재 줄 하나: 맞는 카드(any) 중에서 count 장(장 수가 다른 카드끼리 나눠도 된다).
 /// join 은 앞 조건과 같은 소재 줄("융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장"을 나눈 둘째부터)
 struct Pick: Codable, Sendable, Equatable {
     var any: Set<Int>
@@ -168,7 +156,9 @@ struct CardDB: Sendable {
     private static func materialNeeds(_ cids: [Int], _ cards: [Int: CardInfo]) -> [Int: Int] {
         cids.reduce(into: [:]) { need, cid in
             guard let card = cards[cid], card.craftable else { return }
-            for (m, n) in card.cardMaterials { need[m] = max(need[m] ?? 0, n) }
+            // 맞는 카드가 하나뿐인 소재(카드 소재)만 센다
+            let fixed = (card.picks ?? []).reduce(into: [Int: Int]()) { if $1.any.count == 1, let m = $1.any.first { $0[m, default: 0] += $1.count ?? 1 } }
+            for (m, n) in fixed { need[m] = max(need[m] ?? 0, n) }
         }
     }
 

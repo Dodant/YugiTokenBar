@@ -320,7 +320,7 @@ def test_make_picks():
              "6": {"name": "마법", "attr": "마법", "type": "일반", "text": ""}}
     bc.add_codes(cards)
     picks = bc.make_picks(cards)
-    assert picks["4"] == [{"any": [1]}, {"any": [3], "count": 2}], picks["4"]
+    assert picks["4"] == [{"any": [1]}, {"any": [1]}, {"any": [3], "count": 2}], picks["4"]  # 카드 소재도 소재 줄 한 줄
     cards["7"] = {"name": "DDD 왕", "type": "악마족/효과", "level": 7, "text": ""}
     cards["8"] = {"name": "히어로 키즈", "type": "전사족/효과", "text": ""}
     cards["9"] = {"name": "이블 히어로 테마", "type": "악마족/융합/효과", "text": "",
@@ -342,7 +342,13 @@ def test_make_picks():
     assert bc.parse_rule("토큰 이외의 필드의 어둠 속성 몬스터")[0]["attr"] == {"어둠"} and bc.parse_rule("패의 몬스터")
     cards["11"] = {"name": "네오 로드", "type": "악마족/융합/효과", "text": "",
                    "materials": [{"rule": '"용"(또는 그 카드명이 쓰여진 융합 몬스터)'}, {"rule": "필드의 효과 몬스터"}]}
-    assert bc.make_picks(cards)["11"][0] == {"any": [1, 4]}  # 용, 용이 소재인 융합 용 (엑시즈 용은 이름만 겹친다)
+    cards["12"] = {"name": "마스크", "attr": "빛", "type": "전사족/융합/효과", "text": "", "mask": True}
+    cards["13"] = {"name": "빛 히어로", "attr": "빛", "type": "전사족/효과", "text": "", "hero": True}
+    cards["14"] = {"name": "카드 융합", "type": "전사족/융합/효과", "text": "", "materials": [{"cid": 1}, {"cid": 3, "count": 2}]}
+    cards["15"] = {"name": "이름 융합", "type": "전사족/융합/효과", "text": "", "materials": [{"cid": 1}, {"name": "없는 카드"}]}
+    picks = bc.make_picks(cards)
+    assert picks["12"] == [{"any": [13]}] and picks["14"] == [{"any": [1]}, {"any": [3], "count": 2}] and "15" not in picks
+    assert picks["11"][0] == {"any": [1, 4, 14, 15]}  # 용, 용이 소재인 융합 (엑시즈 용은 이름만 겹친다)
 
 
 if __name__ == "__main__":

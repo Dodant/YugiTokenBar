@@ -37,7 +37,7 @@ def out_path(lang):
     return f"Resources/cards_{LANGS[lang]}.json"
 
 
-PICKS_PATH = "Resources/picks.json"  # 언어 공용: 조건 소재 융합의 맞는 카드 목록 (make_picks)
+PICKS_PATH = "Resources/picks.json"  # 언어 공용: 만들 수 있는 융합의 소재 줄마다 맞는 카드 목록 (make_picks)
 
 
 # 팩 표지 몬스터는 어느 팩에서 나오든 SE (Yugipedia cover_card 기준. 표지가 마법·함정인 악몽의 미궁·어둠의 유산,
@@ -691,6 +691,8 @@ def parse_rule(rule):
 def rule_matches(rule, info):
     """parse_rule 결과에 KO 카드가 맞는지. 레벨은 엑시즈·링크에 없고, 수비력은 링크에 없다. "히어로" 테마는 NOT_HERO 를 뺀다."""
     f, nums = rule
+    if "hero" in f:  # 마스크드 히어로의 소재: 같은 속성 "HERO" 몬스터
+        return bool(info.get("hero")) and info.get("attr") == f["hero"]
     parts = (info.get("type") or "").split("/")
     summons = set(info.get("summons") or ())
     if info.get("kind") or f["race"] and parts[0] not in f["race"] or f["attr"] and info.get("attr") not in f["attr"] \
@@ -718,26 +720,33 @@ def split_each(rule):
 
 
 def make_picks(cards):
-    """조건 소재가 parse_rule 로 다 읽히는 융합 몬스터(이름 소재가 100팩 밖이면 뺀다)마다 조건 소재별
-    {"any": 맞는 카드 cid 목록(자기 자신 빼고), "count"} → {cid: [...]}. 소재 줄 순서의 조건 소재와 짝이 맞다.
-    "드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장" 은 종류마다 하나씩 나누고, 둘째부터 "join"(앞 조건 소재와
-    한 줄) 을 붙인다. 맞는 카드가 없는 조건이 있으면 뺀다. KO 카드(summons 가 있어야 함)로 정하고 PICKS_PATH 하나에 둔다(세 언어 공용)."""
+    """만들 수 있는 융합 몬스터마다 소재 줄 한 줄에 하나씩 {"any": 맞는 카드 cid 목록(자기 자신 빼고), "count"} → {cid: [...]}.
+    카드 소재는 [그 cid], 조건 소재는 parse_rule 로 맞는 카드, 마스크드 히어로(mask, 소재 줄 없음)는 같은 속성 hero 몬스터 하나.
+    "드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장" 은 종류마다 하나씩 나누고, 둘째부터 "join"(앞 것과
+    한 줄) 을 붙인다. 이름 소재(100팩 밖)·못 읽는 조건·맞는 카드가 없는 조건이 있으면 뺀다.
+    KO 카드(add_codes 뒤)로 정하고 PICKS_PATH 하나에 둔다(세 언어 공용)."""
     def match(r, k, c):  # "of": 그 이름의 카드, 또는 그 카드가 소재인 융합
         if not r[0].get("of"):
             return rule_matches(r, c)
         names = {k for k, c in cards.items() if c["name"].replace(" ", "") in r[0]["theme"]}
         return k in names or any(str(m.get("cid")) in names for m in c.get("materials") or [])
 
+    def pool(cid, m):
+        if "cid" in m:
+            return [m["cid"]]
+        return [int(k) for k, c in cards.items() if k != cid and match(m["rule"], k, c)]
+
     out = {}
     for cid, info in cards.items():
-        mats = info.get("materials") or []
-        if not any("rule" in m for m in mats) or any("name" in m for m in mats):
+        if info.get("mask"):
+            mats = [{"rule": ({"hero": info["attr"]}, [])}]
+        else:
+            mats = [m | {"rule": parse_rule(r), "join": i > 0} if "rule" in m else m
+                    for m in info.get("materials") or [] for i, r in enumerate(split_each(m["rule"]) if "rule" in m else [None])]
+        if not mats or any("name" in m or "rule" in m and not m["rule"] for m in mats):
             continue
-        rules = [(parse_rule(r), m.get("count"), i > 0) for m in mats if "rule" in m for i, r in enumerate(split_each(m["rule"]))]
-        if not all(r for r, _, _ in rules):
-            continue
-        picks = [{"any": [int(k) for k, c in cards.items() if k != cid and match(r, k, c)]} | ({"count": n} if n else {})
-                 | ({"join": True} if join else {}) for r, n, join in rules]
+        picks = [{"any": pool(cid, m)} | ({"count": m["count"]} if m.get("count") else {}) | ({"join": True} if m.get("join") else {})
+                 for m in mats]
         if all(p["any"] for p in picks):  # 맞는 카드가 자기뿐이면("성령수기" 몬스터) 못 만든다
             out[cid] = picks
     return out
@@ -751,7 +760,7 @@ def dump_picks(cards):
 
 def add_codes(cards):
     """언어와 상관없는 코드 필드: 마법·함정은 kind, 몬스터는 type 칸의 소환법을 summons(시대 순)로,
-    "HERO" 몬스터는 hero, 마스크 체인지로만 소환하는 몬스터는 mask. 앱 로직은 이것만 본다(조건 소재는 따로 make_picks)."""
+    "HERO" 몬스터는 hero, 마스크 체인지로만 소환하는 몬스터는 mask. 앱 로직은 이것만 본다(융합 소재는 따로 make_picks)."""
     for info in cards.values():
         for f in ("kind", "summons", "hero", "mask"):
             info.pop(f, None)

@@ -249,9 +249,6 @@ struct Game: Sendable {
 
     // MARK: 융합
 
-    /// 융합에 쓸 소재 (cid → 장 수). 소재가 전부 100팩 카드인 융합 몬스터만, 아니면 nil.
-    func fusionMaterials(_ cid: Int) -> [Int: Int]? { db.cards[cid]?.fusionMaterials }
-
     /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통)
     func keep(_ cid: Int) -> Int { state.fusionOnly ? max(1, db.materialNeed[cid] ?? 1) : 1 }
 
@@ -264,47 +261,36 @@ struct Game: Sendable {
     /// 마스크드 히어로는 「마스크 체인지」, 나머지는 「융합」이 있어야 만든다 (소비하지 않는다)
     func craftSpell(_ cid: Int) -> Int { db.cards[cid]?.mask == true ? CardDB.maskChange : CardDB.fusionSpell }
 
-    /// 마스크드 히어로의 소재: 가진 같은 속성 "HERO" 몬스터 중 가장 많은 것 (같으면 cid 가 작은 것). 없으면 nil.
-    func maskMaterial(_ cid: Int) -> Int? {
-        guard let card = db.cards[cid], card.mask == true else { return nil }
-        return state.owned.keys
-            .filter { $0 != cid && copies($0) > 0 && db.cards[$0].map { $0.hero == true && $0.attr == card.attr } == true }
-            .max { (copies($0), -$0) < (copies($1), -$1) }
-    }
-
-    /// 조건 소재 융합(picks)의 소재: 소재 줄의 카드를 먼저 잡고, 조건마다 가진 카드 중 남는 장 수가 많은 것부터(같으면 cid 가 작은 것) 채운다.
-    /// 조건 소재 줄 순서대로 고른 카드 (cid → 장 수, join 은 앞 줄에 합친다). 하나라도 못 채우면 nil.
+    /// 소재 줄 순서대로 고른 카드 (cid → 장 수, join 은 앞 줄에 합친다). 맞는 카드가 하나뿐인 줄(카드 소재)을 먼저 잡고,
+    /// 나머지는 줄 순서대로 가진 카드 중 남는 장 수가 많은 것부터(같으면 cid 가 작은 것) 채운다. 하나라도 못 채우면 nil.
     func pickMaterials(_ cid: Int) -> [[Int: Int]]? {
-        guard let card = db.cards[cid], let picks = card.picks else { return nil }
-        var used = card.cardMaterials
-        var out: [[Int: Int]] = []
-        for pick in picks {
-            var need = pick.count ?? 1, got: [Int: Int] = [:]
-            let left = { (c: Int) in copies(c) - (used[c] ?? 0) }
-            let pool = state.owned.keys.filter { $0 != cid && pick.any.contains($0) && left($0) > 0 }
+        guard let picks = db.cards[cid]?.picks else { return nil }
+        var used: [Int: Int] = [:], got = [[Int: Int]](repeating: [:], count: picks.count)
+        let left = { (c: Int) in copies(c) - (used[c] ?? 0) }
+        let order = picks.indices.sorted { (picks[$0].any.count == 1 ? 0 : 1, $0) < (picks[$1].any.count == 1 ? 0 : 1, $1) }
+        for i in order {
+            var need = picks[i].count ?? 1
+            let pool = state.owned.keys.filter { $0 != cid && picks[i].any.contains($0) && left($0) > 0 }
             for c in pool.sorted(by: { (left($0), -$0) > (left($1), -$1) }) where need > 0 {
                 let k = min(need, left(c))
-                got[c] = k
+                got[i][c] = k
                 used[c, default: 0] += k
                 need -= k
             }
             guard need == 0 else { return nil }
-            if pick.join == true, !out.isEmpty { out[out.count - 1].merge(got, uniquingKeysWith: +) } else { out.append(got) }
         }
-        return out
+        return zip(picks, got).reduce(into: []) { out, pg in
+            if pg.0.join == true, !out.isEmpty { out[out.count - 1].merge(pg.1, uniquingKeysWith: +) } else { out.append(pg.1) }
+        }
     }
 
-    /// 만들 때 쓸 소재 (cid → 장 수): 융합은 소재 줄(조건 소재는 고른 카드), 마스크드 히어로는 고른 HERO 1장
+    /// 만들 때 쓸 소재 (cid → 장 수)
     func craftMaterials(_ cid: Int) -> [Int: Int]? {
-        guard let card = db.cards[cid] else { return nil }
-        if card.mask == true { return maskMaterial(cid).map { [$0: 1] } }
-        if card.picks != nil { return pickMaterials(cid)?.reduce(card.cardMaterials) { $0.merging($1, uniquingKeysWith: +) } }
-        return card.fusionMaterials
+        pickMaterials(cid)?.reduce(into: [:]) { $0.merge($1, uniquingKeysWith: +) }
     }
 
-    func canFuse(_ cid: Int) -> Bool {
-        copies(craftSpell(cid)) > 0 && craftMaterials(cid)?.allSatisfy { copies($0.key) >= $0.value } == true
-    }
+    /// 고른 소재는 가진 장 수 안에서만 잡으니 다 고르면 만들 수 있다
+    func canFuse(_ cid: Int) -> Bool { copies(craftSpell(cid)) > 0 && pickMaterials(cid) != nil }
 
     /// 지금 융합할 수 있는 범위 안 미보유 카드 (설정이 꺼져 있으면 없다)
     var fusable: [Int] {

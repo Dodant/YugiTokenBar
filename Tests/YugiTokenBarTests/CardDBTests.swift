@@ -68,9 +68,10 @@ import Testing
         #expect(db.cards.values.allSatisfy { $0.materials?.allSatisfy { $0.name == nil } ?? true })
         #expect(db.cards[9116]?.materials?.first == Material(cid: 7697) && db.packs[36].cards.contains(7697))
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
-        // 조건 소재가 단순한(테마 포함) 융합 177종은 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
-        #expect(db.cards.values.filter { $0.picks != nil }.count == 177)
+        // 만들 수 있는 융합 305종(카드 소재 118·조건 소재 177·마스크드 히어로 10)은 소재 줄마다 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
+        #expect(db.cards.values.filter { $0.picks != nil }.count == 305)
         #expect(db.cards[12777]?.picks?.first?.any.contains(6315) == true)  // 앤틱 기어 데블의 "앤틱 기어" 몬스터에 앤틱 기어 골렘
+        #expect(db.cards[4043]?.picks == [Pick(any: [4044]), Pick(any: [4045])] && db.cards[21614]?.picks?.first?.any.count == 9)  // 용기사 가이아(카드 소재), 마스크드 히어로 아토믹(화염 HERO)
         #expect(db.cards[19728]?.picks?.map(\.any.count) == [437, 74] && db.cards[19728]?.picks?[0].any.contains(4007) == true)
         #expect(db.cards[12953]?.picks?.map { $0.join == true } == [false, true, true, true])  // 패왕룡 즈아크: 종류마다 1장씩
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
@@ -86,22 +87,14 @@ import Testing
         for d in [db, db.prefix(packs: 30)] {
             #expect(d.fusionCount == d.allCIDs.filter { d.cards[$0]?.craftable == true }.count && d.fusionCount > 0)
         }
-        // 소재를 다 아는 융합(융합 전용 후보)의 소재는 어느 시대 범위에서도 그 융합과 같은 범위 안에 있다 → Game.isFusionOnly 가 범위 검사를 안 한다
+        // 만들 수 있는 융합(융합 전용 후보)은 어느 시대 범위에서도 소재 줄마다 맞는 카드가 같은 범위 안에 있고(한 카드를 여러 장 모으면
+        // 장 수는 채운다), 마스크드 히어로는 「마스크 체인지」도 있다 → Game.isFusionOnly 가 범위 검사를 안 한다
         for era in db.eras {
             let sub = db.prefix(packs: era.packs.upperBound)
             #expect(sub.allCIDs.allSatisfy { cid in
-                let mats = sub.cards[cid]?.materials ?? []
-                return !mats.allSatisfy { $0.cid != nil } || mats.allSatisfy { sub.cidSet.contains($0.cid!) }
-            }, "\(era.name)까지: 소재가 범위 밖인 융합 전용 카드가 있음")
-            // 마스크드 히어로도 「마스크 체인지」와 같은 속성 HERO 가 같은 범위 안에 있다
-            #expect(sub.allCIDs.filter { sub.cards[$0]?.mask == true }.allSatisfy { cid in
-                sub.cidSet.contains(CardDB.maskChange) && sub.allCIDs.contains { $0 != cid && sub.cards[$0]?.hero == true && sub.cards[$0]?.attr == sub.cards[cid]?.attr }
-            }, "\(era.name)까지: 마스크 체인지나 같은 속성 HERO 가 범위 밖인 마스크드 히어로가 있음")
-            // 조건 소재 융합도 소재 줄의 카드와 조건마다 맞는 카드가 같은 범위 안에 있다 (한 카드를 여러 장 모으면 장 수는 채운다)
-            #expect(sub.allCIDs.allSatisfy { cid in
                 guard let card = sub.cards[cid], let picks = card.picks else { return true }
-                return card.cardMaterials.keys.allSatisfy(sub.cidSet.contains) && picks.allSatisfy { !$0.any.isDisjoint(with: sub.cidSet) }
-            }, "\(era.name)까지: 조건에 맞는 카드가 범위 밖인 조건 소재 융합이 있음")
+                return picks.allSatisfy { !$0.any.isDisjoint(with: sub.cidSet) } && (card.mask != true || sub.cidSet.contains(CardDB.maskChange))
+            }, "\(era.name)까지: 맞는 카드가 범위 밖인 융합 소재가 있음")
         }
     }
 }
