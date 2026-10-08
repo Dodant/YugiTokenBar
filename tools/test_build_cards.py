@@ -252,6 +252,7 @@ def test_add_outside_fusions():
     found = '<div class="t_row c_normal open"><span class="card_name">없는 카드</span><input class="cid" value="30"></div>' 
     detail = '<div id="cardname"></div><div id="update_list"><div class="time"> 2010-01-01 </div><div class="lr_icon rid_1"><p>UR</p></div></div>'
     real_get, real_sleep = bc.get, bc.time.sleep
+    bc.ko_fusions.cache_clear()
     bc.get = lambda url: (detail if "ope=2" in url else search if "page=1&" in url
                           else found if url.endswith(urllib.parse.quote("없는 카드")) else "")
     bc.time.sleep = lambda s: None
@@ -270,6 +271,43 @@ def test_add_outside_fusions():
     assert out["cards"]["21"]["materials"] == [{"cid": 10}, {"name": "없는 카드"}]
     assert out["cards"]["25"]["materials"] == [{"cid": 26}, {"cid": 10}]
     assert out["packs"][0]["cards"] == [10, 12, 21, 25, 26] and out["packs"][1]["cards"] == [10, 11, 20]
+
+
+
+def test_add_mask_change():
+    row = lambda cid, name, text, kind="[전사족／융합／효과]": (
+        f'<div class="t_row c_fusion open"><span class="card_name">{name}</span><input class="cid" value="{cid}">'
+        f'<span class="card_info_species_and_other_item"><span>{kind}</span></span><dd class="box_card_text c_text">{text}</dd></div>')
+    fusions = row(40, "마스크드 히어로 가", '이 카드는 "마스크 체인지"의 효과로만 특수 소환할 수 있다.') + row(41, "다른 융합", '"가"＋"나"')
+    spell = '<div class="t_row c_normal open"><span class="card_name">마스크 체인지</span><input class="cid" value="50"><span class="box_card_attribute"><span>마법</span></span></div>'
+    printed = lambda d: f'<div id="cardname"></div><div id="update_list"><div class="time"> {d} </div><div class="pack_name flex_1">팩</div><div class="lr_icon rid_1"><p>SR</p></div></div>'
+    real_get, real_sleep = bc.get, bc.time.sleep
+    bc.ko_fusions.cache_clear()
+    bc.find_card.cache_clear()
+    bc.get = lambda url: (printed("2005-01-01" if "cid=50" in url else "2004-06-01") if "ope=2" in url
+                          else fusions if "page=1&" in url else spell if url.endswith(urllib.parse.quote("마스크 체인지")) else "")
+    bc.time.sleep = lambda s: None
+    try:
+        out = json.loads(json.dumps(KO))
+        out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "cards": [10]},
+                        {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "cards": [11]}]
+        bc.add_mask_change(out, {40: 7})
+        bc.add_codes(out["cards"])
+    finally:
+        bc.get, bc.time.sleep = real_get, real_sleep
+        bc.find_card.cache_clear()
+    # 첫 수록일 직전(같은 날 포함) 팩에: 마스크드 히어로(2004-06) → 첫 팩, 마스크 체인지(2005-01-01) → 둘째 팩
+    assert out["packs"][0]["cards"] == [10, 40] and out["packs"][1]["cards"] == [11, 50]
+    assert out["cards"]["40"]["mask"] and out["cards"]["40"]["hero"] and out["cards"]["40"]["tier"] == 3 and out["cards"]["40"]["imageId"] == 7
+    assert out["cards"]["50"]["kind"] == "spell" and "hero" not in out["cards"]["50"] and "41" not in out["cards"]
+
+
+def test_add_codes_hero():
+    cards = {"1": {"name": "엘리멘틀 히어로 네오스", "type": "전사족/일반", "text": ""},
+             "2": {"name": "히어로 키즈", "type": "전사족/효과", "text": ""},
+             "3": {"name": "히어로 마스크", "attr": "마법", "type": "일반", "text": ""}}
+    bc.add_codes(cards)
+    assert cards["1"].get("hero") and "hero" not in cards["2"] and "hero" not in cards["3"]
 
 
 if __name__ == "__main__":

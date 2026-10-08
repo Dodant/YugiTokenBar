@@ -40,6 +40,27 @@ import Testing
         #expect(game.fusionMaterials(11) == nil && !unknown)  // 소재를 모르는 융합은 못 만든다
     }
 
+    /// 마스크드 히어로: 「마스크 체인지」가 있으면 같은 속성 HERO 중 가장 많이 가진 1장을 소비해(마지막 장은 남김) 만든다
+    @Test func maskChangeUsesSameAttributeHero() {
+        func hero(_ attr: String, mask: Bool? = nil) -> CardInfo {
+            CardInfo(name: "히어로", attr: attr, level: nil, type: "전사족", atk: nil, def: nil, text: "", imageId: nil, hero: true, mask: mask)
+        }
+        let cards: [Int: CardInfo] = [1: hero("빛"), 2: hero("빛"), 3: hero("어둠"), 4: CardInfo(name: "빛 몬스터", attr: "빛", level: nil, type: "전사족", atk: nil, def: nil, text: "", imageId: nil),
+                                      20: hero("빛", mask: true), CardDB.maskChange: CardInfo(name: "마스크 체인지", attr: "마법", level: nil, type: "속공", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
+        let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
+        var game = Game(db: db, state: GameState())
+        game.state.owned = [3: 5, 4: 5]
+        game.state.fusionOnly = true
+        #expect(game.maskMaterial(20) == nil && !game.canFuse(20))  // 빛 HERO 가 없다 (어둠 HERO·HERO 아닌 빛 몬스터는 안 된다)
+        game.state.owned[1] = 2
+        game.state.owned[2] = 3
+        #expect(game.maskMaterial(20) == 2 && !game.canFuse(20))  // 「마스크 체인지」가 없으면 잠김
+        game.state.owned[CardDB.maskChange] = 1
+        #expect(game.fusable == [20] && db.fusionCIDs.contains(20) && game.isFusionOnly(20))
+        let made = game.fuse(20)
+        #expect(made && game.state.owned[2] == 2 && game.state.owned[1] == 2 && game.state.owned[20] == 1 && game.state.owned[CardDB.maskChange] == 1)
+    }
+
     /// 오른쪽 "융합 가능" 목록: 설정·「융합」·소재가 다 있어야 나온다
     @Test func fusableListsOnlyReadyFusions() {
         var game = Game(db: db, state: GameState())

@@ -255,26 +255,42 @@ struct Game: Sendable {
     /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통)
     func keep(_ cid: Int) -> Int { state.fusionOnly ? max(1, db.materialNeed[cid] ?? 1) : 1 }
 
-    /// 설정이 켜져 있으면 소재를 아는 융합 몬스터는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
+    /// 설정이 켜져 있으면 소재를 아는 융합 몬스터·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
     func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) }
 
     /// 「융합」 마법 카드가 있어야 융합이 열린다 (소비하지 않는다)
     var hasFusionSpell: Bool { copies(CardDB.fusionSpell) > 0 }
 
-    func canFuse(_ cid: Int) -> Bool {
-        hasFusionSpell && fusionMaterials(cid)?.allSatisfy { copies($0.key) >= $0.value } == true
+    /// 마스크드 히어로는 「마스크 체인지」, 나머지는 「융합」이 있어야 만든다 (소비하지 않는다)
+    func craftSpell(_ cid: Int) -> Int { db.cards[cid]?.mask == true ? CardDB.maskChange : CardDB.fusionSpell }
+
+    /// 마스크드 히어로의 소재: 가진 같은 속성 "HERO" 몬스터 중 가장 많은 것 (같으면 cid 가 작은 것). 없으면 nil.
+    func maskMaterial(_ cid: Int) -> Int? {
+        guard let card = db.cards[cid], card.mask == true else { return nil }
+        return state.owned.keys
+            .filter { $0 != cid && copies($0) > 0 && db.cards[$0].map { $0.hero == true && $0.attr == card.attr } == true }
+            .max { (copies($0), -$0) < (copies($1), -$1) }
     }
 
-    /// 지금 융합할 수 있는 범위 안 미보유 융합 몬스터 (설정이 꺼져 있으면 없다)
+    /// 만들 때 쓸 소재 (cid → 장 수): 융합은 소재 줄, 마스크드 히어로는 고른 HERO 1장
+    func craftMaterials(_ cid: Int) -> [Int: Int]? {
+        db.cards[cid]?.mask == true ? maskMaterial(cid).map { [$0: 1] } : fusionMaterials(cid)
+    }
+
+    func canFuse(_ cid: Int) -> Bool {
+        copies(craftSpell(cid)) > 0 && craftMaterials(cid)?.allSatisfy { copies($0.key) >= $0.value } == true
+    }
+
+    /// 지금 융합할 수 있는 범위 안 미보유 카드 (설정이 꺼져 있으면 없다)
     var fusable: [Int] {
-        guard state.fusionOnly, hasFusionSpell else { return [] }
+        guard state.fusionOnly else { return [] }
         return db.allCIDs.filter { copies($0) == 0 && canFuse($0) }
     }
 
-    /// 소재를 소비해(1장은 남긴다) 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」이 없거나 소재가 모자라면 false.
+    /// 소재를 소비해(1장은 남긴다) 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」(마스크드 히어로는 「마스크 체인지」)이 없거나 소재가 모자라면 false.
     @discardableResult
     mutating func fuse(_ cid: Int) -> Bool {
-        guard let materials = fusionMaterials(cid), canFuse(cid) else { return false }
+        guard canFuse(cid), let materials = craftMaterials(cid) else { return false }
         for (m, n) in materials { state.owned[m] = max(1, copies(m) - n) }  // 마지막 1장은 남겨 컬렉션에서 빠지지 않는다
         give(cid, source: LogEntry.fusion)
         return true

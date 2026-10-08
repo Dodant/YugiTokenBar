@@ -6,6 +6,7 @@
 사용: python3 tools/build-cards.py [--lang ko|ja|en|all] [--reformat]
 """
 import argparse
+import bisect
 import functools
 import html
 import http.client
@@ -23,9 +24,12 @@ CUTOFF = "2026/07/15"  # 『카오스 오리진즈』까지
 MINI = re.compile(r"어시스트 팩|익스팬션 팩|얼티미트 스페셜 팩")
 LANGS = {"ko": "KO", "ja": "JP", "en": "EN"}
 # 세 파일이 같은 카드 필드(KO 기준)와 언어마다 다른 카드 필드
-SHARED = ("tier", "imageId", "level", "atk", "def", "scale", "kind", "summons")
+SHARED = ("tier", "imageId", "level", "atk", "def", "scale", "kind", "summons", "hero", "mask")
 TEXT_FIELDS = ("name", "attr", "type", "text", "pendulum")
 KINDS = {"마법": "spell", "함정": "trap"}
+MASK_CHANGE = "마스크 체인지"
+MASK_TEXT = '"마스크 체인지"의 효과로만'  # 마스크드 히어로 효과문 첫머리
+NOT_HERO = {"다크 히어로 존바이어", "히어로 키즈"}  # 이름에 히어로가 있지만 "HERO" 카드가 아니다(JP·EN 이름에 HERO 가 없다)
 SUMMONS = {"의식": "ritual", "융합": "fusion", "싱크로": "synchro", "엑시즈": "xyz", "펜듈럼": "pendulum", "링크": "link"}  # 시대 순
 
 
@@ -523,22 +527,52 @@ def add_missing_materials(out, image_ids):
     out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
 
 
+@functools.cache
+def ko_fusions():
+    """KO DB 의 융합 몬스터 전부 {cid 문자열: 검색 행 info} (100장씩 페이지, 새 카드가 안 나오면 끝)."""
+    found, page_no = {}, 1
+    while True:
+        page = get(BASE + f"card_search.action?ope=1&sess=1&rp=100&page={page_no}&stype=1&ctype=1&other=2&request_locale=ko&keyword=")
+        time.sleep(1)
+        new = {str(c["cid"]): c["info"] for c in parse_pack(page, need_rarity=False) if str(c["cid"]) not in found}
+        if not new:
+            return found
+        found |= new
+        page_no += 1
+
+
+def first_print(page):
+    """KO 상세 페이지 → (가장 이른 수록일, 그 판의 레어도 라벨)."""
+    _, packs = parse_detail(page)
+    return min(d for _, d in packs), first_rarity(page)
+
+
+def add_mask_change(out, image_ids):
+    """「마스크 체인지」 마법과 그 효과로만 소환하는 마스크드 히어로를 넣는다. 각각 한국 첫 수록일 직전(같은 날 포함)의 팩에 넣고
+    등급은 첫 수록판 레어도. 앱은 마스크 체인지가 있으면 같은 속성 "hero" 몬스터 1장으로 "mask" 카드를 만든다(add_codes)."""
+    cards = out["cards"]
+    spell = find_card(MASK_CHANGE)
+    rows = [(str(spell["cid"]), spell["info"])] + [(cid, info) for cid, info in ko_fusions().items() if MASK_TEXT in info["text"]]
+    dates = [p["date"] for p in out["packs"]]
+    for cid, info in rows:
+        if cid in cards:
+            continue
+        date, label = first_print(get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale=ko"))
+        time.sleep(1)
+        cards[cid] = {f: x for f, x in (info | {"imageId": image_ids.get(int(cid)), "tier": TIER.get(label, 5)}).items() if x is not None}
+        pack = out["packs"][max(bisect.bisect_right(dates, date) - 1, 0)]
+        pack["cards"].append(int(cid))
+        print(f"  마스크 체인지 추가: {cid} {info['name']} ({label}, {date}) → {pack['name']}")
+    out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
+
+
 def add_outside_fusions(out, image_ids):
     """100팩 밖 융합 몬스터 중 소재에 조건이 없고 100팩 카드가 하나 이상인 것을 넣는다. 들어갈 팩은 100팩 소재마다
     처음 나온 팩 중 가장 늦은 팩이라 어느 시대 범위에서도 소재가 같이 있다. 100팩 밖 소재는 {"name"} 으로 남겨 뒤이은
     add_missing_materials 가 그 팩에 넣는다(한국 미발매 소재가 있으면 뺀다). 소재가 100팩 밖 융합이면 조건 융합(극화염의 검사의 투의염참룡)만 받아 같은 팩에
     넣는다(조건 없는 것은 그 융합부터 이 기준에 맞아야 해서 뺀다: AtoZ 의 ABC). 등급은 그 카드의 한국 첫 수록판 레어도."""
     cards = out["cards"]
-    cand, page_no = {}, 1
-    while True:
-        page = get(BASE + f"card_search.action?ope=1&sess=1&rp=100&page={page_no}&stype=1&ctype=1&other=2&request_locale=ko&keyword=")
-        time.sleep(1)
-        rows = parse_pack(page, need_rarity=False)
-        new = {str(c["cid"]): c["info"] for c in rows if str(c["cid"]) not in cards and str(c["cid"]) not in cand}
-        if not new:
-            break
-        cand |= new
-        page_no += 1
+    cand = {cid: dict(info) for cid, info in ko_fusions().items() if cid not in cards}
     merged = cards | cand
     split_materials(merged)  # 100팩 카드는 이미 뗐으니 후보만 뗀다
     first_pack = {}
@@ -582,16 +616,21 @@ def move_tiers(out):
 
 
 def add_codes(cards):
-    """언어와 상관없는 코드 필드: 마법·함정은 kind, 몬스터는 type 칸의 소환법을 summons(시대 순)로. 앱 로직은 이것만 본다."""
+    """언어와 상관없는 코드 필드: 마법·함정은 kind, 몬스터는 type 칸의 소환법을 summons(시대 순)로,
+    "HERO" 몬스터는 hero, 마스크 체인지로만 소환하는 몬스터는 mask. 앱 로직은 이것만 본다."""
     for info in cards.values():
-        info.pop("kind", None)
-        info.pop("summons", None)
+        for f in ("kind", "summons", "hero", "mask"):
+            info.pop(f, None)
         if kind := KINDS.get(info.get("attr")):
             info["kind"] = kind
             continue
         parts = (info.get("type") or "").split("/")
         if summons := [code for name, code in SUMMONS.items() if name in parts]:
             info["summons"] = summons
+        if "히어로" in info["name"] and info["name"] not in NOT_HERO:
+            info["hero"] = True
+        if MASK_TEXT in info["text"]:
+            info["mask"] = True
 
 
 def normalize_ko(out):
@@ -665,6 +704,7 @@ def build_ko():
     split_materials(out["cards"])  # 새로 넣은 소재 중 융합 몬스터(궁극의 푸른 눈의 백룡)
     add_outside_fusions(out, by_konami)
     add_missing_materials(out, by_konami)  # 넣은 융합의 100팩 밖 소재
+    add_mask_change(out, by_konami)
     add_codes(out["cards"])
     dump(out, out_path("ko"))
     missing += [f"{k} {v['name']}" for k, v in out["cards"].items() if "imageId" not in v and int(k) not in infos]

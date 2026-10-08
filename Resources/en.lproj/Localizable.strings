@@ -225,8 +225,6 @@
 /* CardDetailView.swift:136 */
 "P스케일 %lld" = "Pendulum Scale %lld";
 /* CardDetailView.swift:58 */
-"「융합」 마법 카드가 있어야 해요" = "You need the \"Polymerization\" Spell Card";
-/* CardDetailView.swift:58 */
 "소재 카드를 소비해 1장 만들어요" = "Uses up the materials to make 1 copy";
 /* CardDetailView.swift:58 */
 "소재 카드가 모자라요" = "Not enough materials";
@@ -234,8 +232,6 @@
 "정규 부스터 100팩에 없는 카드예요" = "Not in the 100 regular Booster Packs";
 /* CardDetailView.swift:47 */
 "보유 %lld" = "Owned %lld";
-/* CardDetailView.swift:64 */
-"「융합」 마법 카드가 1장 있어야 해요 (소비되지 않아요)" = "Requires 1 \"Polymerization\" Spell Card (not used up)";
 /* CardDetailView.swift:73 */
 "%@ 융합" = "Fusion Summon \"%@\"";
 /* CardDetailView.swift:80 */
@@ -416,3 +412,11 @@
 "남은 카드는 융합으로만 얻는 팩" = "Pack whose remaining cards come only from fusion";
 /* DexView.swift:194 */
 "획득 순서" = "Order obtained";
+/* CardDetailView.swift:44 */
+"같은 속성(%@)의 \"히어로\" 몬스터 1장" = "1 \"HERO\" monster with the same Attribute (%@)";
+/* CardDetailView.swift:45 */
+"가진 것 중 가장 많은 카드를 써요" = "Uses the one you have the most copies of";
+/* CardDetailView.swift:67 */
+"「%@」 마법 카드가 있어야 해요" = "You need the \"%@\" Spell Card";
+/* CardDetailView.swift:73 */
+"「%@」 마법 카드가 1장 있어야 해요 (소비되지 않아요)" = "Requires 1 \"%@\" Spell Card (not used up)";

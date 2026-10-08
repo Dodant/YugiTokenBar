@@ -21,9 +21,13 @@ struct CardInfo: Codable, Sendable, Equatable {
     var kindCode: String? = nil
     /// 몬스터의 소환법 코드(시대 순, CardInfo.summonCodes 중). build-cards.py 가 KO type 으로 정한다
     var summons: [String]? = nil
+    /// "HERO" 몬스터 (마스크 체인지의 소재). build-cards.py 가 KO 이름으로 정한다
+    var hero: Bool? = nil
+    /// 「마스크 체인지」로만 소환하는 마스크드 히어로: 같은 속성 hero 몬스터 1장으로 만든다
+    var mask: Bool? = nil
 
     enum CodingKeys: String, CodingKey {
-        case name, attr, level, type, atk, def, text, imageId, tier, scale, pendulum, materials, summons
+        case name, attr, level, type, atk, def, text, imageId, tier, scale, pendulum, materials, summons, hero, mask
         case kindCode = "kind"
     }
 
@@ -66,6 +70,9 @@ struct CardInfo: Codable, Sendable, Equatable {
         }
         return need
     }
+
+    /// 융합(소재를 다 아는 융합 몬스터)이나 마스크 체인지로 만들 수 있는 카드
+    var craftable: Bool { fusionMaterials != nil || mask == true }
 }
 
 /// 카드 종류. rawValue 는 컬렉션 종류 메뉴 값이자 cards_XX.json "kind" 값(마법·함정, 몬스터는 생략).
@@ -111,9 +118,9 @@ struct CardDB: Sendable {
     private(set) var cidSet: Set<Int>
     /// 범위 안 융합 몬스터의 소재로 필요한 최대 장 수 (사이버 드래곤 → 3, 사이버 엔드 드래곤). 중복 판매에서 그만큼 남긴다.
     private(set) var materialNeed: [Int: Int]
-    /// 범위 안 융합 몬스터(소재를 아는 카드) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
+    /// 범위 안 융합 몬스터(소재를 아는 카드·마스크드 히어로) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
     private(set) var fusionCount: Int
-    /// 소재를 다 아는 융합 몬스터 전체 (`fusionMaterials` 는 부를 때마다 사전을 만들어서, 상점이 그릴 때 쓰지 않게)
+    /// 만들 수 있는 카드 전체: 소재를 다 아는 융합 몬스터·마스크드 히어로 (`fusionMaterials` 는 부를 때마다 사전을 만들어서, 상점이 그릴 때 쓰지 않게)
     let fusionCIDs: Set<Int>
 
     /// 등급은 1~5 로 자른다. cards_XX.json 에 범위 밖 등급이 있어도 뽑기(티어 1~5 만 찾음)·판매가·등급 표시가 어긋나거나 죽지 않게.
@@ -129,7 +136,7 @@ struct CardDB: Sendable {
         self.cidSet = Set(cards.keys)
         self.materialNeed = Self.materialNeeds(allCIDs, cards)
         self.fusionCount = Self.fusionCount(allCIDs, cards)
-        self.fusionCIDs = Set(cards.keys.filter { cards[$0]?.fusionMaterials != nil })
+        self.fusionCIDs = Set(cards.keys.filter { cards[$0]?.craftable == true })
     }
 
     /// 컬렉션 이름순 정렬 키: cid → 이름 순위(Finder 순서, 같은 이름은 같은 순위). 정렬마다 문자열을 비교하지 않으려고 쓴다
@@ -152,7 +159,7 @@ struct CardDB: Sendable {
     }
 
     private static func fusionCount(_ cids: [Int], _ cards: [Int: CardInfo]) -> Int {
-        cids.filter { cards[$0]?.fusionMaterials != nil }.count
+        cids.filter { cards[$0]?.craftable == true }.count
     }
 
     /// 앞 n 팩만 쓰는 DB (설정의 "시대 범위"). cards 는 그대로 두어 범위 밖 보유·기록 카드도 이름·이미지를 찾는다.
@@ -173,6 +180,8 @@ struct CardDB: Sendable {
     static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63), ("Modern", 75)]
     /// 「융합」 마법 카드 (푸른 눈의 백룡의 전설 SR). 1장 이상 있어야 융합할 수 있고 소비되지 않는다.
     static let fusionSpell = 4837
+    /// 「마스크 체인지」(익스트림 빅토리에 넣은 프리미엄 팩 Vol.6 SE). 1장 이상 있어야 마스크드 히어로를 만들 수 있고 소비되지 않는다.
+    static let maskChange = 9066
     /// 「날개 크리보」(잃어버린 천년 SR). 가지면 파트너가 해금된다.
     static let partnerCard = 6314
     /// 시대를 대표하는 소환법 코드 (설정의 시대 범위 메뉴 표시용, 이름은 CardInfo.summonTitle)

@@ -14,7 +14,7 @@ import Testing
         #expect(db.packs.first?.setCode == "LOB")
         #expect(db.eras.map(\.name) == ["DM", "GX", "5D's", "ZEXAL", "ARC-V", "VRAINS", "Modern"])
         let kinds = Dictionary(grouping: db.cards.values, by: \.kind).mapValues(\.count)
-        #expect(kinds == [.monster: 5073, .spell: 1719, .trap: 1420])
+        #expect(kinds == [.monster: 5083, .spell: 1720, .trap: 1420])
         // 팩마다 노멀 몬스터가 보장 장 수 이상이라 몬스터 슬롯이 다른 티어로 올라가지 않는다
         #expect(db.packs.allSatisfy { p in p.cards.filter { db.tier($0) == 1 && db.cards[$0]?.kind == .monster }.count >= Balance.monstersPerPack })
         #expect(db.eras.map(\.packs) == [0..<11, 11..<27, 27..<43, 43..<51, 51..<63, 63..<75, 75..<100])
@@ -22,11 +22,11 @@ import Testing
         #expect(db.eras.map { db.packs[$0.packs.lowerBound].setCode } == ["LOB", "SOD", "TDGS", "REDU", "DUEA", "COTD", "ROTD"])
         #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
         #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 100팩 모두 한글판
-        #expect(db.allCIDs.count == 8212)
+        #expect(db.allCIDs.count == 8223)
         // 재수록 카드는 수록 팩 중 가장 높은 등급: 유벨(환영의 어둠 N, 팬텀 나이트메어 QCSE → SE)
         #expect(db.cards.values.first { $0.name == "유벨" }?.rarity == "SE")
         let tiers = Dictionary(grouping: db.cards.values, by: \.tier).mapValues(\.count)
-        #expect(tiers == [1: 4774, 2: 1733, 3: 899, 4: 499, 5: 307])
+        #expect(tiers == [1: 4774, 2: 1733, 3: 905, 4: 502, 5: 309])
         // 팩 표지 몬스터는 SE (악몽의 미궁·어둠의 유산은 표지가 마법·함정이라 빠진다)
         #expect(db.cards[4007]?.rarity == "SE" && db.cards[4223]?.rarity == "SE")  // 푸른 눈의 백룡, 블랙 데몬즈 드래곤
         for pack in db.packs {
@@ -46,8 +46,8 @@ import Testing
         // 종류 메뉴의 소환법: 의식 마법(댄스의 유혹)은 "의식"에 안 잡히고, 엑시즈 펜듈럼(패왕흑룡)은 둘 다
         #expect(db.cards[4682]?.matches(kind: "ritual") == false && db.cards[4682]?.matches(kind: "spell") == true)
         #expect(["monster", "xyz", "pendulum"].allSatisfy { db.cards[11835]?.matches(kind: $0) == true })
-        #expect(db.cards.values.filter { $0.matches(kind: "fusion") }.count == 313)
-        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): NEX 2종·베어트론 빼고 310종, 전부 카드인 건 118종
+        #expect(db.cards.values.filter { $0.matches(kind: "fusion") }.count == 323)
+        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): 마스크드 히어로 10종·NEX 2종·베어트론 빼고 310종, 전부 카드인 건 118종
         let fusions = db.cards.values.filter { $0.matches(kind: "fusion") }
         #expect(fusions.filter { $0.materials != nil }.count == 310)
         #expect(fusions.filter { $0.materials?.allSatisfy { $0.cid != nil } == true }.count == 118)
@@ -60,6 +60,10 @@ import Testing
         // 밖 소재도 같은 팩에: 극화염의 검사(화염의 검사 + 조건 융합 투의염참룡), 메테오 블랙 드래곤(붉은 눈의 흑룡 + 메테오 드래곤)
         #expect(db.cards[19727]?.materials == [Material(cid: 4021), Material(cid: 19728)] && [19727, 19728, 4719, 4718].allSatisfy(db.packs[0].cards.contains))
         #expect(db.cards[4121] == nil)  // 카오스 위저드: 소재 흑마족의 커튼이 한국 미발매
+        // 마스크 체인지·마스크드 히어로 10종은 한국 첫 수록일 직전 팩에: 마스크 체인지(익스트림 빅토리), 아토믹(듀얼리스트 어드밴스)
+        #expect(db.packs.firstIndex { $0.cards.contains(CardDB.maskChange) } == 38 && db.cards[CardDB.maskChange]?.kind == .spell)
+        #expect(db.packs.firstIndex { $0.cards.contains(21614) } == 95 && db.cards.values.filter { $0.mask == true }.count == 10)
+        #expect(db.cards.values.filter { $0.hero == true }.count == 87 && db.fusionCIDs.count == 128)
         #expect(db.cards.values.filter { $0.materials?.contains { $0.name != nil } == true }.count == 6)  // 조건이 섞인 융합의 소재는 그대로
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
@@ -67,13 +71,13 @@ import Testing
         #expect(db.packs[0].cards.contains(CardDB.fusionSpell))
         #expect(db.materialNeed[6390] == 3 && db.materialNeed[4007] == 3)  // 사이버 드래곤(사이버 엔드 드래곤), 푸른 눈의 백룡(궁극의 푸른 눈의 백룡)
         #expect(db.prefix(packs: 11).materialNeed[6390] == nil)  // DM 범위엔 사이버 드래곤을 쓰는 융합이 없다
-        // fusionCount 는 소재를 아는 카드 수를 미리 센 값이라 전체·시대 범위 DB 모두 필터 식과 같아야 한다
+        // fusionCount 는 만들 수 있는 카드(소재를 아는 융합·마스크드 히어로) 수를 미리 센 값이라 전체·시대 범위 DB 모두 필터 식과 같아야 한다
         // 언어 무관 코드: 마법·함정만 kind 가 있고, summons 는 몬스터에만, 시대 순 코드만
         #expect(db.cards.values.allSatisfy { [nil, "spell", "trap"].contains($0.kindCode) })
         #expect(db.cards.values.allSatisfy { $0.summons == nil || ($0.kind == .monster && $0.summons!.allSatisfy(CardInfo.summonCodes.contains)) })
         #expect(db.cards[11835]?.summons == ["xyz", "pendulum"])
         for d in [db, db.prefix(packs: 30)] {
-            #expect(d.fusionCount == d.allCIDs.filter { d.cards[$0]?.fusionMaterials != nil }.count && d.fusionCount > 0)
+            #expect(d.fusionCount == d.allCIDs.filter { d.cards[$0]?.craftable == true }.count && d.fusionCount > 0)
         }
         // 소재를 다 아는 융합(융합 전용 후보)의 소재는 어느 시대 범위에서도 그 융합과 같은 범위 안에 있다 → Game.isFusionOnly 가 범위 검사를 안 한다
         for era in db.eras {
@@ -82,6 +86,10 @@ import Testing
                 let mats = sub.cards[cid]?.materials ?? []
                 return !mats.allSatisfy { $0.cid != nil } || mats.allSatisfy { sub.cidSet.contains($0.cid!) }
             }, "\(era.name)까지: 소재가 범위 밖인 융합 전용 카드가 있음")
+            // 마스크드 히어로도 「마스크 체인지」와 같은 속성 HERO 가 같은 범위 안에 있다
+            #expect(sub.allCIDs.filter { sub.cards[$0]?.mask == true }.allSatisfy { cid in
+                sub.cidSet.contains(CardDB.maskChange) && sub.allCIDs.contains { $0 != cid && sub.cards[$0]?.hero == true && sub.cards[$0]?.attr == sub.cards[cid]?.attr }
+            }, "\(era.name)까지: 마스크 체인지나 같은 속성 HERO 가 범위 밖인 마스크드 히어로가 있음")
         }
     }
 }

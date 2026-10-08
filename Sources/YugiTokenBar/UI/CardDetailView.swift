@@ -36,8 +36,15 @@ struct CardDetailView: View {
             if let pendulum = card.pendulum {
                 Section("펜듈럼 효과") { Text(pendulum).font(.callout).textSelection(.enabled) }
             }
-            if let materials = card.materials {
+            // 마스크드 히어로는 소재 줄이 없어서 같은 속성 HERO 중 고른 1장을 소재로 보여 준다
+            let mask = card.mask == true
+            let maskRows: [Material]? = mask ? model.game.maskMaterial(cid).map { [Material(cid: $0)] } ?? [] : nil
+            if let materials = card.materials ?? maskRows {
                 Section("융합 소재") {
+                    if mask {
+                        Text("같은 속성(\(card.attr ?? ""))의 \"히어로\" 몬스터 1장").foregroundStyle(.secondary)
+                            .help("가진 것 중 가장 많은 카드를 써요")
+                    }
                     ForEach(Array(grouped(materials).enumerated()), id: \.offset) { _, g in
                         let suffix = g.n > 1 ? " × \(g.n)" : ""
                         if let mcid = g.material.cid, let name = model.db.cards[mcid]?.name {
@@ -52,17 +59,20 @@ struct CardDetailView: View {
                             Text((g.material.rule ?? "") + suffix).foregroundStyle(.secondary)
                         }
                     }
-                    // 설정이 켜져 있고 소재를 다 아는 융합이면 여기서 만든다
-                    if model.game.state.fusionOnly, model.game.fusionMaterials(cid) != nil {
+                    // 설정이 켜져 있고 소재를 다 아는 융합(또는 마스크드 히어로)이면 여기서 만든다
+                    if model.game.state.fusionOnly, model.game.fusionMaterials(cid) != nil || mask {
                         let can = model.game.canFuse(cid)
-                        let why: LocalizedStringKey = !model.game.hasFusionSpell ? "「융합」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
+                        let spell = model.game.craftSpell(cid)
+                        let hasSpell = model.game.copies(spell) > 0
+                        let spellName = model.db.cards[spell]?.name ?? ""
+                        let why: LocalizedStringKey = !hasSpell ? "「\(spellName)」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
                         HStack(spacing: 4) {
                             Spacer()
-                            if !model.game.hasFusionSpell {  // 누르면 「융합」 카드로 이동
+                            if !hasSpell {  // 누르면 「융합」(「마스크 체인지」) 카드로 이동
                                 Image(systemName: "questionmark.circle")
                                     .foregroundStyle(.secondary)
-                                    .hoverHint("「융합」 마법 카드가 1장 있어야 해요 (소비되지 않아요)")
-                                    .onTapGesture { jump(CardDB.fusionSpell) }
+                                    .hoverHint("「\(spellName)」 마법 카드가 1장 있어야 해요 (소비되지 않아요)")
+                                    .onTapGesture { jump(spell) }
                             }
                             Button { confirmFuse = true } label: { Label("융합", systemImage: "arrow.triangle.merge") }
                                 .buttonStyle(.glass)
