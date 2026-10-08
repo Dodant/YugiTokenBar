@@ -47,7 +47,7 @@ struct FusionAnimationView: View {
             if reduceMotion || t >= FusionScene.done { onDone() } else { start = .now.addingTimeInterval(-FusionScene.done) }
         }
         .accessibilityElement()
-        .accessibilityLabel("\(db.cards[show.cid]?.name ?? "") 융합. 눌러서 닫기")
+        .accessibilityLabel("\(db.cards[show.cid]?.name ?? "") 융합. 누르면 건너뛰고, 한 번 더 누르면 닫기")
         .accessibilityAddTraits(.isButton)
         .task {
             for cid in Set(show.materials + [show.cid]) {

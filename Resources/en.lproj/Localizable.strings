@@ -390,8 +390,6 @@
 "카드마다 1장씩은 남아서 컬렉션은 그대로예요." = "1 copy of each card stays, so your collection is unchanged.";
 /* FusableSection.swift:15 */
 "융합 가능 · %lld" = "Fusion Summonable · %lld";
-/* FusionAnimationView.swift:47 */
-"%@ 융합. 눌러서 닫기" = "Fusion Summoned \"%@\". Click to close";
 /* FusionAnimationView.swift:305 */
 "눌러서 닫기" = "Click to close";
 /* SaveTransfer.swift:46 */
@@ -400,11 +398,13 @@
 "더 새 버전 앱에서 만든 세이브예요. 앱을 업데이트한 뒤 가져와 주세요." = "This save was made with a newer version of the app. Update the app, then import it.";
 /* SaveTransfer.swift:48 */
 "세이브 파일로 보기엔 너무 커요." = "Too large to be a save file.";
-/* ShopView.swift:178 */
-"다 모은 팩" = "Completed pack";
 /* ShopView.swift:193 */
 "그래도 사기" = "Buy anyway";
 /* ShopView.swift:124 */
 "융합 %lld장 남음" = "%lld left to fuse";
 /* ShopView.swift:161 */
 "%lld/%lld · 융합 %lld장 남음" = "%lld/%lld · %lld left to fuse";
+/* FusionAnimationView.swift:50 */
+"%@ 융합. 누르면 건너뛰고, 한 번 더 누르면 닫기" = "Fusion Summoned \"%@\". Click to skip, click again to close";
+/* ShopView.swift:178 */
+"새 카드가 더 나오지 않는 팩" = "No new cards left in this pack";

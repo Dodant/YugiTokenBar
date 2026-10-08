@@ -100,10 +100,10 @@ import Testing
     @Test func packClearedWhenOnlyFusionOnlyLeft() {
         var game = Game(db: db, state: GameState())
         game.state.owned = [1: 1, 2: 1, 3: 1, CardDB.fusionSpell: 1, 11: 1]
-        #expect(!game.isCleared(0) && game.fusionLeft(0) == 0)
+        #expect(!game.progress(0).cleared && game.progress(0).fusionLeft == 0)
         game.state.fusionOnly = true
-        #expect(game.isCleared(0) && game.fusionLeft(0) == 1)
+        #expect(game.progress(0).cleared && !game.progress(0).complete && game.progress(0).fusionLeft == 1)
         game.state.owned[10] = 1
-        #expect(game.isCleared(0) && game.fusionLeft(0) == 0)
+        #expect(game.progress(0).complete && game.progress(0).fusionLeft == 0)
     }
 }

@@ -87,10 +87,11 @@ struct DexQuery: Equatable {
             { let inDeck = game.deck(id)?.cards ?? [:]; return all().filter { inDeck[$0] != nil } }()
         default: all()
         }
+        let needle = Self.squash(search)
         let tiered = cards.enumerated()
             .filter { tier == 0 || db.tier($0.element) == tier }
             .filter { kind.isEmpty || db.cards[$0.element]?.matches(kind: kind) == true }
-            .filter { search.isEmpty || Self.squash(db.cards[$0.element]?.name ?? "").localizedStandardContains(Self.squash(search)) }
+            .filter { search.isEmpty || Self.squash(db.cards[$0.element]?.name ?? "").localizedStandardContains(needle) }
             .map { DexEntry(number: $0.offset + 1, cid: $0.element, label: db.cards[$0.element]?.rarity ?? "N") }
         let list = tiered.filter { showUnowned || game.copies($0.cid) > 0 }
         guard sort != .pack else { return (tiered, list) }  // 이미 팩 순번 순

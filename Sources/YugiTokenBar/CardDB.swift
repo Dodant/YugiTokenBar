@@ -113,6 +113,8 @@ struct CardDB: Sendable {
     private(set) var materialNeed: [Int: Int]
     /// 범위 안 융합 몬스터(소재를 아는 카드) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
     private(set) var fusionCount: Int
+    /// 소재를 다 아는 융합 몬스터 전체 (`fusionMaterials` 는 부를 때마다 사전을 만들어서, 상점이 그릴 때 쓰지 않게)
+    let fusionCIDs: Set<Int>
 
     /// 등급은 1~5 로 자른다. cards_XX.json 에 범위 밖 등급이 있어도 뽑기(티어 1~5 만 찾음)·판매가·등급 표시가 어긋나거나 죽지 않게.
     init(packs: [Pack], cards: [Int: CardInfo]) {
@@ -127,6 +129,7 @@ struct CardDB: Sendable {
         self.cidSet = Set(cards.keys)
         self.materialNeed = Self.materialNeeds(allCIDs, cards)
         self.fusionCount = Self.fusionCount(allCIDs, cards)
+        self.fusionCIDs = Set(cards.keys.filter { cards[$0]?.fusionMaterials != nil })
     }
 
     /// 컬렉션 이름순 정렬 키: cid → 이름 순위(Finder 순서, 같은 이름은 같은 순위). 정렬마다 문자열을 비교하지 않으려고 쓴다

@@ -25,6 +25,17 @@ enum Balance {
     static let deckSize = 40...60
 }
 
+struct PackProgress {
+    var owned = 0
+    let total: Int
+    /// 남은 미보유 융합 전용 카드 수 (설정 [융합 몬스터는 융합으로만]일 때만. 융합으로만 채운다)
+    var fusionLeft = 0
+    /// 모든 카드를 1장 이상 가졌다
+    var complete: Bool { owned == total }
+    /// 팩에서 더 받을 카드가 없다: 다 모았거나 남은 미보유가 융합 전용뿐. 상점 CLEAR 도장·구매 막기
+    var cleared: Bool { owned + fusionLeft == total }
+}
+
 struct Pull: Sendable, Equatable {
     let cid: Int
     let tier: Int
@@ -130,24 +141,13 @@ struct Game: Sendable {
         return out
     }
 
-    func progress(_ pack: Int) -> (owned: Int, total: Int) {
-        let cards = db.packs[pack].cards
-        return (cards.filter { copies($0) > 0 }.count, cards.count)
-    }
-
-    /// 팩의 모든 카드를 1장 이상 가졌으면 완료(✓ 표시만, 구매는 계속 가능).
-    func isComplete(_ pack: Int) -> Bool {
-        db.packs[pack].cards.allSatisfy { copies($0) > 0 }
-    }
-
-    /// 팩에서 더 받을 카드가 없다: 다 모았거나 남은 미보유가 융합 전용뿐(설정 [융합 몬스터는 융합으로만]). 상점 CLEAR 도장·구매 막기
-    func isCleared(_ pack: Int) -> Bool {
-        db.packs[pack].cards.allSatisfy { copies($0) > 0 || isFusionOnly($0) }
-    }
-
-    /// 팩에 남은 미보유 융합 전용 카드 수 (융합으로만 채울 수 있다)
-    func fusionLeft(_ pack: Int) -> Int {
-        db.packs[pack].cards.filter { copies($0) == 0 && isFusionOnly($0) }.count
+    /// 팩 진행도를 한 번에 센다 (상점은 팩 100개를 그릴 때마다 부른다)
+    func progress(_ pack: Int) -> PackProgress {
+        var p = PackProgress(total: db.packs[pack].cards.count)
+        for cid in db.packs[pack].cards {
+            if copies(cid) > 0 { p.owned += 1 } else if isFusionOnly(cid) { p.fusionLeft += 1 }
+        }
+        return p
     }
 
     var canAffordPack: Bool { state.coins >= Balance.packPrice }
@@ -256,7 +256,7 @@ struct Game: Sendable {
     func keep(_ cid: Int) -> Int { state.fusionOnly ? max(1, db.materialNeed[cid] ?? 1) : 1 }
 
     /// 설정이 켜져 있으면 소재를 아는 융합 몬스터는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
-    func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && fusionMaterials(cid) != nil }
+    func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) }
 
     /// 「융합」 마법 카드가 있어야 융합이 열린다 (소비하지 않는다)
     var hasFusionSpell: Bool { copies(CardDB.fusionSpell) > 0 }
@@ -358,7 +358,7 @@ struct Game: Sendable {
     }
 
     /// 새 카드가 하나도 없으면 한 칸을 팩의 미보유 카드로 바꾼다. 앞 칸부터 그 칸의 등급·종류에 맞는 미보유 카드를 찾고,
-    /// 어느 칸에도 안 맞으면(남은 미보유가 다른 등급뿐) 마지막 칸을 가장 낮은 등급의 미보유 카드로 바꾼다.
+    /// 어느 칸에도 안 맞으면(남은 미보유가 다른 등급뿐) 뒤 칸부터 종류가 맞는 칸을 가장 낮은 등급의 미보유 카드로 바꾼다.
     private func ensureNew<R: RandomNumberGenerator>(pack: Int, slots: inout [(tier: Int, kind: CardKind?, cid: Int)], using rng: inout R) {
         guard !slots.isEmpty, !slots.contains(where: { copies($0.cid) == 0 }) else { return }
         let unowned = db.packs[pack].cards.filter { copies($0) == 0 && !isFusionOnly($0) }
@@ -367,7 +367,12 @@ struct Game: Sendable {
             let fits = unowned.filter { db.tier($0) == slots[i].tier && (slots[i].kind == nil || db.cards[$0]?.kind == slots[i].kind) }
             if let cid = fits.randomElement(using: &rng) { slots[i].cid = cid; return }
         }
-        slots[slots.count - 1].cid = unowned.filter { db.tier($0) == lowest }.randomElement(using: &rng)!
+        // 몬스터 전용 칸에는 몬스터만 넣는다
+        let pool = unowned.filter { db.tier($0) == lowest }
+        for i in slots.indices.reversed() {
+            let fits = pool.filter { slots[i].kind == nil || db.cards[$0]?.kind == slots[i].kind }
+            if let cid = fits.randomElement(using: &rng) { slots[i].cid = cid; return }
+        }
     }
 
     /// 카드 1장 지급: isNew는 지급 전에 계산하고, 지급 뒤 자동 판매까지 처리한다.
