@@ -8,6 +8,7 @@ enum Provider: String, CaseIterable, Sendable {
 /// `TodayUsage.read` 와 같은 결과를 내되, Claude 로그는 파일마다 (수정 시각, 크기)가 그대로면 다시 파싱하지 않는다.
 /// 오늘 바뀐 Claude JSONL(수십~수백 MB)을 60초마다 통째로 다시 읽던 비용을 줄인다.
 /// `Usage/` 는 PokeTokenBar 복사본이라 고치지 않고, 그 공개 함수(`jsonlFiles`·`parseClaudeFile`·`dedupKeepMax`)로 감싼다.
+/// Cursor 대시보드 API는 실패하면 30분 백오프(그동안 로컬 `state.vscdb`만 읽는다).
 // ponytail: 쓰는 중인 세션 파일은 매번 통째로 다시 읽는다. 더 줄이려면 파일 끝에 붙은 줄만 읽는 증분 파서가 필요(Usage/ 수정)
 actor TodayUsageReader {
     private struct Parsed { let mtime: Date; let size: Int; let entries: [LocalUsageReader.Entry] }
@@ -15,7 +16,28 @@ actor TodayUsageReader {
     /// 테스트용. nil 이면 `LocalUsageReader.claudeProjectRoots`
     private let claudeRoots: [URL]?
 
-    init(claudeRoots: [URL]? = nil) { self.claudeRoots = claudeRoots }
+    /// 대시보드 API 가 실패하면(토큰 없음·HTTP 오류) 이만큼은 다시 부르지 않고 로컬 `state.vscdb`만 읽는다. 매분 실패하는 네트워크 호출을 막는다.
+    static let cursorAPIBackoff: TimeInterval = 30 * 60
+    private var cursorAPIRetryAt = Date.distantPast
+    /// 대시보드 API 경로. 실앱·`PTB_PARITY=1`(`AppEnv.allowsLiveLimitsFetch`)에서만 있고, 테스트는 가짜를 넣는다.
+    private let liveCursor: (@Sendable (Date) async -> LocalAdditionalUsageReader.CursorLoadResult)?
+
+    init(claudeRoots: [URL]? = nil,
+         liveCursor: (@Sendable (Date) async -> LocalAdditionalUsageReader.CursorLoadResult)? =
+            AppEnv.allowsLiveLimitsFetch ? { @Sendable in await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: $0) } : nil) {
+        self.claudeRoots = claudeRoots
+        self.liveCursor = liveCursor
+    }
+
+    /// Cursor: 대시보드 API 가 있으면 그것, 실패(`isAuthoritative == false`)하면 `cursorAPIBackoff` 동안 로컬만.
+    func cursorEntries(modifiedSince start: Date, now: Date) async -> [LocalUsageReader.Entry] {
+        guard let liveCursor, now >= cursorAPIRetryAt else {
+            return LocalAdditionalUsageReader.cursorEntries(modifiedSince: start).entries
+        }
+        let result = await liveCursor(start)
+        if !result.isAuthoritative { cursorAPIRetryAt = now.addingTimeInterval(Self.cursorAPIBackoff) }
+        return result.entries
+    }
 
     /// 꺼져 있던 날을 거슬러 읽는 최대 일 수. Claude Code 가 기본으로 30일 지난 대화 기록을 지우므로 그보다 앞은 읽을 게 없다.
     static let catchUpDays = 30
@@ -27,9 +49,7 @@ actor TodayUsageReader {
         let today = LocalUsageReader.localDayFormatter().string(from: now)
         let start = Self.start(since: since, now: now)
         // 아래는 Claude 를 캐시에서 읽는 것만 빼면 TodayUsage.read 와 같다
-        let cursor = AppEnv.allowsLiveLimitsFetch
-            ? await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: start).entries
-            : LocalAdditionalUsageReader.cursorEntries(modifiedSince: start).entries
+        let cursor = await cursorEntries(modifiedSince: start, now: now)
         var tokens: [String: Int] = [:], cost: [String: Double] = [:], earlier: [String: [String: Int]] = [:]
         for (provider, entries) in [
             (Provider.claude, claudeEntries(modifiedSince: start)),

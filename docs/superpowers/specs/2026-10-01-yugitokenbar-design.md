@@ -90,7 +90,7 @@ Resources/{ko,en,ja}.lproj/Localizable.strings  UI 문구(키는 한국어 문�
 ### 토큰 적립
 
 - 토큰 = input + output + cacheWrite + cacheRead (PokeTokenBar와 동일).
-- 집계 대상(`TodayUsageReader.read` = `TodayUsage.read`와 같은 결과, 이 Mac의 로컬 로그만. 오늘 바뀐 Claude JSONL은 수십~수백 MB라 파일마다 수정 시각·크기가 그대로면 다시 파싱하지 않고 메모리에 둔 결과를 쓴다. 쓰는 중인 세션 파일은 매번 통째로 다시 읽는다): Claude Code(`~/.claude/projects` 등), Codex(`~/.codex/sessions`·`archived_sessions`), Gemini, Grok(`~/.grok/sessions`), Pi(`~/.pi/agent/sessions`), oh-my-pi, Cursor. Cursor는 실앱·`PTB_PARITY=1`에서만 대시보드 API(`CursorUsageAPI`, Cursor 로그인 토큰)를 쓰고, 실패하거나 개발 실행이면 로컬 `state.vscdb`를 읽는다. API 캐시는 세이브 폴더의 `cursor-usage-api-cache.json`.
+- 집계 대상(`TodayUsageReader.read` = `TodayUsage.read`와 같은 결과, 이 Mac의 로컬 로그만. 오늘 바뀐 Claude JSONL은 수십~수백 MB라 파일마다 수정 시각·크기가 그대로면 다시 파싱하지 않고 메모리에 둔 결과를 쓴다. 쓰는 중인 세션 파일은 매번 통째로 다시 읽는다): Claude Code(`~/.claude/projects` 등), Codex(`~/.codex/sessions`·`archived_sessions`), Gemini, Grok(`~/.grok/sessions`), Pi(`~/.pi/agent/sessions`), oh-my-pi, Cursor. Cursor는 실앱·`PTB_PARITY=1`에서만 대시보드 API(`CursorUsageAPI`, Cursor 로그인 토큰)를 쓰고, 실패하거나 개발 실행이면 로컬 `state.vscdb`를 읽는다. API가 실패하면(토큰 없음·HTTP 오류) 30분(`TodayUsageReader.cursorAPIBackoff`) 동안은 다시 부르지 않고 로컬만 읽는다(매분 실패하는 네트워크 호출을 막으려고). API 캐시는 세이브 폴더의 `cursor-usage-api-cache.json`.
 - 매 갱신마다 오늘의 provider별 누적 토큰을 구하고, `claimedByProvider`와의 **양수 차이만** 적립한다. 날짜가 바뀌면 원장을 새로 시작한다 (PokeTokenBar `claimedTodayTokensByProvider` 방식). 그때 원장 날짜(`claimedDate`)부터 어제까지 날짜별 누적도 함께 읽어(`TodayUsageReader.read(since:)`, 최대 `catchUpDays` = 30일. Claude Code가 기본으로 30일 지난 기록을 지운다), 원장 날짜는 원장과의 양수 차이만, 그 뒤 앱이 꺼져 있던 날은 전부 적립한다. 자정 직전 마지막 갱신 뒤 쓴 몫도 여기서 들어온다.
 - 첫 실행 시 오늘 누적치를 원장에 그대로 기록한다 → 설치 전 사용량은 적립하지 않는다.
 - 오늘 날짜가 원장 날짜보다 앞이면(시계·시간대가 과거로 감) 적립하지 않고 원장도 그대로 둔다.
@@ -239,7 +239,7 @@ VRAINS까지 75팩(6,160종)에서는 "무료 1장 + 1팩" 10,114~11,292회로 �
 
 `Tests/YugiTokenBarTests` (시드 고정 RNG 주입):
 - 적립: 같은 누적치를 두 번 반영해도 한 번만 적립, 날짜 변경 시 원장 리셋과 지난 날짜 몫 적립, 첫 실행은 적립 0, 시계가 과거로 가면 무시, 상태가 그대로면 저장하지 않음
-- 사용량(`UsageTests`): 네 버킷 합, `TodayUsageReader` 파일별 캐시가 원래 리더와 같은 결과, 지난 날 읽기 시작일, 날짜별 합계에서 오늘 제외
+- 사용량(`UsageTests`): 네 버킷 합, `TodayUsageReader` 파일별 캐시가 원래 리더와 같은 결과, 지난 날 읽기 시작일, 날짜별 합계에서 오늘 제외, Cursor API 실패 뒤 백오프
 - 한도(`LimitsTests`): 모델별 주간·신형 응답만 올 때의 막대, 초기화까지 남은 시간 문구, 코인 K·M 줄임(`shortCoins`)
 - 코인과 무료 카드: 10M 경계, 나머지 이월
 - 판매: 중복 자동 판매는 켰을 때 2장째부터만 팔고 끄면 다시 쌓인다; 자동 판매 취소는 코인을 돌려주고 카드를 되돌리며, 코인이 모자라면 거절
