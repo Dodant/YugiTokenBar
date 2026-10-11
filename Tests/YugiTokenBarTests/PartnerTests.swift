@@ -174,13 +174,6 @@ import Testing
         #expect(seen)
     }
 
-    @Test func menuBlinksPeriodically() {
-        #expect((0..<6).map { PartnerPlayer.menuFrame(tick: $0) } == [0, 1, 2, 3, 4, 5])
-        #expect(PartnerPlayer.menuFrame(tick: 6) == 0)
-        #expect(PartnerPlayer.menuFrame(tick: PartnerTuning.menuBlinkTicks - 1) == 0)
-        #expect(PartnerPlayer.menuFrame(tick: PartnerTuning.menuBlinkTicks + 1) == 1)
-    }
-
     // MARK: 해금·저장
 
     @Test func partnerCardIsWingedKuriboh() throws {
@@ -288,9 +281,20 @@ import Testing
     @MainActor @Test func missingSheetDisablesPartner() {
         let m = PartnerModel(sheet: nil)
         #expect(!m.isReady)
-        m.start()
+        m.start(desktop: true)
         m.play(.excited)
         #expect(m.menu.image == nil && m.desktop.image == nil)
+    }
+
+    /// 바탕화면 파트너를 끄면 타이머가 멈추고 메뉴바 아이콘은 남는다. 다시 켜면 타이머가 돈다.
+    @MainActor @Test func desktopOffStopsTimerButKeepsMenuIcon() {
+        let m = PartnerModel()
+        m.start(desktop: false)
+        #expect(m.menu.image != nil && !m.isAnimating)
+        m.start(desktop: true)
+        #expect(m.isAnimating && m.desktop.image != nil)
+        m.start(desktop: false)
+        #expect(!m.isAnimating && m.menu.image != nil)
     }
 
     @Test func expiredLimitsDoNotMakeSad() {
