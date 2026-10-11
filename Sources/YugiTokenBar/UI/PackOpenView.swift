@@ -54,7 +54,7 @@ struct OpeningView: View {
     private func isRare(_ i: Int) -> Bool { model.openingPack != nil && i == model.opening.count - 1 }
 
     private func cell(_ pull: Pull, _ i: Int) -> some View {
-        Hovering { hovered in VStack(spacing: 4) {
+        VStack(spacing: 4) {
             FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
                 .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
                 .accessibilityElement(children: .ignore)
@@ -72,7 +72,7 @@ struct OpeningView: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityHidden(true)  // 위 카드가 이름을 읽는다 (뒤집기 전에 이름이 새지 않게)
             if flipped.contains(i) { label.hoverHint(verbatim: name) } else { label.hidden() }
-        } }
+        }
     }
 
     /// 뒤집기 전 "카드 3, 뒤집기 전", 뒤집은 뒤 "푸른 눈의 백룡, UR, 새 카드" (자동 판매면 "+ⓒ 10 자동 판매")
