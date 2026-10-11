@@ -64,13 +64,14 @@ struct OpeningView: View {
                 .accessibilityActions {
                     if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
                 }
-            // 상점 팩 칸처럼 아래 이름 한 줄(넘치면 마우스를 올린 동안 흘러간다). 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
-            MarqueeText(text: model.db.cards[pull.cid]?.name ?? " ", active: hovered && flipped.contains(i))
+            // 상점 팩 칸처럼 아래 이름 한 줄(넘치면 …, 뒤집은 카드는 마우스를 올리면 말풍선으로 전부). 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
+            let name = model.db.cards[pull.cid]?.name ?? " "
+            let label = Text(verbatim: name).lineLimit(1).truncationMode(.tail)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
-                .opacity(flipped.contains(i) ? 1 : 0)
                 .accessibilityHidden(true)  // 위 카드가 이름을 읽는다 (뒤집기 전에 이름이 새지 않게)
+            if flipped.contains(i) { label.hoverHint(verbatim: name) } else { label.hidden() }
         } }
     }
 

@@ -269,6 +269,7 @@ struct DexView: View {
         let n = inDeck ?? game.copies(cid)
         let owned = inDeck.map { game.copies(cid) >= $0 } ?? (n > 0)
         let selected = selectedCards.contains(cid)
+        let name = model.db.cards[cid]?.name ?? ""
         return Hovering { hovered in VStack(spacing: 4) {
             CardImageView(db: model.db, cid: cid, owned: owned)
                 .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
@@ -277,8 +278,10 @@ struct DexView: View {
                 .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
                 .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }
             HStack(spacing: 4) {
-                MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
+                // 긴 이름은 …로 줄고 툴팁으로 전부 보인다(일반 창이라 .help 가 뜬다).
+                Text(verbatim: name).lineLimit(1).truncationMode(.tail)
                     .foregroundStyle(owned ? .primary : .secondary)
+                    .help(name)
                 Spacer(minLength: 0)
                 if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
             }
@@ -454,51 +457,6 @@ struct Hovering<Content: View>: View {
     @State private var hovered = false
 
     var body: some View { content(hovered).onHover { hovered = $0 } }
-}
-
-/// 한 줄 글자. 넘치면 …로 줄이고, `active`(마우스 올림)인 동안 옆으로 흘러가며 전체를 보여준다.
-struct MarqueeText: View {
-    let text: String
-    let active: Bool
-    @State private var full: CGFloat = 0
-    @State private var box: CGFloat = 0
-
-    var body: some View {
-        let scrolling = active && full > box + 0.5
-        Text(verbatim: text).lineLimit(1).truncationMode(.tail)
-            .opacity(scrolling ? 0 : 1)
-            // 마우스를 올린 셀만 잰다. 늘 재면 칸 폭을 끄는 동안 보이는 셀마다 상태를 써서 레이아웃을 다시 돌린다.
-            .overlay {
-                if active {
-                    Color.clear
-                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { box = $0 }
-                        .background { Text(verbatim: text).fixedSize().hidden()
-                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { full = $0 } }
-                }
-            }
-            .overlay(alignment: .leading) { if scrolling { Scroller(text: text, width: full) } }
-            .clipped()
-    }
-
-    /// 두 벌을 이어 붙여 한 벌 길이만큼 왼쪽으로 흘린 뒤 처음으로 돌아가 끊김 없이 반복한다.
-    /// 마우스를 떼면 뷰가 사라지며 위치도 초기화된다.
-    private struct Scroller: View {
-        let text: String
-        let width: CGFloat
-        @State private var offset: CGFloat = 0
-        private let gap: CGFloat = 24
-
-        var body: some View {
-            HStack(spacing: gap) { Text(verbatim: text); Text(verbatim: text) }
-                .fixedSize()
-                .offset(x: offset)
-                .onAppear {
-                    withAnimation(.linear(duration: (width + gap) / 30).delay(1).repeatForever(autoreverses: false)) {
-                        offset = -(width + gap)
-                    }
-                }
-        }
-    }
 }
 
 /// 화면에 보이는 셀의 프레임 (러버밴드 선택용). 클래스라 갱신해도 뷰를 다시 그리지 않는다.
