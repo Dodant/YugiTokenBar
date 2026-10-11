@@ -7,7 +7,6 @@
 
 **⚡ Performance**
 - Winged Kuriboh no longer blinks in the menu bar every 4 seconds, and the partner animation stops while the desktop partner is hidden. CPU use and wake-ups while the app sits idle drop to almost zero.
-- Long card names in the Collection and the pack-opening screen no longer scroll sideways on hover. The Collection shows the full name as a tooltip and the pack-opening screen as a hover bubble. This removes a full-window redraw on every frame while a name was scrolling.
 - When the Cursor dashboard API cannot be read, the app now waits 30 minutes before trying again and reads the local records in the meantime.
 
 ## 0.5.4 — 2026-10-08
