@@ -34,6 +34,20 @@ import Testing
         #expect(await calls.n == 2)
     }
 
+    /// 대시보드 API 가 성공(권위 있는 결과)하면 백오프 없이 매번 부른다
+    @Test func cursorAPIKeepsCallingAfterSuccess() async {
+        actor Calls { var n = 0; func bump() { n += 1 } }
+        let calls = Calls()
+        let reader = TodayUsageReader(claudeRoots: [tempDir()], liveCursor: { _ in
+            await calls.bump()
+            return .init(entries: [], highWaterByPath: [:], didReset: false, isAuthoritative: true)
+        })
+        let t0 = Date(), since = t0.addingTimeInterval(-3600)
+        _ = await reader.cursorEntries(modifiedSince: since, now: t0)
+        _ = await reader.cursorEntries(modifiedSince: since, now: t0.addingTimeInterval(60))
+        #expect(await calls.n == 2)
+    }
+
     /// 파일별 캐시: 캐시 없는 경로와 같은 값, 줄이 붙으면 다시 읽고, 지운 파일은 빠진다
     @Test func todayReaderCachesPerFileAndFollowsChanges() async throws {
         let root = tempDir()
