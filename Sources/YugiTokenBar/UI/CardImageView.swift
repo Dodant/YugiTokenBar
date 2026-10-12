@@ -34,7 +34,7 @@ struct CardImageView: View {
         .clipShape(.rect(cornerRadius: 7))
         .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.cardRim, lineWidth: 1))
         .task(id: workMode ? nil : cid) {  // 업무 모드면 nil 이라 로딩하지 않는다
-            guard !workMode else { return }
+            guard !workMode else { image = nil; return }
             guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
             // 캐시에 있으면 뒷면을 거치지 않고 바로 바꾼다
             if let hit = ImageCache.shared.cached(imageId, size: size) { image = hit; return }
@@ -223,7 +223,7 @@ struct PackImageView: View {
             .clipShape(.rect(cornerRadius: 6))
             .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.cardRim, lineWidth: 1))
         .task(id: workMode ? nil : pack.pid) {
-            guard !workMode else { return }
+            guard !workMode else { image = nil; return }
             // 캐시에 있으면 그라데이션을 거치지 않고 바로 바꾼다
             if let hit = ImageCache.shared.cachedPack(pack) { image = hit; return }
             image = nil

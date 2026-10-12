@@ -114,12 +114,16 @@ import Testing
 
     /// 업무 모드가 켜져 있으면 로더(디스크·네트워크·디코드)를 부르지 않고 nil, 끄면 다시 불러온다
     @MainActor @Test func workModeSkipsLoading() async {
-        let d = UserDefaults(suiteName: "ytb-test-\(UUID().uuidString)")!
+        let suite = "ytb-test-\(UUID().uuidString)"
+        let d = UserDefaults(suiteName: suite)!
+        defer { d.removePersistentDomain(forName: suite) }
         d.set(true, forKey: AppModel.workModeKey)
         let calls = CallCount()
         let cache = ImageCache(dir: tempDir(), loader: { _, _, _ in await calls.bump(); return onePixel() }, defaults: d)
         #expect(await cache.image(1, size: .small) == nil)
         #expect(await calls.value == 0)
+        #expect(cache.cached(1, size: .small) == nil)
+        #expect(cache.cachedPack(Pack(pid: "p1", name: "p", date: "", cards: [], imageURL: "https://example.com/a/pack1.jpg")) == nil)
         d.set(false, forKey: AppModel.workModeKey)
         #expect(await cache.image(1, size: .small) != nil)
         #expect(await calls.value == 1)

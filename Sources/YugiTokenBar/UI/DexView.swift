@@ -3,6 +3,7 @@ import SwiftUI
 struct DexView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.lessMotion) private var lessMotion
+    @Environment(\.workMode) private var workMode
     @State private var scope: DexScope? = .all
     /// 여러 장 선택. 클릭 = 한 장, ⌘클릭 = 토글, ⇧클릭 = 범위 추가, 빈 곳에서 끌기 = 러버밴드.
     @State private var selectedCards: Set<Int> = []
@@ -297,7 +298,8 @@ struct DexView: View {
         }
         // 사이드바 덱 줄에 끌어다 놓는다. 페이로드는 cid 를 쉼표로 이은 문자열 (선택된 카드를 끌면 선택 전체).
         .draggable(targets(cid).sorted().map(String.init).joined(separator: ",")) {
-            DragPreview(db: model.db, cids: targets(cid).sorted())
+            // 미리보기는 뷰 계층 밖에서 그려져 환경값을 직접 넘긴다
+            DragPreview(db: model.db, cids: targets(cid).sorted()).environment(\.workMode, workMode)
         }
         .contextMenu { deckMenu(targets(cid), inDeck: deckID) }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("grid")) } action: { frames.map[cid] = $0 }

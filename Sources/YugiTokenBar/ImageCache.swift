@@ -12,6 +12,8 @@ final class ImageCache {
     }
 
     let dir: URL
+    /// 업무 모드 설정을 읽는다 (테스트가 따로 넣는다)
+    private let defaults: UserDefaults
     private let memory = NSCache<NSString, NSImage>()
     /// 받는 중인 이미지와 그걸 기다리는 뷰 수. 기다리는 뷰가 다 사라지면(스크롤로 셀이 지나감) 받기를 취소한다.
     private var inFlight: [String: (task: Task<CGImage?, Never>, waiters: Int)] = [:]
@@ -20,9 +22,6 @@ final class ImageCache {
 
     /// memoryLimit: 메모리 캐시 상한(디코딩된 픽셀 바이트). 작은 카드 한 장이 약 400KB 라 150MB 면 수백 장,
     /// 도감 한 화면(수십 장)과 그 앞뒤 스크롤은 넉넉히 남고, 6천 장을 다 훑어도 그 이상 쌓이지 않는다.
-    /// 업무 모드 설정을 읽는다 (테스트가 따로 넣는다)
-    private let defaults: UserDefaults
-
     init(dir: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("YugiTokenBar"), memoryLimit: Int = 150 << 20,
          loader: @escaping @Sendable (URL, URL, Int?) async -> CGImage? = ImageCache.load,
