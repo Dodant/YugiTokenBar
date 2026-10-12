@@ -87,10 +87,10 @@ struct DexView: View {
             .overlay {
                 if case .deck(let id)? = scope, model.game.deck(id)?.cards.isEmpty ?? true {
                     ContentUnavailableView("덱이 비었어요", systemImage: "rectangle.stack.badge.plus",
-                                           description: Text("팩에서 카드를 왼쪽 덱 이름으로 끌어다 놓거나, 카드를 우클릭해 추가하세요"))
+                                           description: Text("카드를 덱 이름으로 끌어다 놓으세요"))
                 } else if entries.isEmpty, scope == .favorites, model.game.state.favorites.isEmpty {
                     ContentUnavailableView("즐겨찾기한 카드가 없어요", systemImage: "star",
-                                           description: Text("카드에 마우스를 올리고 오른쪽 위 ☆를 눌러 보세요"))
+                                           description: Text("카드에 마우스를 올려 ☆를 누르세요"))
                 } else if entries.isEmpty, !dexQuery.search.isEmpty, scope != .all {
                     // 팩 안에서 검색해 없을 때: 같은 검색어로 전체에서 다시
                     ContentUnavailableView {
@@ -446,7 +446,7 @@ struct DexView: View {
             ContentUnavailableView {
                 Label("\(selectedCards.count)장 선택됨", systemImage: "rectangle.on.rectangle")
             } description: {
-                Text("왼쪽 덱 이름으로 끌어다 놓거나 아래에서 덱을 고르세요")
+                Text("추가할 덱을 아래에서 고르세요")
             } actions: {
                 deckMenu(selectedCards, inDeck: deckID)
             }
@@ -454,7 +454,7 @@ struct DexView: View {
             CardDetailView(cid: cid, card: card, jump: jump) { fusing = $0 }
         } else {
             ContentUnavailableView("카드를 선택하세요", systemImage: "rectangle.portrait.on.rectangle.portrait",
-                                   description: Text("카드를 누르면 자세한 정보가 여기 나와요"))
+                                   description: Text("카드를 눌러 정보를 확인하세요"))
         }
     }
 }

@@ -1,5 +1,9 @@
 # Patch notes
 
+## 0.6.3 — 2026-10-12
+**🎨 Improvements**
+- Shortened guidance in Settings, Collection and usage, and moved detailed conditions and controls to ? tooltips.
+
 ## 0.6.2 — 2026-10-12
 **✨ New features**
 - Added [Report a bug] to Settings. It opens an email with your app version and system details already filled in.

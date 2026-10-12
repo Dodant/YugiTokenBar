@@ -40,7 +40,7 @@ struct SettingsView: View {
         // swift run 바이너리는 .app 이 아니라 로그인 항목으로 등록할 수 없다
         let installed = AppInfo.bundleVersion != nil
         return section("일반") {
-            toggleRow("로그인 시 자동 실행", hint: installed ? "Mac에 로그인하면 메뉴바에 바로 떠요" : "설치한 앱(.app)에서만 켤 수 있어요",
+            toggleRow("로그인 시 자동 실행", hint: installed ? "로그인하면 메뉴바에 표시해요" : "설치한 앱에서 켤 수 있어요",
                       isOn: $launchAtLogin)
                 .disabled(!installed)
                 .onChange(of: launchAtLogin) { setLaunchAtLogin() }
@@ -60,15 +60,16 @@ struct SettingsView: View {
                 .fixedSize()
                 .onChange(of: language) { AppLanguage.store(language) }
             }
-            toggleRow("업무 모드", hint: "카드·팩 이미지와 파트너를 숨기고 밋밋한 상자만 보여요", isOn: Bindable(model).workMode)
+            toggleRow("업무 모드", hint: "카드 이미지와 파트너를 숨겨요", isOn: Bindable(model).workMode)
         }
     }
 
     private var partnerSection: some View {
         let unlocked = model.game.state.partnerUnlocked
         return section("파트너", beta: true) {
-            toggleRow("바탕화면 파트너", hint: unlocked ? "날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요"
-                                                 : "「날개 크리보」 카드를 얻으면 파트너로 함께해요",
+            toggleRow("바탕화면 파트너", hint: unlocked ? "날개 크리보를 바탕화면에 표시해요"
+                                                 : "「날개 크리보」를 얻으면 켤 수 있어요",
+                      detail: unlocked ? "끌어서 옮기고, 우클릭으로 숨겨요" : nil,
                       isOn: Bindable(model).partnerEnabled)
                 .disabled(!unlocked)
             row {
@@ -82,12 +83,14 @@ struct SettingsView: View {
 
     private var cardSection: some View {
         section("카드") {
-            toggleRow("중복 카드 자동 판매", hint: "이미 가진 카드가 나오면 바로 코인으로 바꿔요",
+            toggleRow("중복 카드 자동 판매", hint: "새로 나온 중복 카드를 코인으로 바꿔요",
+                      detail: "이미 모은 카드는 그대로예요. 융합 전용 모드에서는 필요한 소재도 남겨요.",
                       isOn: Bindable(model).autoSellDuplicates)
             let n = model.db.fusionCount
-            toggleRow("융합 몬스터는 융합으로만", hint: "소재를 다 아는 융합 몬스터 \(n)종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요",
+            toggleRow("융합 몬스터는 융합으로만", hint: "융합 몬스터 \(n)종을 팩 대신 융합으로 얻어요",
+                      detail: "대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요.",
                       isOn: Bindable(model).fusionOnly)
-            toggleRow("애니메이션 끄기", hint: "카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요",
+            toggleRow("애니메이션 끄기", hint: "카드를 연출 없이 바로 보여줘요",
                       isOn: Bindable(model).animationsOff)
             row {
                 let db = model.game.fullDB
@@ -319,21 +322,29 @@ struct SettingsView: View {
     }
 
     /// 이름·설명 + 오른쪽 스위치 한 줄. VoiceOver 는 스위치에서 설명까지 읽는다
-    private func toggleRow(_ title: LocalizedStringKey, hint: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
+    private func toggleRow(_ title: LocalizedStringKey, hint: LocalizedStringKey, detail: LocalizedStringKey? = nil, isOn: Binding<Bool>) -> some View {
         row {
-            labeled(title, hint: hint)
+            labeled(title, hint: hint, detail: detail)
             Spacer()
             Toggle(title, isOn: isOn)
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .accessibilityHint(hint)
+                .accessibilityHint(detail ?? hint)
         }
     }
 
-    private func labeled(_ title: LocalizedStringKey, hint: LocalizedStringKey) -> some View {
+    private func labeled(_ title: LocalizedStringKey, hint: LocalizedStringKey, detail: LocalizedStringKey? = nil) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(title)
+            HStack(spacing: 4) {
+                Text(title)
+                if let detail {
+                    Image(systemName: "questionmark.circle")
+                        .foregroundStyle(.secondary)
+                        .hoverHint(detail)
+                        .accessibilityLabel(detail)
+                }
+            }
             Text(hint).font(.caption2).foregroundStyle(.secondary)
         }
     }

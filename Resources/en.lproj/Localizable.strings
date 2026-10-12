@@ -108,31 +108,31 @@
 /* SettingsView.swift:43 */
 "로그인 시 자동 실행" = "Launch at login";
 /* SettingsView.swift:43 */
-"Mac에 로그인하면 메뉴바에 바로 떠요" = "Appears in the menu bar when you log in to your Mac";
+"로그인하면 메뉴바에 표시해요" = "Show in the menu bar at login";
 /* SettingsView.swift:43 */
-"설치한 앱(.app)에서만 켤 수 있어요" = "Only available in the installed app (.app)";
+"설치한 앱에서 켤 수 있어요" = "Available in the installed app";
 /* SettingsView.swift:213 */
 "로그인 항목을 바꾸지 못했어요" = "Couldn't change the login item";
 /* SettingsView.swift:68 */
 "바탕화면 파트너" = "Desktop partner";
 /* SettingsView.swift:68 */
-"날개 크리보가 바탕화면에서 함께해요. 끌어서 옮기고, 우클릭으로 숨겨요" = "Winged Kuriboh keeps you company on the desktop. Drag to move, right-click to hide";
+"날개 크리보를 바탕화면에 표시해요" = "Show Winged Kuriboh on your desktop";
 /* SettingsView.swift:69 */
-"「날개 크리보」 카드를 얻으면 파트너로 함께해요" = "Get the \"Winged Kuriboh\" card to unlock your partner";
+"「날개 크리보」를 얻으면 켤 수 있어요" = "Unlock by collecting Winged Kuriboh";
 /* SettingsView.swift:73 */
 "크기" = "Size";
 /* SettingsView.swift:83 */
 "중복 카드 자동 판매" = "Auto-sell duplicates";
 /* SettingsView.swift:83 */
-"이미 가진 카드가 나오면 바로 코인으로 바꿔요" = "Cards you already own are turned into coins right away";
+"새로 나온 중복 카드를 코인으로 바꿔요" = "Sell newly drawn duplicates for coins";
 /* SettingsView.swift:86 */
 "융합 몬스터는 융합으로만" = "Fusion Monsters by Fusion Summon only";
 /* SettingsView.swift:86 */
-"소재를 다 아는 융합 몬스터 %lld종은 팩·무료 카드에서 안 나와요. 「융합」 카드와 소재를 모아 컬렉션에서 융합하세요" = "The %lld Fusion Monsters with known materials won't appear in packs or free cards. Collect \"Polymerization\" and the materials, then Fusion Summon in the collection";
+"융합 몬스터 %lld종을 팩 대신 융합으로 얻어요" = "Get %lld Fusion Monsters through Fusion";
 /* SettingsView.swift:88 */
 "애니메이션 끄기" = "Turn off animations";
 /* SettingsView.swift:88 */
-"카드 기울기·뒤집기·레어 연출·융합 연출 없이 바로 보여줘요" = "Shows cards right away without tilt, flip, rare, or Fusion effects";
+"카드를 연출 없이 바로 보여줘요" = "Show cards without animations";
 /* SettingsView.swift:102 */
 "시대 범위" = "Era range";
 /* SettingsView.swift:99 */
@@ -210,7 +210,7 @@
 /* UsageView.swift:125 */
 "한도 불러오는 중…" = "Loading limits…";
 /* UsageView.swift:125 */
-"한도 정보 없음 · 눌러서 불러오기" = "No limit info · click to load";
+"한도를 보려면 누르세요" = "Click to load limits";
 /* CardDetailView.swift:37 */
 "펜듈럼 효과" = "Pendulum Effect";
 /* CardDetailView.swift:40 */
@@ -284,9 +284,9 @@
 /* DexView.swift:103 */
 "카드 이름" = "Card name";
 /* DexView.swift:75 */
-"팩에서 카드를 왼쪽 덱 이름으로 끌어다 놓거나, 카드를 우클릭해 추가하세요" = "Drag cards from a pack onto a Deck name on the left, or right-click a card to add it";
+"카드를 덱 이름으로 끌어다 놓으세요" = "Drag cards onto a deck name";
 /* DexView.swift:78 */
-"카드에 마우스를 올리고 오른쪽 위 ☆를 눌러 보세요" = "Hover over a card and click ☆ in the top-right corner";
+"카드에 마우스를 올려 ☆를 누르세요" = "Hover over a card and click ☆";
 /* DexView.swift:74 */
 "덱이 비었어요" = "This Deck is empty";
 /* DexView.swift:77 */
@@ -360,13 +360,13 @@
 /* DexView.swift:289 */
 "미보유" = "Not owned";
 /* DexView.swift:404 */
-"카드를 누르면 자세한 정보가 여기 나와요" = "Click a card to see its details here";
+"카드를 눌러 정보를 확인하세요" = "Select a card to see its details";
 /* DexView.swift:403 */
 "카드를 선택하세요" = "Select a card";
 /* DexView.swift:394 */
 "%lld장 선택됨" = "Selected: %lld";
 /* DexView.swift:396 */
-"왼쪽 덱 이름으로 끌어다 놓거나 아래에서 덱을 고르세요" = "Drag onto a Deck name on the left, or choose a Deck below";
+"추가할 덱을 아래에서 고르세요" = "Choose a deck below";
 /* DexView.swift:454 */
 "카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card, keeping as many Fusion Materials as needed (Cards: %lld · +%@)";
 /* DexView.swift:455 */
@@ -436,7 +436,7 @@
 /* SettingsView.swift:62 */
 "업무 모드" = "Work mode";
 /* SettingsView.swift:62 */
-"카드·팩 이미지와 파트너를 숨기고 밋밋한 상자만 보여요" = "Hides card and pack images and the partner, showing plain boxes instead";
+"카드 이미지와 파트너를 숨겨요" = "Hide card images and your partner";
 /* PackOpenView.swift:97 */
 "눌러서 공개" = "Click to reveal";
 /* AppInfo.swift:17 */
@@ -447,3 +447,9 @@
 "버그 신고하기" = "Report a bug";
 /* SettingsView.swift:195 */
 "메일 쓰기" = "Write email";
+/* SettingsView.swift:72 */
+"끌어서 옮기고, 우클릭으로 숨겨요" = "Drag to move. Right-click to hide.";
+/* SettingsView.swift:87 */
+"이미 모은 카드는 그대로예요. 융합 전용 모드에서는 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Fusion-only mode also keeps the materials you need.";
+/* SettingsView.swift:91 */
+"대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요." = "These cards do not appear in packs or free draws. Collect Polymerization and the materials, then fuse in Collection.";
