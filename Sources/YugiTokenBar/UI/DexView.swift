@@ -280,10 +280,10 @@ struct DexView: View {
         let selected = selectedCards.contains(cid)
         return Hovering { hovered in Group {
             if workMode {
-                // 업무 모드 줄: 종류 막대 · 등급 · 이름 · 오른쪽에 (마우스를 올리면) − · ☆ · ×n. 고르면 강조색 배경
+                // 업무 모드 줄: 종류 표시(몬스터 ●·마법·함정 ■) · 등급 · 이름 · 오른쪽에 (마우스를 올리면) − · ☆ · ×n. 고르면 강조색 배경
                 HStack(spacing: 8) {
                     HStack(spacing: 5) {
-                        FrameBar(card: model.db.cards[cid], owned: owned)
+                        FrameBar(card: model.db.cards[cid], owned: owned, shapes: true)
                         RarityPill(label: label, owned: owned, size: 10)
                     }
                     MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)

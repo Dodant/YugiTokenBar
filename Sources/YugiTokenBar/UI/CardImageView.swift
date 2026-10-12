@@ -166,16 +166,25 @@ struct RarityPill: View {
     }
 }
 
-/// 업무 모드 줄의 카드 종류 막대 (등급 알약 앞). 미보유면 흐리게
+/// 업무 모드 줄의 카드 종류 표시 (등급 알약 앞). 미보유면 흐리게.
+/// 기본은 세로 막대, shapes 면 몬스터는 동그라미·마법·함정은 네모 (폭이 같다)
 struct FrameBar: View {
     let card: CardInfo?
     var owned = true
+    var shapes = false
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 1.5)
-            .fill(card.map(Palette.frame) ?? AnyShapeStyle(.clear))
-            .frame(width: 3, height: 16)
-            .opacity(owned ? 1 : 0.4)
+        let style = card.map(Palette.frame) ?? AnyShapeStyle(.clear)
+        Group {
+            if !shapes {
+                RoundedRectangle(cornerRadius: 1.5).fill(style).frame(width: 3, height: 16)
+            } else if card?.kindCode == nil {
+                Circle().fill(style).frame(width: 10, height: 10)
+            } else {
+                RoundedRectangle(cornerRadius: 2).fill(style).frame(width: 10, height: 10)
+            }
+        }
+        .opacity(owned ? 1 : 0.4)
     }
 }
 
