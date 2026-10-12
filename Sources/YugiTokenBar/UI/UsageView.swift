@@ -41,7 +41,8 @@ struct UsageView: View {
     }
 
     /// 표시 순서. Claude·Codex 는 공식 한도가 있어 늘 보인다
-    static let agents: [(id: Provider, name: String, symbol: String, tint: Color)] = [
+    typealias Agent = (id: Provider, name: String, symbol: String, tint: Color)
+    static let agents: [Agent] = [
         (.claude, "Claude", "staroflife.fill", .orange),
         (.codex, "Codex", "hexagon.fill", .teal),
         (.gemini, "Gemini", "sparkle", .blue),

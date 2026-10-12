@@ -127,4 +127,12 @@ import Testing
         #expect(second[day]?["claude_code"]?.total == 75)
         #expect(second.count == TodayUsageReader.historyDays)
     }
+
+    /// 사용량 화면 에이전트 순서: 오늘 많이 쓴 순, Claude·Codex 는 안 써도 보이고 나머지는 기간 안에 쓴 것만
+    @MainActor @Test func agentsRankByTodayUsage() {
+        func t(_ n: Int) -> TokenSum { var t = TokenSum(); t.input = n; return t }
+        let usage: UsageByDay = ["2026-10-11": ["gemini": t(5)], "2026-10-12": ["codex": t(30), "claude_code": t(10)]]
+        let order = UsageDetailView.ranked(usage, today: ["codex": t(30), "claude_code": t(10)]).map(\.id)
+        #expect(order == [.codex, .claude, .gemini])
+    }
 }

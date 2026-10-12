@@ -1,18 +1,18 @@
 import SwiftUI
 
 /// 팝오버 안 사용량 화면 (상점처럼 요약 위에 겹쳐 그린다).
-/// 오늘 합계, 이번 주·이번 달, 최근 30일 막대(모든 에이전트 합), 에이전트별 오늘 입력·출력·캐시와 공식 한도.
+/// 오늘 합계, 이번 주·이번 달, 최근 30일 막대(에이전트별 색으로 쌓음), 오늘 많이 쓴 순 에이전트별 입력·출력·캐시와 공식 한도.
 struct UsageDetailView: View {
     @Environment(AppModel.self) private var model
-    /// 고른 에이전트 탭 (nil 이면 첫 탭)
-    @State private var picked: Provider?
+    /// 마우스를 올린 에이전트 줄. 있으면 막대에 그 몫만 색으로 칠한다
+    @State private var hoveredAgent: Provider?
     /// 마우스를 올린 막대의 날짜 (nil 이면 오늘)
     @State private var hoveredDay: String?
 
     private static let chartDays = 30
     private static let chartHeight = 48.0
 
-    /// byAgent: provider rawValue → 그날 토큰 (고른 탭의 몫을 막대에 칠한다)
+    /// byAgent: provider rawValue → 그날 토큰 (막대를 에이전트별로 쌓는다)
     struct Day { let id: String; let date: Date; let tokens: Int; let cost: Double; let byAgent: [String: Int] }
 
     var body: some View {
@@ -47,10 +47,7 @@ struct UsageDetailView: View {
         let week = TodayUsageReader.total(usage, from: cal.dateInterval(of: .weekOfYear, for: now)?.start ?? now, through: now)
         let month = TodayUsageReader.total(usage, from: cal.dateInterval(of: .month, for: now)?.start ?? now, through: now)
         let days = Self.days(usage, now: now)
-        let agents = UsageView.agents.filter { a in
-            a.id == .claude || a.id == .codex || usage.values.contains { ($0[a.id.rawValue]?.total ?? 0) > 0 }
-        }
-        let agent = agents.first { $0.id == picked } ?? agents[0]
+        let agents = Self.ranked(usage, today: model.todayDetail)
 
         return VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
@@ -70,17 +67,31 @@ struct UsageDetailView: View {
                 }
                 .redacted(reason: model.pastUsage == nil ? .placeholder : [])
             }
-            chart(days, agent: agent)
-            VStack(alignment: .leading, spacing: 10) {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 6) {
-                        ForEach(agents, id: \.id) { a in tab(a.name, selected: a.id == agent.id) { picked = a.id } }
-                    }
+            chart(days, agents: agents)
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(agents, id: \.id) { a in
+                    detail(a)
+                        .background {
+                            if hoveredAgent == a.id { RoundedRectangle(cornerRadius: 8).fill(.fill.quaternary).padding(-6) }
+                        }
+                        .contentShape(Rectangle())
+                        .onHover { inside in
+                            if inside { hoveredAgent = a.id } else if hoveredAgent == a.id { hoveredAgent = nil }
+                        }
                 }
-                .scrollIndicators(.never)
-                detail(agent)
             }
         }
+    }
+
+    /// 보일 에이전트(Claude·Codex 는 늘, 나머지는 기간 안에 쓴 것만)를 오늘 많이 쓴 순으로. 같으면 기간 합, 그다음 원래 순서
+    static func ranked(_ usage: UsageByDay, today: [String: TokenSum]) -> [UsageView.Agent] {
+        func period(_ a: UsageView.Agent) -> Int { usage.values.reduce(0) { $0 + ($1[a.id.rawValue]?.total ?? 0) } }
+        let shown = UsageView.agents.filter { $0.id == .claude || $0.id == .codex || period($0) > 0 }
+        return shown.enumerated().sorted { x, y in
+            let a = (today[x.element.id.rawValue]?.total ?? 0, period(x.element), -x.offset)
+            let b = (today[y.element.id.rawValue]?.total ?? 0, period(y.element), -y.offset)
+            return a > b
+        }.map(\.element)
     }
 
     /// 오늘 포함 최근 count 일 (오래된 날부터)
@@ -105,21 +116,23 @@ struct UsageDetailView: View {
         .monospacedDigit()
     }
 
-    private func chart(_ days: [Day], agent: (id: Provider, name: String, symbol: String, tint: Color)) -> some View {
+    private func chart(_ days: [Day], agents: [UsageView.Agent]) -> some View {
         let maxTokens = days.map(\.tokens).max() ?? 0
         let shown = days.first { $0.id == hoveredDay } ?? days.last
         let loading = model.pastUsage == nil
         let cal = Calendar.current
+        let focus = agents.first { $0.id == hoveredAgent }
         func height(_ n: Int) -> Double { maxTokens > 0 && n > 0 ? max(2, Self.chartHeight * Double(n) / Double(maxTokens)) : 0 }
         return VStack(alignment: .leading, spacing: 4) {
+            // 날짜가 있으니 "최근 30일"은 쓰지 않고 한 줄에 둔다
             HStack(spacing: 6) {
-                Text("최근 30일").foregroundStyle(.secondary)
                 if let shown {
-                    Text(shown.date, format: .dateTime.month(.defaultDigits).day().weekday(.abbreviated))
-                    Text(shortTokens(shown.tokens)).fontWeight(.semibold)
-                    Text(Self.costText(shown.cost)).foregroundStyle(.secondary)
+                    Text(shown.date, format: .dateTime.month(.defaultDigits).day().weekday(.abbreviated)).foregroundStyle(.secondary)
+                    Text(shortTokens(focus.map { shown.byAgent[$0.id.rawValue] ?? 0 } ?? shown.tokens)).fontWeight(.semibold)
+                    if let focus { Text(verbatim: focus.name).foregroundStyle(focus.tint) }
+                    else { Text(Self.costText(shown.cost)).foregroundStyle(.secondary) }
                 }
-                Spacer()
+                Spacer(minLength: 4)
                 if loading {
                     ProgressView().controlSize(.mini)
                 } else {
@@ -128,6 +141,7 @@ struct UsageDetailView: View {
                 }
             }
             .font(.caption)
+            .lineLimit(1)
             .monospacedDigit()
             HStack(alignment: .bottom, spacing: 2) {
                 ForEach(Array(days.enumerated()), id: \.element.id) { i, d in
@@ -136,16 +150,25 @@ struct UsageDetailView: View {
                     // 주가 바뀌는 날 앞에 가는 선. 날짜는 오늘 라벨과 겹치지 않을 때만
                     let weekStart = i > 0 && cal.component(.weekday, from: d.date) == cal.firstWeekday
                     let label = isToday || (weekStart && i < days.count - 3)
-                    let mine = d.byAgent[agent.id.rawValue] ?? 0
+                    let barHeight = d.tokens > 0 ? height(d.tokens) : 1
                     VStack(spacing: 0) {
                         Spacer(minLength: 0)
-                        // 그날 합(회색) 아래쪽에 고른 에이전트 몫을 그 색으로. 쓴 게 없는 날은 바닥선만
+                        // 평소엔 에이전트별 색을 많이 쓴 순으로 아래부터 쌓고, 에이전트 줄에 마우스를 올리면
+                        // 그 몫만 색으로 칠하고 나머지는 회색. 쓴 게 없는 날은 바닥선만
                         ZStack(alignment: .bottom) {
-                            Rectangle().fill(hovered ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tertiary))
-                            Rectangle().fill(agent.tint.opacity(isToday || hovered ? 1 : 0.75)).frame(height: height(mine))
+                            Rectangle().fill(.tertiary)
+                            if let focus {
+                                Rectangle().fill(focus.tint).frame(height: barHeight * share(d, focus))
+                            } else {
+                                VStack(spacing: 0) {
+                                    ForEach(agents.reversed(), id: \.id) { a in
+                                        Rectangle().fill(a.tint).frame(height: barHeight * share(d, a))
+                                    }
+                                }
+                            }
                         }
-                        .frame(height: d.tokens > 0 ? height(d.tokens) : 1)
-                        .opacity(d.tokens > 0 ? 1 : 0.5)
+                        .frame(height: barHeight)
+                        .opacity(d.tokens == 0 ? 0.5 : isToday || hovered ? 1 : 0.75)
                         .clipShape(.rect(cornerRadius: 1.5))
                     }
                     .frame(maxWidth: .infinity)
@@ -159,7 +182,8 @@ struct UsageDetailView: View {
                     }
                     .overlay(alignment: .bottom) {
                         if label {
-                            Text(d.date, format: .dateTime.day())
+                            // 숫자만 (한국어 "12일"처럼 단위가 붙으면 오른쪽 끝에서 잘린다)
+                            Text(verbatim: "\(cal.component(.day, from: d.date))")
                                 .font(.caption2.weight(isToday ? .semibold : .regular)).monospacedDigit()
                                 .foregroundStyle(isToday ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
                                 .fixedSize()
@@ -178,19 +202,12 @@ struct UsageDetailView: View {
         }
     }
 
-    private func tab(_ name: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(verbatim: name)
-                .font(.callout.weight(selected ? .semibold : .regular))
-                .padding(.horizontal, 12).padding(.vertical, 5)
-                .foregroundStyle(selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.primary))
-                .background(selected ? AnyShapeStyle(Color.accentColor.opacity(0.18)) : AnyShapeStyle(.fill.tertiary), in: .capsule)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+    /// 그날 합 중 그 에이전트 몫 (0...1)
+    private func share(_ d: Day, _ a: UsageView.Agent) -> Double {
+        d.tokens > 0 ? Double(d.byAgent[a.id.rawValue] ?? 0) / Double(d.tokens) : 0
     }
 
-    private func detail(_ a: (id: Provider, name: String, symbol: String, tint: Color)) -> some View {
+    private func detail(_ a: UsageView.Agent) -> some View {
         let b = model.todayDetail[a.id.rawValue] ?? .init()
         let meters: [Meter]? = switch a.id {
         case .claude: model.claudeLimits.map(UsageView.claudeMeters) ?? []
@@ -203,13 +220,14 @@ struct UsageDetailView: View {
             ProviderUsageRow(name: a.name, symbol: a.symbol, tint: a.tint, tokens: b.total, cost: b.cost,
                              reset: reset, meters: meters, loading: model.fetchingLimits,
                              emptyText: "한도를 읽지 못했어요. 새로고침해 보세요")
-            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 3) {
+            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 3) {
+                // 첫 칸 폭을 고정해 에이전트 줄마다 출력·캐시 읽기 위치가 같다
                 GridRow {
-                    part("입력", b.input)
+                    part("입력", b.input).frame(width: 104, alignment: .leading)
                     part("출력", b.output)
                 }
                 GridRow {
-                    part("캐시 쓰기", b.cacheWrite)
+                    part("캐시 쓰기", b.cacheWrite).frame(width: 104, alignment: .leading)
                     part("캐시 읽기", b.cacheRead)
                 }
             }
