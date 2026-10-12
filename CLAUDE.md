@@ -7,7 +7,8 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
   - 100팩 소재가 있는 조건 없는 100팩 밖 융합은 그 소재의 가장 늦은 팩에 넣음.
   - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음.
 
-개인용이며 배포하지 않는다.
+GitHub Releases의 ZIP으로 배포한다.
+첫 공개 릴리스는 Developer ID 서명·Apple 공증 설정 후 게시한다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
 - 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 21장·복사한 코드. 이미지 출처를 바꾸면 같이 고친다)
@@ -24,7 +25,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
   바꾼 점은 `Usage/NOTICE.md`에 적는다.
   캐시처럼 읽는 쪽 조정은 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
 - 버전과 패치노트는 `CHANGELOG.md` 맨 위에 `## x.y.z — 날짜` 항목을 추가하는 것으로만 올린다.
-  `build-app.sh`(Info.plist)와 앱의 업데이트 확인(main의 raw 파일)이 이 파일을 읽는다.
+  `build-app.sh`(Info.plist)는 이 파일을 읽고, 앱의 업데이트 확인은 GitHub의 최신 정식 Release를 읽는다.
   같은 항목을 `CHANGELOG.en.md`·`CHANGELOG.ja.md`에도 같은 `## x.y.z — 날짜` 제목으로 번역해 넣는다(앱은 언어별 파일을 보여 주고, 테스트가 세 파일의 제목을 맞춰 본다).
   분류 줄과 이름은 다음을 쓴다:
   - 분류 줄 en: `**✨ New features**`·`**🎨 Improvements**`·`**⚖️ Balance**`·`**🐛 Bug fixes**`·`**⚡ Performance**`

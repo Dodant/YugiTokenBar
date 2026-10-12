@@ -141,10 +141,8 @@ struct SettingsView: View {
                     HStack {
                         Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
                         Spacer()
-                        Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.subheadline)
+                        Link("GitHub에서 받기", destination: AppInfo.releasesURL).font(.subheadline)
                     }
-                    Text("git pull && scripts/build-app.sh --install")
-                        .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 8)
             } else if case .failed = update {

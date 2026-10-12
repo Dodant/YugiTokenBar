@@ -717,9 +717,9 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
   - 업데이트: 현재 버전(`v<CFBundleShortVersionString> (<CFBundleVersion>)`).
     - `swift run`이면 "개발 빌드".
     - 확인해서 최신이면 그 옆에 흐린 "(최신)", 개발 빌드는 붙이지 않는다.
-    - [업데이트 확인]을 누르면 `raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md`의 맨 위 버전과 숫자로 비교하고 "최신 버전" 줄에 `v x.y.z`를 보인다.
-    - 릴리스 없이 main 기준이다.
-    - 새 버전이면 GitHub 링크와 `git pull && scripts/build-app.sh --install`을 보여준다.
+    - [업데이트 확인]을 누르면 GitHub Releases API의 최신 정식 릴리스 태그와 숫자로 비교하고 "최신 버전" 줄에 `v x.y.z`를 보인다.
+    - 초안·프리릴리스·main의 미배포 변경은 제외한다.
+    - 새 버전이면 최신 Release 다운로드 링크를 보여준다.
     - 자동 확인·자동 업데이트는 없다.
   - 백업 & 이전: [내보내기], [가져오기](4절 내보내기·가져오기), 세이브 폴더 [Finder].
   - 정보 & 지원: [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, [버그 신고하기](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어), PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
@@ -812,5 +812,6 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 ## 10. 라이선스 메모
 
 - `Usage/` 코드는 PokeTokenBar(MIT, © 2026 chattymin)에서 복사하고 NOTICE.md에 고지한다.
-- 카드 이미지와 텍스트는 Konami 저작물이다. 개인용 앱으로만 쓰고 배포하지 않는다. 이미지는 번들에 넣지 않고 런타임에 캐시한다.
-- 파트너 스프라이트 시트(`Resources/partner.png`)는 사용자가 제공한 「날개 크리보」 팬 이미지다. 개인용으로만 쓴다.
+- 카드 이미지와 텍스트는 Konami 저작물이다. 비공식 팬 프로젝트이며 Konami와 관계없음을 표시한다.
+  배포 방법은 `docs/distribution.md`에 정리한다. 이미지는 번들에 넣지 않고 런타임에 캐시한다.
+- 파트너 스프라이트 시트(`Resources/partner.png`)는 사용자가 제공한 「날개 크리보」 팬 이미지다. 출처는 `docs/sources.md`에 기록한다.

@@ -4,7 +4,8 @@ import Foundation
 /// (scripts/build-app.sh 가 맨 위 `## x.y.z` 를 Info.plist 에 넣는다). CHANGELOG.en.md·ja.md 는 그 번역이다.
 enum AppInfo {
     static let repoURL = URL(string: "https://github.com/Dodant/YugiTokenBar")!
-    static let latestChangelogURL = URL(string: "https://raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md")!
+    static let releasesURL = URL(string: "https://github.com/Dodant/YugiTokenBar/releases/latest")!
+    static let latestReleaseURL = URL(string: "https://api.github.com/repos/Dodant/YugiTokenBar/releases/latest")!
     static let supportEmail = "ohho0506@gmail.com"
 
     /// 버그 신고 메일 (설정 › 정보 & 지원). 제목에 버전, 본문 끝에 버전·macOS·언어를 미리 적어 둔다
@@ -72,13 +73,27 @@ enum AppInfo {
         return false
     }
 
-    /// main 브랜치 CHANGELOG 의 최신 버전. 실패하면 nil.
-    // ponytail: 릴리스 없이 main 기준으로 비교. 릴리스를 만들기 시작하면 Releases API 로 바꿀 것
+    /// 게시된 정식 릴리스만 확인한다(main의 미배포 변경·초안·프리릴리스 제외).
+    static func releaseVersion(from data: Data) -> String? {
+        struct Release: Decodable {
+            let tag_name: String
+            let draft: Bool
+            let prerelease: Bool
+        }
+        guard let release = try? JSONDecoder().decode(Release.self, from: data),
+              !release.draft, !release.prerelease else { return nil }
+        let version = release.tag_name.hasPrefix("v") ? String(release.tag_name.dropFirst()) : release.tag_name
+        let parts = version.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 3, parts.allSatisfy({ !$0.isEmpty && $0.utf8.allSatisfy { (48...57).contains($0) } }) else { return nil }
+        return version
+    }
+
     static func fetchLatestVersion() async -> String? {
-        let request = URLRequest(url: latestChangelogURL, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        var request = URLRequest(url: latestReleaseURL, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("YugiTokenBar", forHTTPHeaderField: "User-Agent")
         guard let (data, response) = try? await URLSession.shared.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200
-        else { return nil }
-        return topVersion(ofChangelog: String(decoding: data, as: UTF8.self))
+              (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return releaseVersion(from: data)
     }
 }

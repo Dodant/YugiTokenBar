@@ -26,6 +26,17 @@
 - macOS 26 이상, Swift 6.2 (Xcode 26)
 - 외부 의존성 없음
 
+## 설치와 업데이트
+
+GitHub Releases에서 앱 ZIP을 다운로드하도록 준비했습니다.
+아직 공개 릴리스는 없으며, 첫 릴리스가 게시된 뒤 다운로드할 수 있습니다.
+
+[Releases](https://github.com/Dodant/YugiTokenBar/releases)에서 `YugiTokenBar-x.y.z.zip`을 받아 압축을 풀고 앱을 `/Applications`로 옮깁니다.
+업데이트할 때는 앱을 종료하고 새 앱으로 교체합니다.
+앱을 교체해도 컬렉션은 Application Support의 별도 세이브에 남습니다.
+배포 ZIP에는 Apple Silicon·Intel 실행 파일을 함께 포함하며, 사용자에게 Xcode 설치를 요구하지 않습니다.
+배포 담당자 설정과 첫 릴리스 절차는 [배포 문서](docs/distribution.md)에 있습니다.
+
 ## 실행
 
 ```bash

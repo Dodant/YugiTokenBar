@@ -4,6 +4,9 @@
 **✨ New features**
 - Added [Report a bug] to Settings. It opens an email with your app version and system details already filled in.
 
+**🎨 Improvements**
+- Settings now checks the latest published release and opens its download page.
+
 ## 0.6.1 — 2026-10-12
 **🐛 Bug fixes**
 - Fixed English text using plural forms for a single card.
