@@ -159,20 +159,26 @@ struct FlipCard: View {
     }
 }
 
-/// SR·UR 앞면이 드러날 때의 연출 (뒤집기 0.4초가 끝날 즈음 시작).
-/// SR: 금빛 광택 한 번 + 빛 맥박 + 살짝 튀어오름. UR: 무지개 광택 반복 + 빛 고리·반짝이 폭발 + 크게 튀어오름.
-/// SE: UR 연출에 고리·반짝이를 더하고 더 크게 튀어오름.
+/// SR·UR·SE 앞면이 드러날 때의 연출 (뒤집기 0.4초가 끝날 즈음 시작). 날리는 것 없이 빛만 절제해서 쓴다.
+/// 공통: 옅은 섬광 + 대각선 광택 한 번(좌상단 → 우하단) + 부드럽게 떠올랐다 내려앉음 + 느린 빛 숨쉬기 + 카드 둘레에서 차례로 반짝이는 빛 점.
+/// UR: 광택 띠 가장자리에 옅은 무지개 + 무지개 홀로 포일이 천천히 돈다 + 카드 모양 빛 테두리가 퍼진다.
+/// SE: UR 에 금빛 광택·금빛 포일·금빛 후광·테두리 두 겹.
 private struct RareEffect: ViewModifier {
     let tier: Int
     let active: Bool
-    @State private var sweep = false
-    @State private var burst = false
+    @State private var turn = false
     @State private var pulse = false
     @State private var pop = 0
     @Environment(\.lessMotion) private var lessMotion
 
     private var ur: Bool { tier >= 4 }
     private var se: Bool { tier >= 5 }
+    nonisolated private static let corner = 7.0
+
+    /// 한 번만 재생하는 등장 값 (끝값은 처음과 같은 '보이지 않음')
+    private struct Reveal {
+        var scale = 1.0, flash = 0.0, ring = 0.0, glint = 0.0, sweep = 0.0
+    }
 
     func body(content: Content) -> some View {
         if tier < 3 {
@@ -180,68 +186,134 @@ private struct RareEffect: ViewModifier {
         } else if lessMotion {
             content.shadow(color: Rarity.color(tier: tier).opacity(active ? 0.7 : 0), radius: 12)  // 연출 없이 빛만
         } else {
-            let color = Rarity.color(tier: tier)
+            let color = Rarity.color(tier: tier), ur = ur, se = se
             content
-                .overlay { shine.allowsHitTesting(false) }
-                .shadow(color: color.opacity(pulse ? 0.95 : 0.45), radius: pulse ? 20 : 9)
-                .shadow(color: se ? Rarity.gold.opacity(pulse ? 0.9 : 0.3) : .clear, radius: pulse ? 28 : 12)
-                .background { if ur { rings(color) } }
-                .overlay { if ur { sparkles(color) } }
-                .keyframeAnimator(initialValue: 1.0, trigger: pop) { view, scale in
-                    view.scaleEffect(scale)
+                .overlay { if ur { foil.allowsHitTesting(false) } }
+                .shadow(color: color.opacity(pulse ? 0.8 : 0.4), radius: pulse ? 16 : 9)
+                .shadow(color: se ? Rarity.gold.opacity(pulse ? 0.7 : 0.25) : .clear, radius: pulse ? 24 : 12)
+                .keyframeAnimator(initialValue: Reveal(), trigger: pop) { view, v in
+                    view
+                        .overlay {
+                            RoundedRectangle(cornerRadius: Self.corner).fill(.white)
+                                .opacity(v.flash).blendMode(.plusLighter).allowsHitTesting(false)
+                        }
+                        .overlay { Self.sweep(v.sweep, ur: ur, se: se).allowsHitTesting(false) }
+                        .background { if ur { Self.rings(color, v.ring, se: se) } }
+                        .overlay { Self.glints(color, v.glint, n: se ? 6 : ur ? 4 : 2, se: se) }
+                        .scaleEffect(v.scale)
                 } keyframes: { _ in
-                    LinearKeyframe(1.0, duration: 0.3)
-                    SpringKeyframe(se ? 1.2 : ur ? 1.14 : 1.06, duration: 0.18)
-                    SpringKeyframe(1.0, duration: 0.4, spring: .bouncy)
+                    KeyframeTrack(\.scale) {
+                        LinearKeyframe(1, duration: 0.3)
+                        CubicKeyframe(se ? 1.09 : ur ? 1.06 : 1.035, duration: 0.22)
+                        SpringKeyframe(1, duration: 0.8, spring: .smooth)
+                    }
+                    KeyframeTrack(\.flash) {
+                        LinearKeyframe(0, duration: 0.32)
+                        LinearKeyframe(se ? 0.35 : ur ? 0.28 : 0.2, duration: 0.07)  // 광택 띠가 주인공이라 옅게
+                        CubicKeyframe(0, duration: 0.6)
+                    }
+                    KeyframeTrack(\.ring) {
+                        LinearKeyframe(0, duration: 0.34)
+                        CubicKeyframe(1, duration: 1.1)
+                    }
+                    KeyframeTrack(\.sweep) {
+                        LinearKeyframe(0, duration: 0.4)
+                        LinearKeyframe(1, duration: se ? 1.9 : ur ? 1.7 : 1.5, timingCurve: .easeInOut)
+                        MoveKeyframe(0)
+                    }
+                    KeyframeTrack(\.glint) {
+                        LinearKeyframe(0, duration: 0.45)
+                        LinearKeyframe(1, duration: 1.6)
+                    }
                 }
                 .onChange(of: active) { start() }
                 .onAppear { start() }
         }
     }
 
-    /// SE 는 금색 빛줄기 두 줄이 잇따라 지나간다
-    private var shine: some View {
+    /// 대각선 광택 한 번: 좌상단 모서리에서 맺힌 반사광 띠가 우하단으로 미끄러져 빠져나간다 (p: 0…1).
+    /// 가운데가 밝고 양옆으로 번지는 띠 + 더 넓고 옅은 광채. 가운데쯤에서 가장 밝고 넓어지며 각도가 조금 돌아
+    /// 곡면 위를 굴러가듯 보인다. UR 은 띠 가장자리에 옅은 무지개, SE 는 따뜻한 금빛.
+    nonisolated private static func sweep(_ p: Double, ur: Bool, se: Bool) -> some View {
         GeometryReader { g in
+            let w = g.size.width, h = g.size.height, d = hypot(w, h)
+            let theta = atan2(h, w)
+            let bulge = sin(.pi * p)                      // 가운데서 1, 양끝 모서리에서 0
+            let band = w * (0.32 + 0.16 * bulge)
+            let s = (p - 0.5) * (d + band)                // 띠 가운데가 좌상단 모서리 → 우하단 모서리 밖
+            let tint: Color = se ? Color(red: 1, green: 0.9, blue: 0.7) : .white
+            let edge: (Color, Color) = ur && !se ? (.cyan, .pink) : (tint, tint)
+            ZStack {
+                // 주변 광채
+                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: tint.opacity(0.14), location: 0.5),
+                                       .init(color: .clear, location: 1)], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: band * 2.6)
+                // 반사광 띠
+                LinearGradient(stops: [.init(color: .clear, location: 0),
+                                       .init(color: edge.0.opacity(0.12), location: 0.22),
+                                       .init(color: tint.opacity(0.35), location: 0.4),
+                                       .init(color: .white.opacity(0.62), location: 0.5),
+                                       .init(color: tint.opacity(0.35), location: 0.6),
+                                       .init(color: edge.1.opacity(0.12), location: 0.78),
+                                       .init(color: .clear, location: 1)], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: band)
+            }
+            .frame(height: d * 1.4)
+            .rotationEffect(.radians(theta + (p - 0.5) * 0.18))
+            .position(x: w / 2 + cos(theta) * s, y: h / 2 + sin(theta) * s)
+            .opacity(p > 0 && p < 1 ? pow(bulge, 0.5) : 0)
+            .blendMode(.plusLighter)
+        }
+        .clipShape(.rect(cornerRadius: corner))
+    }
+
+    /// 홀로 포일: 무지개(SE 는 금·장미빛) 각도 그라데이션이 아주 옅게 천천히 돈다
+    private var foil: some View {
+        GeometryReader { g in
+            let d = hypot(g.size.width, g.size.height)
+            AngularGradient(colors: se
+                            ? [Rarity.gold, .orange, .pink, .white, Rarity.gold]
+                            : [.red, .orange, .yellow, .green, .cyan, .blue, .purple, .red],
+                            center: .center)
+                .frame(width: d, height: d)
+                .rotationEffect(.degrees(turn ? 360 : 0))
+                .position(x: g.size.width / 2, y: g.size.height / 2)
+                .opacity(0.1)
+                .blendMode(.plusLighter)
+        }
+        .clipShape(.rect(cornerRadius: Self.corner))
+    }
+
+    /// 카드 모양 빛 테두리가 가늘어지며 퍼진다 (SE 는 금빛 한 겹이 뒤따른다)
+    nonisolated private static func rings(_ color: Color, _ r: Double, se: Bool) -> some View {
+        ZStack {
             ForEach(0..<(se ? 2 : 1), id: \.self) { i in
-                LinearGradient(colors: se
-                               ? [.clear, .orange.opacity(0.5), Rarity.gold.opacity(0.95), .white, Rarity.gold.opacity(0.95), .orange.opacity(0.5), .clear]
-                               : ur
-                               ? [.clear, .pink.opacity(0.45), .white.opacity(0.85), .cyan.opacity(0.45), .clear]
-                               : [.clear, .white.opacity(0.75), .clear],
-                               startPoint: .leading, endPoint: .trailing)
-                    .frame(width: g.size.width * (i == 0 ? 0.7 : 0.35), height: g.size.height * 1.6)
-                    .rotationEffect(.degrees(20))
-                    .offset(x: (sweep ? g.size.width * 1.3 : -g.size.width * 1.0) - Double(i) * g.size.width * 0.9,
-                            y: -g.size.height * 0.3)
-                    .blendMode(.plusLighter)
-            }
-        }
-        .clipShape(.rect(cornerRadius: 7))
-    }
-
-    private func rings(_ color: Color) -> some View {
-        ZStack {
-            ForEach(0..<(se ? 3 : 2), id: \.self) { i in
-                Circle()
-                    .stroke(color, lineWidth: 3)
-                    .scaleEffect(burst ? 1.8 + Double(i) * 0.6 : 0.3)
-                    .opacity(burst ? 0 : 0.9)
+                let q = min(max((r - Double(i) * 0.18) / (1 - Double(i) * 0.18), 0), 1)
+                RoundedRectangle(cornerRadius: Self.corner)
+                    .stroke(i == 0 ? color : Rarity.gold, lineWidth: 2.5 * (1 - q) + 0.5)
+                    .blur(radius: 1.5)
+                    .scaleEffect(1 + 0.3 * q)
+                    .opacity(q > 0 ? (1 - q) * 0.9 : 0)
             }
         }
     }
 
-    private func sparkles(_ color: Color) -> some View {
-        ZStack {
-            let n = se ? 16 : 10
+    /// 카드 둘레 정해진 자리에서 빛 점이 하나씩 피었다 진다
+    nonisolated private static func glints(_ color: Color, _ g: Double, n: Int, se: Bool) -> some View {
+        let spots: [UnitPoint] = [.init(x: 0.1, y: 0.06), .init(x: 0.9, y: 0.82), .init(x: 0.94, y: 0.2),
+                                  .init(x: 0.08, y: 0.7), .init(x: 0.55, y: 0.02), .init(x: 0.45, y: 0.97)]
+        return GeometryReader { geo in
             ForEach(0..<n, id: \.self) { i in
-                let angle = Double(i) / Double(n) * 2 * .pi
-                let r = burst ? 70.0 + Double(i % 3) * 14 : 0
+                let local = min(max((g - Double(i) / Double(n) * 0.5) / 0.5, 0), 1)
+                let s = sin(.pi * local)
                 Image(systemName: "sparkle")
-                    .font(.system(size: CGFloat(10 + (i % 3) * 4), weight: .bold))
-                    .foregroundStyle(i.isMultiple(of: 2) ? color : se && i % 4 == 1 ? Rarity.gold : .white)
-                    .offset(x: cos(angle) * r, y: sin(angle) * r)
-                    .scaleEffect(burst ? 1 : 0.2)
-                    .opacity(burst ? 0 : 1)
+                    .font(.system(size: CGFloat(i.isMultiple(of: 2) ? 15 : 11), weight: .light))
+                    .foregroundStyle(.white)
+                    .shadow(color: se && i % 2 == 1 ? Rarity.gold : color, radius: 4)
+                    .scaleEffect(0.3 + 0.9 * s)
+                    .rotationEffect(.degrees(60 * local))
+                    .opacity(s)
+                    .position(x: spots[i].x * geo.size.width, y: spots[i].y * geo.size.height)
             }
         }
         .allowsHitTesting(false)
@@ -250,10 +322,7 @@ private struct RareEffect: ViewModifier {
     private func start() {
         guard active else { return }  // 다음 팩은 개봉 화면째 새로 만들어져 처음 상태로 시작한다
         pop += 1
-        withAnimation(ur
-                      ? .easeInOut(duration: se ? 1.6 : 1.4).delay(0.35).repeatForever(autoreverses: false)
-                      : .easeInOut(duration: 0.9).delay(0.35)) { sweep = true }
-        withAnimation(.easeOut(duration: 0.9).delay(0.35)) { burst = true }
-        withAnimation(.easeInOut(duration: 1.1).delay(0.35).repeatForever()) { pulse = true }
+        if ur { withAnimation(.linear(duration: 10).delay(0.35).repeatForever(autoreverses: false)) { turn = true } }
+        withAnimation(.easeInOut(duration: 2.2).delay(0.35).repeatForever()) { pulse = true }
     }
 }
