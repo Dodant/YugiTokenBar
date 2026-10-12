@@ -70,7 +70,7 @@ struct DexSidebar: View {
                 HStack {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
                     HStack(spacing: 3) {
-                        if workMode && p.complete {  // 업무 모드 상점 줄처럼 다 모으면 "104 ✓"
+                        if p.complete {  // 다 모으면 "104 ✓"
                             Text(verbatim: "\(p.owned)")
                             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                         } else {
