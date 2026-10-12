@@ -21,9 +21,12 @@
 
 ### 오버프레임 (`ImageCache.overframe`)
 
-오버프레임(Over-Frame, TCG 이름 Extended art)은 일러스트가 카드 테두리 밖으로 뻗어 나오는 공식 카드 처리다. OCG에서는 LIMIT OVER COLLECTION(2026)에 처음 나왔다. 대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(약 100종)을 passcode로 `cards_KO.json`과 맞춰 뽑았고, 100팩 안에 든 21종 전부를 넣었다(2026-10-06 기준).
+오버프레임(Over-Frame, TCG 이름 Extended art)은 일러스트가 카드 테두리 밖으로 뻗어 나오는 공식 카드 처리다.
+OCG에서는 LIMIT OVER COLLECTION(2026)에 처음 나왔다.
+대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(약 100종)을 passcode로 `cards_KO.json`과 맞춰 뽑았고, 100팩 안에 든 21종 전부를 넣었다(2026-10-06 기준).
 
-이미지는 SAMPLE 워터마크가 없는 것만 쓴다. Yugipedia 이미지를 먼저 쓰고(영문 RA05 UR, 일본판 LOSP PScR, CF02 공식 이미지), Yugipedia에 워터마크 판이나 이름 없는 마스터 듀얼 렌더만 있거나 이미지가 없는 9장은 일본 카드숍 상품 스캔을 쓴다(사용자 제공).
+이미지는 SAMPLE 워터마크가 없는 것만 쓴다.
+Yugipedia 이미지를 먼저 쓰고(영문 RA05 UR, 일본판 LOSP PScR, CF02 공식 이미지), Yugipedia에 워터마크 판이나 이름 없는 마스터 듀얼 렌더만 있거나 이미지가 없는 9장은 일본 카드숍 상품 스캔을 쓴다(사용자 제공).
 
 | 카드 | passcode | 수록 | 출처 | 이미지 |
 |---|---|---|---|---|

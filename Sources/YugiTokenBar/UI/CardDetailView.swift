@@ -15,8 +15,8 @@ struct CardDetailView: View {
     var body: some View {
         let n = model.game.copies(cid)
         Form {
-            // 미보유도 컬러로, 호버 기울기 없이
-            CardImageView(db: model.db, cid: cid, size: .full)
+            // 미보유도 컬러로, 호버 기울기 없이, 업무 모드여도 실제 그림
+            CardImageView(db: model.db, cid: cid, size: .full, showInWorkMode: true)
                 .frame(maxWidth: .infinity)
                 .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
                 .listRowSeparator(.hidden)

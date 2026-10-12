@@ -42,6 +42,17 @@ import Testing
         #expect(Set(game.state.decks.map(\.name)).count == game.state.decks.count)
     }
 
+    /// 기본 이름은 어느 언어로 만들었든 번호로 알아보고(화면에선 지금 언어), 새 번호는 그와 겹치지 않는다
+    @Test func defaultNamesInAnyLanguage() {
+        var game = Game(db: makeDB([[(1, 1)]]), state: GameState())
+        game.state.decks = [Deck(name: "New Deck 1"), Deck(name: "新しいデッキ 2"), Deck(name: "드래곤 덱")]
+        #expect(game.state.decks.map(\.defaultNumber) == [1, 2, nil])
+        #expect(game.state.decks[2].title == "드래곤 덱")
+        #expect(game.state.decks[0].title == String(localized: "새 덱 1"))
+        #expect(game.addDeck().name == "새 덱 4")
+        #expect(Deck(name: "New Deck X").defaultNumber == nil)
+    }
+
     @Test func removeRenameDelete() {
         var game = Game(db: makeDB([[(1, 1)]]), state: GameState())
         let deck = game.addDeck()

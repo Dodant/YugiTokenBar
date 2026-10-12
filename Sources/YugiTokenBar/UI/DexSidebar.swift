@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 컬렉션 사이드바. 따로 둬서 카드를 클릭(선택)해도 팩·등급 통계를 다시 세지 않는다.
 struct DexSidebar: View {
+    @Environment(\.workMode) private var workMode
     @Environment(AppModel.self) private var model
     @Binding var scope: DexScope?
     @State private var renaming: Deck?
@@ -44,7 +45,7 @@ struct DexSidebar: View {
             Button("저장") { if let deck = renaming { model.renameDeck(deck.id, to: newName) } }
             Button("취소", role: .cancel) {}
         }
-        .confirmationDialog("'\(deleting?.name ?? "")' 덱을 지울까요?",
+        .confirmationDialog("'\(deleting?.title ?? "")' 덱을 지울까요?",
                             isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
             Button("삭제", role: .destructive) {
                 guard let deck = deleting else { return }
@@ -60,13 +61,23 @@ struct DexSidebar: View {
         let pack = game.db.packs[i]
         let p = game.progress(i)
         return HStack(spacing: 8) {
-            PackImageView(pack: pack)
-                .frame(height: 36)
+            if !workMode {  // 업무 모드면 봉투 자리 없이
+                PackImageView(pack: pack)
+                    .frame(height: 36)
+            }
             VStack(alignment: .leading, spacing: 3) {
                 Text(pack.name).lineLimit(1)
                 HStack {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
-                    Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                    HStack(spacing: 3) {
+                        if p.complete {  // 다 모으면 "104 ✓"
+                            Text(verbatim: "\(p.owned)")
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        } else {
+                            Text("\(p.owned)/\(p.total)")
+                        }
+                    }
+                    .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
         }
@@ -80,7 +91,7 @@ struct DexSidebar: View {
                 DeckRow(deck: deck)
                     .tag(DexScope.deck(deck.id))
                     .contextMenu {
-                        Button("이름 바꾸기") { newName = deck.name; renaming = deck }
+                        Button("이름 바꾸기") { newName = deck.title; renaming = deck }
                         Button("삭제", role: .destructive) { deleting = deck }
                     }
             }
@@ -175,7 +186,7 @@ private struct DeckRow: View {
         let p = model.game.deckProgress(deck)
         Label {
             VStack(alignment: .leading, spacing: 3) {
-                Text(deck.name).lineLimit(1)
+                Text(deck.title).lineLimit(1)
                 HStack {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.total > 0 && p.owned == p.total ? .green : .accentColor)
                     Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()

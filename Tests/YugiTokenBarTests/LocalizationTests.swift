@@ -57,6 +57,35 @@ import Testing
         #expect(en.count >= 3)
     }
 
+    /// en 복수형(stringsdict): 키는 strings 에도 있고(sync-strings 가 보는 곳), 1장·2장이 단수·복수로 나온다
+    @Test func englishPlurals() throws {
+        // en.lproj 만 든 임시 번들 (Resources 를 그대로 쓰면 시스템 언어의 lproj 를 고른다)
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ytb-plural-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: AppInfo.repoRoot.appendingPathComponent("Resources/en.lproj"), to: dir.appendingPathComponent("en.lproj"))
+        let bundle = try #require(Bundle(url: dir))
+        let en = try Self.strings("en")
+        let format = { (key: String) in bundle.localizedString(forKey: key, value: nil, table: nil) }
+        let url = AppInfo.repoRoot.appendingPathComponent("Resources/en.lproj/Localizable.stringsdict")
+        let plurals = try #require(NSDictionary(contentsOf: url) as? [String: Any])
+        for key in plurals.keys { #expect(en[key] != nil, "strings 에 없는 stringsdict 키: \(key)") }
+        let locale = Locale(identifier: "en")
+        #expect(String(format: format("%lld장을 융합했어요"), locale: locale, 1) == "Fused 1 card")
+        #expect(String(format: format("%lld장을 융합했어요"), locale: locale, 2) == "Fused 2 cards")
+        #expect(String(format: format("%lld장을 모두 융합할까요?"), locale: locale, 1) == "Fuse 1 card?")
+        #expect(String(format: format("%lld / %lld장 보유 · 메인 덱 %lld~%lld장"), locale: locale, 3, 42, 40, 60) == "3 / 42 owned · Main Deck 40–60 cards")
+        let save = "가져올 세이브: 카드 %lld종 · %@\n(%@, v%@)\n지금 세이브: 카드 %lld종 · %@\n\n지금 세이브는 세이브 폴더에 자동 백업돼요."
+        #expect(String(format: format(save), locale: locale, 1, "a", "b", "c", 2, "d").hasPrefix("Save to import: 1 card · a\n(b, vc)\nCurrent save: 2 cards · d"))
+    }
+
+    /// 기본 덱 이름을 알아보는 앞부분이 번역과 맞다 (번역을 바꾸면 Deck.defaultPrefixes 도)
+    @Test func defaultDeckPrefixesMatchTranslations() throws {
+        let key = "새 덱 %lld"
+        let names = [key] + [try Self.strings("en"), try Self.strings("ja")].map { $0[key] ?? "" }
+        #expect(names == Deck.defaultPrefixes.map { $0 + "%lld" })
+    }
+
     static let dbs: [String: CardDB] = Dictionary(uniqueKeysWithValues: ["ko", "en", "ja"].map { ($0, try! CardDB.load(from: CardDB.repoURL($0))) })
 
     /// 세 언어 파일은 같은 팩(pid·카드 목록)·같은 카드 집합이고, 언어 무관 필드가 같다

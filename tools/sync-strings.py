@@ -3,12 +3,14 @@
 키는 코드의 한국어 문장이고 보간은 컴파일러가 실제 타입으로 바꾼 형식(%lld·%@)이다. Usage/(PokeTokenBar 복사본)는 뺀다.
 
 사용: python3 tools/sync-strings.py                 # 없는 키를 번역 안 된 채(값 = 키) 덧붙인다
-      python3 tools/sync-strings.py --check         # 없는 키·번역 안 된 키·안 쓰는 키·키에 없는 한글 리터럴이 있으면 실패
+      python3 tools/sync-strings.py --check         # 없는 키·번역 안 된 키·안 쓰는 키·키에 없는 한글 리터럴,
+                                                    # en 값의 한글·가나·한자, stringsdict 없는 en 복수 명사("%lld cards")가 있으면 실패
       python3 tools/sync-strings.py --check A.swift  # 그 소스 파일만 (안 쓰는 키 검사는 안 함)
 """
 import glob
 import json
 import os
+import plistlib
 import re
 import shutil
 import subprocess
@@ -17,6 +19,10 @@ import sys
 OUT = os.path.abspath(".build/loc")  # 절대 경로: 상대 경로면 컴파일러가 .stringsdata 를 안 쓴다
 LANGS = ["en", "ja"]
 HANGUL = re.compile(r"[가-힣]")
+# en 값에 남으면 안 되는 글자 (한글·자모·가나·한자). 가운뎃점 ・ 은 카드 이름에도 쓰여 뺀다
+NOT_EN = re.compile(r"[가-힣ㄱ-ㅎㅏ-ㅣ\u3040-\u30fa\u30fc-\u30ff\u4e00-\u9fff]")
+# en 값에서 수 바로 뒤 영어 복수 명사 ("%lld cards") — 1일 때 틀리므로 en.lproj/Localizable.stringsdict 에 복수 규칙이 있어야 한다
+PLURAL = re.compile(r"%(?:\d+\$)?lld [A-Za-z]+s\b")
 ENTRY = re.compile(r'^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)";\s*$')
 SPEC = re.compile(r"%(?:\d+\$)?(lld|ld|d|@|lf|f)")
 INTERP = re.compile(r"\\\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)")
@@ -71,6 +77,14 @@ def append_strings(path, missing):
             f.write(f'/* {where} */\n"{escape(key)}" = "{escape(key)}";\n')
 
 
+def stringsdict_keys():
+    path = "Resources/en.lproj/Localizable.stringsdict"
+    if not os.path.exists(path):
+        return set()
+    with open(path, "rb") as f:
+        return set(plistlib.load(f))
+
+
 def specs(s):
     return sorted(SPEC.findall(s))
 
@@ -112,6 +126,11 @@ def main():
             problems += [f"{lang}: 형식 지정자 다름: {k} → {v}" for k, v in table.items() if specs(k) != specs(v)]
             if not only:
                 problems += [f"{lang}: 안 쓰는 키: {k}" for k in table if k not in keys and HANGUL.search(k)]
+            if lang == "en":
+                plurals = stringsdict_keys()
+                problems += [f"en: 영어가 아닌 글자: {k} → {v}" for k, v in table.items() if NOT_EN.search(v)]
+                problems += [f"en: 복수형 없음(stringsdict 에 추가): {k} → {v}" for k, v in table.items() if PLURAL.search(v) and k not in plurals]
+                problems += [f"en: stringsdict 키가 strings 에 없음: {k}" for k in plurals if k not in table]
         elif missing:
             append_strings(path, missing)
             print(f"{lang}: 키 {len(missing)}개 덧붙임 (값 = 키, 번역할 것)")

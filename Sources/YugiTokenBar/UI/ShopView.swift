@@ -43,6 +43,7 @@ struct ShopView: View {
 /// 시대별 접고 펴는 팩 묶음. 접힘 상태는 다음 실행에도 기억한다.
 private struct EraSection: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.workMode) private var workMode
     let name: String
     let packs: Range<Int>
     @AppStorage private var expanded: Bool
@@ -78,13 +79,72 @@ private struct EraSection: View {
             }
             .buttonStyle(.plain)
             if expanded {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                    ForEach(packs, id: \.self) { i in
-                        PackTile(index: i)
+                if workMode {
+                    LazyVStack(spacing: 6) {
+                        ForEach(packs, id: \.self) { i in
+                            ShopRow(index: i)
+                        }
                     }
+                    .transition(.opacity)
+                } else {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                        ForEach(packs, id: \.self) { i in
+                            PackTile(index: i)
+                        }
+                    }
+                    .transition(.opacity)
                 }
-                .transition(.opacity)
             }
+        }
+    }
+}
+
+extension VerticalAlignment {
+    /// 업무 모드 상점 줄: 구매 버튼 아랫선을 진행 막대 아랫선에 맞추는 기준. TintBar 가 올려 보내고 오버레이가 받는다
+    private enum BarBottom: AlignmentID {
+        static func defaultValue(in d: ViewDimensions) -> CGFloat { d[.bottom] }
+    }
+    static let barBottom = VerticalAlignment(BarBottom.self)
+}
+
+/// 업무 모드 상점 줄: 이름 · 왼쪽부터 진행 막대, 오른쪽 벽에 보유/전체. 마우스를 올리면 오른쪽에 작은 구매 버튼이 얹혀 뜨고 그 뒤 숫자만 흐려진다. 버튼 아랫선은 막대 아랫선에 맞춘다 (봉투 자리 없음).
+private struct ShopRow: View {
+    /// "136/136"(약 42pt)이 들어가는 폭. 숫자 칸을 고정해 모든 줄의 막대 길이를 같게.
+    private static let countWidth: CGFloat = 60
+    @Environment(AppModel.self) private var model
+    let index: Int
+
+    var body: some View {
+        let game = model.game
+        let pack = game.db.packs[index]
+        let p = game.progress(index)
+        Hovering { hovered in
+            VStack(alignment: .leading, spacing: 3) {
+                Text(pack.name).font(.callout).lineLimit(1)
+                HStack(spacing: 8) {
+                    TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
+                        .alignmentGuide(.barBottom) { $0[.bottom] }
+                    HStack(spacing: 3) {
+                        if p.complete {  // 다 모으면 "136 ✓"
+                            Text(verbatim: "\(p.owned)")
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        } else {
+                            Text("\(p.owned)/\(p.total)")
+                        }
+                    }
+                    .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                    .lineLimit(1)
+                    .frame(width: Self.countWidth, alignment: .trailing)
+                    .blur(radius: hovered ? 6 : 0)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: Alignment(horizontal: .trailing, vertical: .barBottom)) {
+                if hovered {
+                    BuyButton(index: index, cleared: p.cleared).controlSize(.small).transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.15), value: hovered)
         }
     }
 }
@@ -139,19 +199,22 @@ struct PackTile: View {
     }
 }
 
-/// 팝오버 바로 구매 줄: 팩 이미지 · 이름 · 진행도 · 구매 버튼.
+/// 팝오버 바로 구매 줄: 팩 이미지(업무 모드면 없음) · 이름 · 진행도 · 구매 버튼.
 struct PackRow: View {
     @Environment(AppModel.self) private var model
     let index: Int
+    @Environment(\.workMode) private var workMode
 
     var body: some View {
         let game = model.game
         let pack = game.db.packs[index]
         let p = game.progress(index)
         HStack(spacing: 12) {
-            PackImageView(pack: pack)
-                .frame(height: 50)
-                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            if !workMode {  // 업무 모드면 봉투 자리 없이
+                PackImageView(pack: pack)
+                    .frame(height: 50)
+                    .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            }
             VStack(alignment: .leading, spacing: 4) {
                 Text(pack.name).font(.callout.weight(.medium)).lineLimit(1)
                 Text(p.fusionLeft > 0 ? "\(p.owned)/\(p.total) · 융합 \(p.fusionLeft)장 남음" : p.complete ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")

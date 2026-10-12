@@ -9,6 +9,9 @@ struct PopoverView: View {
     @State private var freeRows: (pack: Bool, card: Bool)?
     /// 바로 구매 줄에 보이는 팩 (스와이프로 넘김)
     @State private var shownPack: Int?
+    @Environment(\.workMode) private var workMode
+    /// 최근 획득 줄이 보이는지 (업무 모드면 없음). freeRows 처럼 덮인 동안(설정에서 업무 모드를 끔) 다시 생기는 건 돌아왔을 때로 미룬다
+    @State private var showRecent: Bool?
 
     var body: some View {
         // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점·개봉·설정은 요약 크기 안에 겹쳐 그려 높이를 고정
@@ -36,6 +39,7 @@ struct PopoverView: View {
                 let now = (pack: model.game.state.freePacks > 0, card: model.game.state.pendingFree > 0)
                 freeRows = covered ? (now.pack && freeRows?.pack ?? false, now.card && freeRows?.card ?? false) : now
             }
+            .onChange(of: [covered, workMode], initial: true) { showRecent = !workMode && (!covered || showRecent ?? true) }
     }
 
     // 패널 자체가 Liquid Glass 라서 내용에는 유리를 겹치지 않는다(겹치면 뒤 배경 색이 번져 탁해짐).
@@ -54,7 +58,7 @@ struct PopoverView: View {
                     .tint(.orange)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
+            if showRecent ?? !workMode { VStack(alignment: .leading, spacing: 8) {
                 caption("최근 획득")
                 HStack(spacing: 9) {
                     ForEach(Array(state.log.prefix(5).enumerated()), id: \.offset) { _, entry in
@@ -73,7 +77,7 @@ struct PopoverView: View {
                     }
                 }
                 .frame(height: 79)
-            }
+            } }
 
             if freeRows?.pack ?? (state.freePacks > 0) {
                 FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",

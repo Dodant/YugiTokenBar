@@ -35,7 +35,9 @@ scripts/build-app.sh                                  # build/YugiTokenBar.app (
 scripts/build-app.sh --install                        # /Applications 에 설치 후 실행
 ```
 
-세이브는 `~/Library/Application Support/YugiTokenBar/`에 저장된다(`YTB_STATE_DIR`로 바꿀 수 있다). 공식 한도는 `~/.claude/.credentials.json`이나 키체인의 Claude 로그인 정보, `codex app-server`로 읽는다. `swift run`으로 개발 실행할 때는 `PTB_PARITY=1`을 붙여야 읽는다.
+세이브는 `~/Library/Application Support/YugiTokenBar/`에 저장된다(`YTB_STATE_DIR`로 바꿀 수 있다).
+공식 한도는 `~/.claude/.credentials.json`이나 키체인의 Claude 로그인 정보, `codex app-server`로 읽는다.
+`swift run`으로 개발 실행할 때는 `PTB_PARITY=1`을 붙여야 읽는다.
 
 ## 데이터
 
@@ -50,6 +52,7 @@ scripts/build-app.sh --install                        # /Applications 에 설치
 
 ## 출처
 
-`Sources/YugiTokenBar/Usage/`는 [PokeTokenBar](https://github.com/chattymin/PokeTokenBar)(MIT, © 2026 chattymin)에서 가져온 코드다. 출처와 변경점은 [`Usage/NOTICE.md`](Sources/YugiTokenBar/Usage/NOTICE.md)에 적었다.
+`Sources/YugiTokenBar/Usage/`는 [PokeTokenBar](https://github.com/chattymin/PokeTokenBar)(MIT, © 2026 chattymin)에서 가져온 코드다.
+출처와 변경점은 [`Usage/NOTICE.md`](Sources/YugiTokenBar/Usage/NOTICE.md)에 적었다.
 
 설계 문서: [`docs/superpowers/specs/2026-10-01-yugitokenbar-design.md`](docs/superpowers/specs/2026-10-01-yugitokenbar-design.md)

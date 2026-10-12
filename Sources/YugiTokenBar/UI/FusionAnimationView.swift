@@ -18,12 +18,15 @@ struct FusionAnimationView: View {
     let show: FusionShow
     let onDone: () -> Void
     @Environment(\.lessMotion) private var reduceMotion
+    @Environment(\.workMode) private var workMode
+    /// 동작 줄이기·업무 모드면 마지막 장면만
+    private var still: Bool { reduceMotion || workMode }
     @State private var start = Date.now
     @State private var images: [Int: NSImage] = [:]
 
     var body: some View {
-        TimelineView(.animation(paused: reduceMotion)) { timeline in
-            let t = reduceMotion ? FusionScene.reveal + 2 : timeline.date.timeIntervalSince(start)
+        TimelineView(.animation(paused: still)) { timeline in
+            let t = still ? FusionScene.reveal + 2 : timeline.date.timeIntervalSince(start)
             Canvas { gc, size in
                 FusionScene(t: t, size: size, materials: show.materials, result: show.cid,
                             tier: min(max(db.tier(show.cid), 3), 5), name: db.cards[show.cid]?.name ?? "", images: images)
@@ -44,7 +47,7 @@ struct FusionAnimationView: View {
         .contentShape(.rect)
         .onTapGesture {
             let t = Date.now.timeIntervalSince(start)
-            if reduceMotion || t >= FusionScene.done { onDone() } else { start = .now.addingTimeInterval(-FusionScene.done) }
+            if still || t >= FusionScene.done { onDone() } else { start = .now.addingTimeInterval(-FusionScene.done) }
         }
         .accessibilityElement()
         .accessibilityLabel("\(db.cards[show.cid]?.name ?? "") 융합. 누르면 건너뛰고, 한 번 더 누르면 닫기")
