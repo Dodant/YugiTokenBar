@@ -105,7 +105,7 @@ private struct ShopRow: View {
                 Text(pack.name).font(.callout).lineLimit(1)
                 HStack {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
-                    Text(p.fusionLeft > 0 ? "\(p.owned)/\(p.total) · 융합 \(p.fusionLeft)장 남음" : "\(p.owned)/\(p.total)")
+                    Text(p.fusionLeft > 0 ? "\(p.owned)/\(p.total) · 융합 \(p.fusionLeft)장 남음" : p.complete ? "완료 · \(p.owned)/\(p.total)" : "\(p.owned)/\(p.total)")
                         .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
