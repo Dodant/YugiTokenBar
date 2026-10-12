@@ -91,7 +91,7 @@ struct OpeningView: View {
                     .fixedSize()  // 마우스를 올린 "✕ 売らない"는 칸보다 넓어 왼쪽 여백으로 넘친다
                     .frame(width: Self.badgeWidth, alignment: .trailing)  // 등급 바로 옆에 붙인다
                 RarityPill(label: pull.label, size: 10)
-                Text(card?.name ?? "").lineLimit(1)
+                Hovering { MarqueeText(text: card?.name ?? "", active: $0) }  // 넘치면 이름만 마우스를 올린 동안 흘러간다
                 Spacer(minLength: 0)
             } else {
                 Text("눌러서 공개").foregroundStyle(.tertiary)
