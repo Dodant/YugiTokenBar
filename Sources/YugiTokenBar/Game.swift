@@ -249,8 +249,13 @@ struct Game: Sendable {
 
     // MARK: 융합
 
-    /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통)
-    func keep(_ cid: Int) -> Int { state.fusionOnly ? max(1, db.materialNeed[cid] ?? 1) : 1 }
+    /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통).
+    /// 조건 소재는 그 융합을 아직 안 가졌을 때만 센다(같은 카드만 나와도 모아서 만들 수 있게).
+    func keep(_ cid: Int) -> Int {
+        guard state.fusionOnly else { return 1 }
+        let open = db.conditionNeed[cid]?.filter { copies($0.key) == 0 }.values.max() ?? 1
+        return max(1, db.materialNeed[cid] ?? 1, open)
+    }
 
     /// 설정이 켜져 있으면 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
     func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) }

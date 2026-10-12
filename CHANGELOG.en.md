@@ -3,6 +3,8 @@
 ## 0.5.7 — 2026-10-12
 **✨ New features**
 - Added [Work mode] to Settings > General. When on, card and pack images and the partner are hidden and only the card name is shown in a grey box, and the rare reveal effects are turned off too. Game progress is unchanged. The shop shows a plain list of rows without images. The Recently obtained row in the menu bar panel is hidden. Card and pack openings also show as a list, and you click each row to reveal it. The collection also shows as a list, and the info panel on the right still shows the picture of the selected card. A thin bar in the card frame color (Normal, Effect, Fusion, Spell, Trap and so on) appears before the rarity in each row.
+**🐛 Bug fixes**
+- With [Fusion Monsters by Fusion Summon only] on, materials defined by a condition (such as "3 Dragon monsters") are now kept up to the number needed until you make that Fusion, before [Auto-sell duplicates] or [Sell all duplicates] sells them. Even if the same card keeps coming, it no longer stays at 1 copy, so you can collect enough to fuse.
 
 ## 0.5.6 — 2026-10-12
 **🎨 Improvements**
