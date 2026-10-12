@@ -1,5 +1,9 @@
 # Patch notes
 
+## 0.5.6 — 2026-10-12
+**🎨 Improvements**
+- Refined the reveal of SR, UR and SE cards from packs. Instead of flying sparkles and a bouncy pop, a soft diagonal sheen gliding from the top-left to the bottom-right, a subtle holographic foil and light spreading along the card edge make it calmer and more premium.
+
 ## 0.5.5 — 2026-10-12
 **🎨 Improvements**
 - Pack wrappers in the Shop and the collection now match the chosen language (Japanese packs in Japanese, English packs in English). The first 11 packs, which never came out in Japan, show the English wrapper in Japanese too.
