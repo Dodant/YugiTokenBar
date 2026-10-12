@@ -46,9 +46,17 @@ struct DexView: View {
         } detail: {
             // .scrollPosition(id:) 는 스크롤 중에도 값을 계속 써서 줄마다 창 전체를 다시 계산하므로, 이동할 때만 쓰는 ScrollViewReader 로
             ScrollView { ScrollViewReader { proxy in
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
-                    ForEach(entries) { entry in
-                        cell(cid: entry.cid, label: entry.label)
+                Group {
+                    if workMode {
+                        LazyVStack(spacing: 2) {
+                            ForEach(entries) { entry in cell(cid: entry.cid, label: entry.label) }
+                        }
+                    } else {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
+                            ForEach(entries) { entry in
+                                cell(cid: entry.cid, label: entry.label)
+                            }
+                        }
                     }
                 }
                 .padding(16)
@@ -270,20 +278,39 @@ struct DexView: View {
         let n = inDeck ?? game.copies(cid)
         let owned = inDeck.map { game.copies(cid) >= $0 } ?? (n > 0)
         let selected = selectedCards.contains(cid)
-        return Hovering { hovered in VStack(spacing: 4) {
-            CardImageView(db: model.db, cid: cid, owned: owned)
-                .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
-                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
-                .overlay(alignment: .topTrailing) { star(cid, hovered: hovered) }
-                .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
-                .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }
-            HStack(spacing: 4) {
-                MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
-                    .foregroundStyle(owned ? .primary : .secondary)
-                Spacer(minLength: 0)
-                if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
+        return Hovering { hovered in Group {
+            if workMode {
+                // 업무 모드 줄: 등급 · 이름 · 오른쪽에 (마우스를 올리면) − · ☆ · ×n. 고르면 강조색 배경
+                HStack(spacing: 8) {
+                    RarityPill(label: label, owned: owned, size: 10)
+                    MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
+                        .foregroundStyle(owned ? .primary : .secondary)
+                    Spacer(minLength: 0)
+                    if let deckID, hovered { minus(deckID, cid) }
+                    star(cid, hovered: hovered)
+                    if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
+                }
+                .font(.callout)
+                .padding(.horizontal, 8)
+                .frame(height: 28)
+                .background(selected ? Color.accentColor.opacity(0.2) : .clear, in: .rect(cornerRadius: 6))
+            } else {
+                VStack(spacing: 4) {
+                CardImageView(db: model.db, cid: cid, owned: owned)
+                    .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
+                    .overlay(alignment: .topTrailing) { star(cid, hovered: hovered) }
+                    .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
+                    .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }
+                HStack(spacing: 4) {
+                    MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
+                        .foregroundStyle(owned ? .primary : .secondary)
+                    Spacer(minLength: 0)
+                    if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
+                }
+                .font(.caption2)
+                }
             }
-            .font(.caption2)
         }
         .contentShape(Rectangle()) }
         .onTapGesture { select(cid) }
