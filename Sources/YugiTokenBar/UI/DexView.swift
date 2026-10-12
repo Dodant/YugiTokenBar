@@ -284,7 +284,7 @@ struct DexView: View {
                 HStack(spacing: 8) {
                     HStack(spacing: 5) {
                         FrameBar(card: model.db.cards[cid], owned: owned, shapes: true)
-                        RarityPill(label: label, owned: owned, size: 10)
+                        RarityPill(label: label, owned: owned, size: 10, aligned: true)
                     }
                     MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
                         .foregroundStyle(owned ? .primary : .secondary)

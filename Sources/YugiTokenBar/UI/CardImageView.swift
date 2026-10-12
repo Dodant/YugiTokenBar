@@ -153,11 +153,24 @@ struct RarityPill: View {
     let label: String
     var owned = true
     var size: CGFloat = 9
+    /// 줄 목록용: 가장 넓은 등급 알약만큼 자리를 잡아(왼쪽 정렬) 뒤 글자의 시작을 맞춘다
+    var aligned = false
 
     var body: some View {
+        if aligned {
+            ZStack(alignment: .leading) {
+                ForEach(CardInfo.rarities, id: \.self) { pill($0).hidden() }
+                pill(label)
+            }
+        } else {
+            pill(label)
+        }
+    }
+
+    private func pill(_ label: String) -> some View {
         let tier = (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1
         let color = owned ? Rarity.pillColors[min(max(tier, 1), Rarity.pillColors.count) - 1] : Rarity.locked
-        Text(label)
+        return Text(label)
             .font(.system(size: size, weight: .bold))
             .foregroundStyle(owned && tier != 3 ? .white : .black)  // 금색 SR·미획득 회색만 검정 글자
             .padding(.horizontal, size * 0.6)

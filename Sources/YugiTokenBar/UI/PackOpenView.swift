@@ -92,7 +92,7 @@ struct OpeningView: View {
                     .frame(width: Self.badgeWidth, alignment: .trailing)  // 등급 바로 옆에 붙인다
                 HStack(spacing: 5) {
                     FrameBar(card: card)
-                    RarityPill(label: pull.label, size: 10)
+                    RarityPill(label: pull.label, size: 10, aligned: true)
                 }
                 Hovering { MarqueeText(text: card?.name ?? "", active: $0) }  // 넘치면 이름만 마우스를 올린 동안 흘러간다
                 Spacer(minLength: 0)
