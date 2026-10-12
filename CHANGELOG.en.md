@@ -1,23 +1,27 @@
 # Patch notes
 
-## 0.5.9 — 2026-10-12
+## 0.6.2 — 2026-10-12
 **✨ New features**
-- Added [Report a bug] to Settings > About & support. Clicking [Write email] opens an email in your mail app with the app version, macOS version and language already filled in.
+- Added [Report a bug] to Settings. It opens an email with your app version and system details already filled in.
 
-## 0.5.8 — 2026-10-12
+## 0.6.1 — 2026-10-12
 **🐛 Bug fixes**
-- In English, text such as [Fuse All], save import and Deck card counts no longer says "1 cards" for a single card; it now says "1 card".
-- Default Deck names ("New Deck 1") no longer stay in the language they were created in. Decks you haven't renamed now show in the current language (한국어 "새 덱 1", 日本語 "新しいデッキ 1").
+- Fixed English text using plural forms for a single card.
+- Decks you haven't renamed now use the current app language.
 
-## 0.5.7 — 2026-10-12
+## 0.6.0 — 2026-10-12
+
+Work mode gives your card collection a simpler look.
+
 **✨ New features**
-- Added [Work mode] to Settings > General. When on, card and pack images and the partner are hidden and only the card name is shown in a grey box, and the rare reveal effects are turned off too. Game progress is unchanged. The shop shows a plain list of rows without images. The Recently obtained row in the menu bar panel is hidden. Card and pack openings also show as a list, and you click each row to reveal it. The collection also shows as a list, and the info panel on the right still shows the picture of the selected card. A thin bar in the card frame color (Normal, Effect, Fusion, Spell, Trap and so on) appears before the rarity in each row.
+- Added [Work mode] to Settings > General. It hides card and pack images and your partner, and shows the Shop, openings and Collection as lists. Game progress stays the same, and you can still view the selected card's image in Collection details.
+
 **🐛 Bug fixes**
-- With [Fusion Monsters by Fusion Summon only] on, materials defined by a condition (such as "3 Dragon monsters") are now kept up to the number needed until you make that Fusion, before [Auto-sell duplicates] or [Sell all duplicates] sells them. Even if the same card keeps coming, it no longer stays at 1 copy, so you can collect enough to fuse.
+- In Fusion-only mode, selling duplicates now keeps enough materials for Fusion, including materials defined by conditions.
 
 ## 0.5.6 — 2026-10-12
 **🎨 Improvements**
-- Refined the reveal of SR, UR and SE cards from packs. Instead of flying sparkles and a bouncy pop, a soft diagonal sheen gliding from the top-left to the bottom-right, a subtle holographic foil and light spreading along the card edge make it calmer and more premium.
+- Refined SR, UR and SE reveals with a softer sheen and subtle holographic effects.
 
 ## 0.5.5 — 2026-10-12
 **🎨 Improvements**
