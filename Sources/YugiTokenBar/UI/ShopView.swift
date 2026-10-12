@@ -109,7 +109,7 @@ extension VerticalAlignment {
 
 /// 업무 모드 상점 줄: 이름 · 왼쪽부터 진행 막대, 오른쪽 벽에 보유/전체. 마우스를 올리면 오른쪽에 작은 구매 버튼이 얹혀 뜨고 그 뒤 숫자만 흐려진다. 버튼 아랫선은 막대 아랫선에 맞춘다 (봉투 자리 없음).
 private struct ShopRow: View {
-    /// "136/136 ✓"(약 56pt)가 들어가는 폭. 숫자 칸을 고정해 모든 줄의 막대 길이를 같게.
+    /// "136/136"(약 42pt)이 들어가는 폭. 숫자 칸을 고정해 모든 줄의 막대 길이를 같게.
     private static let countWidth: CGFloat = 60
     @Environment(AppModel.self) private var model
     let index: Int
@@ -125,8 +125,12 @@ private struct ShopRow: View {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
                         .alignmentGuide(.barBottom) { $0[.bottom] }
                     HStack(spacing: 3) {
-                        Text("\(p.owned)/\(p.total)")
-                        if p.complete { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green) }  // 다 모으면 체크
+                        if p.complete {  // 다 모으면 "136 ✓"
+                            Text(verbatim: "\(p.owned)")
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        } else {
+                            Text("\(p.owned)/\(p.total)")
+                        }
                     }
                     .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                     .lineLimit(1)
