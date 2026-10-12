@@ -56,6 +56,7 @@ struct SettingsView: View {
                     ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
                 }
                 .labelsHidden()
+                .controlSize(.small)
                 .fixedSize()
                 .onChange(of: language) { AppLanguage.store(language) }
             }
@@ -140,7 +141,7 @@ struct SettingsView: View {
                     HStack {
                         Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
                         Spacer()
-                        Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.callout)
+                        Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.subheadline)
                     }
                     Text("git pull && scripts/build-app.sh --install")
                         .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
@@ -186,7 +187,13 @@ struct SettingsView: View {
             row {
                 Text("GitHub")
                 Spacer()
-                Link("Dodant/YugiTokenBar", destination: AppInfo.repoURL).font(.callout)
+                Link("Dodant/YugiTokenBar", destination: AppInfo.repoURL).font(.subheadline)
+            }
+            Divider()
+            row {
+                Text("버그 신고하기")
+                Spacer()
+                Button("메일 쓰기") { NSWorkspace.shared.open(AppInfo.bugReportURL) }.controlSize(.small)
             }
             Divider()
             row {

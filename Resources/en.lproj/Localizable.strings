@@ -439,3 +439,11 @@
 "카드·팩 이미지와 파트너를 숨기고 밋밋한 상자만 보여요" = "Hides card and pack images and the partner, showing plain boxes instead";
 /* PackOpenView.swift:97 */
 "눌러서 공개" = "Click to reveal";
+/* AppInfo.swift:17 */
+"버그 신고" = "Report a bug";
+/* AppInfo.swift:18 */
+"어떤 일이 있었는지 적어 주세요:" = "Please describe what happened:";
+/* SettingsView.swift:193 */
+"버그 신고하기" = "Report a bug";
+/* SettingsView.swift:195 */
+"메일 쓰기" = "Write email";

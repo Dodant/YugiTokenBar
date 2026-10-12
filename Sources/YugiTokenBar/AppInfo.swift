@@ -5,6 +5,21 @@ import Foundation
 enum AppInfo {
     static let repoURL = URL(string: "https://github.com/Dodant/YugiTokenBar")!
     static let latestChangelogURL = URL(string: "https://raw.githubusercontent.com/Dodant/YugiTokenBar/main/CHANGELOG.md")!
+    static let supportEmail = "ohho0506@gmail.com"
+
+    /// 버그 신고 메일 (설정 › 정보 & 지원). 제목에 버전, 본문 끝에 버전·macOS·언어를 미리 적어 둔다
+    static var bugReportURL: URL {
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        var c = URLComponents()
+        c.scheme = "mailto"
+        c.path = supportEmail
+        c.queryItems = [
+            URLQueryItem(name: "subject", value: "[YugiTokenBar] " + String(localized: "버그 신고") + " (\(versionText))"),
+            URLQueryItem(name: "body", value: String(localized: "어떤 일이 있었는지 적어 주세요:") +
+                "\n\n\n---\nYugiTokenBar \(versionText) · macOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion) · \(AppLanguage.current)"),
+        ]
+        return c.url!
+    }
 
     /// 저장소 루트. `swift run`·테스트에서 번들 대신 읽는 파일(cards_XX.json·partner.png·문서)의 기준
     static let repoRoot = URL(fileURLWithPath: #filePath)
