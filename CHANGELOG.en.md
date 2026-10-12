@@ -1,5 +1,9 @@
 # Patch notes
 
+## 0.5.7 — 2026-10-12
+**✨ New features**
+- Added [Work mode] to Settings > General. When on, card and pack images and the partner are hidden and only the card name is shown in a grey box, and the rare reveal effects are turned off too. Game progress is unchanged.
+
 ## 0.5.6 — 2026-10-12
 **🎨 Improvements**
 - Refined the reveal of SR, UR and SE cards from packs. Instead of flying sparkles and a bouncy pop, a soft diagonal sheen gliding from the top-left to the bottom-right, a subtle holographic foil and light spreading along the card edge make it calmer and more premium.

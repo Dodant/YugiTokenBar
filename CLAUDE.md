@@ -17,6 +17,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
 - 패치노트는 사용자용 문장(~했습니다)으로, 분류 줄 `**✨ 새로운 기능**`·`**🎨 개선**`·`**⚖️ 밸런스**`·`**🐛 오류 수정**`·`**⚡ 성능**` 중 해당하는 것만 쓴다. 같은 버전 안에서 바뀐 수치는 최종값만, 같은 기능은 모아서, 한 항목엔 한 주제. 내부 구조(카드 데이터 파일 형식, 해상도 등)는 빼고 커밋에만 남긴다. 큰 버전은 제목 아래에 핵심 변화 한 줄.
 - `Resources/cards_KO.json`·`cards_JP.json`·`cards_EN.json`·`picks.json`(만들 수 있는 융합의 소재 줄마다 맞는 카드, 언어 공용)은 `python3 tools/build-cards.py`로만 다시 만든다. 옵션(`--reformat`·`--extras`·`--lang`)과 요청 간격·이어 받기는 스펙 3절. JP·EN은 언어당 5~9시간 걸린다.
 - UI 문구는 ko/en/ja 현지화, 기준 언어는 한국어. 코드에는 한국어 문장을 그대로 쓰고(SwiftUI 리터럴은 자동, `String`으로 만드는 문구는 `String(localized:)`, 문구를 받는 헬퍼는 `LocalizedStringKey`), `python3 tools/sync-strings.py`로 en/ja `Resources/*.lproj/Localizable.strings`에 키를 덧붙여 번역한다. 커밋 전 `python3 tools/sync-strings.py --check`.
+- 설정은 저장 위치를 나눈다. 기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다. 새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
 - 색은 시스템 색(`.primary`·`.secondary`·`.fill`·`accentColor`)을 먼저 쓰고, 고유한 색은 `CardImageView.swift`의 `Rarity`·`Palette`에만 라이트·다크 값을 같이 둔다(스펙 6절 외관). 화면에서 `colorScheme`으로 분기하지 않는다.
 - **문서는 항상 코드와 동기화한다.** 동작·구조·명령이 바뀌면 같은 커밋에서 스펙(해당 절), `Usage/NOTICE.md`, 이 파일을 함께 고친다.
 - 커밋 메시지 끝: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`
