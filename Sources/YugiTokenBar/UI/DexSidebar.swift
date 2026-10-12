@@ -69,7 +69,15 @@ struct DexSidebar: View {
                 Text(pack.name).lineLimit(1)
                 HStack {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
-                    Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                    HStack(spacing: 3) {
+                        if workMode && p.complete {  // 업무 모드 상점 줄처럼 다 모으면 "104 ✓"
+                            Text(verbatim: "\(p.owned)")
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        } else {
+                            Text("\(p.owned)/\(p.total)")
+                        }
+                    }
+                    .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
         }
