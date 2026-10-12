@@ -20,7 +20,8 @@ enum Provider: String, CaseIterable, Sendable {
     case claude = "claude_code", codex, gemini, grok, pi, omp, cursor
 }
 
-/// `TodayUsage.read` 와 같은 결과를 내되, Claude 로그는 파일마다 (수정 시각, 크기)가 그대로면 다시 파싱하지 않는다.
+/// 오늘(로컬 날짜) provider별 누적 토큰과 비용을 읽는다. 토큰 = input + output + cacheWrite + cacheRead (PokeTokenBar 와 동일).
+/// Claude 로그는 파일마다 (수정 시각, 크기)가 그대로면 다시 파싱하지 않는다.
 /// 오늘 바뀐 Claude JSONL(수십~수백 MB)을 60초마다 통째로 다시 읽던 비용을 줄인다.
 /// `Usage/` 는 PokeTokenBar 복사본이라 고치지 않고, 그 공개 함수(`jsonlFiles`·`parseClaudeFile`·`dedupKeepMax`)로 감싼다.
 /// Cursor 대시보드 API는 실패하면 30분 백오프(그동안 로컬 `state.vscdb`만 읽는다).
@@ -39,15 +40,19 @@ actor TodayUsageReader {
 
     /// 지난 날짜별 합계 파일. nil 이면 디스크에 두지 않는다
     private let historyFile: URL?
+    /// Claude·Cursor 밖 provider 의 로그 읽기. 테스트는 빈 결과를 넣어 이 Mac 의 실제 로그를 읽지 않는다
+    private let otherLogs: @Sendable (Date) -> [(Provider, [LocalUsageReader.Entry])]
 
     init(claudeRoots: [URL]? = nil,
          historyFile: URL? = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("YugiTokenBar/usage-days.json"),
          liveCursor: (@Sendable (Date) async -> LocalAdditionalUsageReader.CursorLoadResult)? =
-            AppEnv.allowsLiveLimitsFetch ? { @Sendable in await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: $0) } : nil) {
+            AppEnv.allowsLiveLimitsFetch ? { @Sendable in await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: $0) } : nil,
+         otherLogs: @escaping @Sendable (Date) -> [(Provider, [LocalUsageReader.Entry])] = TodayUsageReader.localOtherLogs) {
         self.claudeRoots = claudeRoots
         self.historyFile = historyFile
         self.liveCursor = liveCursor
+        self.otherLogs = otherLogs
     }
 
     /// Cursor: 대시보드 API 가 있으면 그것, 실패(`isAuthoritative == false`)하면 `cursorAPIBackoff` 동안 로컬만.
@@ -64,38 +69,35 @@ actor TodayUsageReader {
     static let catchUpDays = 30
 
     /// since: 적립 원장 날짜(`claimedDate`). 오늘보다 앞이면 그날부터 어제까지의 날짜별 합계도 `earlier`로 돌려준다
-    /// (앱이 꺼져 있던 날·자정 직전 몫을 `Game.claim`이 적립). 오늘 몫은 `TodayUsage.read`와 같다.
+    /// (앱이 꺼져 있던 날·자정 직전 몫을 `Game.claim`이 적립).
     /// detail: 오늘 provider별 입력·출력·캐시 합계 (사용량 화면)
     func read(since: String? = nil, now: Date = Date())
-        async -> (date: String, byProvider: [String: Int], cost: [String: Double], earlier: [String: [String: Int]],
-                  detail: [String: TokenSum]) {
+        async -> (date: String, byProvider: [String: Int], earlier: [String: [String: Int]], detail: [String: TokenSum]) {
         let today = LocalUsageReader.localDayFormatter().string(from: now)
         let start = Self.start(since: since, now: now)
-        // 아래는 Claude 를 캐시에서 읽는 것만 빼면 TodayUsage.read 와 같다
         let cursor = await cursorEntries(modifiedSince: start, now: now)
-        var tokens: [String: Int] = [:], cost: [String: Double] = [:], earlier: [String: [String: Int]] = [:]
-        var detail: [String: TokenSum] = [:]
-        for (provider, entries) in Self.others(since: start, claude: claudeEntries(modifiedSince: start), cursor: cursor) {
-            let b = TodayUsage.bucket(entries, day: today)
-            tokens[provider.rawValue] = b.total
-            cost[provider.rawValue] = b.cost
-            detail[provider.rawValue] = TokenSum(b)
+        var earlier: [String: [String: Int]] = [:], detail: [String: TokenSum] = [:]
+        for (provider, entries) in others(since: start, claude: claudeEntries(modifiedSince: start), cursor: cursor) {
+            detail[provider.rawValue] = TokenSum(Self.bucket(entries, day: today))
             for (day, total) in Self.totalsByDay(entries, before: today) { earlier[day, default: [:]][provider.rawValue] = total }
         }
-        return (today, tokens, cost, earlier, detail)
+        return (today, detail.mapValues(\.total), earlier, detail)
     }
 
-    /// Claude·Cursor 는 받은 것, 나머지는 로그에서 바로 읽은 provider별 기록
-    private static func others(since start: Date, claude: [LocalUsageReader.Entry], cursor: [LocalUsageReader.Entry])
+    /// Claude·Cursor 는 받은 것, 나머지는 `otherLogs` 로 읽은 provider별 기록
+    private func others(since start: Date, claude: [LocalUsageReader.Entry], cursor: [LocalUsageReader.Entry])
         -> [(Provider, [LocalUsageReader.Entry])] {
+        [(.claude, claude)] + otherLogs(start) + [(.cursor, cursor)]
+    }
+
+    /// Codex·Gemini·Grok·Pi·oh-my-pi 로그를 이 Mac 의 기본 위치에서 바로 읽는다
+    static func localOtherLogs(since start: Date) -> [(Provider, [LocalUsageReader.Entry])] {
         [
-            (.claude, claude),
             (.codex, LocalUsageReader.codexEntries(modifiedSince: start)),
             (.gemini, LocalUsageReader.geminiEntries(modifiedSince: start)),
             (.grok, LocalUsageReader.grokEntries(modifiedSince: start)),
             (.pi, LocalUsageReader.piEntries(modifiedSince: start)),
             (.omp, LocalUsageReader.ompEntries(modifiedSince: start)),
-            (.cursor, cursor),
         ]
     }
 
@@ -122,7 +124,7 @@ actor TodayUsageReader {
             let claude = LocalUsageReader.claudeEntries(modifiedSince: start, roots: claudeRoots ?? LocalUsageReader.claudeProjectRoots)
             let cursor = await cursorEntries(modifiedSince: start, now: now)
             var found: [String: [String: LocalUsageReader.Bucket]] = [:]
-            for (provider, entries) in Self.others(since: start, claude: claude, cursor: cursor) {
+            for (provider, entries) in others(since: start, claude: claude, cursor: cursor) {
                 for e in entries where missing.contains(e.localDay) { found[e.localDay, default: [:]][provider.rawValue, default: .init()].add(e) }
             }
             for day in missing { days[day] = found[day]?.mapValues(TokenSum.init) ?? [:] }
@@ -155,10 +157,17 @@ actor TodayUsageReader {
         return min(max(cal.startOfDay(for: day), oldest), today)
     }
 
-    /// 오늘보다 앞 날짜별 토큰 합계 (`TodayUsage.bucket`과 같은 계산)
+    /// 그날 기록의 합. 비용은 PokeTokenBar 와 같은 계산(기록된 비용 우선, 없으면 ModelPricing 추정).
+    static func bucket(_ entries: [LocalUsageReader.Entry], day: String) -> LocalUsageReader.Bucket {
+        var b = LocalUsageReader.Bucket()
+        for e in entries where e.localDay == day { b.add(e) }
+        return b
+    }
+
+    /// 오늘보다 앞 날짜별 토큰 합계 (`bucket`과 같은 계산)
     static func totalsByDay(_ entries: [LocalUsageReader.Entry], before today: String) -> [String: Int] {
         Dictionary(grouping: entries.filter { $0.localDay < today }, by: \.localDay)
-            .mapValues { TodayUsage.bucket($0, day: $0[0].localDay).total }
+            .mapValues { bucket($0, day: $0[0].localDay).total }
     }
 
     /// `LocalUsageReader.claudeEntries(modifiedSince:roots:)` 와 같은 결과. 목록에서 빠진 파일은 캐시에서도 지운다.

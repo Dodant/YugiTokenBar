@@ -184,8 +184,8 @@ Sources/YugiTokenBar/
   App.swift            앱 진입, 메뉴바 라벨
   AppLanguage.swift    언어 선택(앱 AppleLanguages, 재시작 후 반영)·이번 실행 언어(`Bundle.preferredLocalizations(from: [en, ko, ja])`, 지원하지 않는 언어는 en)
   AppModel.swift       60초마다 사용량 적립(늘어난 토큰이 없으면 저장·화면 갱신 안 함), 5분마다 공식 한도 갱신, 저장
-  TodayUsageReader.swift  TodayUsage.read와 같은 집계, Claude 로그는 파일별 (수정 시각, 크기) 캐시 (Usage/ 밖에서 감쌈). 사용량 화면용 지난 31일 날짜별 합계(`pastDays`). 지난 날은 바뀌지 않으므로 `~/Library/Caches/YugiTokenBar/usage-days.json`에 두고 없는 날만 로그에서 읽는다(31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초)
-  Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·한도 provider + 의존 파일, TodayUsage(신규), NOTICE.md(출처·변경점)
+  TodayUsageReader.swift  오늘 provider별 토큰·비용 집계(LocalUsageReader 의 로그 리더를 그대로 씀), Claude 로그는 파일별 (수정 시각, 크기) 캐시 (Usage/ 밖에서 감쌈). 사용량 화면용 지난 31일 날짜별 합계(`pastDays`). 지난 날은 바뀌지 않으므로 `~/Library/Caches/YugiTokenBar/usage-days.json`에 두고 없는 날만 로그에서 읽는다(31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초)
+  Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·한도 provider + 의존 파일, NOTICE.md(출처·변경점)
   CardDB.swift         `cards_<KO|JP|EN>.json` 로드(등급은 1~5로 잘라 읽는다), 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 `DexQuery`가 처음 이름순으로 볼 때 한 번 만들어 둔다)
   Game.swift           적립·뽑기·판매·덱·융합 (밸런스 상수 `Balance`는 파일 상단)
   GameState.swift      세이브 상태(`GameState`·`LogEntry`·`Deck`)와 저장소(`StateStore`)
@@ -210,7 +210,7 @@ Resources/en.lproj/Localizable.stringsdict  영어 단수·복수(1 card·2 card
 ### 토큰 적립
 
 - 토큰 = input + output + cacheWrite + cacheRead (PokeTokenBar와 동일).
-- 집계 대상은 이 Mac의 로컬 로그만이다(`TodayUsageReader.read` = `TodayUsage.read`와 같은 결과).
+- 집계 대상은 이 Mac의 로컬 로그만이다(`TodayUsageReader.read`).
   - 대상 도구:
     - Claude Code(`~/.claude/projects` 등)
     - Codex(`~/.codex/sessions`·`archived_sessions`)

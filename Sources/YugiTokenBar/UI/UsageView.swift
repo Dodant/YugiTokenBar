@@ -16,7 +16,7 @@ struct UsageView: View {
         Button { model.screen = .usage } label: { VStack(alignment: .leading, spacing: 12) {
             if workMode { WorkSummary() }
             ForEach(Self.agents, id: \.id) { p in
-                let tokens = model.todayTokens[p.id.rawValue] ?? 0, cost = model.todayCost[p.id.rawValue] ?? 0
+                let today = model.todayDetail[p.id.rawValue] ?? .init(), tokens = today.total, cost = today.cost
                 switch p.id {
                 case .claude:
                     ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: tokens, cost: cost,

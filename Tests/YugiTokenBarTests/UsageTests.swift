@@ -14,8 +14,8 @@ import Testing
 
         let entries = LocalUsageReader.claudeEntries(modifiedSince: Date().addingTimeInterval(-3600), roots: [root])
         let today = LocalUsageReader.localDayFormatter().string(from: Date())
-        #expect(TodayUsage.total(entries, day: today) == 4123)
-        #expect(TodayUsage.total(entries, day: "1999-01-01") == 0)
+        #expect(TodayUsageReader.bucket(entries, day: today).total == 4123)
+        #expect(TodayUsageReader.bucket(entries, day: "1999-01-01").total == 0)
     }
 
     /// Cursor API 가 실패하면 백오프 동안 다시 부르지 않고 로컬만 읽고, 지나면 다시 부른다
@@ -63,10 +63,10 @@ import Testing
         let since = Date().addingTimeInterval(-3600)
         let today = LocalUsageReader.localDayFormatter().string(from: Date())
         let reader = TodayUsageReader(claudeRoots: [root])
-        func total() async -> Int { TodayUsage.total(await reader.claudeEntries(modifiedSince: since), day: today) }
+        func total() async -> Int { TodayUsageReader.bucket(await reader.claudeEntries(modifiedSince: since), day: today).total }
 
         #expect(await total() == 120)
-        #expect(await total() == TodayUsage.total(LocalUsageReader.claudeEntries(modifiedSince: since, roots: [root]), day: today))
+        #expect(await total() == TodayUsageReader.bucket(LocalUsageReader.claudeEntries(modifiedSince: since, roots: [root]), day: today).total)
         try (line("1", 100) + line("3", 5)).write(to: a, atomically: true, encoding: .utf8)
         #expect(await total() == 125)
         try FileManager.default.removeItem(at: b)
@@ -120,10 +120,10 @@ import Testing
         let file = tempDir().appendingPathComponent("days.json")
         let day = LocalUsageReader.localDayFormatter().string(from: twoDaysAgo)
 
-        let first = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil).pastDays()
+        let first = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil, otherLogs: { _ in [] }).pastDays()
         #expect(first[day]?["claude_code"]?.total == 75)
         try FileManager.default.removeItem(at: log)
-        let second = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil).pastDays()
+        let second = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil, otherLogs: { _ in [] }).pastDays()
         #expect(second[day]?["claude_code"]?.total == 75)
         #expect(second.count == TodayUsageReader.historyDays)
     }

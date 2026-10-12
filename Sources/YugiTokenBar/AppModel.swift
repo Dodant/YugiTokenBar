@@ -18,10 +18,7 @@ final class AppModel {
     }
     /// 팝오버 안 지금 화면
     var screen: PanelScreen = .summary
-    /// 오늘 provider별 토큰·비용 (팝오버 사용량 표시)
-    private(set) var todayTokens: [String: Int] = [:]
-    private(set) var todayCost: [String: Double] = [:]
-    /// 오늘 provider별 입력·출력·캐시 (사용량 화면)
+    /// 오늘 provider별 입력·출력·캐시·비용 (메뉴 사용량 칸·사용량 화면)
     private(set) var todayDetail: [String: TokenSum] = [:]
     /// 오늘보다 앞 날짜별 사용량. 사용량 화면을 처음 열 때 읽는다(그 전엔 nil)
     private(set) var pastUsage: UsageByDay?
@@ -136,8 +133,6 @@ final class AppModel {
             let usage = await usageReader.read(since: game.state.claimedDate)  // actor 라서 메인 스레드 밖에서 읽는다
             // 같은 값이라도 넣으면 읽는 화면이 다시 그려질 수 있어 바뀔 때만
             if todayDetail != usage.detail { todayDetail = usage.detail }
-            if todayTokens != usage.byProvider { todayTokens = usage.byProvider }
-            if todayCost != usage.cost { todayCost = usage.cost }
             let sample = UsageSample(date: usage.date, total: usage.byProvider.values.reduce(0, +), at: Date())
             tokensPerMinute = PartnerMood.tokensPerMinute(from: lastUsage, to: sample)
             lastUsage = sample
