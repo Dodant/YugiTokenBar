@@ -23,7 +23,7 @@ GitHub Releases의 ZIP으로 배포한다.
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 복사본이다.
   직접 고치지 말고 `tools/import-usage.sh`(원본 `~/remote-claude-projects/code/PokeTokenBar-carryover`, 커밋 `de617e3`)로 다시 만든다.
   바꾼 점은 `Usage/NOTICE.md`에 적는다.
-  캐시처럼 읽는 쪽 조정은 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
+  파일별 캐시는 원본의 `LocalUsageCache`를 그대로 가져와 쓰고, 그 밖의 읽는 쪽 조정(provider 묶기·Cursor 증분·백오프)은 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
 - 버전과 패치노트는 `CHANGELOG.md` 맨 위에 `## x.y.z — 날짜` 항목을 추가하는 것으로만 올린다.
   `build-app.sh`(Info.plist)는 이 파일을 읽고, 앱의 업데이트 확인은 GitHub의 최신 정식 Release를 읽는다.
   같은 항목을 `CHANGELOG.en.md`·`CHANGELOG.ja.md`에도 같은 `## x.y.z — 날짜` 제목으로 번역해 넣는다(앱은 언어별 파일을 보여 주고, 테스트가 세 파일의 제목을 맞춰 본다).
