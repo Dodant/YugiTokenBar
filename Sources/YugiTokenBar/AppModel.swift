@@ -319,9 +319,11 @@ final class AppModel {
 
     /// 해금·설정에 맞춰 파트너를 돌리고 바탕화면 창을 보이거나 숨긴다.
     func updatePartner() {
-        guard game.state.partnerUnlocked, !workMode, partner.isReady else { partnerPanel?.hide(); return }
-        partner.start(desktop: game.state.partnerEnabled)
-        guard game.state.partnerEnabled else { partnerPanel?.hide(); return }
+        guard game.state.partnerUnlocked, partner.isReady else { partnerPanel?.hide(); return }
+        // 업무 모드에서는 창을 숨기고 타이머도 멈춘다 (partnerEnabled 는 그대로)
+        let desktop = game.state.partnerEnabled && !workMode
+        partner.start(desktop: desktop)
+        guard desktop else { partnerPanel?.hide(); return }
         let panel = partnerPanel ?? PartnerPanel(
             frame: partner.desktop,
             onClick: { [weak self] in self?.partner.interrupt(.puzzled) },
