@@ -190,7 +190,7 @@ struct SettingsView: View {
             }
             Divider()
             row {
-                labeled("버그 신고", hint: "\(AppInfo.supportEmail)로 메일을 보내요")
+                Text("버그 신고하기")
                 Spacer()
                 Button("메일 쓰기") { NSWorkspace.shared.open(AppInfo.bugReportURL) }.controlSize(.small)
             }

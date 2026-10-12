@@ -722,7 +722,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - 새 버전이면 GitHub 링크와 `git pull && scripts/build-app.sh --install`을 보여준다.
     - 자동 확인·자동 업데이트는 없다.
   - 백업 & 이전: [내보내기], [가져오기](4절 내보내기·가져오기), 세이브 폴더 [Finder].
-  - 정보 & 지원: [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, [버그 신고](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어), PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
+  - 정보 & 지원: [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, [버그 신고하기](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어), PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
 - **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다.
   `scripts/build-app.sh`가 다음을 한다:
   - 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣는다.

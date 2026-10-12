@@ -444,6 +444,6 @@
 /* AppInfo.swift:18 */
 "어떤 일이 있었는지 적어 주세요:" = "Please describe what happened:";
 /* SettingsView.swift:193 */
-"%@로 메일을 보내요" = "Sends an email to %@";
+"버그 신고하기" = "Report a bug";
 /* SettingsView.swift:195 */
 "메일 쓰기" = "Write email";
