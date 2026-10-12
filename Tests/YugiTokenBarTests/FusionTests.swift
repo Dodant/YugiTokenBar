@@ -149,6 +149,20 @@ import Testing
         #expect(game.copies(2) == 2)  // 끄면 더 쌓이지 않고, 이미 쌓인 건 그대로
     }
 
+    /// 조건 소재("전사족 3장")는 그 융합을 만들기 전까지 3장 남기고, 만들고 나면 1장만 남긴다
+    @Test func fusionOnlyKeepsConditionMaterialsUntilMade() {
+        var c = CardInfo(name: "조건 융합", attr: nil, level: nil, type: "전사족/융합", atk: nil, def: nil, text: "", imageId: nil, tier: 4,
+                         materials: [Material(rule: "전사족", count: 3)])
+        c.picks = [Pick(any: [1, 2], count: 3)]
+        let plain = CardInfo(name: "전사", attr: nil, level: nil, type: "전사족/일반", atk: nil, def: nil, text: "", imageId: nil, tier: 1)
+        let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: [1, 2, 20])], cards: [1: plain, 2: plain, 20: c])
+        var game = Game(db: db, state: GameState())
+        game.state.fusionOnly = true
+        #expect(game.keep(1) == 3 && game.keep(2) == 3)
+        game.state.owned[20] = 1
+        #expect(game.keep(1) == 1)
+    }
+
     @Test func fusionOnlyKeepsKnownFusionsOutOfPacksAndFreeCards() {
         var state = GameState()
         state.coins = 1_000_000

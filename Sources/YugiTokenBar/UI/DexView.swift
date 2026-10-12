@@ -3,6 +3,7 @@ import SwiftUI
 struct DexView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.lessMotion) private var lessMotion
+    @Environment(\.workMode) private var workMode
     @State private var scope: DexScope? = .all
     /// 여러 장 선택. 클릭 = 한 장, ⌘클릭 = 토글, ⇧클릭 = 범위 추가, 빈 곳에서 끌기 = 러버밴드.
     @State private var selectedCards: Set<Int> = []
@@ -45,9 +46,17 @@ struct DexView: View {
         } detail: {
             // .scrollPosition(id:) 는 스크롤 중에도 값을 계속 써서 줄마다 창 전체를 다시 계산하므로, 이동할 때만 쓰는 ScrollViewReader 로
             ScrollView { ScrollViewReader { proxy in
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
-                    ForEach(entries) { entry in
-                        cell(cid: entry.cid, label: entry.label)
+                Group {
+                    if workMode {
+                        LazyVStack(spacing: 2) {
+                            ForEach(entries) { entry in cell(cid: entry.cid, label: entry.label) }
+                        }
+                    } else {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), spacing: 12)], spacing: 14) {
+                            ForEach(entries) { entry in
+                                cell(cid: entry.cid, label: entry.label)
+                            }
+                        }
                     }
                 }
                 .padding(16)
@@ -269,20 +278,42 @@ struct DexView: View {
         let n = inDeck ?? game.copies(cid)
         let owned = inDeck.map { game.copies(cid) >= $0 } ?? (n > 0)
         let selected = selectedCards.contains(cid)
-        return Hovering { hovered in VStack(spacing: 4) {
-            CardImageView(db: model.db, cid: cid, owned: owned)
-                .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
-                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
-                .overlay(alignment: .topTrailing) { star(cid, hovered: hovered) }
-                .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
-                .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }
-            HStack(spacing: 4) {
-                MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
-                    .foregroundStyle(owned ? .primary : .secondary)
-                Spacer(minLength: 0)
-                if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
+        return Hovering { hovered in Group {
+            if workMode {
+                // 업무 모드 줄: 종류 표시(몬스터 ●·마법·함정 ■) · 등급 · 이름 · 오른쪽에 (마우스를 올리면) − · ☆ · ×n. 고르면 강조색 배경
+                HStack(spacing: 8) {
+                    HStack(spacing: 5) {
+                        FrameBar(card: model.db.cards[cid], owned: owned, shapes: true)
+                        RarityPill(label: label, owned: owned, size: 10, aligned: true)
+                    }
+                    MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
+                        .foregroundStyle(owned ? .primary : .secondary)
+                    Spacer(minLength: 0)
+                    if let deckID, hovered { minus(deckID, cid) }
+                    star(cid, hovered: hovered)
+                    if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
+                }
+                .font(.callout)
+                .padding(.horizontal, 8)
+                .frame(height: 28)
+                .background(selected ? Color.accentColor.opacity(0.2) : .clear, in: .rect(cornerRadius: 6))
+            } else {
+                VStack(spacing: 4) {
+                    CardImageView(db: model.db, cid: cid, owned: owned)
+                        .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+                        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
+                        .overlay(alignment: .topTrailing) { star(cid, hovered: hovered) }
+                        .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
+                        .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }
+                    HStack(spacing: 4) {
+                        MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
+                            .foregroundStyle(owned ? .primary : .secondary)
+                        Spacer(minLength: 0)
+                        if n > 1 || inDeck != nil { Text("×\(n)").fontWeight(.semibold).monospacedDigit() }
+                    }
+                    .font(.caption2)
+                }
             }
-            .font(.caption2)
         }
         .contentShape(Rectangle()) }
         .onTapGesture { select(cid) }
@@ -297,7 +328,8 @@ struct DexView: View {
         }
         // 사이드바 덱 줄에 끌어다 놓는다. 페이로드는 cid 를 쉼표로 이은 문자열 (선택된 카드를 끌면 선택 전체).
         .draggable(targets(cid).sorted().map(String.init).joined(separator: ",")) {
-            DragPreview(db: model.db, cids: targets(cid).sorted())
+            // 미리보기는 뷰 계층 밖에서 그려져 환경값을 직접 넘긴다
+            DragPreview(db: model.db, cids: targets(cid).sorted()).environment(\.workMode, workMode)
         }
         .contextMenu { deckMenu(targets(cid), inDeck: deckID) }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("grid")) } action: { frames.map[cid] = $0 }
@@ -392,10 +424,10 @@ struct DexView: View {
         selectedCards = selectedCards.filter { model.game.deck(deck)?.cards[$0] != nil }
     }
 
-    /// 즐겨찾기 별: 체크된 카드는 항상, 아니면 마우스를 올렸을 때만.
+    /// 즐겨찾기 별: 체크된 카드는 항상, 아니면 마우스를 올렸을 때만. 즐겨찾기 화면은 다 체크된 카드라 마우스를 올렸을 때만(해제용).
     @ViewBuilder private func star(_ cid: Int, hovered: Bool) -> some View {
         let on = model.game.state.favorites.contains(cid)
-        if on || hovered {
+        if on && scope != .favorites || hovered {
             overlayButton(systemImage: on ? "star.fill" : "star", color: on ? .yellow : .white,
                           help: on ? "즐겨찾기 해제" : "즐겨찾기") { model.toggleFavorite(cid) }
         }

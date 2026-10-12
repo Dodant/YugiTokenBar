@@ -6,6 +6,7 @@ struct OpeningView: View {
     @State private var flipped: Set<Int> = []
     @State private var width: CGFloat = 300
     @Environment(\.lessMotion) private var lessMotion
+    @Environment(\.workMode) private var workMode
 
     var body: some View {
         let pulls = model.opening
@@ -17,19 +18,26 @@ struct OpeningView: View {
             let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
             let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
             let rareW = (width - 20) / 3 * 1.75
-            VStack(spacing: 10) {
-                ForEach(Array(stride(from: 0, to: pulls.count, by: cols)), id: \.self) { start in
-                    HStack(alignment: .bottom, spacing: 10) {
-                        ForEach(start..<min(start + cols, pulls.count), id: \.self) { i in
-                            cell(pulls[i], i).frame(width: isRare(i) ? nil : cellW).frame(maxWidth: isRare(i) ? rareW : nil)
-                        }
-                    }
-                    .frame(maxHeight: isRare(start) ? .infinity : nil)
+            if workMode {
+                VStack(spacing: 6) {
+                    ForEach(pulls.indices, id: \.self) { i in row(pulls[i], i) }
                 }
+                Spacer(minLength: 0)
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(Array(stride(from: 0, to: pulls.count, by: cols)), id: \.self) { start in
+                        HStack(alignment: .bottom, spacing: 10) {
+                            ForEach(start..<min(start + cols, pulls.count), id: \.self) { i in
+                                cell(pulls[i], i).frame(width: isRare(i) ? nil : cellW).frame(maxWidth: isRare(i) ? rareW : nil)
+                            }
+                        }
+                        .frame(maxHeight: isRare(start) ? .infinity : nil)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+                if !packLayout { Spacer(minLength: 0) }
             }
-            .frame(maxWidth: .infinity)
-            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-            if !packLayout { Spacer(minLength: 0) }
             HStack(spacing: 8) {
                 if allFlipped, let again {
                     Button("확인") { model.closeOpening() }.buttonStyle(.glass)
@@ -74,6 +82,45 @@ struct OpeningView: View {
         } }
     }
 
+    /// 업무 모드 개봉 줄: 배지 칸(폭 고정, 오른쪽 정렬) · 종류 막대 · 등급 · 이름. 누르기 전엔 "눌러서 공개"만
+    private func row(_ pull: Pull, _ i: Int) -> some View {
+        let card = model.db.cards[pull.cid]
+        return HStack(spacing: 8) {
+            if flipped.contains(i) {
+                PullBadge(pull: pull, canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
+                    .fixedSize()  // 마우스를 올린 "✕ 売らない"는 칸보다 넓어 왼쪽 여백으로 넘친다
+                    .frame(width: Self.badgeWidth, alignment: .trailing)  // 등급 바로 옆에 붙인다
+                HStack(spacing: 5) {
+                    FrameBar(card: card)
+                    RarityPill(label: pull.label, size: 10, aligned: true)
+                }
+                Hovering { MarqueeText(text: card?.name ?? "", active: $0) }  // 넘치면 이름만 마우스를 올린 동안 흘러간다
+                Spacer(minLength: 0)
+            } else {
+                Text("눌러서 공개").foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.leading, 6)  // 줄 여백이 왼쪽 4·오른쪽 10 이라 맞춰 가운데에 둔다
+            }
+        }
+        .font(.callout)
+        .padding(.leading, 4)
+        .padding(.trailing, 10)
+        .frame(height: 30)
+        .background(.fill.tertiary, in: .rect(cornerRadius: 6))
+        .contentShape(.rect)
+        .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel(pull, i))
+        .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
+        .accessibilityAction { withAnimation(flip) { _ = flipped.insert(i) } }
+        .accessibilityActions {
+            if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
+        }
+    }
+
+    /// 배지 칸 폭: 평소 가장 넓은 "+ⓒ 1.2K" 52pt 가 들어간다 (마우스를 올린 "✕ 売らない" 58pt 는 왼쪽 여백 4pt 로 넘친다)
+    private static let badgeWidth: CGFloat = 54
+
     /// 뒤집기 전 "카드 3, 뒤집기 전", 뒤집은 뒤 "푸른 눈의 백룡, UR, 새 카드" (자동 판매면 "+ⓒ 10 자동 판매")
     private func accessibilityLabel(_ pull: Pull, _ i: Int) -> String {
         guard flipped.contains(i) else { return String(localized: "카드 \(i + 1), 뒤집기 전") }
@@ -117,27 +164,16 @@ struct FlipCard: View {
     let db: CardDB
     let flipped: Bool
     var canUnsell = false
-    /// 자동 판매 표시(+ⓒ)에 마우스를 올리면 ✕ 로 바뀌고, 누르면 판매를 취소한다
+    /// 배지의 판매 취소
     var onUnsell: (() -> Void)?
-    @State private var hoverSold = false
+    @Environment(\.workMode) private var workMode
 
     var body: some View {
         ZStack {
             CardImageView(db: db, cid: pull.cid, size: .full)
                 .overlay(alignment: .bottomLeading) { RarityPill(label: pull.label, size: 10).padding(4) }
-                .overlay(alignment: .topTrailing) {
-                    if pull.isNew { tag("NEW", Palette.badgeNew) }
-                    else if let coins = pull.soldFor {
-                        Button { onUnsell?() } label: {
-                            tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+\(coinText(coins))", hoverSold && canUnsell ? Palette.badgeLoss : Palette.badgeGain)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!canUnsell)
-                        .onHover { hoverSold = $0 }
-                        .help(canUnsell ? "판매 취소: 코인을 돌려주고 카드를 가져요" : "코인이 모자라 취소할 수 없어요")
-                    }
-                }
-                .shadow(color: pull.tier == 2 ? Rarity.color(tier: 2) : .clear, radius: 10)
+                .overlay(alignment: .topTrailing) { PullBadge(pull: pull, canUnsell: canUnsell, onUnsell: onUnsell).padding(4) }
+                .shadow(color: pull.tier == 2 && !workMode ? Rarity.color(tier: 2) : .clear, radius: 10)
                 .modifier(RareEffect(tier: pull.tier, active: flipped))
                 .rotation3DEffect(.degrees(flipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
                 .opacity(flipped ? 1 : 0)
@@ -147,6 +183,32 @@ struct FlipCard: View {
         }
         .cardTilt(tier: pull.tier, enabled: flipped)  // 뒤집기 회전 바깥에서 기운다
     }
+}
+
+/// 개봉 카드의 NEW·자동 판매(+ⓒ) 배지. 판매 배지에 마우스를 올리면 ✕ 로 바뀌고, 누르면 판매를 취소한다
+struct PullBadge: View {
+    let pull: Pull
+    var canUnsell = false
+    var onUnsell: (() -> Void)?
+    @State private var hoverSold = false
+
+    var body: some View {
+        if pull.isNew { tag("NEW", Palette.badgeNew) }
+        else if let coins = pull.soldFor {
+            Button { onUnsell?() } label: {
+                tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+ⓒ \(Self.short(coins))", hoverSold && canUnsell ? Palette.badgeLoss : Palette.badgeGain)
+            }
+            .buttonStyle(.plain)
+            .disabled(!canUnsell)
+            .onHover { hoverSold = $0 }
+            .help(canUnsell ? "판매 취소: 코인을 돌려주고 카드를 가져요" : "코인이 모자라 취소할 수 없어요")
+        }
+    }
+
+    /// 배지는 좁아서 1,000 부터 K (SE 1,200 → 1.2K)
+    private static func short(_ n: Int) -> String {
+        n < 1_000 ? "\(n)" : n.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)).locale(Locale(identifier: "en_US")))
+    }
 
     private func tag(_ text: LocalizedStringKey, _ color: Color) -> some View {
         Text(text)
@@ -155,7 +217,6 @@ struct FlipCard: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(color, in: Capsule())
-            .padding(4)
     }
 }
 
@@ -170,6 +231,7 @@ private struct RareEffect: ViewModifier {
     @State private var pulse = false
     @State private var pop = 0
     @Environment(\.lessMotion) private var lessMotion
+    @Environment(\.workMode) private var workMode
 
     private var ur: Bool { tier >= 4 }
     private var se: Bool { tier >= 5 }
@@ -181,7 +243,7 @@ private struct RareEffect: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        if tier < 3 {
+        if tier < 3 || workMode {  // 업무 모드면 연출 없음
             content
         } else if lessMotion {
             content.shadow(color: Rarity.color(tier: tier).opacity(active ? 0.7 : 0), radius: 12)  // 연출 없이 빛만

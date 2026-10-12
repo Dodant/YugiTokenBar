@@ -119,6 +119,9 @@ struct CardDB: Sendable {
     private(set) var cidSet: Set<Int>
     /// 범위 안 융합 몬스터의 소재로 필요한 최대 장 수 (사이버 드래곤 → 3, 사이버 엔드 드래곤). 중복 판매에서 그만큼 남긴다.
     private(set) var materialNeed: [Int: Int]
+    /// 조건 소재(맞는 카드가 여럿인 줄)로 2장 이상 필요한 카드: 소재 → [융합 → 장 수] (썬더 드래곤 → [뇌신룡－썬더 드래곤: 3]).
+    /// 그 융합을 아직 안 가졌을 때만 중복 판매에서 그만큼 남긴다(`Game.keep`).
+    private(set) var conditionNeed: [Int: [Int: Int]]
     /// 범위 안 융합 몬스터(소재를 알거나 조건이 단순한 카드·마스크드 히어로) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
     private(set) var fusionCount: Int
     /// 만들 수 있는 카드 전체: 소재를 다 알거나 조건이 단순한 융합 몬스터·마스크드 히어로 (`fusionMaterials` 는 부를 때마다 사전을 만들어서, 상점이 그릴 때 쓰지 않게)
@@ -135,7 +138,7 @@ struct CardDB: Sendable {
         self.cards = cards
         self.allCIDs = cards.keys.sorted()
         self.cidSet = Set(cards.keys)
-        self.materialNeed = Self.materialNeeds(allCIDs, cards)
+        (self.materialNeed, self.conditionNeed) = Self.materialNeeds(allCIDs, cards)
         self.fusionCount = Self.fusionCount(allCIDs, cards)
         self.fusionCIDs = Set(cards.keys.filter { cards[$0]?.craftable == true })
     }
@@ -153,13 +156,20 @@ struct CardDB: Sendable {
 
     func tier(_ cid: Int) -> Int { cards[cid]?.tier ?? 1 }
 
-    private static func materialNeeds(_ cids: [Int], _ cards: [Int: CardInfo]) -> [Int: Int] {
-        cids.reduce(into: [:]) { need, cid in
-            guard let card = cards[cid], card.craftable else { return }
-            // 맞는 카드가 하나뿐인 소재(카드 소재)만 센다
-            let fixed = (card.picks ?? []).reduce(into: [Int: Int]()) { if $1.any.count == 1, let m = $1.any.first { $0[m, default: 0] += $1.count ?? 1 } }
+    /// 카드 소재(맞는 카드가 하나뿐인 줄)는 융합마다 장 수를 더해 최대값, 조건 소재는 융합마다 그 카드가 들어간 줄의 장 수 합(2장 이상만)
+    private static func materialNeeds(_ cids: [Int], _ cards: [Int: CardInfo]) -> ([Int: Int], [Int: [Int: Int]]) {
+        var need: [Int: Int] = [:], cond: [Int: [Int: Int]] = [:]
+        for cid in cids {
+            guard let card = cards[cid], card.craftable else { continue }
+            var fixed: [Int: Int] = [:], loose: [Int: Int] = [:]
+            for pick in card.picks ?? [] {
+                if pick.any.count == 1, let m = pick.any.first { fixed[m, default: 0] += pick.count ?? 1 }
+                else { for m in pick.any where m != cid { loose[m, default: 0] += pick.count ?? 1 } }
+            }
             for (m, n) in fixed { need[m] = max(need[m] ?? 0, n) }
+            for (m, n) in loose where n > 1 { cond[m, default: [:]][cid] = n }
         }
+        return (need, cond)
     }
 
     private static func fusionCount(_ cids: [Int], _ cards: [Int: CardInfo]) -> Int {
@@ -172,7 +182,7 @@ struct CardDB: Sendable {
         db.packs = Array(packs.prefix(n))
         db.cidSet = Set(db.packs.flatMap(\.cards))
         db.allCIDs = db.cidSet.sorted()
-        db.materialNeed = Self.materialNeeds(db.allCIDs, cards)
+        (db.materialNeed, db.conditionNeed) = Self.materialNeeds(db.allCIDs, cards)
         db.fusionCount = Self.fusionCount(db.allCIDs, cards)
         return db
     }

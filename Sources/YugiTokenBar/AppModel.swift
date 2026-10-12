@@ -11,6 +11,11 @@ final class AppModel {
     /// 지금 개봉 화면이 무료 팩인지. 남은 무료 팩이 있으면 한 번 더가 무료 팩을 연다.
     private(set) var openingFreePack = false
     private(set) var openingID = UUID()
+    /// 업무 모드: 카드·팩 이미지를 숨기고 불러오지도 않는다. 세이브가 아니라 이 Mac 의 UserDefaults 에 둔다.
+    static let workModeKey = "workMode"
+    var workMode = UserDefaults.standard.bool(forKey: AppModel.workModeKey) {
+        didSet { UserDefaults.standard.set(workMode, forKey: Self.workModeKey); updatePartner() }
+    }
     /// 팝오버 안 지금 화면
     var screen: PanelScreen = .summary
     /// 오늘 provider별 토큰·비용 (팝오버 사용량 표시)
@@ -315,8 +320,10 @@ final class AppModel {
     /// 해금·설정에 맞춰 파트너를 돌리고 바탕화면 창을 보이거나 숨긴다.
     func updatePartner() {
         guard game.state.partnerUnlocked, partner.isReady else { partnerPanel?.hide(); return }
-        partner.start(desktop: game.state.partnerEnabled)
-        guard game.state.partnerEnabled else { partnerPanel?.hide(); return }
+        // 업무 모드에서는 창을 숨기고 타이머도 멈춘다 (partnerEnabled 는 그대로)
+        let desktop = game.state.partnerEnabled && !workMode
+        partner.start(desktop: desktop)
+        guard desktop else { partnerPanel?.hide(); return }
         let panel = partnerPanel ?? PartnerPanel(
             frame: partner.desktop,
             onClick: { [weak self] in self?.partner.interrupt(.puzzled) },

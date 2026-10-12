@@ -6,19 +6,27 @@ struct CardImageView: View {
     let cid: Int
     var size: ImageCache.Size = .small
     var owned = true
+    /// 업무 모드여도 실제 그림 (컬렉션 정보 패널)
+    var showInWorkMode = false
+    @Environment(\.workMode) private var workMode
     @State private var image: NSImage?
 
-    init(db: CardDB, cid: Int, size: ImageCache.Size = .small, owned: Bool = true) {
+    init(db: CardDB, cid: Int, size: ImageCache.Size = .small, owned: Bool = true, showInWorkMode: Bool = false) {
         self.db = db
         self.cid = cid
         self.size = size
         self.owned = owned
-        _image = State(initialValue: db.cards[cid]?.imageId.flatMap { ImageCache.shared.cached($0, size: size) })
+        self.showInWorkMode = showInWorkMode
+        _image = State(initialValue: db.cards[cid]?.imageId.flatMap { ImageCache.shared.cached($0, size: size, force: showInWorkMode) })
     }
+
+    private var hidden: Bool { workMode && !showInWorkMode }
 
     var body: some View {
         ZStack {
-            if let image {
+            if hidden {
+                CardPlaceholder(name: db.cards[cid]?.name ?? "", owned: owned)
+            } else if let image {
                 Image(nsImage: image)
                     .resizable()
                     .grayscale(owned ? 0 : 0.8)  // 미보유: 색이 살짝 남는 흑백
@@ -30,12 +38,13 @@ struct CardImageView: View {
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 7))
         .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.cardRim, lineWidth: 1))
-        .task(id: cid) {
+        .task(id: hidden ? nil : cid) {  // 숨길 때는 nil 이라 로딩하지 않는다
+            guard !hidden else { image = nil; return }
             guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
             // 캐시에 있으면 뒷면을 거치지 않고 바로 바꾼다
-            if let hit = ImageCache.shared.cached(imageId, size: size) { image = hit; return }
+            if let hit = ImageCache.shared.cached(imageId, size: size, force: showInWorkMode) { image = hit; return }
             image = nil
-            let loaded = await ImageCache.shared.image(imageId, size: size)
+            let loaded = await ImageCache.shared.image(imageId, size: size, force: showInWorkMode)
             guard !Task.isCancelled else { return }  // cid 가 바뀌어 취소됐으면 새 카드의 이미지를 덮어쓰지 않는다
             image = loaded
         }
@@ -45,6 +54,8 @@ struct CardImageView: View {
 extension EnvironmentValues {
     /// 설정 [애니메이션 끄기]. 읽을 때는 시스템 동작 줄이기와 합친 `lessMotion`
     @Entry var animationsOff = false
+    /// 업무 모드 (카드·팩 이미지를 그리지 않는다)
+    @Entry var workMode = false
     var lessMotion: Bool { animationsOff || accessibilityReduceMotion }
 }
 
@@ -99,6 +110,35 @@ enum Palette {
     /// 상점 팩 도장(COMPLETE·FUSION ONLY). 팩 이미지 위 흰 바탕이라 외관과 상관없이 고정
     static let stampComplete = Color(red: 0x1B / 255, green: 0x7F / 255, blue: 0x3B / 255)
     static let stampFusion = Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255)
+    /// 카드 틀 색 (업무 모드 줄의 세로 막대). 라이트는 흰 바탕에서 보이게 진하게, 다크는 밝게
+    static let frameNormal = Color(light: hex(0xC9A13A), dark: hex(0xFDE68A))
+    static let frameEffect = Color(light: hex(0xE0712F), dark: hex(0xFF8B53))
+    static let frameRitual = Color(light: hex(0x5F86B3), dark: hex(0x9DB5CC))
+    static let frameFusion = Color(light: hex(0x8A5CB5), dark: hex(0xB89BD6))
+    static let frameSynchro = Color(light: hex(0xA6A6A6), dark: hex(0xE6E6E6))
+    static let frameXyz = Color(light: hex(0x1C1C1C), dark: hex(0x8C8C8C))
+    static let frameLink = Color(light: hex(0x1F3FA8), dark: hex(0x6B86FF))
+    static let frameSpell = Color(light: hex(0x1D9E74), dark: hex(0x3FC79A))
+    static let frameTrap = Color(light: hex(0xBC5A84), dark: hex(0xE07BA8))
+
+    private static func hex(_ v: Int) -> Color {
+        Color(red: Double(v >> 16 & 0xFF) / 255, green: Double(v >> 8 & 0xFF) / 255, blue: Double(v & 0xFF) / 255)
+    }
+
+    /// 카드 종류의 틀 색. 펜듈럼은 위 틀 색 → 아래 마법 초록
+    static func frame(_ card: CardInfo) -> AnyShapeStyle {
+        if card.kindCode == "spell" { return AnyShapeStyle(frameSpell) }
+        if card.kindCode == "trap" { return AnyShapeStyle(frameTrap) }
+        let summons = card.summons ?? []
+        // ponytail: 일반/효과는 언어 공용 코드가 없어 type 칸의 세 언어 낱말로 가른다. 코드가 생기면 그걸로
+        let normal = card.type?.split(separator: "/").contains { ["일반", "Normal", "通常"].contains($0) } ?? false
+        let base = summons.contains("link") ? frameLink : summons.contains("xyz") ? frameXyz
+            : summons.contains("synchro") ? frameSynchro : summons.contains("fusion") ? frameFusion
+            : summons.contains("ritual") ? frameRitual : normal ? frameNormal : frameEffect
+        return summons.contains("pendulum")
+            ? AnyShapeStyle(LinearGradient(colors: [base, frameSpell], startPoint: .top, endPoint: .bottom))
+            : AnyShapeStyle(base)
+    }
 }
 
 extension Color {
@@ -113,11 +153,24 @@ struct RarityPill: View {
     let label: String
     var owned = true
     var size: CGFloat = 9
+    /// 줄 목록용: 가장 넓은 등급 알약만큼 자리를 잡아(왼쪽 정렬) 뒤 글자의 시작을 맞춘다
+    var aligned = false
 
     var body: some View {
+        if aligned {
+            ZStack(alignment: .leading) {
+                ForEach(CardInfo.rarities, id: \.self) { pill($0).hidden() }
+                pill(label)
+            }
+        } else {
+            pill(label)
+        }
+    }
+
+    private func pill(_ label: String) -> some View {
         let tier = (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1
         let color = owned ? Rarity.pillColors[min(max(tier, 1), Rarity.pillColors.count) - 1] : Rarity.locked
-        Text(label)
+        return Text(label)
             .font(.system(size: size, weight: .bold))
             .foregroundStyle(owned && tier != 3 ? .white : .black)  // 금색 SR·미획득 회색만 검정 글자
             .padding(.horizontal, size * 0.6)
@@ -126,13 +179,66 @@ struct RarityPill: View {
     }
 }
 
+/// 업무 모드 줄의 카드 종류 표시 (등급 알약 앞). 미보유면 흐리게.
+/// 기본은 세로 막대, shapes 면 몬스터는 동그라미·마법·함정은 네모 (폭이 같다)
+struct FrameBar: View {
+    let card: CardInfo?
+    var owned = true
+    var shapes = false
+
+    var body: some View {
+        let style = card.map(Palette.frame) ?? AnyShapeStyle(.clear)
+        Group {
+            if !shapes {
+                RoundedRectangle(cornerRadius: 1.5).fill(style).frame(width: 3, height: 16)
+            } else if card?.kindCode == nil {
+                Circle().fill(style).frame(width: 10, height: 10)
+            } else {
+                RoundedRectangle(cornerRadius: 2).fill(style).frame(width: 10, height: 10)
+            }
+        }
+        .opacity(owned ? 1 : 0.4)
+    }
+}
+
+/// 업무 모드에서 이미지 대신 그리는 밋밋한 상자. 시스템 색만 쓴다.
+private struct CardPlaceholder: View {
+    var name = ""
+    var owned = true
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 7)
+            .fill(.fill.tertiary)
+            .overlay {
+                if !name.isEmpty {
+                    Text(name)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(owned ? .secondary : .tertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 3)
+                }
+            }
+    }
+}
+
 /// 카드 뒷면. 번들 이미지, 못 읽으면 비슷한 갈색 그라데이션.
 struct CardBack: View {
     var name = ""
     /// 레어 이상이면 등급 색으로 빛난다
     var glow: Color? = nil
+    @Environment(\.workMode) private var workMode
 
     var body: some View {
+        if workMode {
+            CardPlaceholder(name: name)
+                .aspectRatio(59.0 / 86.0, contentMode: .fit)
+        } else {
+            back
+        }
+    }
+
+    private var back: some View {
         ZStack {
             if let image = ImageCache.cardBack {
                 Image(nsImage: image).resizable()
@@ -162,6 +268,7 @@ struct CardBack: View {
 /// 팩 봉투 이미지. 없거나 로딩 중이면 그라데이션.
 struct PackImageView: View {
     let pack: Pack
+    @Environment(\.workMode) private var workMode
     @State private var image: NSImage?
 
     init(pack: Pack) {
@@ -174,7 +281,9 @@ struct PackImageView: View {
         Color.clear
             .aspectRatio(0.53, contentMode: .fit)
             .overlay {
-                if let image {
+                if workMode {
+                    Rectangle().fill(.fill.tertiary)
+                } else if let image {
                     Image(nsImage: image).resizable().scaledToFill()
                 } else {
                     LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -182,7 +291,8 @@ struct PackImageView: View {
             }
             .clipShape(.rect(cornerRadius: 6))
             .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.cardRim, lineWidth: 1))
-        .task(id: pack.pid) {
+        .task(id: workMode ? nil : pack.pid) {
+            guard !workMode else { image = nil; return }
             // 캐시에 있으면 그라데이션을 거치지 않고 바로 바꾼다
             if let hit = ImageCache.shared.cachedPack(pack) { image = hit; return }
             image = nil
@@ -200,6 +310,7 @@ private struct CardTilt: ViewModifier {
     let angleScale: Double
     let enabled: Bool
     @Environment(\.lessMotion) private var reduceMotion
+    @Environment(\.workMode) private var workMode
     /// 카드 안 커서 위치 (-1…1), 밖이면 nil
     @State private var point: CGPoint?
     @State private var size: CGSize = .zero
@@ -212,6 +323,7 @@ private struct CardTilt: ViewModifier {
     private static let shadowShift = 4.0
 
     func body(content: Content) -> some View {
+        let enabled = enabled && !workMode  // 업무 모드면 기울기·반사·홀로그램 없음
         let on = enabled && point != nil
         let p = enabled ? point ?? .zero : .zero
         let angle = reduceMotion ? 0 : Self.maxAngle * angleScale

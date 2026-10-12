@@ -59,6 +59,7 @@ struct SettingsView: View {
                 .fixedSize()
                 .onChange(of: language) { AppLanguage.store(language) }
             }
+            toggleRow("업무 모드", hint: "카드·팩 이미지와 파트너를 숨기고 밋밋한 상자만 보여요", isOn: Bindable(model).workMode)
         }
     }
 

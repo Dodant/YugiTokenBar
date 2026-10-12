@@ -12,6 +12,8 @@ final class ImageCache {
     }
 
     let dir: URL
+    /// 업무 모드 설정을 읽는다 (테스트가 따로 넣는다)
+    private let defaults: UserDefaults
     private let memory = NSCache<NSString, NSImage>()
     /// 받는 중인 이미지와 그걸 기다리는 뷰 수. 기다리는 뷰가 다 사라지면(스크롤로 셀이 지나감) 받기를 취소한다.
     private var inFlight: [String: (task: Task<CGImage?, Never>, waiters: Int)] = [:]
@@ -22,23 +24,29 @@ final class ImageCache {
     /// 도감 한 화면(수십 장)과 그 앞뒤 스크롤은 넉넉히 남고, 6천 장을 다 훑어도 그 이상 쌓이지 않는다.
     init(dir: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("YugiTokenBar"), memoryLimit: Int = 150 << 20,
-         loader: @escaping @Sendable (URL, URL, Int?) async -> CGImage? = ImageCache.load) {
+         loader: @escaping @Sendable (URL, URL, Int?) async -> CGImage? = ImageCache.load,
+         defaults: UserDefaults = .standard) {
         self.dir = dir
+        self.defaults = defaults
         self.loader = loader
         memory.totalCostLimit = memoryLimit
     }
 
-    func image(_ imageId: Int, size: Size) async -> NSImage? {
+    private var workMode: Bool { defaults.bool(forKey: AppModel.workModeKey) }
+
+    /// force: 업무 모드여도 불러온다 (컬렉션 정보 패널의 고른 카드 한 장만)
+    func image(_ imageId: Int, size: Size, force: Bool = false) async -> NSImage? {
         if let s = Self.overframe[imageId] {
             // 원본이 600~1,160px 이라 YGOPRODeck 큰 이미지(세로 614px)만큼 줄여 두 크기에 함께 쓴다
-            return await image(key: key(imageId, size: size), url: URL(string: s)!, maxPixels: 614)
+            return await image(key: key(imageId, size: size), url: URL(string: s)!, maxPixels: 614, force: force)
         }
-        return await image(key: key(imageId, size: size), url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"))
+        return await image(key: key(imageId, size: size), url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"), force: force)
     }
 
     /// 메모리 캐시에 이미 있으면 바로 (뷰가 첫 프레임부터 그리도록, 기다리는 동안 뒷면이 깜빡이지 않게)
-    func cached(_ imageId: Int, size: Size) -> NSImage? {
-        memory.object(forKey: key(imageId, size: size) as NSString)
+    func cached(_ imageId: Int, size: Size, force: Bool = false) -> NSImage? {
+        guard force || !workMode else { return nil }
+        return memory.object(forKey: key(imageId, size: size) as NSString)
     }
 
     private func key(_ imageId: Int, size: Size) -> String {
@@ -81,6 +89,7 @@ final class ImageCache {
 
     /// packImage 의 메모리 캐시 조회 (cached 와 같은 목적)
     func cachedPack(_ pack: Pack) -> NSImage? {
+        guard !workMode else { return nil }
         guard let s = pack.imageURL, let url = URL(string: s) else { return nil }
         return memory.object(forKey: "pack-\(url.lastPathComponent)" as NSString)
     }
@@ -94,7 +103,8 @@ final class ImageCache {
     }
 
     /// key = 캐시 파일 이름(확장자 제외). 디코딩까지 백그라운드에서 끝내 스크롤 중 메인 스레드가 JPEG 를 풀지 않게 한다.
-    private func image(key: String, url: URL, maxPixels: Int? = nil) async -> NSImage? {
+    private func image(key: String, url: URL, maxPixels: Int? = nil, force: Bool = false) async -> NSImage? {
+        guard force || !workMode else { return nil }
         if let image = memory.object(forKey: key as NSString) { return image }
         let file = dir.appendingPathComponent("\(key).jpg")
         let loader = loader
