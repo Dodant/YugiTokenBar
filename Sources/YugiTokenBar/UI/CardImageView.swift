@@ -6,20 +6,25 @@ struct CardImageView: View {
     let cid: Int
     var size: ImageCache.Size = .small
     var owned = true
+    /// 업무 모드여도 실제 그림 (컬렉션 정보 패널)
+    var showInWorkMode = false
     @Environment(\.workMode) private var workMode
     @State private var image: NSImage?
 
-    init(db: CardDB, cid: Int, size: ImageCache.Size = .small, owned: Bool = true) {
+    init(db: CardDB, cid: Int, size: ImageCache.Size = .small, owned: Bool = true, showInWorkMode: Bool = false) {
         self.db = db
         self.cid = cid
         self.size = size
         self.owned = owned
-        _image = State(initialValue: db.cards[cid]?.imageId.flatMap { ImageCache.shared.cached($0, size: size) })
+        self.showInWorkMode = showInWorkMode
+        _image = State(initialValue: db.cards[cid]?.imageId.flatMap { ImageCache.shared.cached($0, size: size, force: showInWorkMode) })
     }
+
+    private var hidden: Bool { workMode && !showInWorkMode }
 
     var body: some View {
         ZStack {
-            if workMode {
+            if hidden {
                 CardPlaceholder(name: db.cards[cid]?.name ?? "", owned: owned)
             } else if let image {
                 Image(nsImage: image)
@@ -33,13 +38,13 @@ struct CardImageView: View {
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 7))
         .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.cardRim, lineWidth: 1))
-        .task(id: workMode ? nil : cid) {  // 업무 모드면 nil 이라 로딩하지 않는다
-            guard !workMode else { image = nil; return }
+        .task(id: hidden ? nil : cid) {  // 숨길 때는 nil 이라 로딩하지 않는다
+            guard !hidden else { image = nil; return }
             guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
             // 캐시에 있으면 뒷면을 거치지 않고 바로 바꾼다
-            if let hit = ImageCache.shared.cached(imageId, size: size) { image = hit; return }
+            if let hit = ImageCache.shared.cached(imageId, size: size, force: showInWorkMode) { image = hit; return }
             image = nil
-            let loaded = await ImageCache.shared.image(imageId, size: size)
+            let loaded = await ImageCache.shared.image(imageId, size: size, force: showInWorkMode)
             guard !Task.isCancelled else { return }  // cid 가 바뀌어 취소됐으면 새 카드의 이미지를 덮어쓰지 않는다
             image = loaded
         }

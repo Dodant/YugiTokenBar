@@ -34,17 +34,18 @@ final class ImageCache {
 
     private var workMode: Bool { defaults.bool(forKey: AppModel.workModeKey) }
 
-    func image(_ imageId: Int, size: Size) async -> NSImage? {
+    /// force: 업무 모드여도 불러온다 (컬렉션 정보 패널의 고른 카드 한 장만)
+    func image(_ imageId: Int, size: Size, force: Bool = false) async -> NSImage? {
         if let s = Self.overframe[imageId] {
             // 원본이 600~1,160px 이라 YGOPRODeck 큰 이미지(세로 614px)만큼 줄여 두 크기에 함께 쓴다
-            return await image(key: key(imageId, size: size), url: URL(string: s)!, maxPixels: 614)
+            return await image(key: key(imageId, size: size), url: URL(string: s)!, maxPixels: 614, force: force)
         }
-        return await image(key: key(imageId, size: size), url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"))
+        return await image(key: key(imageId, size: size), url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"), force: force)
     }
 
     /// 메모리 캐시에 이미 있으면 바로 (뷰가 첫 프레임부터 그리도록, 기다리는 동안 뒷면이 깜빡이지 않게)
-    func cached(_ imageId: Int, size: Size) -> NSImage? {
-        guard !workMode else { return nil }
+    func cached(_ imageId: Int, size: Size, force: Bool = false) -> NSImage? {
+        guard force || !workMode else { return nil }
         return memory.object(forKey: key(imageId, size: size) as NSString)
     }
 
@@ -102,8 +103,8 @@ final class ImageCache {
     }
 
     /// key = 캐시 파일 이름(확장자 제외). 디코딩까지 백그라운드에서 끝내 스크롤 중 메인 스레드가 JPEG 를 풀지 않게 한다.
-    private func image(key: String, url: URL, maxPixels: Int? = nil) async -> NSImage? {
-        guard !workMode else { return nil }
+    private func image(key: String, url: URL, maxPixels: Int? = nil, force: Bool = false) async -> NSImage? {
+        guard force || !workMode else { return nil }
         if let image = memory.object(forKey: key as NSString) { return image }
         let file = dir.appendingPathComponent("\(key).jpg")
         let loader = loader
