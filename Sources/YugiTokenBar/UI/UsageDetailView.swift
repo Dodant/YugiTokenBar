@@ -13,7 +13,7 @@ struct UsageDetailView: View {
     private static let chartHeight = 48.0
 
     /// byAgent: provider rawValue → 그날 토큰 (고른 탭의 몫을 막대에 칠한다)
-    private struct Day { let id: String; let date: Date; let tokens: Int; let cost: Double; let byAgent: [String: Int] }
+    struct Day { let id: String; let date: Date; let tokens: Int; let cost: Double; let byAgent: [String: Int] }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -42,8 +42,7 @@ struct UsageDetailView: View {
     private var content: some View {
         let now = Date()
         let cal = Calendar.current
-        var usage = model.pastUsage ?? [:]
-        usage[LocalUsageReader.localDayFormatter().string(from: now)] = model.todayDetail
+        let usage = model.usageByDay
         let today = TodayUsageReader.total(usage, from: now, through: now)
         let week = TodayUsageReader.total(usage, from: cal.dateInterval(of: .weekOfYear, for: now)?.start ?? now, through: now)
         let month = TodayUsageReader.total(usage, from: cal.dateInterval(of: .month, for: now)?.start ?? now, through: now)
@@ -84,11 +83,11 @@ struct UsageDetailView: View {
         }
     }
 
-    /// 오늘 포함 최근 `chartDays`일 (오래된 날부터)
-    private static func days(_ usage: UsageByDay, now: Date) -> [Day] {
+    /// 오늘 포함 최근 count 일 (오래된 날부터)
+    static func days(_ usage: UsageByDay, now: Date, count: Int = chartDays) -> [Day] {
         let cal = Calendar.current, fmt = LocalUsageReader.localDayFormatter()
         let today = cal.startOfDay(for: now)
-        return (0..<chartDays).reversed().compactMap { back in
+        return (0..<count).reversed().compactMap { back in
             guard let date = cal.date(byAdding: .day, value: -back, to: today) else { return nil }
             let id = fmt.string(from: date)
             let t = TodayUsageReader.total(usage, from: date, through: date)

@@ -5,6 +5,8 @@ import SwiftUI
 struct UsageView: View {
     @Environment(AppModel.self) private var model
     @State private var hover = false
+    /// 업무 모드면 카드 줄(최근 획득)이 빠진 자리에 합계 요약을 더 보인다
+    @Environment(\.workMode) private var workMode
 
     var body: some View {
         let claude = model.claudeLimits
@@ -12,6 +14,7 @@ struct UsageView: View {
         let loading = model.fetchingLimits
         // 메뉴 줄처럼 마우스를 올리면 배경이 생기고, 누르면 사용량 화면으로 넘어간다
         Button { model.screen = .usage } label: { VStack(alignment: .leading, spacing: 12) {
+            if workMode { WorkSummary() }
             ForEach(Self.agents, id: \.id) { p in
                 let tokens = model.todayTokens[p.id.rawValue] ?? 0, cost = model.todayCost[p.id.rawValue] ?? 0
                 switch p.id {
@@ -153,5 +156,58 @@ struct MeterView: View {
                 }
             Text("\(Int(p.rounded()))%").font(.caption.weight(.medium)).monospacedDigit().foregroundStyle(color)
         }
+    }
+}
+
+/// 업무 모드 사용량 칸 맨 위: 오늘·이번 주·이번 달 합계와 최근 14일 막대 (모든 에이전트 합, 오늘은 강조색).
+/// 지난 날짜는 사용량 화면과 같은 것(`AppModel.pastUsage`, 디스크 캐시)을 읽는다.
+private struct WorkSummary: View {
+    @Environment(AppModel.self) private var model
+    private static let barHeight = 18.0
+
+    var body: some View {
+        let now = Date(), cal = Calendar.current
+        let usage = model.usageByDay
+        let today = TodayUsageReader.total(usage, from: now, through: now)
+        let week = TodayUsageReader.total(usage, from: cal.dateInterval(of: .weekOfYear, for: now)?.start ?? now, through: now)
+        let month = TodayUsageReader.total(usage, from: cal.dateInterval(of: .month, for: now)?.start ?? now, through: now)
+        let days = UsageDetailView.days(usage, now: now, count: 14)
+        let peak = days.map(\.tokens).max() ?? 0
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("오늘").font(.caption).foregroundStyle(.secondary)
+                Text(shortTokens(today.tokens)).font(.title3.weight(.semibold))
+                Text(UsageDetailView.costText(today.cost)).font(.caption).foregroundStyle(.secondary)
+                Spacer()
+            }
+            .lineLimit(1)
+            .monospacedDigit()
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(Array(days.enumerated()), id: \.element.id) { i, d in
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(i == days.count - 1 ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.tertiary))
+                        .frame(height: peak > 0 && d.tokens > 0 ? max(2, Self.barHeight * Double(d.tokens) / Double(peak)) : 1)
+                        .opacity(d.tokens > 0 ? 1 : 0.5)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .frame(height: Self.barHeight, alignment: .bottom)
+            .opacity(model.pastUsage == nil ? 0.4 : 1)
+            .accessibilityHidden(true)
+            HStack(spacing: 4) {
+                Text("이번 주").foregroundStyle(.secondary)
+                Text(shortTokens(week.tokens)).fontWeight(.medium)
+                Text(UsageDetailView.costText(week.cost)).foregroundStyle(.secondary)
+                Spacer()
+                Text("이번 달").foregroundStyle(.secondary)
+                Text(shortTokens(month.tokens)).fontWeight(.medium)
+                Text(UsageDetailView.costText(month.cost)).foregroundStyle(.secondary)
+            }
+            .font(.caption)
+            .lineLimit(1)
+            .monospacedDigit()
+            .redacted(reason: model.pastUsage == nil ? .placeholder : [])
+        }
+        .task { await model.loadHistory() }
     }
 }

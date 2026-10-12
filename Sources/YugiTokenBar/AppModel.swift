@@ -116,6 +116,13 @@ final class AppModel {
         }
     }
 
+    /// 지난 날짜 + 오늘 사용량 (사용량 화면·업무 모드 요약)
+    var usageByDay: UsageByDay {
+        var usage = pastUsage ?? [:]
+        usage[LocalUsageReader.localDayFormatter().string(from: Date())] = todayDetail
+        return usage
+    }
+
     /// 사용량 화면이 열릴 때. 지난 날짜는 날이 바뀔 때까지 리더가 들고 있어 두 번째부터는 바로 온다.
     func loadHistory() async {
         pastUsage = await usageReader.pastDays()
