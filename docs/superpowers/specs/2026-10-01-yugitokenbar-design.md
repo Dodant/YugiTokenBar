@@ -51,7 +51,7 @@ R 이상은 팩 개봉 때 등급 색으로 빛난다.
 팩 표지 몬스터(Yugipedia `cover_card`, `build-cards.py`의 `COVER_SE` 98종)는 어느 팩에서 나오든 SE로 올린다.
 표지가 마법·함정인 악몽의 미궁·어둠의 유산과 「영원한 화염」의 마의 덱 파괴 바이러스, 한글판에 없는 「장렬한 전투」 표지 2장은 뺀다.
 Konami 원래 표기(UL 등)는 남기지 않는다.
-실측 티어 분포(100팩): 4,758 / 1,730 / 896 / 488 / 300. 모든 팩에 SE가 있다.
+실측 티어 분포(100팩과 그 밖에서 넣은 카드): 4,774 / 1,733 / 907 / 502 / 310. 모든 팩에 SE가 있다.
 검투사의 급습·광속의 스타더스트는 UR이 표지뿐이었어서 UR이 없다(UR 슬롯은 SR로 내려간다).
 
 ## 3. 데이터 파이프라인 (`tools/build-cards.py`, 수동 1회 실행 후 결과 커밋)
@@ -116,8 +116,8 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
    { "packs": [ { "pid": "71101000", "name": "푸른 눈의 백룡의 전설", "date": "2003-12-09", "setCode": "LOB", "imageURL": "https://ms.yugipedia.com//4/4b/LOB-BoosterKR.png",
                   "cards": [ 4711, 4007, … ] } ],
      "cards": { "4007": { "name": "푸른 눈의 백룡", "attr": "빛", "level": 8,
-                          "type": "드래곤족/일반", "atk": 3000, "def": 2500,
-                          "text": "…", "imageId": 89631139, "tier": 4 },
+                          "type": "드래곤족/일반", "atk": "3000", "def": "2500",
+                          "text": "…", "imageId": 89631139, "tier": 5 },
                 "4837": { "name": "융합", "attr": "마법", …, "kind": "spell" },
                 "4043": { "name": "용기사 가이아", …, "text": "", "summons": ["fusion"], "materials": [ { "cid": 4044 }, { "cid": 4045 } ] },
                 "7287": { "name": "검투수 헤라클레이노스", …, "materials": [ { "cid": 7286 }, { "rule": "\"검투수\"라는 이름이 붙은 몬스터", "count": 2 } ] } } }
@@ -133,7 +133,7 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
    `hero`는 KO 이름에 "히어로"가 든 몬스터("HERO" 카드가 아닌 다크 히어로 존바이어·히어로 키즈 제외, 87종), `mask`는 효과문에 `"마스크 체인지"의 효과로만`이 있는 마스크드 히어로(10종).
    만들 수 있는 융합의 소재 줄마다 맞는 카드 목록 `picks`는 카드 파일이 아니라 세 언어 공용 `Resources/picks.json` 하나에 둔다.
    - 형식은 `{"cid": [...]}`, 융합 하나가 한 줄이다.
-   - KO 빌드와 `--reformat` 때 KO 카드로 다시 쓴다(`make_picks`·`dump_picks`).
+   - KO 빌드·`--reformat`·`--extras` 때 KO 카드로 다시 쓴다(`make_picks`·`dump_picks`).
    - 앱은 `CardDB.load`가 카드 파일 옆에서 읽어 `CardInfo.picks`에 채운다.
    - 카드 파일에 넣으면 cid 목록이 세 번 들고 카드 한 줄이 수천 cid로 길어져 diff를 못 읽는다.
 
@@ -161,10 +161,10 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
    - 읽는 것: 이름(`h1`, ja의 루비·영문 병기 제외)·속성(마법·함정은 아이콘 칸)·종족/타입·효과·펜듈럼 효과·수록 팩 목록
 
    결과는 `tools/cache/<lang>.jsonl`(gitignore)에 한 줄씩 바로 덧붙여 끊겨도 같은 명령으로 이어 받는다.
-   공유 필드(`tier`·`imageId`·`level`·`atk`·`def`·`scale`·`kind`·`summons`, 팩의 `pid`·`date`·`cards`·`setCode`)는 KO 값을 쓴다.
+   공유 필드(`tier`·`imageId`·`level`·`atk`·`def`·`scale`·`kind`·`summons`·`hero`·`mask`, 팩의 `pid`·`date`·`cards`·`setCode`)는 KO 값을 쓴다.
    팩 봉투 `imageURL`은 그 언어 것을 받는다(3번).
    대체 규칙, 소재 줄(`MATERIALS_OVERRIDES`), 원판 팩명 매핑(`PACK_NAME_OVERRIDES`)은 `2026-10-07-i18n-design.md` 3절 그대로다.
-   상세 페이지가 오류면 30초씩 늘려 쉬며 4번까지 다시 받는다.
+   상세 페이지가 오류면 30초씩 늘려 쉬며(30·60·90초) 처음 시도를 합쳐 4번까지 받는다.
    끝에 세 파일의 팩·cid 순서·공유 필드·이름을 검증하고 어긋나면 non-zero로 끝난다.
    자체 검사는 `python3 tools/test_build_cards.py`.
 
@@ -296,7 +296,7 @@ Resources/en.lproj/Localizable.stringsdict  영어 단수·복수(1 card·2 card
 ### 무료 카드
 
 `dropProgress`가 10M을 넘을 때마다 1장이 `pendingFree`에 **쌓이기만 한다**(자동으로 뽑지 않는다).
-팝오버의 [무료 카드 N장 · 열기]를 누르면 최대 `freeOpenBatch`(5)장씩 **전체 8,223종에서 `freeWeights`로 티어를 고르고 그 티어 안에서 균등 무작위**로 뽑아 패널 안 개봉 화면에서 보여준다.
+팝오버의 [무료 카드 N장 · 열기]를 누르면 최대 `freeOpenBatch`(5)장씩 **시대 범위 안 카드에서 `freeWeights`로 티어를 고르고 그 티어 안에서 균등 무작위**로 뽑아 패널 안 개봉 화면에서 보여준다.
 - 티어가 비면 팩처럼 아래 → 위 티어로 간다.
 - 융합 전용 카드는 뺀다.
 
@@ -517,7 +517,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - 한 팩마다 `.sensoryFeedback(.alignment)` 햅틱.
     - 사면 그 팩이 다음 기본 팩이 된다.
   - [상점].
-  - [컬렉션 (n / 8172)](새 창으로 열리므로 꺾쇠 대신 `arrow.up.right.square` 아이콘).
+  - [컬렉션 (보유 종 수 / 시대 범위 안 종 수)](새 창으로 열리므로 꺾쇠 대신 `arrow.up.right.square` 아이콘).
   - 사용량: Claude·Codex 줄마다 공식 한도 5시간/주간/모델별 주간 % 막대와 5시간 창 초기화까지 남은 시간, 오늘 토큰·비용.
     - Gemini·Grok·Pi·oh-my-pi·Cursor는 오늘 토큰이 있을 때만 한도 막대 없이 토큰·비용 한 줄.
     - 업무 모드면 최근 획득 줄이 빠진 자리에 더 보인다:
