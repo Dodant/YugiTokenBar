@@ -9,17 +9,10 @@ VERSION=$(awk '/^## [0-9]/{print $2; exit}' CHANGELOG.md)
 [[ -n "$VERSION" ]] || { echo "CHANGELOG.md 에 '## x.y.z' 제목이 없음"; exit 1; }
 BUILD=$(git rev-list --count HEAD)
 
-# 공개 배포는 universal binary, 로컬 개발은 현재 아키텍처.
-if [[ "${YTB_UNIVERSAL:-0}" == "1" ]]; then
-    swift build -c release --arch arm64 --arch x86_64
-    BIN_DIR=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
-else
-    swift build -c release
-    BIN_DIR=$(swift build -c release --show-bin-path)
-fi
+swift build -c release
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN_DIR/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
+cp ".build/release/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
 cp Resources/cards_*.json Resources/picks.json "$APP/Contents/Resources/"
 cp -R Resources/ko.lproj Resources/en.lproj Resources/ja.lproj "$APP/Contents/Resources/"
 cp Resources/partner.png "$APP/Contents/Resources/partner.png"
@@ -44,12 +37,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
-if [[ -n "${YTB_SIGN_IDENTITY:-}" ]]; then
-    codesign --force --options runtime --timestamp --sign "$YTB_SIGN_IDENTITY" "$APP"
-else
-    codesign --force -s - "$APP"
-fi
-codesign --verify --strict "$APP"
+codesign --force -s - "$APP"
 echo "built $APP (v$VERSION, build $BUILD)"
 
 if [[ "${1:-}" == "--install" ]]; then
