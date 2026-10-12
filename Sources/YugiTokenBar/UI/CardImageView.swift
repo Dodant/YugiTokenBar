@@ -86,10 +86,7 @@ enum Rarity {
     ]
 
     static func color(tier: Int) -> Color { colors[min(max(tier, 1), colors.count) - 1] }
-    static func color(label: String, owned: Bool = true) -> Color {
-        guard owned else { return locked }
-        return color(tier: (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1)
-    }
+    static func color(label: String) -> Color { color(tier: (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1) }
 }
 
 /// 등급 외에 라이트·다크 값을 같이 두는 색. 화면에서 colorScheme 으로 나누지 않고 여기서 고른다.

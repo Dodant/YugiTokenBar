@@ -46,8 +46,6 @@ struct CardDetailView: View {
                         let suffix = g.n > 1 ? " × \(g.n)" : ""
                         if let mcid = g.material.cid {
                             materialRow(mcid, suffix)
-                        } else if let name = g.material.name {
-                            Text(name + suffix).foregroundStyle(.secondary).help("정규 부스터 100팩에 없는 카드예요")
                         } else {
                             Text((g.material.rule ?? "") + suffix).foregroundStyle(.secondary)
                                 .help(card.picks != nil ? "가진 것 중 가장 많은 카드를 써요" : "")

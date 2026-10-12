@@ -220,7 +220,6 @@
 /* CardDetailView.swift:58 */
 "소재 카드가 모자라요" = "Not enough materials";
 /* CardDetailView.swift:50 */
-"정규 부스터 100팩에 없는 카드예요" = "Not in the 100 regular Booster Packs";
 /* CardDetailView.swift:47 */
 "보유 %lld" = "Owned %lld";
 /* CardDetailView.swift:73 */

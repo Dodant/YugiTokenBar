@@ -260,9 +260,6 @@ struct Game: Sendable {
     /// 설정이 켜져 있으면 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
     func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) }
 
-    /// 「융합」 마법 카드가 있어야 융합이 열린다 (소비하지 않는다)
-    var hasFusionSpell: Bool { copies(CardDB.fusionSpell) > 0 }
-
     /// 마스크드 히어로는 「마스크 체인지」, 나머지는 「융합」이 있어야 만든다 (소비하지 않는다)
     func craftSpell(_ cid: Int) -> Int { db.cards[cid]?.mask == true ? CardDB.maskChange : CardDB.fusionSpell }
 
@@ -275,7 +272,7 @@ struct Game: Sendable {
         let order = picks.indices.sorted { (picks[$0].any.count == 1 ? 0 : 1, $0) < (picks[$1].any.count == 1 ? 0 : 1, $1) }
         for i in order {
             var need = picks[i].count ?? 1
-            let pool = state.owned.keys.filter { $0 != cid && picks[i].any.contains($0) && left($0) > 0 }
+            let pool = picks[i].any.filter { $0 != cid && left($0) > 0 }
             for c in pool.sorted(by: { (left($0), -$0) > (left($1), -$1) }) where need > 0 {
                 let k = min(need, left(c))
                 got[i][c] = k
@@ -300,7 +297,7 @@ struct Game: Sendable {
     /// 지금 융합할 수 있는 범위 안 미보유 카드 (설정이 꺼져 있으면 없다)
     var fusable: [Int] {
         guard state.fusionOnly else { return [] }
-        return db.allCIDs.filter { copies($0) == 0 && canFuse($0) }
+        return db.allCIDs.filter { db.fusionCIDs.contains($0) && copies($0) == 0 && canFuse($0) }
     }
 
     /// 소재를 소비해(1장은 남긴다) 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」(마스크드 히어로는 「마스크 체인지」)이 없거나 소재가 모자라면 false.

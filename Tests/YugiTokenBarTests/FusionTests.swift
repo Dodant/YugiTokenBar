@@ -24,7 +24,7 @@ import Testing
         var game = Game(db: db, state: GameState())
         game.state.owned = [1: 1, 2: 3]
         #expect(game.craftMaterials(10) == [1: 1, 2: 2])
-        #expect(!game.hasFusionSpell && !game.canFuse(10))  // 「융합」 카드가 없으면 소재가 있어도 잠김
+        #expect(game.copies(CardDB.fusionSpell) == 0 && !game.canFuse(10))  // 「융합」 카드가 없으면 소재가 있어도 잠김
         let locked = game.fuse(10)
         #expect(!locked)
         game.state.owned[CardDB.fusionSpell] = 1
