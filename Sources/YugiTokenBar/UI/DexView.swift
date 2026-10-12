@@ -424,10 +424,10 @@ struct DexView: View {
         selectedCards = selectedCards.filter { model.game.deck(deck)?.cards[$0] != nil }
     }
 
-    /// 즐겨찾기 별: 체크된 카드는 항상, 아니면 마우스를 올렸을 때만.
+    /// 즐겨찾기 별: 체크된 카드는 항상, 아니면 마우스를 올렸을 때만. 즐겨찾기 화면은 다 체크된 카드라 마우스를 올렸을 때만(해제용).
     @ViewBuilder private func star(_ cid: Int, hovered: Bool) -> some View {
         let on = model.game.state.favorites.contains(cid)
-        if on || hovered {
+        if on && scope != .favorites || hovered {
             overlayButton(systemImage: on ? "star.fill" : "star", color: on ? .yellow : .white,
                           help: on ? "즐겨찾기 해제" : "즐겨찾기") { model.toggleFavorite(cid) }
         }
