@@ -229,11 +229,7 @@ import Testing
     }
 
     @MainActor @Test func saveUnlocksPartner() throws {
-        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
-        var state = GameState()
-        state.pendingFree = 1
-        try store.save(state)
-        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store, partner: PartnerModel(sheet: nil))
+        let (model, store) = try makeModel(makeDB([[(CardDB.partnerCard, 1)]])) { $0.pendingFree = 1 }
         #expect(!model.game.state.partnerUnlocked)
         #expect(model.openFree())  // 풀에 날개 크리보 1종뿐
         #expect(model.game.state.partnerUnlocked)
@@ -241,11 +237,7 @@ import Testing
     }
 
     @MainActor @Test func unlocksOnLaunch() throws {
-        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
-        var state = GameState()
-        state.owned[CardDB.partnerCard] = 1
-        try store.save(state)
-        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store, partner: PartnerModel(sheet: nil))
+        let (model, store) = try makeModel(makeDB([[(CardDB.partnerCard, 1)]])) { $0.owned[CardDB.partnerCard] = 1 }
         #expect(!model.game.state.partnerUnlocked)
         model.unlockOnLaunch()
         #expect(model.game.state.partnerUnlocked)
@@ -253,12 +245,7 @@ import Testing
     }
 
     @MainActor @Test func importKeepsUnlockAndLocalPartnerSettings() throws {
-        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
-        var state = GameState()
-        state.partnerUnlocked = true
-        state.partnerSize = 200
-        try store.save(state)
-        let model = AppModel(db: makeDB([[(1, 1)]]), store: store, partner: PartnerModel(sheet: nil))
+        let (model, store) = try makeModel(makeDB([[(1, 1)]])) { $0.partnerUnlocked = true; $0.partnerSize = 200 }
         var incoming = GameState()
         incoming.partnerSize = 64
         _ = try model.importSave(SaveEnvelope(appVersion: "0", exportedAt: Date(), state: incoming))
@@ -268,9 +255,7 @@ import Testing
     }
 
     @MainActor @Test func importSaveWithKuribohUnlocks() throws {
-        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
-        try store.save(GameState())
-        let model = AppModel(db: makeDB([[(CardDB.partnerCard, 1)]]), store: store, partner: PartnerModel(sheet: nil))
+        let (model, store) = try makeModel(makeDB([[(CardDB.partnerCard, 1)]]))
         var incoming = GameState()
         incoming.owned[CardDB.partnerCard] = 1
         _ = try model.importSave(SaveEnvelope(appVersion: "0", exportedAt: Date(), state: incoming))

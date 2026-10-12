@@ -7,7 +7,6 @@ import Testing
 
     @Test func firstRunSeedsLedgerWithoutCredit() {
         var game = Game(db: db, state: GameState())
-        var rng = SeededRNG(seed: 1)
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 50_000_000])
         #expect(game.state.coins == 0)
         #expect(game.state.dropProgress == 0)
@@ -16,7 +15,6 @@ import Testing
 
     @Test func sameTotalsTwiceCreditOnce() {
         var game = Game(db: db, state: GameState())
-        var rng = SeededRNG(seed: 1)
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0])
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 25_000, "codex": 5_000])
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 25_000, "codex": 5_000])
@@ -26,7 +24,6 @@ import Testing
 
     @Test func transientLowReadingNeverDoubleCredits() {
         var game = Game(db: db, state: GameState())
-        var rng = SeededRNG(seed: 1)
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0])
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 100_000])
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0])  // 로그 읽기 일시 실패
@@ -59,7 +56,6 @@ import Testing
 
     @Test func newDayStartsLedgerFromZero() {
         var game = Game(db: db, state: GameState())
-        var rng = SeededRNG(seed: 1)
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 900_000])
         _ = game.claim(today: "2026-10-04", byProvider: ["claude_code": 40_000])  // 며칠 꺼져 있다 켜짐
         #expect(game.state.dropProgress == 40_000)
@@ -68,7 +64,6 @@ import Testing
 
     @Test func coinsAndFreeCardsCarryRemainders() {
         var game = Game(db: db, state: GameState())
-        var rng = SeededRNG(seed: 1)
         let got = game.credit(10_005_000)
         #expect(game.state.coins == 1_000)
         #expect(game.state.coinRemainder == 5_000)
@@ -92,7 +87,6 @@ import Testing
 
     @Test func clockMovingBackwardsIsIgnored() {
         var game = Game(db: db, state: GameState())
-        var rng = SeededRNG(seed: 1)
         _ = game.claim(today: "2026-10-02", byProvider: ["claude_code": 0])
         _ = game.claim(today: "2026-10-02", byProvider: ["claude_code": 25_000])
         let coins = game.state.coins

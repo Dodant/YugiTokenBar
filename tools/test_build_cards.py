@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """build-cards.py 의 네트워크 없는 함수 자체 검사. 사용: python3 tools/test_build_cards.py"""
+import contextlib
 import importlib.util
 import json
 import os
@@ -9,6 +10,21 @@ import urllib.parse
 spec = importlib.util.spec_from_file_location("bc", os.path.join(os.path.dirname(__file__), "build-cards.py"))
 bc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bc)
+
+
+@contextlib.contextmanager
+def fake_net(get, sleep=lambda s: None):
+    """네트워크(bc.get)와 쉬기를 가짜로 바꾸고, 검색 캐시를 비운 채로 시작하고 끝낸다"""
+    real = bc.get, bc.time.sleep
+    bc.get, bc.time.sleep = get, sleep
+    bc.ko_fusions.cache_clear()
+    bc.find_card.cache_clear()
+    try:
+        yield
+    finally:
+        bc.get, bc.time.sleep = real
+        bc.ko_fusions.cache_clear()
+        bc.find_card.cache_clear()
 
 # 실제 상세 페이지(2026-10-07)의 구조를 줄인 것
 JA_MONSTER = """
@@ -121,9 +137,7 @@ def test_get_card_page_retries():
         if isinstance(p, Exception):
             raise p
         return p
-    real_get, real_sleep = bc.get, bc.time.sleep
-    bc.get, bc.time.sleep = fake_get, sleeps.append
-    try:
+    with fake_net(fake_get, sleeps.append):
         assert bc.get_card_page("u") == EN_SPELL and len(calls) == 3 and sleeps == [30, 60]
         for nf in (EN_NOT_FOUND, JA_NOT_FOUND):  # 그 언어에 없는 카드: 재시도 없이 name "" 로
             calls.clear()
@@ -136,8 +150,6 @@ def test_get_card_page_retries():
             assert False
         except RuntimeError:
             pass
-    finally:
-        bc.get, bc.time.sleep = real_get, real_sleep
 
 
 KO = {
@@ -225,16 +237,12 @@ def test_add_missing_materials():
               '<span class="box_card_attribute"><span>땅</span></span><dd class="box_card_text c_text">설명</dd></div>')
     row = lambda d, label: f'<div class="t_row "><div class="time"> {d} </div><div class="lr_icon rid_1"><p>{label}</p></div></div>'
     detail = '<div id="cardname"></div><div id="update_list">' + row("2010-01-01", "SR") + row("2004-01-01", "R") + "</div>"
-    real_get, real_sleep = bc.get, bc.time.sleep
-    bc.get, bc.time.sleep = (lambda url: detail if "ope=2" in url else search), (lambda s: None)
-    try:
+    with fake_net(lambda url: detail if "ope=2" in url else search):
         out = json.loads(json.dumps(KO))
         out["packs"][0]["cards"].append(13)
         out["cards"]["13"] = {"name": "라", "type": "악마족/융합", "text": "", "materials": [{"name": "미노타우로스"}, {"cid": 10}]}
         out["packs"].append({"pid": "2", "name": "다른 팩", "date": "2005-01-01", "cards": [10]})
         bc.add_missing_materials(out, {4032: 77})
-    finally:
-        bc.get, bc.time.sleep = real_get, real_sleep
     assert out["cards"]["4032"] == {"name": "미노타우로스", "attr": "땅", "type": "일반", "text": "설명", "imageId": 77, "tier": 2}
     assert out["cards"]["13"]["materials"][0] == {"cid": 4032}
     assert out["cards"]["12"]["materials"][1] == {"cid": 4032}  # 조건이 섞인 융합도 이름이 같으면 cid 로
@@ -251,18 +259,12 @@ def test_add_outside_fusions():
               + fusion(25, "차", '"카"＋"가"') + fusion(26, "카", '전사족 몬스터＋"가"') + fusion(27, "타", '"가"＋"미발매"'))
     found = '<div class="t_row c_normal open"><span class="card_name">없는 카드</span><input class="cid" value="30"></div>' 
     detail = '<div id="cardname"></div><div id="update_list"><div class="time"> 2010-01-01 </div><div class="lr_icon rid_1"><p>UR</p></div></div>'
-    real_get, real_sleep = bc.get, bc.time.sleep
-    bc.ko_fusions.cache_clear()
-    bc.get = lambda url: (detail if "ope=2" in url else search if "page=1&" in url
-                          else found if url.endswith(urllib.parse.quote("없는 카드")) else "")
-    bc.time.sleep = lambda s: None
-    try:
+    with fake_net(lambda url: (detail if "ope=2" in url else search if "page=1&" in url
+                               else found if url.endswith(urllib.parse.quote("없는 카드")) else "")):
         out = json.loads(json.dumps(KO))
         out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "cards": [10, 12]},
                         {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "cards": [10, 11]}]
         bc.add_outside_fusions(out, {20: 99})
-    finally:
-        bc.get, bc.time.sleep = real_get, real_sleep
     # 조건(22)·100팩 소재가 없는 것(24)·조건 없는 후보 융합이 소재(23)인 것은 빼고, 100팩 소재가 처음 나온 팩 중 늦은 팩(가 0, 나 1 → 1)에.
     # 100팩 밖 소재는 이름으로 남기고(21), 한국 미발매 소재(27)면 빼고, 조건 융합 소재(26)는 그 융합(25)과 같은 팩에
     assert list(out["cards"]) == ["10", "11", "12", "20", "21", "25", "26"]
@@ -281,21 +283,13 @@ def test_add_mask_change():
     fusions = row(40, "마스크드 히어로 가", '이 카드는 "마스크 체인지"의 효과로만 특수 소환할 수 있다.') + row(41, "다른 융합", '"가"＋"나"')
     spell = '<div class="t_row c_normal open"><span class="card_name">마스크 체인지</span><input class="cid" value="50"><span class="box_card_attribute"><span>마법</span></span></div>'
     printed = lambda d: f'<div id="cardname"></div><div id="update_list"><div class="time"> {d} </div><div class="pack_name flex_1">팩</div><div class="lr_icon rid_1"><p>SR</p></div></div>'
-    real_get, real_sleep = bc.get, bc.time.sleep
-    bc.ko_fusions.cache_clear()
-    bc.find_card.cache_clear()
-    bc.get = lambda url: (printed("2005-01-01" if "cid=50" in url else "2004-06-01") if "ope=2" in url
-                          else fusions if "page=1&" in url else spell if url.endswith(urllib.parse.quote("마스크 체인지")) else "")
-    bc.time.sleep = lambda s: None
-    try:
+    with fake_net(lambda url: (printed("2005-01-01" if "cid=50" in url else "2004-06-01") if "ope=2" in url
+                               else fusions if "page=1&" in url else spell if url.endswith(urllib.parse.quote("마스크 체인지")) else "")):
         out = json.loads(json.dumps(KO))
         out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "cards": [10]},
                         {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "cards": [11]}]
         bc.add_mask_change(out, {40: 7})
         bc.add_codes(out["cards"])
-    finally:
-        bc.get, bc.time.sleep = real_get, real_sleep
-        bc.find_card.cache_clear()
     # 첫 수록일 직전(같은 날 포함) 팩에: 마스크드 히어로(2004-06) → 첫 팩, 마스크 체인지(2005-01-01) → 둘째 팩
     assert out["packs"][0]["cards"] == [10, 40] and out["packs"][1]["cards"] == [11, 50]
     assert out["cards"]["40"]["mask"] and out["cards"]["40"]["hero"] and out["cards"]["40"]["tier"] == 3 and out["cards"]["40"]["imageId"] == 7

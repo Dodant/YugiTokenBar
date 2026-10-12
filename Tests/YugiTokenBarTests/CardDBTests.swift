@@ -101,20 +101,14 @@ import Testing
 
 /// 이름순 키: Finder 순서(숫자는 크기순), 같은 이름은 같은 순위(그 안에서는 팩 순번으로 정렬된다)
 @Test func nameRanksFollowFinderOrderAndTieEqualNames() {
-    func info(_ name: String) -> CardInfo {
-        CardInfo(name: name, attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "", imageId: nil)
-    }
-    let r = CardDB.nameRanks([1: info("카드10"), 2: info("카드2"), 3: info("가"), 4: info("카드2")])
+    let r = CardDB.nameRanks([1: card("카드10"), 2: card("카드2"), 3: card("가"), 4: card("카드2")])
     #expect(r[3]! < r[2]! && r[2]! < r[1]!)
     #expect(r[2] == r[4])
 }
 
 /// cards_XX.json 에 범위 밖 등급이 있어도 1~5 로 잘라 읽는다 (Pull.label 등이 죽지 않게)
 @Test func outOfRangeTiersAreClamped() {
-    func card(_ tier: Int) -> CardInfo {
-        CardInfo(name: "", attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "", imageId: nil, tier: tier)
-    }
-    let db = CardDB(packs: [], cards: [1: card(0), 2: card(9), 3: card(3)])
+    let db = CardDB(packs: [], cards: [1: card(tier: 0), 2: card(tier: 9), 3: card(tier: 3)])
     #expect([1, 2, 3].map(db.tier) == [1, 5, 3])
     #expect(Pull(cid: 2, tier: db.tier(2), isNew: true).label == "SE")
 }

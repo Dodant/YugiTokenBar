@@ -5,14 +5,14 @@ import Testing
     /// 팩0: 노멀 1·2·3, 「융합」 마법(해금 카드), UR 10 = 1 + 2 + 2 (소재를 다 아는 융합), UR 11 = 1 + 100팩에 없는 카드
     let db: CardDB = {
         func info(_ name: String, _ materials: [Material]? = nil, picks: [Pick]? = nil) -> CardInfo {
-            var c = CardInfo(name: name, attr: nil, level: nil, type: materials == nil ? "전사족/일반" : "전사족/융합",
-                             atk: nil, def: nil, text: "", imageId: nil, tier: materials == nil ? 1 : 4, materials: materials)
+            var c = card(name, type: materials == nil ? "전사족/일반" : "전사족/융합", tier: materials == nil ? 1 : 4)
+            c.materials = materials
             c.picks = picks
             return c
         }
         let cards: [Int: CardInfo] = [
             1: info("소재1"), 2: info("소재2"), 3: info("다른 카드"),
-            CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, tier: 3, kindCode: "spell"),
+            CardDB.fusionSpell: card("융합", attr: "마법", type: "일반", tier: 3, kind: "spell"),
             10: info("융합", [Material(cid: 1), Material(cid: 2), Material(cid: 2)], picks: [Pick(any: [1]), Pick(any: [2]), Pick(any: [2])]),
             11: info("조건 융합", [Material(cid: 1), Material(name: "없는 카드")]),
         ]
@@ -45,13 +45,16 @@ import Testing
     /// 마스크드 히어로: 「마스크 체인지」가 있으면 같은 속성 HERO 중 가장 많이 가진 1장을 소비해(마지막 장은 남김) 만든다
     @Test func maskChangeUsesSameAttributeHero() {
         func hero(_ attr: String, mask: Bool? = nil) -> CardInfo {
-            CardInfo(name: "히어로", attr: attr, level: nil, type: "전사족", atk: nil, def: nil, text: "", imageId: nil, hero: true, mask: mask)
+            var c = card("히어로", attr: attr, type: "전사족")
+            c.hero = true
+            c.mask = mask
+            return c
         }
         var masked = hero("빛", mask: true)
         masked.picks = [Pick(any: [1, 2])]  // build-cards.py: 자기 빼고 같은 속성 HERO
-        let cards: [Int: CardInfo] = [1: hero("빛"), 2: hero("빛"), 3: hero("어둠"), 4: CardInfo(name: "빛 몬스터", attr: "빛", level: nil, type: "전사족", atk: nil, def: nil, text: "", imageId: nil),
-                                      20: masked, CardDB.maskChange: CardInfo(name: "마스크 체인지", attr: "마법", level: nil, type: "속공", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
-        let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
+        let cards: [Int: CardInfo] = [1: hero("빛"), 2: hero("빛"), 3: hero("어둠"), 4: card("빛 몬스터", attr: "빛", type: "전사족"),
+                                      20: masked, CardDB.maskChange: card("마스크 체인지", attr: "마법", type: "속공", kind: "spell")]
+        let db = oneBoxDB(cards)
         var game = Game(db: db, state: GameState())
         game.state.owned = [3: 5, 4: 5]
         game.state.fusionOnly = true
@@ -67,7 +70,7 @@ import Testing
 
     /// 조건 소재: 소재 줄의 카드를 먼저 잡고, 조건마다 맞는 카드 중 남는 장 수가 많은 것부터 채운다 (마지막 장은 남김)
     @Test func picksUseMostOwnedMatchingCards() {
-        func mon(_ name: String) -> CardInfo { CardInfo(name: name, attr: nil, level: nil, type: "드래곤족", atk: nil, def: nil, text: "", imageId: nil) }
+        func mon(_ name: String) -> CardInfo { card(name, type: "드래곤족") }
         var fusion = mon("융합 용")
         fusion.materials = [Material(cid: 1), Material(rule: "드래곤족 몬스터", count: 2)]
         fusion.picks = [Pick(any: [1]), Pick(any: [1, 2, 3], count: 2)]
@@ -75,8 +78,8 @@ import Testing
         each.materials = [Material(rule: "드래곤족의 일반 / 효과 몬스터 1장씩 합계 2장")]
         each.picks = [Pick(any: [3]), Pick(any: [4], join: true)]
         let cards: [Int: CardInfo] = [1: mon("용 1"), 2: mon("용 2"), 3: mon("용 3"), 4: mon("다른 몬스터"), 20: fusion, 21: each,
-                                      CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
-        let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
+                                      CardDB.fusionSpell: card("융합", attr: "마법", type: "일반", kind: "spell")]
+        let db = oneBoxDB(cards)
         var game = Game(db: db, state: GameState())
         game.state.owned = [1: 1, 4: 9, CardDB.fusionSpell: 1]
         game.state.fusionOnly = true
@@ -108,15 +111,15 @@ import Testing
     /// 일괄 융합: 목록을 다 만들고, 만든 융합이 소재인 융합도 이어서 만든다. 소재가 겹쳐 모자라면 앞 것만
     @Test func fuseAllChainsAndStopsWhenShort() {
         func mon(_ name: String, _ picks: [Pick]? = nil) -> CardInfo {
-            var c = CardInfo(name: name, attr: nil, level: nil, type: picks == nil ? "전사족" : "전사족/융합", atk: nil, def: nil, text: "", imageId: nil,
-                             materials: picks.map { $0.map { _ in Material(rule: "몬스터") } })
+            var c = card(name, type: picks == nil ? "전사족" : "전사족/융합")
+            c.materials = picks.map { $0.map { _ in Material(rule: "몬스터") } }
             c.picks = picks
             return c
         }
         let cards: [Int: CardInfo] = [1: mon("소재"), 20: mon("융합 A", [Pick(any: [1])]), 21: mon("융합 B", [Pick(any: [20])]),
                                       22: mon("융합 C", [Pick(any: [1], count: 3)]),
-                                      CardDB.fusionSpell: CardInfo(name: "융합", attr: "마법", level: nil, type: "일반", atk: nil, def: nil, text: "", imageId: nil, kindCode: "spell")]
-        let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
+                                      CardDB.fusionSpell: card("융합", attr: "마법", type: "일반", kind: "spell")]
+        let db = oneBoxDB(cards)
         var game = Game(db: db, state: GameState())
         game.state.owned = [1: 3, CardDB.fusionSpell: 1]
         game.state.fusionOnly = true
@@ -151,11 +154,11 @@ import Testing
 
     /// 조건 소재("전사족 3장")는 그 융합을 만들기 전까지 3장 남기고, 만들고 나면 1장만 남긴다
     @Test func fusionOnlyKeepsConditionMaterialsUntilMade() {
-        var c = CardInfo(name: "조건 융합", attr: nil, level: nil, type: "전사족/융합", atk: nil, def: nil, text: "", imageId: nil, tier: 4,
-                         materials: [Material(rule: "전사족", count: 3)])
+        var c = card("조건 융합", type: "전사족/융합", tier: 4)
+        c.materials = [Material(rule: "전사족", count: 3)]
         c.picks = [Pick(any: [1, 2], count: 3)]
-        let plain = CardInfo(name: "전사", attr: nil, level: nil, type: "전사족/일반", atk: nil, def: nil, text: "", imageId: nil, tier: 1)
-        let db = CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: [1, 2, 20])], cards: [1: plain, 2: plain, 20: c])
+        let plain = card("전사", type: "전사족/일반")
+        let db = oneBoxDB([1: plain, 2: plain, 20: c])
         var game = Game(db: db, state: GameState())
         game.state.fusionOnly = true
         #expect(game.keep(1) == 3 && game.keep(2) == 3)

@@ -14,14 +14,23 @@ struct SeededRNG: RandomNumberGenerator {
     }
 }
 
+/// 테스트용 카드 (주어진 것 말고는 비운다)
+func card(_ name: String = "", attr: String? = nil, type: String? = nil, tier: Int = 1, kind: String? = nil) -> CardInfo {
+    CardInfo(name: name, attr: attr, level: nil, type: type, atk: nil, def: nil, text: "", imageId: nil, tier: tier, kindCode: kind)
+}
+
+/// 카드를 cid 순서로 모두 담은 팩 하나짜리 DB
+func oneBoxDB(_ cards: [Int: CardInfo]) -> CardDB {
+    CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)
+}
+
 /// 팩마다 (cid, tier) 목록으로 작은 카드 DB를 만든다. 여러 팩에 있는 카드는 build-cards.py 처럼 가장 높은 tier.
 func makeDB(_ packs: [[(cid: Int, tier: Int)]]) -> CardDB {
     var cards: [Int: CardInfo] = [:]
     var built: [Pack] = []
     for (i, list) in packs.enumerated() {
         for c in list {
-            cards[c.cid] = CardInfo(name: "카드\(c.cid)", attr: nil, level: nil, type: nil,
-                                    atk: nil, def: nil, text: "", imageId: nil, tier: max(cards[c.cid]?.tier ?? 1, c.tier))
+            cards[c.cid] = card("카드\(c.cid)", tier: max(cards[c.cid]?.tier ?? 1, c.tier))
         }
         built.append(Pack(pid: "p\(i)", name: "팩\(i)", date: "2004-01-01",
                           cards: list.map(\.cid)))
@@ -33,4 +42,13 @@ func tempDir() -> URL {
     let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ytb-test-\(UUID().uuidString)")
     try! FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     return dir
+}
+
+/// 세이브를 먼저 써 둔 임시 저장소로 AppModel 을 만든다 (파트너 시트는 읽지 않는다)
+@MainActor func makeModel(_ db: CardDB, _ edit: (inout GameState) -> Void = { _ in }) throws -> (AppModel, StateStore) {
+    let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+    var state = GameState()
+    edit(&state)
+    try store.save(state)
+    return (AppModel(db: db, store: store, partner: PartnerModel(sheet: nil)), store)
 }
