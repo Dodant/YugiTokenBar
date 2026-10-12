@@ -95,7 +95,8 @@ struct OpeningView: View {
                 Spacer(minLength: 0)
             } else {
                 Text("눌러서 공개").foregroundStyle(.tertiary)
-                Spacer(minLength: 0)
+                    .frame(maxWidth: .infinity)
+                    .padding(.leading, 6)  // 줄 여백이 왼쪽 4·오른쪽 10 이라 맞춰 가운데에 둔다
             }
         }
         .font(.callout)
