@@ -187,8 +187,6 @@
 "%lld팩" = "Packs: %lld";
 /* ShopView.swift:160 */
 "완료 · %lld/%lld" = "Complete · %lld/%lld";
-/* UsageView.swift:39 */
-"눌러서 공식 한도를 다시 불러와요" = "Click to reload the official limits";
 /* UsageView.swift:52 */
 "5시간" = "5h";
 /* UsageView.swift:53 */
@@ -449,3 +447,33 @@
 "대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요." = "These cards do not appear in packs or free draws. Collect Polymerization and the materials, then fuse in Collection.";
 /* SettingsView.swift:141 */
 "버전" = "Version";
+/* UsageDetailView.swift:19 */
+"사용량" = "Usage";
+/* UsageDetailView.swift:26 */
+"새로고침" = "Refresh";
+/* UsageDetailView.swift:57 */
+"오늘 사용한 토큰" = "Tokens used today";
+/* UsageDetailView.swift:68 */
+"이번 주" = "This week";
+/* UsageDetailView.swift:69 */
+"이번 달" = "This month";
+/* UsageDetailView.swift:166 */
+"최근 30일 토큰 사용량" = "Token usage over the last 30 days";
+/* UsageDetailView.swift:114 */
+"최근 30일" = "Last 30 days";
+/* UsageDetailView.swift:124 */
+"최다" = "Peak";
+/* UsageDetailView.swift:196 */
+"입력" = "Input";
+/* UsageDetailView.swift:197 */
+"출력" = "Output";
+/* UsageDetailView.swift:200 */
+"캐시 쓰기" = "Cache write";
+/* UsageDetailView.swift:201 */
+"캐시 읽기" = "Cache read";
+/* UsageView.swift:39 */
+"눌러서 사용량을 자세히 봐요" = "Click to see usage details";
+/* UsageDetailView.swift:177 */
+"지난 기록을 읽는 중이에요. 처음 한 번은 오래 걸려요." = "Reading past usage. The first time takes a while.";
+/* UsageDetailView.swift:206 */
+"한도를 읽지 못했어요. 새로고침해 보세요" = "Couldn't load limits. Try refreshing.";

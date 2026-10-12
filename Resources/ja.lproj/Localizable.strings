@@ -187,8 +187,6 @@
 "%lld팩" = "%lldパック";
 /* ShopView.swift:160 */
 "완료 · %lld/%lld" = "コンプリート · %lld/%lld";
-/* UsageView.swift:39 */
-"눌러서 공식 한도를 다시 불러와요" = "クリックで公式の上限を再読み込みします";
 /* UsageView.swift:52 */
 "5시간" = "5時間";
 /* UsageView.swift:53 */
@@ -449,3 +447,33 @@
 "대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요." = "対象カードはパック・無料カードから出ません。「融合」と素材を集めて、コレクションで融合してください。";
 /* SettingsView.swift:141 */
 "버전" = "バージョン";
+/* UsageDetailView.swift:19 */
+"사용량" = "使用量";
+/* UsageDetailView.swift:26 */
+"새로고침" = "再読み込み";
+/* UsageDetailView.swift:57 */
+"오늘 사용한 토큰" = "今日使ったトークン";
+/* UsageDetailView.swift:68 */
+"이번 주" = "今週";
+/* UsageDetailView.swift:69 */
+"이번 달" = "今月";
+/* UsageDetailView.swift:166 */
+"최근 30일 토큰 사용량" = "過去30日のトークン使用量";
+/* UsageDetailView.swift:114 */
+"최근 30일" = "過去30日";
+/* UsageDetailView.swift:124 */
+"최다" = "最多";
+/* UsageDetailView.swift:196 */
+"입력" = "入力";
+/* UsageDetailView.swift:197 */
+"출력" = "出力";
+/* UsageDetailView.swift:200 */
+"캐시 쓰기" = "キャッシュ書き込み";
+/* UsageDetailView.swift:201 */
+"캐시 읽기" = "キャッシュ読み込み";
+/* UsageView.swift:39 */
+"눌러서 사용량을 자세히 봐요" = "クリックで使用量の詳細を表示";
+/* UsageDetailView.swift:177 */
+"지난 기록을 읽는 중이에요. 처음 한 번은 오래 걸려요." = "過去の記録を読み込み中です。初回は時間がかかります。";
+/* UsageDetailView.swift:206 */
+"한도를 읽지 못했어요. 새로고침해 보세요" = "上限を読み込めませんでした。再読み込みしてください";

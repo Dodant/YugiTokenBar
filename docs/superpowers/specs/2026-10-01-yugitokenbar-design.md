@@ -174,17 +174,17 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
 - 버튼은 Liquid Glass 스타일: 주요 동작(구매·열기·모두 뒤집기)은 `.glassProminent`, 나머지(설정·판매 등)는 `.glass`.
   패널·카드 배경에는 유리를 겹치지 않는다(`.fill.quinary`).
 - `MenuBarExtra(.window)` + 컬렉션 창(`Window`).
-  상점·개봉·설정은 패널 안 화면 전환(요약 위에 겹쳐 그려 패널 높이 고정.
+  상점·개봉·설정·사용량은 패널 안 화면 전환(요약 위에 겹쳐 그려 패널 높이 고정.
   지금 화면은 `PanelScreen` 하나로, 개봉은 연 화면(요약·상점)을 기억했다 닫으면 그리로 돌아간다.
   바뀔 때 0.15초 페이드, 애니메이션 끄기·동작 줄이기면 바로).
-  패널 안 스크롤(상점·설정)의 아래 끝은 재질 띠로 흐려지며 사라져(`panelScrollBottom`) 글자가 반 토막으로 잘려 보이지 않는다.
+  패널 안 스크롤(상점·설정·사용량)의 아래 끝은 재질 띠로 흐려지며 사라져(`panelScrollBottom`) 글자가 반 토막으로 잘려 보이지 않는다.
 
 ```
 Sources/YugiTokenBar/
   App.swift            앱 진입, 메뉴바 라벨
   AppLanguage.swift    언어 선택(앱 AppleLanguages, 재시작 후 반영)·이번 실행 언어(`Bundle.preferredLocalizations(from: [en, ko, ja])`, 지원하지 않는 언어는 en)
   AppModel.swift       60초마다 사용량 적립(늘어난 토큰이 없으면 저장·화면 갱신 안 함), 5분마다 공식 한도 갱신, 저장
-  TodayUsageReader.swift  TodayUsage.read와 같은 집계, Claude 로그는 파일별 (수정 시각, 크기) 캐시 (Usage/ 밖에서 감쌈)
+  TodayUsageReader.swift  TodayUsage.read와 같은 집계, Claude 로그는 파일별 (수정 시각, 크기) 캐시 (Usage/ 밖에서 감쌈). 사용량 화면용 지난 31일 날짜별 합계(`pastDays`). 지난 날은 바뀌지 않으므로 `~/Library/Caches/YugiTokenBar/usage-days.json`에 두고 없는 날만 로그에서 읽는다(31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초)
   Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·한도 provider + 의존 파일, TodayUsage(신규), NOTICE.md(출처·변경점)
   CardDB.swift         `cards_<KO|JP|EN>.json` 로드(등급은 1~5로 잘라 읽는다), 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 `DexQuery`가 처음 이름순으로 볼 때 한 번 만들어 둔다)
   Game.swift           적립·뽑기·판매·덱·융합 (밸런스 상수 `Balance`는 파일 상단)
@@ -193,7 +193,7 @@ Sources/YugiTokenBar/
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
   Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기
-  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않음, "융합 가능" 목록(`FusableSection.swift`)은 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage, CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`), PartnerPanel(바탕화면 파트너)
+  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않음, "융합 가능" 목록(`FusableSection.swift`)은 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage(메뉴 줄), UsageDetail(사용량 화면), CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`), PartnerPanel(바탕화면 파트너)
 CHANGELOG.md           패치노트(한국어) 겸 버전 원본. CHANGELOG.en.md·CHANGELOG.ja.md는 같은 버전 제목의 번역
 Resources/partner.png  파트너 스프라이트 시트(192×208 셀, 8열 × 9행)
 Resources/card-back.jpg 카드 뒷면(923×1351, 로고 없음. tools/clean-card-back.py 산출물)
@@ -520,7 +520,17 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - 한도는 5분마다 읽고, 실패하면 직전 값을 유지한다:
       - PokeTokenBar의 `OAuthLimitsProvider`(Claude OAuth usage, `~/.claude/.credentials.json` → 없으면 실행당 한 번 키체인)
       - `CodexRateLimitsProvider`(`codex app-server`)
-    - 칸은 메뉴 줄처럼 마우스를 올리면 배경이 생기는 버튼이고, 누르면 바로 다시 읽는다.
+    - 칸은 메뉴 줄처럼 마우스를 올리면 배경이 생기는 버튼이고, 누르면 사용량 화면으로 간다.
+    - 사용량 화면(`UsageDetailView`):
+      - 오늘 사용한 토큰(큰 숫자·정확한 수·비용), 이번 주·이번 달 토큰·비용(달력 주·달, 오늘 포함).
+      - 최근 30일 막대(모든 에이전트 합은 회색, 그 아래쪽에 고른 탭 에이전트의 몫을 그 색으로, 쓴 게 없는 날은 바닥선).
+        주 첫날 앞에 구분선과 날짜, 오늘 날짜는 강조색(오늘 바로 앞 사흘의 주 첫날 날짜는 겹쳐서 뺀다).
+        마우스를 올린 날(없으면 오늘)의 날짜·토큰·비용과 30일 중 최다를 위에 보인다.
+      - 에이전트 탭(Claude·Codex는 늘, 나머지는 31일 안에 쓴 것만): 오늘 토큰·비용·입력·출력·캐시 쓰기·캐시 읽기, Claude·Codex는 한도 막대도.
+      - 열 때와 [새로고침]에서 한도를 다시 읽는다(키체인 창을 띄울 수 있음).
+        지난 날짜는 처음 열 때 읽고, 그동안 막대가 흐리고 이번 주·이번 달은 자리 표시, 도는 표시와 안내 문구가 나온다.
+      - 한도를 못 읽었으면 "한도를 읽지 못했어요. 새로고침해 보세요".
+      - Claude Code가 30일 지난 기록을 지우므로 그보다 앞 막대는 비어 있을 수 있다.
     - 읽는 동안 Claude·Codex 줄의 초기화 시각 자리에 도는 표시가 나온다.
     - 한도 이름은 "5시간"·"주간"·모델명.
     - 비용은 기록 비용 우선, 없으면 모델 단가로 추정.
@@ -755,7 +765,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 
 `Tests/YugiTokenBarTests` (시드 고정 RNG 주입):
 - 적립: 같은 누적치를 두 번 반영해도 한 번만 적립, 날짜 변경 시 원장 리셋과 지난 날짜 몫 적립, 첫 실행은 적립 0, 시계가 과거로 가면 무시, 상태가 그대로면 저장하지 않음
-- 사용량(`UsageTests`): 네 버킷 합, `TodayUsageReader` 파일별 캐시가 원래 리더와 같은 결과, 지난 날 읽기 시작일, 날짜별 합계에서 오늘 제외, Cursor API 실패 뒤 백오프·성공 뒤 매번 호출
+- 사용량(`UsageTests`): 네 버킷 합, `TodayUsageReader` 파일별 캐시가 원래 리더와 같은 결과, 지난 날 읽기 시작일, 날짜별 합계에서 오늘 제외, 사용량 화면 기간 합(양 끝 포함)·지난 날짜 합계 파일(로그가 지워져도 새 리더가 같은 값), Cursor API 실패 뒤 백오프·성공 뒤 매번 호출
 - 한도(`LimitsTests`): 모델별 주간·신형 응답만 올 때의 막대, 초기화까지 남은 시간 문구, 코인 K·M 줄임(`shortCoins`)
 - 코인과 무료 카드: 10M 경계, 나머지 이월
 - 판매: 중복 자동 판매는 켰을 때 2장째부터만 팔고 끄면 다시 쌓인다; 자동 판매 취소는 코인을 돌려주고 카드를 되돌리며, 코인이 모자라면 거절

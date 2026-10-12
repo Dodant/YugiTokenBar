@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Claude Code·Codex 공식 한도(5시간·주간·모델별 주간) + 오늘 토큰·비용. 누르면 한도를 바로 다시 읽는다.
+/// Claude Code·Codex 공식 한도(5시간·주간·모델별 주간) + 오늘 토큰·비용. 누르면 사용량 화면(`UsageDetailView`)으로 간다.
 /// 그 밖의 에이전트(Gemini·Grok·Pi·oh-my-pi·Cursor)는 오늘 쓴 것만 토큰·비용 한 줄로 보인다.
 struct UsageView: View {
     @Environment(AppModel.self) private var model
@@ -10,23 +10,21 @@ struct UsageView: View {
         let claude = model.claudeLimits
         let codex = model.codexLimits
         let loading = model.fetchingLimits
-        // 메뉴 줄처럼 마우스를 올리면 배경이 생기고, 누르면 한도를 바로 다시 읽는다
-        Button { model.refreshLimits(userInitiated: true) } label: { VStack(alignment: .leading, spacing: 12) {
-            ProviderUsageRow(
-                name: "Claude", symbol: "staroflife.fill", tint: .orange,
-                tokens: model.todayTokens[Provider.claude.rawValue] ?? 0, cost: model.todayCost[Provider.claude.rawValue] ?? 0,
-                reset: claude.flatMap(Self.claudeReset),
-                meters: claude.map(Self.claudeMeters) ?? [], loading: loading)
-            ProviderUsageRow(
-                name: "Codex", symbol: "hexagon.fill", tint: .teal,
-                tokens: model.todayTokens[Provider.codex.rawValue] ?? 0, cost: model.todayCost[Provider.codex.rawValue] ?? 0,
-                reset: codex?.primary?.resetDate,
-                meters: codex.map(Self.codexMeters) ?? [], loading: loading)
-            ForEach(Self.others, id: \.id) { p in
-                if let tokens = model.todayTokens[p.id.rawValue], tokens > 0 {
-                    ProviderUsageRow(
-                        name: p.name, symbol: p.symbol, tint: p.tint,
-                        tokens: tokens, cost: model.todayCost[p.id.rawValue] ?? 0, reset: nil, meters: nil)
+        // 메뉴 줄처럼 마우스를 올리면 배경이 생기고, 누르면 사용량 화면으로 넘어간다
+        Button { model.screen = .usage } label: { VStack(alignment: .leading, spacing: 12) {
+            ForEach(Self.agents, id: \.id) { p in
+                let tokens = model.todayTokens[p.id.rawValue] ?? 0, cost = model.todayCost[p.id.rawValue] ?? 0
+                switch p.id {
+                case .claude:
+                    ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: tokens, cost: cost,
+                                     reset: claude.flatMap(Self.claudeReset), meters: claude.map(Self.claudeMeters) ?? [], loading: loading)
+                case .codex:
+                    ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: tokens, cost: cost,
+                                     reset: codex?.primary?.resetDate, meters: codex.map(Self.codexMeters) ?? [], loading: loading)
+                default:
+                    if tokens > 0 {
+                        ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: tokens, cost: cost, reset: nil, meters: nil)
+                    }
                 }
             }
         }
@@ -36,10 +34,13 @@ struct UsageView: View {
         .background(hover ? AnyShapeStyle(.fill.tertiary) : AnyShapeStyle(.clear), in: .rect(cornerRadius: 10)) }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
-        .accessibilityHint("눌러서 공식 한도를 다시 불러와요")
+        .accessibilityHint("눌러서 사용량을 자세히 봐요")
     }
 
-    static let others: [(id: Provider, name: String, symbol: String, tint: Color)] = [
+    /// 표시 순서. Claude·Codex 는 공식 한도가 있어 늘 보인다
+    static let agents: [(id: Provider, name: String, symbol: String, tint: Color)] = [
+        (.claude, "Claude", "staroflife.fill", .orange),
+        (.codex, "Codex", "hexagon.fill", .teal),
         (.gemini, "Gemini", "sparkle", .blue),
         (.grok, "Grok", "bolt.fill", .gray),
         (.pi, "Pi", "circle.hexagongrid.fill", .purple),
@@ -90,7 +91,7 @@ struct Meter {
     var resetsAt: Date? = nil
 }
 
-private struct ProviderUsageRow: View {
+struct ProviderUsageRow: View {
     let name: String
     let symbol: String
     let tint: Color
@@ -101,6 +102,8 @@ private struct ProviderUsageRow: View {
     let meters: [Meter]?
     /// 한도를 읽는 중이면 초기화 시각 자리에 도는 표시
     var loading = false
+    /// 한도를 아직 못 읽었을 때 문구 (메뉴 줄은 누르라고, 사용량 화면은 새로고침하라고)
+    var emptyText: LocalizedStringKey = "한도를 보려면 누르세요"
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -122,7 +125,7 @@ private struct ProviderUsageRow: View {
                         .font(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
                 if let meters, meters.isEmpty {
-                    Text(loading ? "한도 불러오는 중…" : "한도를 보려면 누르세요").font(.caption).foregroundStyle(.secondary)
+                    Text(loading ? "한도 불러오는 중…" : emptyText).font(.caption).foregroundStyle(.secondary)
                 } else if let meters {
                     HStack(spacing: 10) {
                         ForEach(Array(meters.enumerated()), id: \.offset) { MeterView(meter: $0.element) }  // 라벨이 겹쳐도 안전하게
@@ -133,7 +136,7 @@ private struct ProviderUsageRow: View {
     }
 }
 
-private struct MeterView: View {
+struct MeterView: View {
     let meter: Meter
     /// 막대 폭. 이름이 "5시간"·"주간"이라 "5h"·"주" 때(30)보다 줄여 Claude 한 줄(한도 3개)이 패널 폭에 들어가게
     private static let barWidth = 24.0

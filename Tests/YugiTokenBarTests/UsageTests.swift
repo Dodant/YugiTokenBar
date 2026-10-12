@@ -94,4 +94,37 @@ import Testing
                                                   before: "2026-10-07")
         #expect(totals == ["2026-10-05": 15, "2026-10-06": 7])
     }
+
+    /// 사용량 화면 합계: 고른 날짜 범위(양 끝 포함)의 모든 provider 를 더한다
+    @Test func dailyUsageTotalCoversInclusiveRange() {
+        func b(_ input: Int) -> TokenSum { var b = TokenSum(); b.input = input; b.cost = Double(input) / 100; return b }
+        let days: UsageByDay = ["2026-09-30": ["claude_code": b(1)], "2026-10-01": ["claude_code": b(10), "codex": b(20)],
+                                "2026-10-05": ["codex": b(300)], "2026-10-06": ["claude_code": b(4000)]]
+        let cal = Calendar.current
+        let date = { (d: Int) in cal.date(from: DateComponents(year: 2026, month: 10, day: d, hour: 12))! }
+        let t = TodayUsageReader.total(days, from: date(1), through: date(5))
+        #expect(t.tokens == 330)
+        #expect(abs(t.cost - 3.3) < 1e-9)
+        #expect(TodayUsageReader.total(days, from: date(6), through: date(6)).tokens == 4000)
+    }
+
+    /// 지난 날짜 합계는 파일에 남아, 로그가 지워진 뒤 새 리더도 다시 읽지 않고 같은 값을 낸다
+    @Test func pastDaysPersistAcrossReaders() async throws {
+        let root = tempDir(), project = root.appendingPathComponent("proj")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let twoDaysAgo = Date().addingTimeInterval(-2 * 86_400)
+        let ts = ISO8601DateFormatter().string(from: twoDaysAgo)
+        let line = #"{"type":"assistant","timestamp":"\#(ts)","requestId":"r1","message":{"id":"m1","model":"claude-opus-5-5","usage":{"input_tokens":70,"output_tokens":5}}}"#
+        let log = project.appendingPathComponent("s.jsonl")
+        try (line + "\n").write(to: log, atomically: true, encoding: .utf8)
+        let file = tempDir().appendingPathComponent("days.json")
+        let day = LocalUsageReader.localDayFormatter().string(from: twoDaysAgo)
+
+        let first = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil).pastDays()
+        #expect(first[day]?["claude_code"]?.total == 75)
+        try FileManager.default.removeItem(at: log)
+        let second = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil).pastDays()
+        #expect(second[day]?["claude_code"]?.total == 75)
+        #expect(second.count == TodayUsageReader.historyDays)
+    }
 }

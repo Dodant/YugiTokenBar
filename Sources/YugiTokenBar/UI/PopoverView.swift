@@ -26,6 +26,7 @@ struct PopoverView: View {
                     case .opening: OpeningView().id(model.openingID)
                     case .shop: ShopView()
                     case .settings: SettingsView(open: show)
+                    case .usage: UsageDetailView()
                     case .summary: EmptyView()
                     }
                 }

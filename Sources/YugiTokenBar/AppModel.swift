@@ -21,6 +21,10 @@ final class AppModel {
     /// 오늘 provider별 토큰·비용 (팝오버 사용량 표시)
     private(set) var todayTokens: [String: Int] = [:]
     private(set) var todayCost: [String: Double] = [:]
+    /// 오늘 provider별 입력·출력·캐시 (사용량 화면)
+    private(set) var todayDetail: [String: TokenSum] = [:]
+    /// 오늘보다 앞 날짜별 사용량. 사용량 화면을 처음 열 때 읽는다(그 전엔 nil)
+    private(set) var pastUsage: UsageByDay?
     /// 공식 한도 (Claude: OAuth usage, Codex: app-server). 못 읽으면 nil.
     private(set) var claudeLimits: LimitStatus?
     private(set) var codexLimits: CodexRateLimitSnapshot?
@@ -112,6 +116,11 @@ final class AppModel {
         }
     }
 
+    /// 사용량 화면이 열릴 때. 지난 날짜는 날이 바뀔 때까지 리더가 들고 있어 두 번째부터는 바로 온다.
+    func loadHistory() async {
+        pastUsage = await usageReader.pastDays()
+    }
+
     func refresh() {
         guard !refreshing else { return }
         refreshing = true
@@ -119,6 +128,7 @@ final class AppModel {
             defer { refreshing = false }
             let usage = await usageReader.read(since: game.state.claimedDate)  // actor 라서 메인 스레드 밖에서 읽는다
             // 같은 값이라도 넣으면 읽는 화면이 다시 그려질 수 있어 바뀔 때만
+            if todayDetail != usage.detail { todayDetail = usage.detail }
             if todayTokens != usage.byProvider { todayTokens = usage.byProvider }
             if todayCost != usage.cost { todayCost = usage.cost }
             let sample = UsageSample(date: usage.date, total: usage.byProvider.values.reduce(0, +), at: Date())
@@ -339,6 +349,6 @@ final class AppModel {
 
 /// 팝오버 안 화면. 개봉은 연 화면(요약·상점) 위에 뜨고, 닫으면 그리로 돌아간다.
 enum PanelScreen: Equatable {
-    case summary, shop, settings
+    case summary, shop, settings, usage
     indirect case opening(back: PanelScreen)
 }
