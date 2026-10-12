@@ -43,6 +43,7 @@ struct ShopView: View {
 /// 시대별 접고 펴는 팩 묶음. 접힘 상태는 다음 실행에도 기억한다.
 private struct EraSection: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.workMode) private var workMode
     let name: String
     let packs: Range<Int>
     @AppStorage private var expanded: Bool
@@ -78,18 +79,27 @@ private struct EraSection: View {
             }
             .buttonStyle(.plain)
             if expanded {
-                LazyVStack(spacing: 6) {
-                    ForEach(packs, id: \.self) { i in
-                        ShopRow(index: i)
+                if workMode {
+                    LazyVStack(spacing: 6) {
+                        ForEach(packs, id: \.self) { i in
+                            ShopRow(index: i)
+                        }
                     }
+                    .transition(.opacity)
+                } else {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                        ForEach(packs, id: \.self) { i in
+                            PackTile(index: i)
+                        }
+                    }
+                    .transition(.opacity)
                 }
-                .transition(.opacity)
             }
         }
     }
 }
 
-/// 상점 줄: 봉투 · 이름 · 진행 막대와 보유/전체 · 작은 구매 버튼.
+/// 업무 모드 상점 줄: 이름 · 진행 막대와 보유/전체 · 작은 구매 버튼 (봉투 자리 없음).
 private struct ShopRow: View {
     @Environment(AppModel.self) private var model
     let index: Int
@@ -99,8 +109,6 @@ private struct ShopRow: View {
         let pack = game.db.packs[index]
         let p = game.progress(index)
         HStack(spacing: 8) {
-            PackImageView(pack: pack)
-                .frame(height: 36)
             VStack(alignment: .leading, spacing: 3) {
                 Text(pack.name).font(.callout).lineLimit(1)
                 HStack {
@@ -112,6 +120,56 @@ private struct ShopRow: View {
             Spacer(minLength: 4)
             BuyButton(index: index, cleared: p.cleared).controlSize(.small)
         }
+    }
+}
+
+/// 상점 그리드 칸: 팩 이미지와 그 아래 이름 한 줄, 마우스를 올리면 이미지가 흐려지며 전체 이름·진행도·구매 버튼.
+struct PackTile: View {
+    @Environment(AppModel.self) private var model
+    let index: Int
+    @State private var hover = false
+
+    var body: some View {
+        let game = model.game
+        let pack = game.db.packs[index]
+        VStack(spacing: 4) {
+            image(pack, game)
+            Text(pack.name)
+                .font(.caption2).lineLimit(1).truncationMode(.tail)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func image(_ pack: Pack, _ game: Game) -> some View {
+        let p = game.progress(index)
+        return PackImageView(pack: pack)
+            .blur(radius: hover ? 6 : 0)
+            .overlay {
+                if hover {
+                    VStack(spacing: 6) {
+                        Text(pack.name)
+                            .font(.callout.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                        Text("\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
+                            .font(.caption2).monospacedDigit().opacity(0.85)
+                        if p.fusionLeft > 0 { Text("융합 \(p.fusionLeft)장 남음").font(.caption2).opacity(0.85) }
+                        BuyButton(index: index, cleared: p.cleared)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black.opacity(0.35))
+                    .transition(.opacity)
+                }
+            }
+            .overlay {
+                if p.cleared && !hover { PackStamp(complete: p.complete) }
+            }
+            .clipShape(.rect(cornerRadius: 10))
+            .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
+            .onHover { h in withAnimation(.easeOut(duration: 0.15)) { hover = h } }
+            .help(pack.name)
     }
 }
 
@@ -138,6 +196,25 @@ struct PackRow: View {
             // 바로 구매 줄은 계속 떠 있고 팩만 바뀌므로, 팩이 바뀌면 "그래도 사기" 상태를 버린다
             BuyButton(index: index, cleared: p.cleared).id(index)
         }
+    }
+}
+
+/// 팩에서 더 받을 카드가 없는 팩 위에 비스듬히 찍는 도장: 다 모았으면 COMPLETE(초록), 융합 전용만 남았으면 FUSION ONLY(보라)
+private struct PackStamp: View {
+    let complete: Bool
+
+    var body: some View {
+        let color = complete ? Palette.stampComplete : Palette.stampFusion
+        // 3열 칸(폭 약 96pt)에 기울여도 들어가게: 12pt, FUSION ONLY는 두 줄
+        Text(verbatim: complete ? "COMPLETE" : "FUSION\nONLY")
+            .font(.system(size: 12, weight: .heavy)).kerning(1)
+            .multilineTextAlignment(.center).fixedSize()
+            .foregroundStyle(color)
+            .padding(.horizontal, 6).padding(.vertical, 3)
+            .background(.white.opacity(0.75), in: .rect(cornerRadius: 4))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(color, lineWidth: 2.5))
+            .rotationEffect(.degrees(-24))
+            .accessibilityLabel(complete ? "다 모은 팩" : "남은 카드는 융합으로만 얻는 팩")
     }
 }
 

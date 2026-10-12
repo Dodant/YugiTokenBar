@@ -2,10 +2,7 @@
 
 ## 0.5.7 — 2026-10-12
 **✨ New features**
-- Added [Work mode] to Settings > General. When on, card and pack images and the partner are hidden and only the card name is shown in a grey box, and the rare reveal effects are turned off too. Game progress is unchanged.
-
-**🎨 Improvements**
-- Changed the Shop from a 3-column grid to a list. Each pack now shows its name, progress bar, owned/total and buy button at a glance, and completion and fusion-left are shown as text instead of stamps.
+- Added [Work mode] to Settings > General. When on, card and pack images and the partner are hidden and only the card name is shown in a grey box, and the rare reveal effects are turned off too. Game progress is unchanged. The shop shows a plain list of rows without images.
 
 ## 0.5.6 — 2026-10-12
 **🎨 Improvements**

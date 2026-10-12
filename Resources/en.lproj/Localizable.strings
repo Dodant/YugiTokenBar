@@ -391,6 +391,8 @@
 "세이브 파일로 보기엔 너무 커요." = "Too large to be a save file.";
 /* ShopView.swift:193 */
 "그래도 사기" = "Buy anyway";
+/* ShopView.swift:124 */
+"융합 %lld장 남음" = "%lld left to fuse";
 /* ShopView.swift:161 */
 "%lld/%lld · 융합 %lld장 남음" = "%lld/%lld · %lld left to fuse";
 /* FusionAnimationView.swift:50 */
@@ -403,6 +405,10 @@
 "베타 기능" = "Beta feature";
 /* PackOpenView.swift:105 */
 "다음 무료 팩 열기 · %lld개 남음" = "Open next free pack · %lld left";
+/* ShopView.swift:181 */
+"다 모은 팩" = "Completed pack";
+/* ShopView.swift:181 */
+"남은 카드는 융합으로만 얻는 팩" = "Pack whose remaining cards come only from fusion";
 /* DexView.swift:194 */
 "획득 순서" = "Order obtained";
 /* CardDetailView.swift:44 */
