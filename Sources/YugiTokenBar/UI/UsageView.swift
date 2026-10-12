@@ -9,25 +9,15 @@ struct UsageView: View {
     @Environment(\.workMode) private var workMode
 
     var body: some View {
-        let claude = model.claudeLimits
-        let codex = model.codexLimits
         let loading = model.fetchingLimits
         // 메뉴 줄처럼 마우스를 올리면 배경이 생기고, 누르면 사용량 화면으로 넘어간다
         Button { model.screen = .usage } label: { VStack(alignment: .leading, spacing: 12) {
             if workMode { WorkSummary() }
             ForEach(Self.agents, id: \.id) { p in
-                let today = model.todayDetail[p.id.rawValue] ?? .init(), tokens = today.total, cost = today.cost
-                switch p.id {
-                case .claude:
-                    ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: tokens, cost: cost,
-                                     reset: claude.flatMap(Self.claudeReset), meters: claude.map(Self.claudeMeters) ?? [], loading: loading)
-                case .codex:
-                    ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: tokens, cost: cost,
-                                     reset: codex?.primary?.resetDate, meters: codex.map(Self.codexMeters) ?? [], loading: loading)
-                default:
-                    if tokens > 0 {
-                        ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: tokens, cost: cost, reset: nil, meters: nil)
-                    }
+                let today = model.todayDetail[p.id.rawValue] ?? .init(), meters = model.meters(for: p.id)
+                if meters != nil || today.total > 0 {
+                    ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: today.total, cost: today.cost,
+                                     reset: model.limitReset(for: p.id), meters: meters, loading: loading)
                 }
             }
         }
@@ -125,7 +115,7 @@ struct ProviderUsageRow: View {
                         Text(UsageView.resetText(reset)).font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Text("\(shortTokens(tokens)) · \(String(format: "$%.2f", cost))")
+                    Text("\(shortTokens(tokens)) · \(UsageDetailView.costText(cost))")
                         .font(.caption).foregroundStyle(.secondary).monospacedDigit()
                 }
                 if let meters, meters.isEmpty {
@@ -167,11 +157,9 @@ private struct WorkSummary: View {
     private static let barHeight = 18.0
 
     var body: some View {
-        let now = Date(), cal = Calendar.current
+        let now = Date()
         let usage = model.usageByDay
-        let today = TodayUsageReader.total(usage, from: now, through: now)
-        let week = TodayUsageReader.total(usage, from: cal.dateInterval(of: .weekOfYear, for: now)?.start ?? now, through: now)
-        let month = TodayUsageReader.total(usage, from: cal.dateInterval(of: .month, for: now)?.start ?? now, through: now)
+        let (today, week, month) = TodayUsageReader.periods(usage, now: now)
         let days = UsageDetailView.days(usage, now: now, count: 14)
         let peak = days.map(\.tokens).max() ?? 0
         VStack(alignment: .leading, spacing: 6) {

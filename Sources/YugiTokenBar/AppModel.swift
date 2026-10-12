@@ -25,6 +25,24 @@ final class AppModel {
     /// 공식 한도 (Claude: OAuth usage, Codex: app-server). 못 읽으면 nil.
     private(set) var claudeLimits: LimitStatus?
     private(set) var codexLimits: CodexRateLimitSnapshot?
+    /// 공식 한도 막대. nil 이면 공식 한도를 읽지 않는 provider, 빈 배열이면 아직 못 읽은 것
+    func meters(for p: Provider) -> [Meter]? {
+        switch p {
+        case .claude: claudeLimits.map(UsageView.claudeMeters) ?? []
+        case .codex: codexLimits.map(UsageView.codexMeters) ?? []
+        default: nil
+        }
+    }
+
+    /// 5시간 창 초기화 시각 (공식 한도를 읽는 provider 만)
+    func limitReset(for p: Provider) -> Date? {
+        switch p {
+        case .claude: claudeLimits.flatMap(UsageView.claudeReset)
+        case .codex: codexLimits?.primary?.resetDate
+        default: nil
+        }
+    }
+
     /// 공식 한도를 읽는 중 (사용량 칸이 표시한다)
     private(set) var fetchingLimits = false
     /// 마지막 저장이 실패했으면 그 이유 (팝오버·메뉴바가 경고한다. 다음 저장이 되면 지운다)
@@ -325,7 +343,7 @@ final class AppModel {
     // MARK: 파트너
 
     private func updatePartnerMood() {
-        let meters = (claudeLimits.map(UsageView.claudeMeters) ?? []) + (codexLimits.map(UsageView.codexMeters) ?? [])
+        let meters = (meters(for: .claude) ?? []) + (meters(for: .codex) ?? [])
         partner.setMood(.base(tokensPerMinute: tokensPerMinute, limitPercent: PartnerMood.limitPercent(meters)))
     }
 

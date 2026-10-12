@@ -148,6 +148,16 @@ actor TodayUsageReader {
         return (tokens, cost)
     }
 
+    /// 오늘·이번 주·이번 달(오늘 포함) 합 (사용량 화면·업무 모드 요약)
+    static func periods(_ days: UsageByDay, now: Date)
+        -> (today: (tokens: Int, cost: Double), week: (tokens: Int, cost: Double), month: (tokens: Int, cost: Double)) {
+        let cal = Calendar.current
+        func since(_ unit: Calendar.Component) -> (tokens: Int, cost: Double) {
+            total(days, from: cal.dateInterval(of: unit, for: now)?.start ?? now, through: now)
+        }
+        return (total(days, from: now, through: now), since(.weekOfYear), since(.month))
+    }
+
     /// 읽기 시작 시각: 원장 날짜의 0시(오늘보다 뒤면 오늘, `catchUpDays`보다 앞이면 그만큼만).
     static func start(since: String?, now: Date) -> Date {
         let cal = Calendar.current

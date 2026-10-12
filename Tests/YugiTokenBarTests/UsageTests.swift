@@ -96,7 +96,7 @@ import Testing
     }
 
     /// 사용량 화면 합계: 고른 날짜 범위(양 끝 포함)의 모든 provider 를 더한다
-    @Test func dailyUsageTotalCoversInclusiveRange() {
+    @MainActor @Test func dailyUsageTotalCoversInclusiveRange() {
         func b(_ input: Int) -> TokenSum { var b = TokenSum(); b.input = input; b.cost = Double(input) / 100; return b }
         let days: UsageByDay = ["2026-09-30": ["claude_code": b(1)], "2026-10-01": ["claude_code": b(10), "codex": b(20)],
                                 "2026-10-05": ["codex": b(300)], "2026-10-06": ["claude_code": b(4000)]]
@@ -106,6 +106,9 @@ import Testing
         #expect(t.tokens == 330)
         #expect(abs(t.cost - 3.3) < 1e-9)
         #expect(TodayUsageReader.total(days, from: date(6), through: date(6)).tokens == 4000)
+        let chart = UsageDetailView.days(days, now: date(6), count: 6)  // 10/1 ~ 10/6, 날마다 모든 provider 합
+        #expect(chart.map(\.tokens) == [30, 0, 0, 0, 300, 4000] && chart[0].byAgent == ["claude_code": 10, "codex": 20])
+        #expect(abs(chart[0].cost - 0.3) < 1e-9)
     }
 
     /// 지난 날짜 합계는 파일에 남아, 로그가 지워진 뒤 새 리더도 다시 읽지 않고 같은 값을 낸다

@@ -41,11 +41,8 @@ struct UsageDetailView: View {
 
     private var content: some View {
         let now = Date()
-        let cal = Calendar.current
         let usage = model.usageByDay
-        let today = TodayUsageReader.total(usage, from: now, through: now)
-        let week = TodayUsageReader.total(usage, from: cal.dateInterval(of: .weekOfYear, for: now)?.start ?? now, through: now)
-        let month = TodayUsageReader.total(usage, from: cal.dateInterval(of: .month, for: now)?.start ?? now, through: now)
+        let (today, week, month) = TodayUsageReader.periods(usage, now: now)
         let days = Self.days(usage, now: now)
         let agents = Self.ranked(usage, today: model.todayDetail)
 
@@ -100,9 +97,9 @@ struct UsageDetailView: View {
         let today = cal.startOfDay(for: now)
         return (0..<count).reversed().compactMap { back in
             guard let date = cal.date(byAdding: .day, value: -back, to: today) else { return nil }
-            let id = fmt.string(from: date)
-            let t = TodayUsageReader.total(usage, from: date, through: date)
-            return Day(id: id, date: date, tokens: t.tokens, cost: t.cost, byAgent: usage[id]?.mapValues(\.total) ?? [:])
+            let id = fmt.string(from: date), sums = usage[id] ?? [:]
+            return Day(id: id, date: date, tokens: sums.values.reduce(0) { $0 + $1.total }, cost: sums.values.reduce(0) { $0 + $1.cost },
+                       byAgent: sums.mapValues(\.total))
         }
     }
 
@@ -211,16 +208,9 @@ struct UsageDetailView: View {
 
     private func detail(_ a: UsageView.Agent) -> some View {
         let b = model.todayDetail[a.id.rawValue] ?? .init()
-        let meters: [Meter]? = switch a.id {
-        case .claude: model.claudeLimits.map(UsageView.claudeMeters) ?? []
-        case .codex: model.codexLimits.map(UsageView.codexMeters) ?? []
-        default: nil
-        }
-        let reset = a.id == .claude ? model.claudeLimits.flatMap(UsageView.claudeReset)
-            : a.id == .codex ? model.codexLimits?.primary?.resetDate : nil
         return VStack(alignment: .leading, spacing: 8) {
             ProviderUsageRow(name: a.name, symbol: a.symbol, tint: a.tint, tokens: b.total, cost: b.cost,
-                             reset: reset, meters: meters, loading: model.fetchingLimits,
+                             reset: model.limitReset(for: a.id), meters: model.meters(for: a.id), loading: model.fetchingLimits,
                              emptyText: "한도를 읽지 못했어요. 새로고침해 보세요")
             Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 3) {
                 // 첫 칸 폭을 고정해 에이전트 줄마다 출력·캐시 읽기 위치가 같다
