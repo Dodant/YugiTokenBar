@@ -3,7 +3,7 @@
 "언어" = "Language";
 "다시 시작하면 적용돼요" = "Takes effect after restart";
 /* App.swift:27 */
-"컬렉션" = "Collection";
+"컬렉션" = "Dex";
 /* App.swift:32 */
 "패치노트" = "Patch notes";
 /* App.swift:35 */
@@ -47,7 +47,7 @@
 /* PackOpenView.swift:104 */
 "한 팩 더 · %@" = "One more pack · %@";
 /* PackOpenView.swift:107 */
-"다음 %lld장 열기" = "Open next %lld";
+"다음 %lld장 열기" = "Open %lld";
 /* PackOpenView.swift:81 */
 "새 카드" = "New card";
 /* PackOpenView.swift:82 */
@@ -86,7 +86,7 @@
 /* PopoverView.swift:90 */
 "상점" = "Shop";
 /* PopoverView.swift:96 */
-"설정" = "Settings";
+"설정" = "Setting";
 /* PopoverView.swift:97 */
 "종료" = "Quit";
 /* PopoverView.swift:112 */
@@ -404,7 +404,7 @@
 /* SettingsView.swift:298 */
 "베타 기능" = "Beta feature";
 /* PackOpenView.swift:105 */
-"다음 무료 팩 열기 · %lld개 남음" = "Open next free pack · %lld left";
+"다음 무료 팩 열기 · %lld개 남음" = "Open Next · %lld left";
 /* ShopView.swift:181 */
 "다 모은 팩" = "Completed pack";
 /* ShopView.swift:181 */

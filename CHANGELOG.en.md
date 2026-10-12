@@ -1,5 +1,9 @@
 # Patch notes
 
+## 0.6.4 — 2026-10-12
+**🎨 Improvements**
+- Standardized the main menus as Shop, Dex and Setting, with Cards, Decks, Partner, Updates, OK and Open shared across all languages.
+
 ## 0.6.3 — 2026-10-12
 **🎨 Improvements**
 - Shortened guidance in Settings, Collection and usage, and moved detailed conditions and controls to ? tooltips.

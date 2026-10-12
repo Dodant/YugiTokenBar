@@ -203,7 +203,7 @@ tools/build-cards.py
 tools/import-usage.sh  PokeTokenBar 커밋 de617e3 에서 Usage/ 를 복사하고 패치 (NOTICE.md)
 tools/clean-card-back.py  Yugipedia Back-KR.png 에서 로고를 지워 card-back.jpg 를 만듦
 tools/sync-strings.py  UI 문구 키 추출(swiftc -emit-localized-strings)·en/ja 파일 맞추기·검사
-Resources/{ko,en,ja}.lproj/Localizable.strings  UI 문구(키는 한국어 문장, ko는 빈 파일)
+Resources/{ko,en,ja}.lproj/Localizable.strings  UI 문구(키는 한국어 문장, ko는 공통 영어 표기만 지정)
 Resources/en.lproj/Localizable.stringsdict  영어 단수·복수(1 card·2 cards)가 갈리는 문구
 ```
 
@@ -670,6 +670,10 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     오른쪽 상세 큰 이미지는 미보유도 컬러이고 움직임(기울기·반사)이 없다.
   - 사이드바에서 마지막으로 고른 항목(전체·즐겨찾기·최근 획득·팩·덱)은 기억해서(`dex.scope`) 창을 다시 열면 그대로 열리지만, 그날(로컬 날짜) 처음 열 때는 "전체"로 연다(`dex.scopeDay`).
     기억한 팩이 시대 범위 밖이거나 덱이 지워졌으면 "전체".
+- **공통 UI 표기**: 주요 메뉴와 화면 제목은 모든 언어에서 `Shop`·`Dex`·`Setting`으로 표시한다.
+  카드·덱·파트너·업데이트 섹션은 `Cards`·`Decks`·`Partner`·`Updates`, 단순 확인은 `OK`, 개봉은 `Open`으로 표시한다.
+  수량이 있는 무료 카드 개봉 버튼은 `Open N`, 다음 무료 팩은 `Open Next · N left`로 표시한다.
+  설명·도움말·카드 정보·판매·삭제·세이브 작업과 나머지 UI 문구는 고른 언어로 표시한다.
 - **설정** (팝오버 내 화면 전환, 상점과 같은 방식):
   - 설명 줄은 기능의 결과를 짧게 보여 준다.
     파트너 조작법·중복 판매의 보관 규칙·융합 조건은 이름 옆 ? 말풍선으로 제공하고 VoiceOver 스위치 힌트에서도 읽는다.

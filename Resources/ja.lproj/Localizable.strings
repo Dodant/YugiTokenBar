@@ -3,7 +3,7 @@
 "언어" = "言語";
 "다시 시작하면 적용돼요" = "再起動後に反映されます";
 /* App.swift:27 */
-"컬렉션" = "コレクション";
+"컬렉션" = "Dex";
 /* App.swift:32 */
 "패치노트" = "パッチノート";
 /* App.swift:35 */
@@ -47,7 +47,7 @@
 /* PackOpenView.swift:104 */
 "한 팩 더 · %@" = "もう1パック · %@";
 /* PackOpenView.swift:107 */
-"다음 %lld장 열기" = "次の%lld枚を開封";
+"다음 %lld장 열기" = "Open %lld";
 /* PackOpenView.swift:81 */
 "새 카드" = "新しいカード";
 /* PackOpenView.swift:82 */
@@ -75,18 +75,18 @@
 /* PopoverView.swift:75 */
 "무료 팩 %lld개" = "無料パック %lld個";
 /* PopoverView.swift:76 */
-"열기" = "開封";
+"열기" = "Open";
 /* PopoverView.swift:81 */
 "무료 카드 %lld장" = "無料カード %lld枚";
 /* PopoverView.swift:82 */
-"%lld장 열기" = "%lld枚開封";
+"%lld장 열기" = "Open %lld";
 /* PopoverView.swift:55 */
 "최근 획득" = "最近入手したカード";
 /* PopoverView.swift:68 */
 /* PopoverView.swift:90 */
-"상점" = "ショップ";
+"상점" = "Shop";
 /* PopoverView.swift:96 */
-"설정" = "設定";
+"설정" = "Setting";
 /* PopoverView.swift:97 */
 "종료" = "終了";
 /* PopoverView.swift:112 */
@@ -98,9 +98,9 @@
 /* SettingsView.swift:42 */
 "일반" = "一般";
 /* SettingsView.swift:82 */
-"카드" = "カード";
+"카드" = "Cards";
 /* SettingsView.swift:113 */
-"업데이트" = "アップデート";
+"업데이트" = "Updates";
 /* SettingsView.swift:154 */
 "백업 & 이전" = "バックアップと移行";
 /* SettingsView.swift:176 */
@@ -276,7 +276,7 @@
 /* DexSidebar.swift:82 */
 "이름 바꾸기" = "名前を変更";
 /* DexSidebar.swift:88 */
-"덱" = "デッキ";
+"덱" = "Decks";
 /* DexSidebar.swift:90 */
 "새 덱" = "新しいデッキ";
 /* DexSidebar.swift:155 */
@@ -398,13 +398,13 @@
 /* FusionAnimationView.swift:50 */
 "%@ 융합. 누르면 건너뛰고, 한 번 더 누르면 닫기" = "%@を融合召喚しました。クリックでスキップ、もう一度クリックで閉じます";
 /* SettingsView.swift:67 */
-"파트너" = "パートナー";
+"파트너" = "Partner";
 /* SettingsView.swift:120 */
 "(최신)" = "（最新）";
 /* SettingsView.swift:298 */
 "베타 기능" = "ベータ機能";
 /* PackOpenView.swift:105 */
-"다음 무료 팩 열기 · %lld개 남음" = "次の無料パックを開封・残り%lld個";
+"다음 무료 팩 열기 · %lld개 남음" = "Open Next · %lld left";
 /* ShopView.swift:181 */
 "다 모은 팩" = "コンプリートしたパック";
 /* ShopView.swift:181 */
