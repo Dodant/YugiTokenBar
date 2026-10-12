@@ -391,8 +391,6 @@
 "세이브 파일로 보기엔 너무 커요." = "セーブファイルとしては大きすぎます。";
 /* ShopView.swift:193 */
 "그래도 사기" = "それでも買う";
-/* ShopView.swift:124 */
-"융합 %lld장 남음" = "融合であと%lld枚";
 /* ShopView.swift:161 */
 "%lld/%lld · 융합 %lld장 남음" = "%lld/%lld · 融合であと%lld枚";
 /* FusionAnimationView.swift:50 */
@@ -405,10 +403,6 @@
 "베타 기능" = "ベータ機能";
 /* PackOpenView.swift:105 */
 "다음 무료 팩 열기 · %lld개 남음" = "次の無料パックを開封・残り%lld個";
-/* ShopView.swift:181 */
-"다 모은 팩" = "コンプリートしたパック";
-/* ShopView.swift:181 */
-"남은 카드는 융합으로만 얻는 팩" = "残りのカードは融合でのみ手に入るパック";
 /* DexView.swift:194 */
 "획득 순서" = "入手順";
 /* CardDetailView.swift:44 */
