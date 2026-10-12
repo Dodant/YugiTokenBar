@@ -35,4 +35,13 @@ import Testing
         #expect(UsageView.resetText(now.addingTimeInterval(126 * 60), now: now) == "2시간 6분 후 초기화")
         #expect(UsageView.resetText(now.addingTimeInterval(-60), now: now) == "0분 후 초기화")
     }
+
+    @Test func shortCoinsKeepsDecimalOnlyForOneDigit() {
+        #expect(shortCoins(2_400) == 2_400.formatted())
+        #expect(shortCoins(34_200) == "34K")
+        #expect(shortCoins(293_300) == "293K")
+        #expect(shortCoins(2_400_000) == "2.4M")
+        #expect(shortCoins(1_000_000) == "1M")
+        #expect(shortCoins(12_345_678) == "12M")
+    }
 }

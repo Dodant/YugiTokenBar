@@ -105,7 +105,7 @@ struct Pack: Codable, Sendable, Identifiable, Equatable {
     var cards: [Int]
     /// 대응하는 TCG 팩 코드 (LOB 등)
     var setCode: String? = nil
-    /// 봉투 이미지: Yugipedia 한글판, 없으면 YGOPRODeck 영문판
+    /// 봉투 이미지: Yugipedia 의 그 언어판(일본어는 없으면 영문판), 없으면 YGOPRODeck 영문판
     var imageURL: String? = nil
     var id: String { pid }
 }

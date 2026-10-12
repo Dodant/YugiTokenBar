@@ -63,10 +63,11 @@ struct TintBar: View {
 }
 
 /// 코인 표기: ⓒ 1,000
-/// 만 단위부터 K·M (12,345 → 12.3K, 1,000,000 → 1M). 메뉴바와 `coinText`가 같이 쓴다
+/// 만 단위부터 K·M (34,200 → 34K, 2,400,000 → 2.4M). 소수는 줄인 수가 한 자리일 때만. 메뉴바와 `coinText`가 같이 쓴다
 func shortCoins(_ n: Int) -> String {
     guard abs(n) >= 10_000 else { return n.formatted() }
-    return n.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)).locale(Locale(identifier: "en_US")))
+    let oneDigit = String(n.magnitude).count % 3 == 1
+    return n.formatted(.number.notation(.compactName).precision(.fractionLength(0...(oneDigit ? 1 : 0))).locale(Locale(identifier: "en_US")))
 }
 
 func coinText(_ n: Int) -> String { "ⓒ \(shortCoins(n))" }

@@ -65,7 +65,8 @@ import Testing
         for (lang, db) in Self.dbs {
             #expect(db.packs.map(\.pid) == ko.packs.map(\.pid), "\(lang) 팩 순서")
             #expect(db.packs.map(\.cards) == ko.packs.map(\.cards), "\(lang) 팩 카드")
-            #expect(db.packs.map(\.imageURL) == ko.packs.map(\.imageURL) && db.packs.map(\.date) == ko.packs.map(\.date))
+            #expect(db.packs.map(\.setCode) == ko.packs.map(\.setCode) && db.packs.map(\.date) == ko.packs.map(\.date))
+            #expect(db.packs.allSatisfy { $0.imageURL != nil }, "\(lang) 봉투 이미지")  // 봉투는 언어마다 다르다
             #expect(Set(db.cards.keys) == Set(ko.cards.keys), "\(lang) cid 집합")
             for (cid, k) in ko.cards {
                 let c = db.cards[cid]!

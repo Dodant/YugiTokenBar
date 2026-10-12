@@ -436,14 +436,30 @@ def verify(files):
     return problems
 
 
-def korean_pack_image(set_code):
-    """Yugipedia 의 한글판 봉투 이미지 `<code>-BoosterKR.*` 를 폭 600px 썸네일로(원본이 더 작으면 원본). 없으면 None."""
+# 언어별 봉투 이미지 지역(앞에서부터). NA 는 북미 영문판(매지션의 힘·왕가의 수호자는 EN 이 없다).
+# 초기 11팩은 일본에 같은 팩이 없어(팩 이름도 TCG 이름) JP 도 영문판을 쓴다.
+YGOPRODECK_SET = "https://images.ygoprodeck.com/images/sets/{}.jpg"
+PACK_REGIONS = {"ko": ("KR",), "ja": ("JP", "EN", "NA"), "en": ("EN", "NA")}
+
+
+def pick_booster(names, set_code, regions):
+    """Yugipedia 파일 이름 중 `<code>-Booster<지역>.*`(`-Booster-EN-1E.*` 꼴 포함)을 앞 지역부터 고른다. 없으면 None."""
+    for r in regions:
+        found = sorted((n for n in names if re.fullmatch(rf"{re.escape(set_code)}-Booster-?{r}(-1E)?\.\w+", n)), key=len)
+        if found:
+            return found[0]
+    return None
+
+
+def pack_image(set_code, lang):
+    """Yugipedia 의 그 언어 봉투 이미지를 폭 600px 썸네일로(원본이 더 작으면 원본). 없으면 None."""
     api = "https://yugipedia.com/api.php?format=json&action=query&"
-    found = json.loads(get(api + f"list=allimages&aiprefix={set_code}-BoosterKR&ailimit=5"))["query"]["allimages"]
+    found = json.loads(get(api + f"list=allimages&aiprefix={set_code}-Booster&ailimit=500"))["query"]["allimages"]
     time.sleep(0.5)
-    if not found:
+    name = pick_booster([i["name"] for i in found], set_code, PACK_REGIONS[lang])
+    if not name:
         return None
-    pages = json.loads(get(api + f"prop=imageinfo&iiprop=url&iiurlwidth=600&titles={found[0]['title']}"))["query"]["pages"]
+    pages = json.loads(get(api + f"prop=imageinfo&iiprop=url&iiurlwidth=600&titles=File:{urllib.parse.quote(name)}"))["query"]["pages"]
     time.sleep(0.5)
     info = next(iter(pages.values()))["imageinfo"][0]
     return info.get("thumburl") or info["url"]
@@ -850,7 +866,7 @@ def build_ko():
         best = max((s for s in count if sets.get(s, {}).get("set_image")),
                    key=lambda s: count[s] / max(len(p["cards"]), sets[s]["num_of_cards"]), default=None)
         p["setCode"] = sets[best]["set_code"] if best else None
-        p["imageURL"] = korean_pack_image(p["setCode"]) or sets[best]["set_image"] if best else None
+        p["imageURL"] = pack_image(p["setCode"], "ko") or sets[best]["set_image"] if best else None
         print(f"{p['name']} → {best} ({p['setCode']}) {p['imageURL']}")
     missing = []
     for cid, info in infos.items():
@@ -883,6 +899,7 @@ def build_lang(lang):
         override = PACK_NAME_OVERRIDES[lang].get(p["pid"])
         print(f"  팩 {p['name']} → {override or name} ({n}/{len(p['cards'])}){' [덮어씀]' if override else ''}")
         p["name"] = override or (short_pack_name(name) if name and lang == "ja" else name) or p["name"]
+        p["imageURL"] = pack_image(p["setCode"], lang) or YGOPRODECK_SET.format(p["setCode"])
     dump(out, out_path(lang))
     label = lambda cid: "KO" if fallback is None or cid in fallback_missing else "JP"
     print(f"{lang}: 대체 {len(missing)}장, 소재 줄 불일치 {len(mismatched)}장")
@@ -907,9 +924,9 @@ def reformat(langs):
 
 
 def sync_shared(ko, out):
-    """언어 파일의 팩(이름 빼고)과 카드 공유 필드를 KO 값으로 맞춘다."""
+    """언어 파일의 팩(이름·봉투 이미지 빼고)과 카드 공유 필드를 KO 값으로 맞춘다."""
     for p, k in zip(out["packs"], ko["packs"]):
-        p.update({f: v for f, v in k.items() if f != "name"})
+        p.update({f: v for f, v in k.items() if f not in ("name", "imageURL")})
     for cid, info in out["cards"].items():
         base = ko["cards"][cid]
         for f in SHARED:

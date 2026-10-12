@@ -351,6 +351,16 @@ def test_make_picks():
     assert picks["11"][0] == {"any": [1, 4, 14, 15]}  # 용, 용이 소재인 융합 (엑시즈 용은 이름만 겹친다)
 
 
+def test_pick_booster():
+    names = ["SOVR-BoosterBoxEN.jpg", "SOVR-BoosterEN-UE.png", "SOVR-BoosterEN.jpg", "SOVR-BoosterJP.jpg",
+             "SOVR-BoosterDE-25thAnniversaryEdition.png", "LODT-Booster-EN-1E.png", "MFC-BoosterNA.png"]
+    assert bc.pick_booster(names, "SOVR", ("JP", "EN")) == "SOVR-BoosterJP.jpg"
+    assert bc.pick_booster(names, "SOVR", ("EN", "NA")) == "SOVR-BoosterEN.jpg"
+    assert bc.pick_booster(names, "LODT", ("EN", "NA")) == "LODT-Booster-EN-1E.png"
+    assert bc.pick_booster(names, "MFC", bc.PACK_REGIONS["ja"]) == "MFC-BoosterNA.png"
+    assert bc.pick_booster(names, "MFC", ("KR",)) is None
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
