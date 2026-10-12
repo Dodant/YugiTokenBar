@@ -99,7 +99,7 @@ private struct EraSection: View {
     }
 }
 
-/// 업무 모드 상점 줄: 이름 · 진행 막대와 보유/전체 · 작은 구매 버튼 (봉투 자리 없음).
+/// 업무 모드 상점 줄: 이름 · 진행 막대와 보유/전체. 마우스를 올리면 오른쪽에 작은 구매 버튼이 얹혀 뜬다 (봉투 자리 없음).
 private struct ShopRow: View {
     @Environment(AppModel.self) private var model
     let index: Int
@@ -108,7 +108,7 @@ private struct ShopRow: View {
         let game = model.game
         let pack = game.db.packs[index]
         let p = game.progress(index)
-        HStack(spacing: 8) {
+        Hovering { hovered in
             VStack(alignment: .leading, spacing: 3) {
                 Text(pack.name).font(.callout).lineLimit(1)
                 HStack {
@@ -117,8 +117,13 @@ private struct ShopRow: View {
                         .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
-            Spacer(minLength: 4)
-            BuyButton(index: index, cleared: p.cleared).controlSize(.small)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .trailing) {
+                if hovered {
+                    BuyButton(index: index, cleared: p.cleared).controlSize(.small).transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.15), value: hovered)
         }
     }
 }
