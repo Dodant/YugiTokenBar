@@ -99,7 +99,7 @@ private struct EraSection: View {
     }
 }
 
-/// 업무 모드 상점 줄: 이름 · 왼쪽부터 진행 막대, 오른쪽 벽에 보유/전체. 마우스를 올리면 흐려지고 오른쪽에 작은 구매 버튼이 얹혀 뜬다 (봉투 자리 없음).
+/// 업무 모드 상점 줄: 이름 · 왼쪽부터 진행 막대, 오른쪽 벽에 보유/전체. 마우스를 올리면 오른쪽에 작은 구매 버튼이 얹혀 뜨고 그 뒤 숫자만 흐려진다 (봉투 자리 없음).
 private struct ShopRow: View {
     /// 가장 긴 ja "コンプリート · 136/136"이 들어가는 폭. 숫자 칸을 고정해 모든 줄의 막대 길이를 같게.
     private static let countWidth: CGFloat = 110
@@ -119,10 +119,10 @@ private struct ShopRow: View {
                         .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                         .lineLimit(1)
                         .frame(width: Self.countWidth, alignment: .trailing)
+                        .blur(radius: hovered ? 6 : 0)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .blur(radius: hovered ? 6 : 0)
             .overlay(alignment: .trailing) {
                 if hovered {
                     BuyButton(index: index, cleared: p.cleared).controlSize(.small).transition(.opacity)
