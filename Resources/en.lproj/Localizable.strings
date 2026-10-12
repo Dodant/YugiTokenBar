@@ -437,3 +437,5 @@
 "업무 모드" = "Work mode";
 /* SettingsView.swift:62 */
 "카드·팩 이미지와 파트너를 숨기고 밋밋한 상자만 보여요" = "Hides card and pack images and the partner, showing plain boxes instead";
+/* PackOpenView.swift:97 */
+"눌러서 공개" = "Click to reveal";
