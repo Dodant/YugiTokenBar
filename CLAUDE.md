@@ -1,7 +1,12 @@
 # YugiTokenBar
 
-Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션(정규 부스터 100팩, 8,226종.
-어시스트 팩 같은 미니 팩 제외, 100팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에, 100팩 소재가 있는 조건 없는 100팩 밖 융합은 그 소재의 가장 늦은 팩에, 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음)을 채우는 macOS 메뉴바 앱.
+Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션을 채우는 macOS 메뉴바 앱.
+- 컬렉션: 정규 부스터 100팩, 8,226종.
+  - 어시스트 팩 같은 미니 팩 제외.
+  - 100팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에 넣음.
+  - 100팩 소재가 있는 조건 없는 100팩 밖 융합은 그 소재의 가장 늦은 팩에 넣음.
+  - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음.
+
 개인용이며 배포하지 않는다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
@@ -21,7 +26,11 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
 - 버전과 패치노트는 `CHANGELOG.md` 맨 위에 `## x.y.z — 날짜` 항목을 추가하는 것으로만 올린다.
   `build-app.sh`(Info.plist)와 앱의 업데이트 확인(main의 raw 파일)이 이 파일을 읽는다.
   같은 항목을 `CHANGELOG.en.md`·`CHANGELOG.ja.md`에도 같은 `## x.y.z — 날짜` 제목으로 번역해 넣는다(앱은 언어별 파일을 보여 주고, 테스트가 세 파일의 제목을 맞춰 본다).
-  분류 줄은 en `**✨ New features**`·`**🎨 Improvements**`·`**⚖️ Balance**`·`**🐛 Bug fixes**`·`**⚡ Performance**`, ja `**✨ 新機能**`·`**🎨 改善**`·`**⚖️ バランス**`·`**🐛 不具合修正**`·`**⚡ パフォーマンス**`, UI 이름은 `Localizable.strings` 번역, 카드·팩 이름은 `cards_EN/JP.json` 공식 이름을 쓴다.
+  분류 줄과 이름은 다음을 쓴다:
+  - 분류 줄 en: `**✨ New features**`·`**🎨 Improvements**`·`**⚖️ Balance**`·`**🐛 Bug fixes**`·`**⚡ Performance**`
+  - 분류 줄 ja: `**✨ 新機能**`·`**🎨 改善**`·`**⚖️ バランス**`·`**🐛 不具合修正**`·`**⚡ パフォーマンス**`
+  - UI 이름은 `Localizable.strings` 번역
+  - 카드·팩 이름은 `cards_EN/JP.json` 공식 이름
 - 패치노트는 사용자용 문장(~했습니다)으로, 분류 줄 `**✨ 새로운 기능**`·`**🎨 개선**`·`**⚖️ 밸런스**`·`**🐛 오류 수정**`·`**⚡ 성능**` 중 해당하는 것만 쓴다.
   같은 버전 안에서 바뀐 수치는 최종값만, 같은 기능은 모아서, 한 항목엔 한 주제.
   내부 구조(카드 데이터 파일 형식, 해상도 등)는 빼고 커밋에만 남긴다.
@@ -30,7 +39,11 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
   옵션(`--reformat`·`--extras`·`--lang`)과 요청 간격·이어 받기는 스펙 3절.
   JP·EN은 언어당 5~9시간 걸린다.
 - UI 문구는 ko/en/ja 현지화, 기준 언어는 한국어.
-  코드에는 한국어 문장을 그대로 쓰고(SwiftUI 리터럴은 자동, `String`으로 만드는 문구는 `String(localized:)`, 문구를 받는 헬퍼는 `LocalizedStringKey`), `python3 tools/sync-strings.py`로 en/ja `Resources/*.lproj/Localizable.strings`에 키를 덧붙여 번역한다.
+  코드에는 한국어 문장을 그대로 쓰고, `python3 tools/sync-strings.py`로 en/ja `Resources/*.lproj/Localizable.strings`에 키를 덧붙여 번역한다.
+  - SwiftUI 리터럴은 자동.
+  - `String`으로 만드는 문구는 `String(localized:)`.
+  - 문구를 받는 헬퍼는 `LocalizedStringKey`.
+
   커밋 전 `python3 tools/sync-strings.py --check`.
 - 설정은 저장 위치를 나눈다. 기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다. 새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
 - 색은 시스템 색(`.primary`·`.secondary`·`.fill`·`accentColor`)을 먼저 쓰고, 고유한 색은 `CardImageView.swift`의 `Rarity`·`Palette`에만 라이트·다크 값을 같이 둔다(스펙 6절 외관).

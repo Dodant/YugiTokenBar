@@ -77,7 +77,9 @@ PokeTokenBar의 바탕화면 동료처럼, 토큰 사용 상태에 반응하는 
 
 ## 5. 바탕화면 파트너 (`UI/PartnerPanel.swift`)
 
-- 테두리 없는 투명 `NSPanel`(`.nonactivatingPanel`, 레벨 `.floating`, `.canJoinAllSpaces`·`.fullScreenAuxiliary`, 그림자 없음), 내용은 SwiftUI `PartnerView`(현재 프레임 이미지)를 `NSHostingView` 하위 클래스에 담는다.
+- 테두리 없는 투명 `NSPanel`.
+  - `.nonactivatingPanel`, 레벨 `.floating`, `.canJoinAllSpaces`·`.fullScreenAuxiliary`, 그림자 없음.
+  - 내용은 SwiftUI `PartnerView`(현재 프레임 이미지)를 `NSHostingView` 하위 클래스에 담는다.
 - 마우스: 누른 뒤 4pt 넘게 움직이면 창 드래그, 아니면 클릭.
   클릭은 갸웃만 재생한다(MenuBarExtra(macOS 26)에는 창을 코드로 여는 API가 없고 상태바 버튼에 target/action이 없어 팝오버는 못 연다).
   우클릭·Ctrl 클릭은 메뉴 [숨기기] → `partnerEnabled = false`.
@@ -107,7 +109,13 @@ Sources/YugiTokenBar/
 Resources/partner.png
 ```
 
-`App.swift`(메뉴바 라벨), `AppModel.swift`(분당 토큰·사건 전달·해금 검사·패널 표시), `GameState.swift`, `Game.swift`(`unlockPartnerIfOwned`), `UI/SettingsView.swift`, `scripts/build-app.sh`를 고친다.
+다음 파일을 고친다:
+- `App.swift`(메뉴바 라벨)
+- `AppModel.swift`(분당 토큰·사건 전달·해금 검사·패널 표시)
+- `GameState.swift`
+- `Game.swift`(`unlockPartnerIfOwned`)
+- `UI/SettingsView.swift`
+- `scripts/build-app.sh`
 
 ## 8. 테스트
 
