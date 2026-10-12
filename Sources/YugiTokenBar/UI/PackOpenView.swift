@@ -82,17 +82,16 @@ struct OpeningView: View {
         } }
     }
 
-    /// 업무 모드 개봉 줄: 배지 칸(폭 고정) · 등급 · 이름 · 오른쪽 끝 흐린 종류. 누르기 전엔 "눌러서 공개"만
+    /// 업무 모드 개봉 줄: 배지 칸(폭 고정, 오른쪽 정렬) · 등급 · 이름. 누르기 전엔 "눌러서 공개"만
     private func row(_ pull: Pull, _ i: Int) -> some View {
         let card = model.db.cards[pull.cid]
         return HStack(spacing: 8) {
             if flipped.contains(i) {
                 PullBadge(pull: pull, canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
-                    .frame(width: Self.badgeWidth, alignment: .leading)
+                    .frame(width: Self.badgeWidth, alignment: .trailing)  // 등급 바로 옆에 붙인다
                 RarityPill(label: pull.label, size: 10)
                 Text(card?.name ?? "").lineLimit(1)
-                Spacer(minLength: 8)
-                Text(kind(card)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Spacer(minLength: 0)
             } else {
                 Text("눌러서 공개").foregroundStyle(.tertiary)
                 Spacer(minLength: 0)
@@ -115,12 +114,6 @@ struct OpeningView: View {
 
     /// 배지 칸 폭: 가장 넓은 "✕ 売らない" 58pt 가 들어간다
     private static let badgeWidth: CGFloat = 60
-
-    /// 몬스터는 "드래곤족/일반", 마법·함정은 "마법 · 장착"
-    private func kind(_ card: CardInfo?) -> String {
-        guard let card else { return "" }
-        return card.kindCode != nil ? [card.attr, card.type].compactMap { $0 }.joined(separator: " · ") : card.type ?? ""
-    }
 
     /// 뒤집기 전 "카드 3, 뒤집기 전", 뒤집은 뒤 "푸른 눈의 백룡, UR, 새 카드" (자동 판매면 "+ⓒ 10 자동 판매")
     private func accessibilityLabel(_ pull: Pull, _ i: Int) -> String {
