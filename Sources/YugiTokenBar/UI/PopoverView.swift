@@ -97,9 +97,12 @@ struct PopoverView: View {
             PackRow(index: game.lastBoughtPack).padding(12).hidden()
                 .overlay {
                     ScrollView(.horizontal) {
-                        LazyHStack(spacing: 0) {
+                        LazyHStack(spacing: 10) {
                             ForEach(game.db.packs.indices, id: \.self) { i in
                                 PackRow(index: i).padding(12).containerRelativeFrame(.horizontal)
+                                    .background(workMode ? AnyShapeStyle(.fill.quinary)  // 업무 모드는 한 색으로 밋밋하게
+                                                : AnyShapeStyle(LinearGradient(colors: Palette.packGlow(i), startPoint: .topLeading, endPoint: .bottomTrailing)),
+                                                in: .rect(cornerRadius: 16))
                                     // 넘어가는 동안 살짝 작아지고 흐려졌다가 자리에 붙는다
                                     .scrollTransition { row, phase in
                                         row.scaleEffect(phase.isIdentity ? 1 : swipeScale)
@@ -109,14 +112,14 @@ struct PopoverView: View {
                         }
                         .scrollTargetLayout()
                     }
-                    .scrollTargetBehavior(.paging)
+                    // 팩 사이 틈(spacing)까지 한 칸씩 붙도록 paging 대신 viewAligned
+                    .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
                     .scrollIndicators(.never)
                     .scrollPosition(id: $shownPack)
                     // 한 팩 넘길 때마다 트랙패드에 톡 (Force Touch 트랙패드)
                     .sensoryFeedback(.alignment, trigger: shownPack)
                 }
                 .onChange(of: game.lastBoughtPack, initial: true) { shownPack = game.lastBoughtPack }
-                .background(.fill.quinary, in: .rect(cornerRadius: 16))
             .clipShape(.rect(cornerRadius: 16))
 
             VStack(spacing: 2) {

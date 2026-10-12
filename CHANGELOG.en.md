@@ -10,6 +10,7 @@
 - Standardized the main menus as Shop, Dex and Setting, with Cards, Decks, Partner, OK and Open shared across all languages.
 - Shortened guidance in Settings, Collection and usage, and moved detailed conditions and controls to ? tooltips.
 - Long pack names in the Shop now scroll sideways to show the full name while you hover over them.
+- The quick-buy row in the menu now has a soft two-color gradient that differs for each pack, and packs are spaced apart as you swipe so they slide past one by one (Work mode keeps the plain single color).
 
 **🐛 Bug fixes**
 - Fixed English text using plural forms for a single card.

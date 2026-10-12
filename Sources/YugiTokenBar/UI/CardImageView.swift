@@ -110,6 +110,14 @@ enum Palette {
     /// 상점 팩 도장(COMPLETE·FUSION ONLY). 팩 이미지 위 흰 바탕이라 외관과 상관없이 고정
     static let stampComplete = Color(red: 0x1B / 255, green: 0x7F / 255, blue: 0x3B / 255)
     static let stampFusion = Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255)
+    /// 팝오버 바로 구매 줄 바탕의 왼쪽 위 → 오른쪽 아래 두 색. 팩 순서마다 색상환을 황금각만큼 돌려 이웃 팩끼리 확 다르게, 오른쪽은 왼쪽에서 120° 떨어진 색. 다크는 조금 더 진하게
+    static func packGlow(_ index: Int) -> [Color] {
+        let hue = (Double(index) * 0.618).truncatingRemainder(dividingBy: 1)
+        return [hue, (hue + 1 / 3).truncatingRemainder(dividingBy: 1)].map {
+            let c = Color(hue: $0, saturation: 0.7, brightness: 1)
+            return Color(light: c.opacity(0.08), dark: c.opacity(0.1))
+        }
+    }
     /// 카드 틀 색 (업무 모드 줄의 세로 막대). 라이트는 흰 바탕에서 보이게 진하게, 다크는 밝게
     static let frameNormal = Color(light: hex(0xC9A13A), dark: hex(0xFDE68A))
     static let frameEffect = Color(light: hex(0xE0712F), dark: hex(0xFF8B53))
