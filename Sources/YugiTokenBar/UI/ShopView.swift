@@ -99,8 +99,10 @@ private struct EraSection: View {
     }
 }
 
-/// 업무 모드 상점 줄: 이름 · 진행 막대와 보유/전체. 마우스를 올리면 오른쪽에 작은 구매 버튼이 얹혀 뜬다 (봉투 자리 없음).
+/// 업무 모드 상점 줄: 이름 · 왼쪽부터 진행 막대, 오른쪽 벽에 보유/전체. 마우스를 올리면 흐려지고 오른쪽에 작은 구매 버튼이 얹혀 뜬다 (봉투 자리 없음).
 private struct ShopRow: View {
+    /// 가장 긴 ja "コンプリート · 136/136"이 들어가는 폭. 숫자 칸을 고정해 모든 줄의 막대 길이를 같게.
+    private static let countWidth: CGFloat = 110
     @Environment(AppModel.self) private var model
     let index: Int
 
@@ -111,13 +113,16 @@ private struct ShopRow: View {
         Hovering { hovered in
             VStack(alignment: .leading, spacing: 3) {
                 Text(pack.name).font(.callout).lineLimit(1)
-                HStack {
+                HStack(spacing: 8) {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
-                    Text(p.fusionLeft > 0 ? "\(p.owned)/\(p.total) · 융합 \(p.fusionLeft)장 남음" : p.complete ? "완료 · \(p.owned)/\(p.total)" : "\(p.owned)/\(p.total)")
+                    Text(p.complete ? "완료 · \(p.owned)/\(p.total)" : "\(p.owned)/\(p.total)")
                         .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                        .lineLimit(1)
+                        .frame(width: Self.countWidth, alignment: .trailing)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .blur(radius: hovered ? 6 : 0)
             .overlay(alignment: .trailing) {
                 if hovered {
                     BuyButton(index: index, cleared: p.cleared).controlSize(.small).transition(.opacity)
