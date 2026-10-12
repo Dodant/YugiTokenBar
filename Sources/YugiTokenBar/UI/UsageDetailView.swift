@@ -127,7 +127,9 @@ struct UsageDetailView: View {
             // 날짜가 있으니 "최근 30일"은 쓰지 않고 한 줄에 둔다
             HStack(spacing: 6) {
                 if let shown {
-                    Text(shown.date, format: .dateTime.month(.defaultDigits).day().weekday(.abbreviated)).foregroundStyle(.secondary)
+                    // 사용량 문구는 모든 언어에서 영어라 날짜도 영어 표기
+                    Text(shown.date, format: .dateTime.month(.defaultDigits).day().weekday(.abbreviated).locale(Locale(identifier: "en_US")))
+                        .foregroundStyle(.secondary)
                     Text(shortTokens(focus.map { shown.byAgent[$0.id.rawValue] ?? 0 } ?? shown.tokens)).fontWeight(.semibold)
                     if let focus { Text(verbatim: focus.name).foregroundStyle(focus.tint) }
                     else { Text(Self.costText(shown.cost)).foregroundStyle(.secondary) }

@@ -203,7 +203,7 @@ tools/build-cards.py
 tools/import-usage.sh  PokeTokenBar 커밋 de617e3 에서 Usage/ 를 복사하고 패치 (NOTICE.md)
 tools/clean-card-back.py  Yugipedia Back-KR.png 에서 로고를 지워 card-back.jpg 를 만듦
 tools/sync-strings.py  UI 문구 키 추출(swiftc -emit-localized-strings)·en/ja 파일 맞추기·검사
-Resources/{ko,en,ja}.lproj/Localizable.strings  UI 문구(키는 한국어 문장, ko는 공통 영어 표기만 지정)
+Resources/{ko,en,ja}.lproj/Localizable.strings  UI 문구(키는 한국어 문장, ko는 공통 영어 표기·사용량 문구만 지정)
 Resources/en.lproj/Localizable.stringsdict  영어 단수·복수(1 card·2 cards)가 갈리는 문구
 ```
 
@@ -692,6 +692,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 - **공통 UI 표기**: 주요 메뉴와 화면 제목은 모든 언어에서 `Shop`·`Dex`·`Setting`으로 표시한다.
   카드·덱·파트너 섹션은 `Cards`·`Decks`·`Partner`, 단순 확인은 `OK`, 개봉은 `Open`으로 표시한다.
   수량이 있는 무료 카드 개봉 버튼은 `Open N`, 다음 무료 팩은 `Open Next · N left`로 표시한다.
+  사용량(메뉴 사용량 칸·업무 모드 요약·사용량 화면)의 문구와 날짜는 모든 언어에서 영어다(`Usage`·`Tokens today`·`5h`·`Weekly`·`Resets in …` 등).
   설명·도움말·카드 정보·판매·삭제·세이브 작업과 나머지 UI 문구는 고른 언어로 표시한다.
 - **설정** (팝오버 내 화면 전환, 상점과 같은 방식):
   - 설명 줄은 기능의 결과를 짧게 보여 준다.

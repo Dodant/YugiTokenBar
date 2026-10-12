@@ -188,21 +188,21 @@
 /* ShopView.swift:160 */
 "완료 · %lld/%lld" = "コンプリート · %lld/%lld";
 /* UsageView.swift:52 */
-"5시간" = "5時間";
+"5시간" = "5h";
 /* UsageView.swift:53 */
-"주간" = "週間";
+"주간" = "Weekly";
 /* UsageView.swift:60 */
-"모델" = "モデル";
+"모델" = "Model";
 /* UsageView.swift:76 */
-"%lld일 %lld시간 후 초기화" = "%lld日%lld時間後にリセット";
+"%lld일 %lld시간 후 초기화" = "Resets in %lldd %lldh";
 /* UsageView.swift:77 */
-"%lld시간 %lld분 후 초기화" = "%lld時間%lld分後にリセット";
+"%lld시간 %lld분 후 초기화" = "Resets in %lldh %lldm";
 /* UsageView.swift:77 */
-"%lld분 후 초기화" = "%lld分後にリセット";
+"%lld분 후 초기화" = "Resets in %lldm";
 /* UsageView.swift:125 */
-"한도 불러오는 중…" = "上限を読み込み中…";
+"한도 불러오는 중…" = "Loading limits…";
 /* UsageView.swift:125 */
-"한도를 보려면 누르세요" = "クリックして使用上限を表示";
+"한도를 보려면 누르세요" = "Click to load limits";
 /* CardDetailView.swift:37 */
 "펜듈럼 효과" = "ペンデュラム効果";
 /* CardDetailView.swift:40 */
@@ -448,32 +448,32 @@
 /* SettingsView.swift:141 */
 "버전" = "バージョン";
 /* UsageDetailView.swift:19 */
-"사용량" = "使用量";
+"사용량" = "Usage";
 /* UsageDetailView.swift:26 */
-"새로고침" = "再読み込み";
+"새로고침" = "Refresh";
 /* UsageDetailView.swift:57 */
-"오늘 사용한 토큰" = "今日使ったトークン";
+"오늘 사용한 토큰" = "Tokens today";
 /* UsageDetailView.swift:68 */
-"이번 주" = "今週";
+"이번 주" = "This week";
 /* UsageDetailView.swift:69 */
-"이번 달" = "今月";
+"이번 달" = "This month";
 /* UsageDetailView.swift:166 */
-"최근 30일 토큰 사용량" = "過去30日のトークン使用量";
+"최근 30일 토큰 사용량" = "Token usage over the last 30 days";
 /* UsageDetailView.swift:124 */
-"최다" = "最多";
+"최다" = "Peak";
 /* UsageDetailView.swift:196 */
-"입력" = "入力";
+"입력" = "Input";
 /* UsageDetailView.swift:197 */
-"출력" = "出力";
+"출력" = "Output";
 /* UsageDetailView.swift:200 */
-"캐시 쓰기" = "キャッシュ書き込み";
+"캐시 쓰기" = "Cache write";
 /* UsageDetailView.swift:201 */
-"캐시 읽기" = "キャッシュ読み込み";
+"캐시 읽기" = "Cache read";
 /* UsageView.swift:39 */
-"눌러서 사용량을 자세히 봐요" = "クリックで使用量の詳細を表示";
+"눌러서 사용량을 자세히 봐요" = "Click to see usage details";
 /* UsageDetailView.swift:177 */
-"지난 기록을 읽는 중이에요. 처음 한 번은 오래 걸려요." = "過去の記録を読み込み中です。初回は時間がかかります。";
+"지난 기록을 읽는 중이에요. 처음 한 번은 오래 걸려요." = "Reading past usage. The first time takes a while.";
 /* UsageDetailView.swift:206 */
-"한도를 읽지 못했어요. 새로고침해 보세요" = "上限を読み込めませんでした。再読み込みしてください";
+"한도를 읽지 못했어요. 새로고침해 보세요" = "Couldn't load limits. Try refreshing.";
 /* UsageView.swift:196 */
-"오늘" = "今日";
+"오늘" = "Today";
