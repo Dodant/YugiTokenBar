@@ -433,3 +433,7 @@
 "최근 획득에서 만든 카드를 볼 수 있어요" = "You can find them under Recently obtained";
 /* PopoverView.swift:72 */
 "토큰을 쓰면 코인이 쌓여요 · %@ = 1팩" = "Using tokens earns coins · %@ = 1 pack";
+/* SettingsView.swift:62 */
+"업무 모드" = "Work mode";
+/* SettingsView.swift:62 */
+"카드·팩 이미지와 파트너를 숨기고 밋밋한 상자만 보여요" = "Hides card and pack images and the partner, showing plain boxes instead";

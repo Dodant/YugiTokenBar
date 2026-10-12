@@ -120,6 +120,7 @@ struct FlipCard: View {
     /// 자동 판매 표시(+ⓒ)에 마우스를 올리면 ✕ 로 바뀌고, 누르면 판매를 취소한다
     var onUnsell: (() -> Void)?
     @State private var hoverSold = false
+    @Environment(\.workMode) private var workMode
 
     var body: some View {
         ZStack {
@@ -137,7 +138,7 @@ struct FlipCard: View {
                         .help(canUnsell ? "판매 취소: 코인을 돌려주고 카드를 가져요" : "코인이 모자라 취소할 수 없어요")
                     }
                 }
-                .shadow(color: pull.tier == 2 ? Rarity.color(tier: 2) : .clear, radius: 10)
+                .shadow(color: pull.tier == 2 && !workMode ? Rarity.color(tier: 2) : .clear, radius: 10)
                 .modifier(RareEffect(tier: pull.tier, active: flipped))
                 .rotation3DEffect(.degrees(flipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
                 .opacity(flipped ? 1 : 0)
@@ -170,6 +171,7 @@ private struct RareEffect: ViewModifier {
     @State private var pulse = false
     @State private var pop = 0
     @Environment(\.lessMotion) private var lessMotion
+    @Environment(\.workMode) private var workMode
 
     private var ur: Bool { tier >= 4 }
     private var se: Bool { tier >= 5 }
@@ -181,7 +183,7 @@ private struct RareEffect: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        if tier < 3 {
+        if tier < 3 || workMode {  // 업무 모드면 연출 없음
             content
         } else if lessMotion {
             content.shadow(color: Rarity.color(tier: tier).opacity(active ? 0.7 : 0), radius: 12)  // 연출 없이 빛만

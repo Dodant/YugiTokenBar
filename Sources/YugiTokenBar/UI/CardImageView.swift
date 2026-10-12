@@ -6,6 +6,7 @@ struct CardImageView: View {
     let cid: Int
     var size: ImageCache.Size = .small
     var owned = true
+    @Environment(\.workMode) private var workMode
     @State private var image: NSImage?
 
     init(db: CardDB, cid: Int, size: ImageCache.Size = .small, owned: Bool = true) {
@@ -18,7 +19,9 @@ struct CardImageView: View {
 
     var body: some View {
         ZStack {
-            if let image {
+            if workMode {
+                CardPlaceholder(name: db.cards[cid]?.name ?? "", owned: owned)
+            } else if let image {
                 Image(nsImage: image)
                     .resizable()
                     .grayscale(owned ? 0 : 0.8)  // 미보유: 색이 살짝 남는 흑백
@@ -30,7 +33,8 @@ struct CardImageView: View {
         .aspectRatio(59.0 / 86.0, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 7))
         .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.cardRim, lineWidth: 1))
-        .task(id: cid) {
+        .task(id: workMode ? nil : cid) {  // 업무 모드면 nil 이라 로딩하지 않는다
+            guard !workMode else { return }
             guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
             // 캐시에 있으면 뒷면을 거치지 않고 바로 바꾼다
             if let hit = ImageCache.shared.cached(imageId, size: size) { image = hit; return }
@@ -128,13 +132,44 @@ struct RarityPill: View {
     }
 }
 
+/// 업무 모드에서 이미지 대신 그리는 밋밋한 상자. 시스템 색만 쓴다.
+private struct CardPlaceholder: View {
+    var name = ""
+    var owned = true
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 7)
+            .fill(.fill.tertiary)
+            .overlay {
+                if !name.isEmpty {
+                    Text(name)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(owned ? .secondary : .tertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 3)
+                }
+            }
+    }
+}
+
 /// 카드 뒷면. 번들 이미지, 못 읽으면 비슷한 갈색 그라데이션.
 struct CardBack: View {
     var name = ""
     /// 레어 이상이면 등급 색으로 빛난다
     var glow: Color? = nil
+    @Environment(\.workMode) private var workMode
 
     var body: some View {
+        if workMode {
+            CardPlaceholder(name: name)
+                .aspectRatio(59.0 / 86.0, contentMode: .fit)
+        } else {
+            back
+        }
+    }
+
+    private var back: some View {
         ZStack {
             if let image = ImageCache.cardBack {
                 Image(nsImage: image).resizable()
@@ -164,6 +199,7 @@ struct CardBack: View {
 /// 팩 봉투 이미지. 없거나 로딩 중이면 그라데이션.
 struct PackImageView: View {
     let pack: Pack
+    @Environment(\.workMode) private var workMode
     @State private var image: NSImage?
 
     init(pack: Pack) {
@@ -176,7 +212,9 @@ struct PackImageView: View {
         Color.clear
             .aspectRatio(0.53, contentMode: .fit)
             .overlay {
-                if let image {
+                if workMode {
+                    Rectangle().fill(.fill.tertiary)
+                } else if let image {
                     Image(nsImage: image).resizable().scaledToFill()
                 } else {
                     LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -184,7 +222,8 @@ struct PackImageView: View {
             }
             .clipShape(.rect(cornerRadius: 6))
             .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Palette.cardRim, lineWidth: 1))
-        .task(id: pack.pid) {
+        .task(id: workMode ? nil : pack.pid) {
+            guard !workMode else { return }
             // 캐시에 있으면 그라데이션을 거치지 않고 바로 바꾼다
             if let hit = ImageCache.shared.cachedPack(pack) { image = hit; return }
             image = nil
@@ -202,6 +241,7 @@ private struct CardTilt: ViewModifier {
     let angleScale: Double
     let enabled: Bool
     @Environment(\.lessMotion) private var reduceMotion
+    @Environment(\.workMode) private var workMode
     /// 카드 안 커서 위치 (-1…1), 밖이면 nil
     @State private var point: CGPoint?
     @State private var size: CGSize = .zero
@@ -214,6 +254,7 @@ private struct CardTilt: ViewModifier {
     private static let shadowShift = 4.0
 
     func body(content: Content) -> some View {
+        let enabled = enabled && !workMode  // 업무 모드면 기울기·반사·홀로그램 없음
         let on = enabled && point != nil
         let p = enabled ? point ?? .zero : .zero
         let angle = reduceMotion ? 0 : Self.maxAngle * angleScale
