@@ -99,8 +99,6 @@
 "일반" = "General";
 /* SettingsView.swift:82 */
 "카드" = "Cards";
-/* SettingsView.swift:113 */
-"업데이트" = "Updates";
 /* SettingsView.swift:154 */
 "백업 & 이전" = "Backup & transfer";
 /* SettingsView.swift:176 */
@@ -141,10 +139,6 @@
 "카드·상점·컬렉션이 설정한 시대까지 나와요.\n시대를 옮겨도 카드는 그대로 남아요." = "Cards, the shop, and the collection include eras up to this one.\nChanging the era keeps your cards.";
 /* SettingsView.swift:103 */
 "%@(%@)까지" = "Up to %@ (%@)";
-/* SettingsView.swift:115 */
-"현재 버전" = "Current version";
-/* SettingsView.swift:121 */
-"최신 버전" = "Latest version";
 /* SettingsView.swift:127 */
 "업데이트 확인" = "Check for updates";
 /* SettingsView.swift:135 */
@@ -453,3 +447,5 @@
 "이미 모은 카드는 그대로예요. 융합 전용 모드에서는 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Fusion-only mode also keeps the materials you need.";
 /* SettingsView.swift:91 */
 "대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요." = "These cards do not appear in packs or free draws. Collect Polymerization and the materials, then fuse in Collection.";
+/* SettingsView.swift:141 */
+"버전" = "Version";

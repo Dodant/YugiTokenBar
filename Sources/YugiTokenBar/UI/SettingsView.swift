@@ -21,7 +21,6 @@ struct SettingsView: View {
                     generalSection
                     cardSection
                     partnerSection
-                    updateSection
                     transferSection
                     aboutSection
                 }
@@ -114,47 +113,6 @@ struct SettingsView: View {
         }
     }
 
-    private var updateSection: some View {
-        section("업데이트") {
-            row {
-                Text("현재 버전")
-                Spacer()
-                Text(AppInfo.versionText).foregroundStyle(.secondary).monospacedDigit()
-                // 개발 빌드는 버전이 정해져 있지 않으니 "(최신)"을 붙이지 않는다
-                if AppInfo.bundleVersion != nil, case .found(let latest) = update,
-                   !AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
-                    Text("(최신)").font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            Divider()
-            row {
-                Text("최신 버전")
-                Spacer()
-                if case .checking = update {
-                    ProgressView().controlSize(.small)
-                } else {
-                    if case .found(let latest) = update { Text("v\(latest)").foregroundStyle(.secondary).monospacedDigit() }
-                    Button("업데이트 확인") { checkUpdate() }.controlSize(.small)
-                }
-            }
-            if case .found(let latest) = update,
-               AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
-                Divider()
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
-                        Spacer()
-                        Link("GitHub에서 받기", destination: AppInfo.releasesURL).font(.subheadline)
-                    }
-                }
-                .padding(.horizontal, 12).padding(.vertical, 8)
-            } else if case .failed = update {
-                Divider()
-                row { Text("확인하지 못했어요. 네트워크를 확인해 주세요.").font(.callout).foregroundStyle(.secondary); Spacer() }
-            }
-        }
-    }
-
     private var transferSection: some View {
         section("백업 & 이전") {
             row {
@@ -179,6 +137,34 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         section("정보 & 지원") {
+            row {
+                Text("버전")
+                Spacer()
+                Text(AppInfo.versionText).foregroundStyle(.secondary).monospacedDigit()
+                // 개발 빌드는 버전이 정해져 있지 않으니 "(최신)"을 붙이지 않는다
+                if AppInfo.bundleVersion != nil, case .found(let latest) = update,
+                   !AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
+                    Text("(최신)").font(.caption).foregroundStyle(.secondary)
+                }
+                if case .checking = update {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Button("업데이트 확인") { checkUpdate() }.controlSize(.small)
+                }
+            }
+            if case .found(let latest) = update,
+               AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
+                Divider()
+                row {
+                    Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
+                    Spacer()
+                    Link("GitHub에서 받기", destination: AppInfo.releasesURL).font(.subheadline)
+                }
+            } else if case .failed = update {
+                Divider()
+                row { Text("확인하지 못했어요. 네트워크를 확인해 주세요.").font(.callout).foregroundStyle(.secondary); Spacer() }
+            }
+            Divider()
             row {
                 Text("패치노트")
                 Spacer()

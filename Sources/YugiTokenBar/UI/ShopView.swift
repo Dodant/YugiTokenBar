@@ -120,7 +120,7 @@ private struct ShopRow: View {
         let p = game.progress(index)
         Hovering { hovered in
             VStack(alignment: .leading, spacing: 3) {
-                Text(pack.name).font(.callout).lineLimit(1)
+                MarqueeText(text: pack.name, active: hovered).font(.callout)
                 HStack(spacing: 8) {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
                         .alignmentGuide(.barBottom) { $0[.bottom] }
@@ -160,8 +160,8 @@ struct PackTile: View {
         let pack = game.db.packs[index]
         VStack(spacing: 4) {
             image(pack, game)
-            Text(pack.name)
-                .font(.caption2).lineLimit(1).truncationMode(.tail)
+            Hovering { MarqueeText(text: pack.name, active: $0) }  // 넘치면 마우스를 올린 동안 흘러간다
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
         }
@@ -216,7 +216,7 @@ struct PackRow: View {
                     .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text(pack.name).font(.callout.weight(.medium)).lineLimit(1)
+                Hovering { MarqueeText(text: pack.name, active: $0) }.font(.callout.weight(.medium))
                 Text(p.fusionLeft > 0 ? "\(p.owned)/\(p.total) · 융합 \(p.fusionLeft)장 남음" : p.complete ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                     .font(.caption).foregroundStyle(.secondary).monospacedDigit()
                 TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)

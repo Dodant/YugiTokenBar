@@ -1,21 +1,15 @@
 # Patch notes
 
-## 0.6.4 — 2026-10-12
-**🎨 Improvements**
-- Standardized the main menus as Shop, Dex and Setting, with Cards, Decks, Partner, Updates, OK and Open shared across all languages.
-
-## 0.6.3 — 2026-10-12
-**🎨 Improvements**
-- Shortened guidance in Settings, Collection and usage, and moved detailed conditions and controls to ? tooltips.
-
-## 0.6.2 — 2026-10-12
-**✨ New features**
-- Added [Report a bug] to Settings. It opens an email with your app version and system details already filled in.
-
-**🎨 Improvements**
-- Settings now checks the latest published release and opens its download page.
-
 ## 0.6.1 — 2026-10-12
+**✨ New features**
+- Added [Report a bug] to Settings > About & support. It opens an email with your app version and system details already filled in.
+- The version row in Settings > About & support now checks the latest published release and opens its download page.
+
+**🎨 Improvements**
+- Standardized the main menus as Shop, Dex and Setting, with Cards, Decks, Partner, OK and Open shared across all languages.
+- Shortened guidance in Settings, Collection and usage, and moved detailed conditions and controls to ? tooltips.
+- Long pack names in the Shop now scroll sideways to show the full name while you hover over them.
+
 **🐛 Bug fixes**
 - Fixed English text using plural forms for a single card.
 - Decks you haven't renamed now use the current app language.
