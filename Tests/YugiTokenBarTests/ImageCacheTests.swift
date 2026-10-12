@@ -112,6 +112,19 @@ import Testing
         #expect(await seen.value)
     }
 
+    /// 업무 모드가 켜져 있으면 로더(디스크·네트워크·디코드)를 부르지 않고 nil, 끄면 다시 불러온다
+    @MainActor @Test func workModeSkipsLoading() async {
+        let d = UserDefaults(suiteName: "ytb-test-\(UUID().uuidString)")!
+        d.set(true, forKey: AppModel.workModeKey)
+        let calls = CallCount()
+        let cache = ImageCache(dir: tempDir(), loader: { _, _, _ in await calls.bump(); return onePixel() }, defaults: d)
+        #expect(await cache.image(1, size: .small) == nil)
+        #expect(await calls.value == 0)
+        d.set(false, forKey: AppModel.workModeKey)
+        #expect(await cache.image(1, size: .small) != nil)
+        #expect(await calls.value == 1)
+    }
+
     /// 팩 이미지는 긴 변이 maxPixels 를 넘지 않게 줄여서 디코딩한다
     @Test func decodeDownsamplesToMaxPixels() throws {
         let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 300, pixelsHigh: 600, bitsPerSample: 8,
@@ -122,6 +135,11 @@ import Testing
         #expect(max(small.width, small.height) == 120)
         #expect(ImageCache.decode(data, maxPixels: nil)?.height == 600)
     }
+}
+
+private actor CallCount {
+    var value = 0
+    func bump() { value += 1 }
 }
 
 private actor CancelFlag {

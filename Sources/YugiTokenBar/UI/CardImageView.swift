@@ -45,6 +45,8 @@ struct CardImageView: View {
 extension EnvironmentValues {
     /// 설정 [애니메이션 끄기]. 읽을 때는 시스템 동작 줄이기와 합친 `lessMotion`
     @Entry var animationsOff = false
+    /// 업무 모드 (카드·팩 이미지를 그리지 않는다)
+    @Entry var workMode = false
     var lessMotion: Bool { animationsOff || accessibilityReduceMotion }
 }
 

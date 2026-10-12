@@ -20,13 +20,20 @@ final class ImageCache {
 
     /// memoryLimit: 메모리 캐시 상한(디코딩된 픽셀 바이트). 작은 카드 한 장이 약 400KB 라 150MB 면 수백 장,
     /// 도감 한 화면(수십 장)과 그 앞뒤 스크롤은 넉넉히 남고, 6천 장을 다 훑어도 그 이상 쌓이지 않는다.
+    /// 업무 모드 설정을 읽는다 (테스트가 따로 넣는다)
+    private let defaults: UserDefaults
+
     init(dir: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("YugiTokenBar"), memoryLimit: Int = 150 << 20,
-         loader: @escaping @Sendable (URL, URL, Int?) async -> CGImage? = ImageCache.load) {
+         loader: @escaping @Sendable (URL, URL, Int?) async -> CGImage? = ImageCache.load,
+         defaults: UserDefaults = .standard) {
         self.dir = dir
+        self.defaults = defaults
         self.loader = loader
         memory.totalCostLimit = memoryLimit
     }
+
+    private var workMode: Bool { defaults.bool(forKey: AppModel.workModeKey) }
 
     func image(_ imageId: Int, size: Size) async -> NSImage? {
         if let s = Self.overframe[imageId] {
@@ -38,7 +45,8 @@ final class ImageCache {
 
     /// 메모리 캐시에 이미 있으면 바로 (뷰가 첫 프레임부터 그리도록, 기다리는 동안 뒷면이 깜빡이지 않게)
     func cached(_ imageId: Int, size: Size) -> NSImage? {
-        memory.object(forKey: key(imageId, size: size) as NSString)
+        guard !workMode else { return nil }
+        return memory.object(forKey: key(imageId, size: size) as NSString)
     }
 
     private func key(_ imageId: Int, size: Size) -> String {
@@ -81,6 +89,7 @@ final class ImageCache {
 
     /// packImage 의 메모리 캐시 조회 (cached 와 같은 목적)
     func cachedPack(_ pack: Pack) -> NSImage? {
+        guard !workMode else { return nil }
         guard let s = pack.imageURL, let url = URL(string: s) else { return nil }
         return memory.object(forKey: "pack-\(url.lastPathComponent)" as NSString)
     }
@@ -95,6 +104,7 @@ final class ImageCache {
 
     /// key = 캐시 파일 이름(확장자 제외). 디코딩까지 백그라운드에서 끝내 스크롤 중 메인 스레드가 JPEG 를 풀지 않게 한다.
     private func image(key: String, url: URL, maxPixels: Int? = nil) async -> NSImage? {
+        guard !workMode else { return nil }
         if let image = memory.object(forKey: key as NSString) { return image }
         let file = dir.appendingPathComponent("\(key).jpg")
         let loader = loader

@@ -19,13 +19,15 @@ struct YugiTokenBarApp: App {
     var body: some Scene {
         MenuBarExtra {
             PopoverView().environment(model).environment(\.animationsOff, model.game.state.animationsOff)
+                .environment(\.workMode, model.workMode)
         } label: {
-            MenuBarLabel(title: menuTitle, icon: model.partner.menu, unlocked: model.game.state.partnerUnlocked, saveFailed: model.saveError != nil)
+            MenuBarLabel(title: menuTitle, icon: model.partner.menu, unlocked: model.game.state.partnerUnlocked && !model.workMode, saveFailed: model.saveError != nil)
         }
         .menuBarExtraStyle(.window)
 
         Window("컬렉션", id: "dex") {
             DexView().environment(model).environment(\.animationsOff, model.game.state.animationsOff)
+                .environment(\.workMode, model.workMode)
         }
         .defaultSize(width: 980, height: 640)
 
