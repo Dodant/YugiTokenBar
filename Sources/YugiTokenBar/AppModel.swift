@@ -315,7 +315,7 @@ final class AppModel {
     /// 해금·설정에 맞춰 파트너를 돌리고 바탕화면 창을 보이거나 숨긴다.
     func updatePartner() {
         guard game.state.partnerUnlocked, partner.isReady else { partnerPanel?.hide(); return }
-        partner.start()
+        partner.start(desktop: game.state.partnerEnabled)
         guard game.state.partnerEnabled else { partnerPanel?.hide(); return }
         let panel = partnerPanel ?? PartnerPanel(
             frame: partner.desktop,

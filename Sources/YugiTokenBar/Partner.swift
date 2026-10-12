@@ -59,8 +59,6 @@ enum PartnerTuning {
     }
     /// 대기가 이만큼(초, 무작위) 이어지면 두리번 1회
     static let lookAroundEvery = 20.0...40.0
-    /// 메뉴바 깜빡임 주기 (4초)
-    static let menuBlinkTicks = Int(4 * fps)
     /// 바탕화면 파트너 높이(pt)와 설정 슬라이더 단위
     static let sizes = 64.0...256.0
     static let sizeStep = 16.0
@@ -196,12 +194,6 @@ struct PartnerPlayer: Sendable {
     private mutating func randomTicks(_ seconds: ClosedRange<Double>) -> Int {
         Int((Double.random(in: seconds, using: &rng) * PartnerTuning.fps).rounded())
     }
-
-    /// 메뉴바 대기 행 프레임: menuBlinkTicks 마다 깜빡임 한 번, 나머지는 첫 프레임 (라벨을 다시 그리는 횟수를 줄이려고).
-    static func menuFrame(tick: Int) -> Int {
-        let t = tick % PartnerTuning.menuBlinkTicks
-        return t < PartnerAnim.idle.frameCount ? t : 0
-    }
 }
 
 extension PartnerAnim {
@@ -214,7 +206,7 @@ extension PartnerAnim {
     }
 }
 
-/// 화면에 그릴 프레임 하나. 메뉴바와 바탕화면이 따로 가져서, 바탕화면이 매 프레임 바뀌어도 메뉴바 라벨은 깜빡일 때만 다시 그린다.
+/// 화면에 그릴 프레임 하나. 메뉴바와 바탕화면이 따로 가져서, 바탕화면이 매 프레임 바뀌어도 메뉴바 라벨은 다시 그리지 않는다(아이콘은 고정).
 @MainActor @Observable final class FrameBox {
     var image: NSImage?
 }
@@ -225,9 +217,8 @@ extension PartnerAnim {
     let menu = FrameBox()
     private var player = PartnerPlayer()
     private let frames: [PartnerAnim: [NSImage]]
-    private let menuFrames: [NSImage]
+    private let menuIcon: NSImage?
     private var timer: Timer?
-    private var ticks = 0
 
     init(sheet: PartnerSheet? = .bundled()) {
         let images = sheet?.frames ?? [:]
@@ -236,45 +227,51 @@ extension PartnerAnim {
         let crop = CGRect(x: 0, y: 50, width: PartnerSheet.cell.width, height: 157)
         let height = 18.0, gap = 3.0
         let iconSize = NSSize(width: height * crop.width / crop.height, height: height)
-        menuFrames = (images[.idle] ?? []).compactMap { $0.cropping(to: crop) }.map { cg in
+        menuIcon = (images[.idle] ?? []).compactMap { $0.cropping(to: crop) }.map { cg in
             NSImage(size: NSSize(width: iconSize.width + gap, height: height), flipped: false) { _ in
                 NSImage(cgImage: cg, size: iconSize).draw(in: NSRect(origin: .zero, size: iconSize))
                 return true
             }
-        }
+        }.first
     }
 
-    var isReady: Bool { !menuFrames.isEmpty }
+    var isReady: Bool { menuIcon != nil }
 
-    /// 해금되면 부른다. 여러 번 불러도 타이머는 하나.
-    func start() {
-        guard isReady, timer == nil else { return }
-        render()
+    /// 해금되면 부른다. 메뉴바 아이콘(고정 프레임)을 보이고, `desktop`이면 바탕화면 프레임 타이머를 돌린다(여러 번 불러도 하나).
+    /// 바탕화면 파트너가 꺼져 있으면 타이머를 멈춘다. 메뉴바는 고정이라 깨울 일이 없다(유휴 CPU·깨우기의 거의 전부가 이 타이머와 깜빡임이었다).
+    func start(desktop: Bool) {
+        guard let menuIcon else { return }
+        if menu.image !== menuIcon { menu.image = menuIcon }
+        guard desktop else { stop(); return }
+        guard timer == nil else { return }
         let timer = Timer(timeInterval: 1 / PartnerTuning.fps, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }  // RunLoop.main 에서 불린다
         }
         timer.tolerance = 0.02
         RunLoop.main.add(timer, forMode: .common)  // 메뉴·팝오버가 열려 있어도 돈다
         self.timer = timer
+        render()
     }
 
+    private func stop() { timer?.invalidate(); timer = nil }
+
+    /// 바탕화면 프레임 타이머가 도는 중 (테스트용)
+    var isAnimating: Bool { timer != nil }
+
     func setMood(_ mood: PartnerMood) { player.setMood(mood); render() }
-    /// 해금 전(타이머 꺼짐)의 반응은 버린다. 쌓아 두면 해금 순간 한꺼번에 재생된다.
+    /// 해금 전이거나 바탕화면 파트너가 꺼져 있으면(타이머 꺼짐) 반응은 버린다. 쌓아 두면 해금 순간 한꺼번에 재생된다.
     func play(_ anim: PartnerAnim) { guard timer != nil else { return }; player.play(anim); render() }
     func interrupt(_ anim: PartnerAnim) { player.interrupt(anim); render() }
 
     private func tick() {
         player.tick()
-        ticks += 1
         render()
     }
 
-    /// 바뀐 프레임만 내보낸다 (같은 이미지면 image 를 건드리지 않는다).
+    /// 바뀐 바탕화면 프레임만 내보낸다 (같은 이미지면 image 를 건드리지 않는다). 타이머가 꺼져 있으면 창이 숨어 있으니 그리지 않는다.
     private func render() {
-        guard isReady else { return }
+        guard timer != nil else { return }
         let image = frames[player.anim]?[player.frame]
         if desktop.image !== image { desktop.image = image }
-        let icon = menuFrames[PartnerPlayer.menuFrame(tick: ticks)]
-        if menu.image !== icon { menu.image = icon }
     }
 }

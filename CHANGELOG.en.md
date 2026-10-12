@@ -5,6 +5,10 @@
 - Pack wrappers in the Shop and the collection now match the chosen language (Japanese packs in Japanese, English packs in English). The first 11 packs, which never came out in Japan, show the English wrapper in Japanese too.
 - Abbreviated coin amounts drop the decimal once they have two or more digits (ⓒ 293K, ⓒ 2.4M).
 
+**⚡ Performance**
+- Winged Kuriboh no longer blinks in the menu bar every 4 seconds, and the partner animation stops while the desktop partner is hidden. CPU use and wake-ups while the app sits idle drop to almost zero.
+- When the Cursor dashboard API cannot be read, the app now waits 30 minutes before trying again and reads the local records in the meantime.
+
 ## 0.5.4 — 2026-10-08
 **🎨 Improvements**
 - When you have no cards yet, the popover now explains how to earn coins (using tokens earns coins, and ⓒ 1,000 buys 1 pack).
