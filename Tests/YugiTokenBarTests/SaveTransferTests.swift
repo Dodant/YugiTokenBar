@@ -46,6 +46,11 @@ import Testing
     @Test func changelogVersionAndCompare() {
         let text = "# 패치노트\n\n## 0.10.0 — 2026-10-02\n- x\n## 0.9.1\n"
         #expect(AppInfo.topVersion(ofChangelog: text) == "0.10.0")
+        // 버그 신고 메일: 받는 사람, 제목·본문의 버전 (공백·줄바꿈은 인코딩)
+        let mail = AppInfo.bugReportURL.absoluteString
+        #expect(mail.hasPrefix("mailto:ohho0506@gmail.com?subject="))
+        #expect(!mail.contains(" ") && !mail.contains("\n"))
+        #expect(URLComponents(string: mail)?.queryItems?.first { $0.name == "body" }?.value?.contains(AppInfo.versionText) == true)
         #expect(AppInfo.topVersion(ofChangelog: "## 메모\n") == nil)
         #expect(AppInfo.isNewer("0.10.0", than: "0.9.1"))
         #expect(!AppInfo.isNewer("0.2", than: "0.2.0"))

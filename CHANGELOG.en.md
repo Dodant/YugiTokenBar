@@ -1,5 +1,9 @@
 # Patch notes
 
+## 0.5.9 — 2026-10-12
+**✨ New features**
+- Added [Report a bug] to Settings > About & support. Clicking [Write email] opens an email in your mail app with the app version, macOS version and language already filled in.
+
 ## 0.5.8 — 2026-10-12
 **🐛 Bug fixes**
 - In English, text such as [Fuse All], save import and Deck card counts no longer says "1 cards" for a single card; it now says "1 card".

@@ -140,9 +140,9 @@ struct SettingsView: View {
                     HStack {
                         Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
                         Spacer()
-                        Link("GitHub에서 받기", destination: AppInfo.repoURL).font(.callout)
+                        Link("GitHub에서 받기", destination: AppInfo.releasesURL).font(.callout)
                     }
-                    Text("git pull && scripts/build-app.sh --install")
+                    Text("brew update && brew upgrade --cask yugitokenbar")
                         .font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 8)
@@ -187,6 +187,12 @@ struct SettingsView: View {
                 Text("GitHub")
                 Spacer()
                 Link("Dodant/YugiTokenBar", destination: AppInfo.repoURL).font(.callout)
+            }
+            Divider()
+            row {
+                labeled("버그 신고", hint: "\(AppInfo.supportEmail)로 메일을 보내요")
+                Spacer()
+                Button("메일 쓰기") { NSWorkspace.shared.open(AppInfo.bugReportURL) }.controlSize(.small)
             }
             Divider()
             row {
