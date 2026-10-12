@@ -24,29 +24,7 @@ Work mode gives your card collection a simpler look.
 **🐛 Bug fixes**
 - In Fusion-only mode, selling duplicates now keeps enough materials for Fusion, including materials defined by conditions.
 
-## 0.5.6 — 2026-10-12
-**🎨 Improvements**
-- Refined SR, UR and SE reveals with a softer sheen and subtle holographic effects.
-
-## 0.5.5 — 2026-10-12
-**🎨 Improvements**
-- Pack wrappers in the Shop and the collection now match the chosen language (Japanese packs in Japanese, English packs in English). The first 11 packs, which never came out in Japan, show the English wrapper in Japanese too.
-- Abbreviated coin amounts drop the decimal once they have two or more digits (ⓒ 293K, ⓒ 2.4M).
-
-**⚡ Performance**
-- Winged Kuriboh no longer blinks in the menu bar every 4 seconds, and the partner animation stops while the desktop partner is hidden. CPU use and wake-ups while the app sits idle drop to almost zero.
-- When the Cursor dashboard API cannot be read, the app now waits 30 minutes before trying again and reads the local records in the meantime.
-
-## 0.5.4 — 2026-10-08
-**🎨 Improvements**
-- When you have no cards yet, the popover now explains how to earn coins (using tokens earns coins, and ⓒ 1,000 buys 1 pack).
-- [Fuse All] in the Collection now tells you how many cards it made.
-- Pack progress bars in the Collection sidebar now match the deck bars, and fully collected packs turn green.
-
-**🐛 Bug fixes**
-- Fixed the fusion animation still fading in and out with [Turn off animations] on.
-
-## 0.5.3 — 2026-10-08
+## 0.5.1 — 2026-10-12
 **✨ New features**
 - You can now swipe left or right on the trackpad over the popover's quick-buy row to move to the previous or next pack in release order. The incoming pack shrinks slightly before settling into place, with a light trackpad tap for each pack.
 - Added "Recently obtained" to the collection sidebar. It shows the 50 cards you got most recently (Fusions included) in the order you got them.
@@ -54,25 +32,29 @@ Work mode gives your card collection a simpler look.
 - Added 25 Fusion Monsters that weren't in any booster but have booster cards among their materials (Gate Guardians Combined, Elemental HERO Neos Kluger, Meteor Black Dragon, and more) to the pack where their latest material was released, along with their remaining materials that weren't in any booster (7 cards, including Meteor Dragon and Fighting Flame Dragon).
 - Added "Mask Change" and 10 Masked HEROes to the packs from when they were first released in Korea (EXTREME VICTORY and more). With "Mask Change", you can make a Masked HERO from [Fusion] in the collection, using 1 "HERO" monster of the same Attribute that you have the most copies of.
 - Fusion Monsters whose materials have conditions like Type, Attribute, Level, ATK, monster card type, or an archetype (177 cards, including Fighting Flame Dragon, Elder Entity Norden, Ultimate Ancient Gear Golem, and El Shaddoll Construct) can now be made from [Fusion] in the collection. For each condition, the matching card you have the most copies of is used (conditions about the field or hand count any card you own), and the card details show which cards were picked. The 3 materials among them that weren't in any booster (Gaia Knight, the Force of Earth, and more) are in the same pack as their Fusion Monster. The collection now has 8,226 cards, and 305 cards can be made by Fusion.
-- Added a [Fuse All] button under the "Fusion Summonable" list in the collection. After you confirm, it makes every card in the list at once, and also makes Fusions that use the cards it just made.
+- Added a [Fuse All] button under the "Fusion Summonable" list in the collection. After you confirm, it makes every card in the list at once, and also makes Fusions that use the cards it just made. When it finishes, it tells you how many cards it made.
 
 **🎨 Improvements**
 - Patch notes now appear in the app language (Korean, English, or Japanese).
-
-## 0.5.2 — 2026-10-08
-**🎨 Improvements**
-- After opening a free pack, if you have more free packs you can keep going with [Open next free pack]. Before, only [One more pack] (buying the same pack with coins) was available.
+- Pack wrappers in the Shop and the collection now match the chosen language (Japanese packs in Japanese, English packs in English). The first 11 packs, which never came out in Japan, show the English wrapper in Japanese too.
+- Refined SR, UR and SE reveals with a softer sheen and subtle holographic effects.
 - Split the shop pack stamps. Packs you've completed get a green COMPLETE; packs with nothing left to pull but cards still to fill by Fusion get a purple FUSION ONLY.
+- After opening a free pack, if you have more free packs you can keep going with [Open next free pack]. Before, only [One more pack] (buying the same pack with coins) was available.
 - On the opening screen, hovering over a card whose name is cut off with … now scrolls the full name sideways, like in the collection.
-
-## 0.5.1 — 2026-10-08
-**🎨 Improvements**
+- When you have no cards yet, the popover now explains how to earn coins (using tokens earns coins, and ⓒ 1,000 buys 1 pack).
+- Pack progress bars in the Collection sidebar now match the deck bars, and fully collected packs turn green.
+- Abbreviated coin amounts drop the decimal once they have two or more digits (ⓒ 293K, ⓒ 2.4M).
 - Replaced "(Beta)" on the Partner title in Settings with a small β mark.
 - When an update check finds you're up to date, "(latest)" now appears next to the current version.
 - Card name tooltips for recently obtained cards in the popover now appear only after a short hover.
 
 **⚡ Performance**
 - Card tilt on hover is smoother.
+- Winged Kuriboh no longer blinks in the menu bar every 4 seconds, and the partner animation stops while the desktop partner is hidden. CPU use and wake-ups while the app sits idle drop to almost zero.
+- When the Cursor dashboard API cannot be read, the app now waits 30 minutes before trying again and reads the local records in the meantime.
+
+**🐛 Bug fixes**
+- Fixed the fusion animation still fading in and out with [Turn off animations] on.
 
 ## 0.5.0 — 2026-10-07
 
