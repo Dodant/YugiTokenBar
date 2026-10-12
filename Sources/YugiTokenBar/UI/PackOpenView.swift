@@ -82,7 +82,7 @@ struct OpeningView: View {
         } }
     }
 
-    /// 업무 모드 개봉 줄: 배지 칸(폭 고정, 오른쪽 정렬) · 등급 · 이름. 누르기 전엔 "눌러서 공개"만
+    /// 업무 모드 개봉 줄: 배지 칸(폭 고정, 오른쪽 정렬) · 종류 막대 · 등급 · 이름. 누르기 전엔 "눌러서 공개"만
     private func row(_ pull: Pull, _ i: Int) -> some View {
         let card = model.db.cards[pull.cid]
         return HStack(spacing: 8) {
@@ -90,7 +90,10 @@ struct OpeningView: View {
                 PullBadge(pull: pull, canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
                     .fixedSize()  // 마우스를 올린 "✕ 売らない"는 칸보다 넓어 왼쪽 여백으로 넘친다
                     .frame(width: Self.badgeWidth, alignment: .trailing)  // 등급 바로 옆에 붙인다
-                RarityPill(label: pull.label, size: 10)
+                HStack(spacing: 5) {
+                    FrameBar(card: card)
+                    RarityPill(label: pull.label, size: 10)
+                }
                 Hovering { MarqueeText(text: card?.name ?? "", active: $0) }  // 넘치면 이름만 마우스를 올린 동안 흘러간다
                 Spacer(minLength: 0)
             } else {

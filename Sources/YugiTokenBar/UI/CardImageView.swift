@@ -110,6 +110,35 @@ enum Palette {
     /// 상점 팩 도장(COMPLETE·FUSION ONLY). 팩 이미지 위 흰 바탕이라 외관과 상관없이 고정
     static let stampComplete = Color(red: 0x1B / 255, green: 0x7F / 255, blue: 0x3B / 255)
     static let stampFusion = Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255)
+    /// 카드 틀 색 (업무 모드 줄의 세로 막대). 라이트는 흰 바탕에서 보이게 진하게, 다크는 밝게
+    static let frameNormal = Color(light: hex(0xC9A13A), dark: hex(0xFDE68A))
+    static let frameEffect = Color(light: hex(0xE0712F), dark: hex(0xFF8B53))
+    static let frameRitual = Color(light: hex(0x5F86B3), dark: hex(0x9DB5CC))
+    static let frameFusion = Color(light: hex(0x8A5CB5), dark: hex(0xB89BD6))
+    static let frameSynchro = Color(light: hex(0xA6A6A6), dark: hex(0xE6E6E6))
+    static let frameXyz = Color(light: hex(0x1C1C1C), dark: hex(0x8C8C8C))
+    static let frameLink = Color(light: hex(0x1F3FA8), dark: hex(0x6B86FF))
+    static let frameSpell = Color(light: hex(0x1D9E74), dark: hex(0x3FC79A))
+    static let frameTrap = Color(light: hex(0xBC5A84), dark: hex(0xE07BA8))
+
+    private static func hex(_ v: Int) -> Color {
+        Color(red: Double(v >> 16 & 0xFF) / 255, green: Double(v >> 8 & 0xFF) / 255, blue: Double(v & 0xFF) / 255)
+    }
+
+    /// 카드 종류의 틀 색. 펜듈럼은 위 틀 색 → 아래 마법 초록
+    static func frame(_ card: CardInfo) -> AnyShapeStyle {
+        if card.kindCode == "spell" { return AnyShapeStyle(frameSpell) }
+        if card.kindCode == "trap" { return AnyShapeStyle(frameTrap) }
+        let summons = card.summons ?? []
+        // ponytail: 일반/효과는 언어 공용 코드가 없어 type 칸의 세 언어 낱말로 가른다. 코드가 생기면 그걸로
+        let normal = card.type?.split(separator: "/").contains { ["일반", "Normal", "通常"].contains($0) } ?? false
+        let base = summons.contains("link") ? frameLink : summons.contains("xyz") ? frameXyz
+            : summons.contains("synchro") ? frameSynchro : summons.contains("fusion") ? frameFusion
+            : summons.contains("ritual") ? frameRitual : normal ? frameNormal : frameEffect
+        return summons.contains("pendulum")
+            ? AnyShapeStyle(LinearGradient(colors: [base, frameSpell], startPoint: .top, endPoint: .bottom))
+            : AnyShapeStyle(base)
+    }
 }
 
 extension Color {
@@ -134,6 +163,19 @@ struct RarityPill: View {
             .padding(.horizontal, size * 0.6)
             .padding(.vertical, size * 0.15)
             .background(color, in: Capsule())
+    }
+}
+
+/// 업무 모드 줄의 카드 종류 막대 (등급 알약 앞). 미보유면 흐리게
+struct FrameBar: View {
+    let card: CardInfo?
+    var owned = true
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 1.5)
+            .fill(card.map(Palette.frame) ?? AnyShapeStyle(.clear))
+            .frame(width: 3, height: 16)
+            .opacity(owned ? 1 : 0.4)
     }
 }
 
