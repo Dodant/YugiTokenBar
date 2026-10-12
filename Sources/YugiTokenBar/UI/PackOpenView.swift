@@ -88,6 +88,7 @@ struct OpeningView: View {
         return HStack(spacing: 8) {
             if flipped.contains(i) {
                 PullBadge(pull: pull, canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
+                    .fixedSize()  // 마우스를 올린 "✕ 売らない"는 칸보다 넓어 왼쪽 여백으로 넘친다
                     .frame(width: Self.badgeWidth, alignment: .trailing)  // 등급 바로 옆에 붙인다
                 RarityPill(label: pull.label, size: 10)
                 Text(card?.name ?? "").lineLimit(1)
@@ -98,7 +99,8 @@ struct OpeningView: View {
             }
         }
         .font(.callout)
-        .padding(.horizontal, 10)
+        .padding(.leading, 4)
+        .padding(.trailing, 10)
         .frame(height: 30)
         .background(.fill.tertiary, in: .rect(cornerRadius: 6))
         .contentShape(.rect)
@@ -112,8 +114,8 @@ struct OpeningView: View {
         }
     }
 
-    /// 배지 칸 폭: 가장 넓은 "✕ 売らない" 58pt 가 들어간다
-    private static let badgeWidth: CGFloat = 60
+    /// 배지 칸 폭: 평소 가장 넓은 "+ⓒ 1.2K" 52pt 가 들어간다 (마우스를 올린 "✕ 売らない" 58pt 는 왼쪽 여백 4pt 로 넘친다)
+    private static let badgeWidth: CGFloat = 54
 
     /// 뒤집기 전 "카드 3, 뒤집기 전", 뒤집은 뒤 "푸른 눈의 백룡, UR, 새 카드" (자동 판매면 "+ⓒ 10 자동 판매")
     private func accessibilityLabel(_ pull: Pull, _ i: Int) -> String {
