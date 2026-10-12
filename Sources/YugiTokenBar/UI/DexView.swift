@@ -211,7 +211,7 @@ struct DexView: View {
         case .favorites?: String(localized: "즐겨찾기")
         case .recent?: String(localized: "최근 획득")
         case .pack(let i)? where model.db.packs.indices.contains(i): model.db.packs[i].name
-        case .deck(let id)?: model.game.deck(id)?.name ?? String(localized: "덱")
+        case .deck(let id)?: model.game.deck(id)?.title ?? String(localized: "덱")
         default: String(localized: "전체")
         }
     }
@@ -411,7 +411,7 @@ struct DexView: View {
                 Menu("덱에 추가\(many)") {
                     ForEach(decks) { d in
                         let p = model.game.deckProgress(d)
-                        Button("\(d.name) · \(p.owned)/\(p.total)") { model.addToDeckOrBeep(d.id, cids) }
+                        Button("\(d.title) · \(p.owned)/\(p.total)") { model.addToDeckOrBeep(d.id, cids) }
                     }
                 }
             }

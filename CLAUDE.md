@@ -43,6 +43,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
   - SwiftUI 리터럴은 자동.
   - `String`으로 만드는 문구는 `String(localized:)`.
   - 문구를 받는 헬퍼는 `LocalizedStringKey`.
+  - 영어 단수·복수가 갈리는 문구는 `en.lproj/Localizable.stringsdict`에 복수 규칙을 더한다(키는 strings에도 둔다).
 
   커밋 전 `python3 tools/sync-strings.py --check`.
 - 설정은 저장 위치를 나눈다. 기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다. 새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
@@ -60,7 +61,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
 ```bash
 swift test                                            # 전체 테스트
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
-python3 tools/sync-strings.py --check                 # UI 문구 키·번역 검사 (컴파일러로 키 추출, ~20초)
+python3 tools/sync-strings.py --check                 # UI 문구 키·번역·en 문자 체계·en 복수형 검사 (컴파일러로 키 추출, ~20초)
 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (Claude 공식 한도·Cursor API는 안 읽음)
 PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도까지 실제로 읽기
 scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명, 버전은 CHANGELOG.md)

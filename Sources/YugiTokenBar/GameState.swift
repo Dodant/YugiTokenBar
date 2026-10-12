@@ -15,6 +15,15 @@ struct Deck: Codable, Sendable, Equatable, Identifiable {
     var name: String
     var cards: [Int: Int] = [:]
     var count: Int { cards.values.reduce(0, +) }
+
+    /// 기본 이름의 앞부분 (ko·en·ja). 새 덱은 한국어로 저장하고, 어느 언어로 만든 기본 이름이든 화면 언어로 보인다
+    static let defaultPrefixes = ["새 덱 ", "New Deck ", "新しいデッキ "]
+    /// 기본 이름("새 덱 N" 등)이면 N
+    var defaultNumber: Int? {
+        Self.defaultPrefixes.lazy.compactMap { p in name.hasPrefix(p) ? Int(name.dropFirst(p.count)) : nil }.first
+    }
+    /// 화면에 보일 이름: 기본 이름은 지금 언어로, 사용자가 지은 이름은 그대로
+    var title: String { defaultNumber.map { String(localized: "새 덱 \($0)") } ?? name }
 }
 
 struct GameState: Codable, Sendable, Equatable {

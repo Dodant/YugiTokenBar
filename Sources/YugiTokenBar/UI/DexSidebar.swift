@@ -45,7 +45,7 @@ struct DexSidebar: View {
             Button("저장") { if let deck = renaming { model.renameDeck(deck.id, to: newName) } }
             Button("취소", role: .cancel) {}
         }
-        .confirmationDialog("'\(deleting?.name ?? "")' 덱을 지울까요?",
+        .confirmationDialog("'\(deleting?.title ?? "")' 덱을 지울까요?",
                             isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
             Button("삭제", role: .destructive) {
                 guard let deck = deleting else { return }
@@ -91,7 +91,7 @@ struct DexSidebar: View {
                 DeckRow(deck: deck)
                     .tag(DexScope.deck(deck.id))
                     .contextMenu {
-                        Button("이름 바꾸기") { newName = deck.name; renaming = deck }
+                        Button("이름 바꾸기") { newName = deck.title; renaming = deck }
                         Button("삭제", role: .destructive) { deleting = deck }
                     }
             }
@@ -186,7 +186,7 @@ private struct DeckRow: View {
         let p = model.game.deckProgress(deck)
         Label {
             VStack(alignment: .leading, spacing: 3) {
-                Text(deck.name).lineLimit(1)
+                Text(deck.title).lineLimit(1)
                 HStack {
                     TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.total > 0 && p.owned == p.total ? .green : .accentColor)
                     Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
