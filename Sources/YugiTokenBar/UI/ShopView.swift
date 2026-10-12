@@ -192,19 +192,22 @@ struct PackTile: View {
     }
 }
 
-/// 팝오버 바로 구매 줄: 팩 이미지 · 이름 · 진행도 · 구매 버튼.
+/// 팝오버 바로 구매 줄: 팩 이미지(업무 모드면 없음) · 이름 · 진행도 · 구매 버튼.
 struct PackRow: View {
     @Environment(AppModel.self) private var model
     let index: Int
+    @Environment(\.workMode) private var workMode
 
     var body: some View {
         let game = model.game
         let pack = game.db.packs[index]
         let p = game.progress(index)
         HStack(spacing: 12) {
-            PackImageView(pack: pack)
-                .frame(height: 50)
-                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            if !workMode {  // 업무 모드면 봉투 자리 없이
+                PackImageView(pack: pack)
+                    .frame(height: 50)
+                    .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            }
             VStack(alignment: .leading, spacing: 4) {
                 Text(pack.name).font(.callout.weight(.medium)).lineLimit(1)
                 Text(p.fusionLeft > 0 ? "\(p.owned)/\(p.total) · 융합 \(p.fusionLeft)장 남음" : p.complete ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
