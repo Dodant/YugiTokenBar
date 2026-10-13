@@ -25,6 +25,10 @@ struct SettingsView: View {
                     partnerSection
                     transferSection
                     aboutSection
+                    Text("Made with Love and Claude")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity)
                 } }
                 .buttonStyle(.glass)
                 .buttonBorderShape(.capsule)
@@ -175,7 +179,7 @@ struct SettingsView: View {
             }
             Divider()
             row {
-                Text("GitHub")
+                Text("GitHub Repo")
                 Spacer()
                 Button("Dodant/YugiTokenBar") { NSWorkspace.shared.open(AppInfo.repoURL) }.controlSize(.small)
             }
@@ -193,12 +197,12 @@ struct SettingsView: View {
             }
             Divider()
             row {
-                labeled("Unofficial fan project", hint: "Not affiliated with Konami\nCard names, text and images © Konami")
+                labeled("Card data & images", hint: "[Konami Card Database](https://www.db.yugioh-card.com/yugiohdb/) · [YGOPRODeck](https://ygoprodeck.com/) · [Yugipedia](https://yugipedia.com/)")
                 Spacer()
             }
             Divider()
             row {
-                labeled("Card data & images", hint: "[Konami Card Database](https://www.db.yugioh-card.com/yugiohdb/) · [YGOPRODeck](https://ygoprodeck.com/) · [Yugipedia](https://yugipedia.com/)")
+                labeled("Unofficial fan project", hint: "Not affiliated with Konami\nCard names, text and images © Konami")
                 Spacer()
             }
         }
