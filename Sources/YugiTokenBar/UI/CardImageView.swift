@@ -115,6 +115,10 @@ enum Palette {
     /// 상점 팩 도장(COMPLETE·FUSION ONLY). 팩 이미지 위 흰 바탕이라 외관과 상관없이 고정
     static let stampComplete = Color(red: 0x1B / 255, green: 0x7F / 255, blue: 0x3B / 255)
     static let stampFusion = Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255)
+    /// 이미지를 못 받았을 때의 카드 뒷면(가운데 → 가장자리 갈색)과 테두리, 팩 봉투. 이미지 자리라 외관과 상관없이 고정
+    static let cardBack = [Color(red: 0.35, green: 0.23, blue: 0.10), Color(red: 0.16, green: 0.09, blue: 0.03)]
+    static let cardBackRim = Color(red: 0.54, green: 0.35, blue: 0.17)
+    static let packFallback: [Color] = [.blue, .purple]
     /// 팝오버 바로 구매 줄 바탕의 왼쪽 위 → 오른쪽 아래 두 색. 팩 순서마다 색상환을 황금각만큼 돌려 이웃 팩끼리 확 다르게, 오른쪽은 왼쪽에서 120° 떨어진 색. 다크는 조금 더 진하게
     static func packGlow(_ index: Int) -> [Color] {
         let hue = (Double(index) * 0.618).truncatingRemainder(dividingBy: 1)
@@ -256,9 +260,9 @@ struct CardBack: View {
             if let image = ImageCache.cardBack {
                 Image(nsImage: image).resizable()
             } else {
-                RadialGradient(colors: [Color(red: 0.35, green: 0.23, blue: 0.10), Color(red: 0.16, green: 0.09, blue: 0.03)],
+                RadialGradient(colors: Palette.cardBack,
                                center: .center, startRadius: 0, endRadius: 90)
-                    .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Color(red: 0.54, green: 0.35, blue: 0.17), lineWidth: 2))
+                    .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Palette.cardBackRim, lineWidth: 2))
             }
             if !name.isEmpty {
                 Text(name)
@@ -299,7 +303,7 @@ struct PackImageView: View {
                 } else if let image {
                     Image(nsImage: image).resizable().scaledToFill()
                 } else {
-                    LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    LinearGradient(colors: Palette.packFallback, startPoint: .topLeading, endPoint: .bottomTrailing)
                 }
             }
             .clipShape(.rect(cornerRadius: 6))
