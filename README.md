@@ -47,14 +47,7 @@ Work mode hides card images and the partner character; enable it in Settings.
 
 Enable fusion-only collection in Settings to obtain eligible Fusion Monsters by combining material cards instead of drawing them.
 
-<table align="center">
-<tbody>
-<tr><th>Before fusion</th></tr>
-<tr><td align="center"><img src="docs/image/yugo_pre.png"><br>Materials</td></tr>
-<tr><th>After fusion</th></tr>
-<tr><td align="center"><img src="docs/image/yugo_post.png"><br>Result</td></tr>
-</tbody>
-</table>
+<p align="center"><video src="docs/video/fusion-demo.mp4" width="720" controls></video></p>
 
 ## Install
 
