@@ -193,7 +193,7 @@ Sources/YugiTokenBar/
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
   Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기
-  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않음, "융합 가능" 목록(`FusableSection.swift`)은 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage(메뉴 줄), UsageDetail(사용량 화면), CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`), PartnerPanel(바탕화면 파트너)
+  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않음, "융합 가능" 목록(`FusableSection.swift`)은 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage(메뉴 줄), UsageDetail(사용량 화면), CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`, 진행 표시 `TintBar`·`ProgressBar`·`ProgressCount`·`DisclosureChevron`), PartnerPanel(바탕화면 파트너)
 CHANGELOG.md           패치노트(한국어) 겸 버전 원본. CHANGELOG.en.md·CHANGELOG.ja.md는 같은 버전 제목의 번역
 Resources/partner.png  파트너 스프라이트 시트(192×208 셀, 8열 × 9행)
 Resources/card-back.jpg 카드 뒷면(923×1351, 로고 없음. tools/clean-card-back.py 산출물)
@@ -414,12 +414,14 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 **외관(라이트·다크)**: 시스템 설정만 따르고 앱 안에 따로 설정을 두지 않는다. 실행 중에 바꿔도 바로 다시 그린다.
 - 글자·배경·구분선은 의미 기반 시스템 색(`.primary`·`.secondary`·`.fill`·`.bar`, `Divider`)을 먼저 쓰고, 강조는 시스템 강조색(`accentColor`)을 따른다.
   화면마다 `colorScheme`으로 분기하지 않는다.
-- 고유한 색은 `CardImageView.swift`의 `Rarity`(등급 색·알약 색)와 `Palette`(카드 테두리, 주의·위험·융합 글자, 카드 위 배지)에 라이트·다크 값을 같이 둔다(`Color(light:dark:)`).
+- 고유한 색은 `CardImageView.swift`의 `Rarity`(등급 색·알약 색)와 `Palette`(카드 테두리, 주의·위험·융합 글자, 카드 위 배지, 완료 초록, 이미지를 못 받았을 때의 카드 뒷면·팩 봉투)에 라이트·다크 값을 같이 둔다(`Color(light:dark:)`).
+  예외: 레어 연출(`RareEffect`, 개봉 빛)과 융합 연출 색은 그 뷰 안에 두고, 사용량 에이전트 색은 시스템 색이라 `UsageView.agents`에 둔다.
   글자 대비는 WCAG AA 이상(본문 4.5:1, 라이트는 흰 바탕, 다크는 `#2A2A2C` 바탕 기준).
 - 카드·팩 이미지는 원본 그대로 둔다.
   다크에서는 그림자가 안 보이므로 가장자리에 얇은 밝은 테두리(흰색 20%, 1pt, `Palette.cardRim`)를 두르고, 라이트에서는 테두리 없이 그림자만 쓴다.
   카드 위 NEW·코인·개수 배지는 외관과 상관없이 흰 글자가 5:1 이상인 고정 색이다.
 - 색을 넣는 진행 막대는 `TintBar`로 직접 그린다(`ProgressView`의 `.tint`는 외관을 바꾸면 풀린다).
+  팩·덱 진행은 `ProgressBar`(다 모으면 `Palette.complete` 초록)와 `ProgressCount`(다 모으면 "136 ✓")를 같이 쓴다.
   설정 화면의 그룹 상자는 `.fill` 대신 `Color.primary` 7%다(`panelScrollBottom`의 `.mask` 안에서 `.fill`은 다크일 때 검게 그려진다).
 - 메뉴바 아이콘(SF Symbol)은 메뉴바 색을 따른다. 파트너 날개 크리보는 캐릭터라 컬러 그대로 둔다. 융합 연출은 자체 어두운 배경 위라 외관과 상관없다.
 - **업무 모드**: 켜면 앱 안의 카드·팩 이미지를 전부 숨긴다.
@@ -483,7 +485,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     해금 전에는 메뉴바가 카드 아이콘이다.
   - 동작은 모두 5fps(프레임 간격 0.2초).
     기준 상태는 매 갱신(60초)마다 다시 정하고, 한 번 재생이 끝나면 기준 상태로 돌아간다.
-    기준값(80%, 100k, 1k, 쉬는 시간, 두리번 간격)은 `Partner.swift` 상단 상수(`PartnerTuning`)에 두며 `Balance`에 넣지 않는다.
+    기준값(80%, 100k, 1k, 쉬는 시간, 두리번 간격, 설렘 등급 SR)은 `Partner.swift` 상단 상수(`PartnerTuning`)에 두며 `Balance`에 넣지 않는다.
   - 기준 상태(`PartnerMood.base(tokensPerMinute:limitPercent:)`, 위에서부터 먼저 맞는 것):
     - Claude·Codex 공식 한도 중 가장 높은 %(초기화 시각이 지난 한도는 뺀다, `PartnerMood.limitPercent`) ≥ 80 → 시무룩
     - 분당 토큰 ≥ 100,000 → 비행(오른쪽·왼쪽 번갈아, 제자리)
@@ -615,7 +617,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
   UR은 옅은 무지개 홀로 포일이 천천히 돈다(10초)·카드 모양 빛 테두리가 가늘어지며 퍼진다.
   SE는 UR에 금·장미빛 포일·금빛 후광·금빛 테두리 한 겹을 더한다.
   [모두 뒤집기] → 다 뒤집으면 [확인] 옆에 한 번 더 버튼이 생긴다:
-  - 무료 팩을 열었고 무료 팩이 남아 있으면 [다음 무료 팩 열기 · N개 남음](`AppModel.openingFreePack`).
+  - 무료 팩을 열었고 무료 팩이 남아 있으면 [다음 무료 팩 열기 · N개 남음](`AppModel.opening.freePack`).
   - 아니면 팩(마지막 무료 팩 포함)은 [한 팩 더 · ⓒ 1,000](같은 팩을 코인으로 구매, 부족하면 비활성화).
   - 무료 카드가 남아 있으면 [다음 N장 열기].
   - 둘 다 아니면 [확인]만 있다.

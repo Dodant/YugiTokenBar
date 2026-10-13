@@ -1,16 +1,22 @@
 import SwiftUI
 
+/// 팝오버 안 개봉 화면 한 번의 내용. 새로 열 때마다 통째로 바꾼다
+struct PackOpening {
+    var pulls: [Pull] = []
+    var title = ""
+    /// 연 팩 (무료 카드면 nil). 개봉 화면의 [한 팩 더] 가 쓴다.
+    var pack: Int?
+    /// 무료 팩인지. 남은 무료 팩이 있으면 한 번 더가 무료 팩을 연다.
+    var freePack = false
+    /// 같은 팩을 다시 열어도 개봉 화면을 새로 그리게
+    var id = UUID()
+}
+
 @MainActor @Observable
 final class AppModel {
     private(set) var game: Game
     /// 마지막 구매·무료 카드 결과 (팝오버 안 개봉 화면이 보여줌)
-    private(set) var opening: [Pull] = []
-    private(set) var openingTitle = ""
-    /// 지금 개봉 화면의 팩 (무료 카드면 nil). 개봉 화면의 [한 팩 더] 가 쓴다.
-    private(set) var openingPack: Int?
-    /// 지금 개봉 화면이 무료 팩인지. 남은 무료 팩이 있으면 한 번 더가 무료 팩을 연다.
-    private(set) var openingFreePack = false
-    private(set) var openingID = UUID()
+    private(set) var opening = PackOpening()
     /// 업무 모드: 카드·팩 이미지를 숨기고 불러오지도 않는다. 세이브가 아니라 이 Mac 의 UserDefaults 에 둔다.
     static let workModeKey = "workMode"
     var workMode = UserDefaults.standard.bool(forKey: AppModel.workModeKey) {
@@ -185,14 +191,10 @@ final class AppModel {
 
     /// 팝오버 안 개봉 화면으로 보여준다.
     private func show(_ pulls: [Pull], title: String, pack: Int? = nil, freePack: Bool = false) {
-        opening = pulls
-        openingTitle = title
-        openingPack = pack
-        openingFreePack = freePack
-        openingID = UUID()
+        opening = PackOpening(pulls: pulls, title: title, pack: pack, freePack: freePack)
         // 개봉 중에 또 열면(한 팩 더) 돌아갈 곳은 그대로
         if case .opening = screen {} else { screen = .opening(back: screen) }
-        if pulls.contains(where: { $0.tier >= 3 }) { partner.play(.excited) }
+        if pulls.contains(where: { $0.tier >= PartnerTuning.excitedTier }) { partner.play(.excited) }
         save()
     }
 
@@ -233,9 +235,9 @@ final class AppModel {
 
     /// 개봉 화면에서 자동 판매된 i 번째 카드를 판매 취소
     func keepSold(at i: Int) {
-        guard opening.indices.contains(i), let coins = opening[i].soldFor,
-              game.unsell(opening[i].cid, refund: coins) else { return }
-        opening[i].soldFor = nil
+        guard opening.pulls.indices.contains(i), let coins = opening.pulls[i].soldFor,
+              game.unsell(opening.pulls[i].cid, refund: coins) else { return }
+        opening.pulls[i].soldFor = nil
         save()
     }
 

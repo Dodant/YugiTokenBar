@@ -8,9 +8,9 @@ import Testing
         let (model, _) = try makeModel(makeDB([[(1, 1)], [(2, 1)]])) { $0.coins = Balance.packPrice; $0.pendingFree = 1 }
 
         #expect(model.buy(pack: 1))
-        #expect(model.openingPack == 1 && model.screen == .opening(back: .summary))
+        #expect(model.opening.pack == 1 && model.screen == .opening(back: .summary))
         #expect(model.openFree())
-        #expect(model.openingPack == nil)
+        #expect(model.opening.pack == nil)
     }
 
     /// 개봉은 연 화면 위에 뜨고, 한 팩 더를 해도 닫으면 처음 연 화면(상점)으로 돌아간다
@@ -31,8 +31,8 @@ import Testing
         let (model, _) = try makeModel(makeDB([[(1, 1)]])) { $0.coins = Balance.packPrice; $0.freePacks = 2 }
 
         #expect(model.openFreePack())
-        #expect(model.openingFreePack && model.game.state.freePacks == 1)
+        #expect(model.opening.freePack && model.game.state.freePacks == 1)
         #expect(model.buy(pack: 0))
-        #expect(!model.openingFreePack)
+        #expect(!model.opening.freePack)
     }
 }

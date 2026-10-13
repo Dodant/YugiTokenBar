@@ -301,7 +301,7 @@ struct DexView: View {
                 VStack(spacing: 4) {
                     CardImageView(db: model.db, cid: cid, owned: owned)
                         .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
-                        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
+                        .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
                         .overlay(alignment: .topTrailing) { star(cid, hovered: hovered) }
                         .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
                         .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }

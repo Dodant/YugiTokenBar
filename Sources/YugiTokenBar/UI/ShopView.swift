@@ -58,17 +58,13 @@ private struct EraSection: View {
         let game = model.game
         // 시대 범위를 줄이면 부모가 이 섹션을 없애기 전에 몸체가 먼저 다시 그려질 수 있다 → 범위를 지금 DB 에 맞춰 자른다
         let packs = packs.clamped(to: game.db.packs.indices)
-        let progress = packs.map { game.progress($0) }
-        let owned = progress.reduce(0) { $0 + $1.owned }, total = progress.reduce(0) { $0 + $1.total }
+        let (owned, total) = game.progress(packs: packs)
         VStack(alignment: .leading, spacing: 10) {
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                    DisclosureChevron(expanded: expanded).foregroundStyle(.secondary)
                     Text(name).font(.headline)
                     Text("\(packs.count)팩").font(.caption).foregroundStyle(.secondary)
                     Spacer()
@@ -122,16 +118,9 @@ private struct ShopRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 MarqueeText(text: pack.name, active: hovered).font(.callout)
                 HStack(spacing: 8) {
-                    TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
+                    ProgressBar(owned: p.owned, total: p.total)
                         .alignmentGuide(.barBottom) { $0[.bottom] }
-                    HStack(spacing: 3) {
-                        if p.complete {  // 다 모으면 "136 ✓"
-                            Text(verbatim: "\(p.owned)")
-                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        } else {
-                            Text("\(p.owned)/\(p.total)")
-                        }
-                    }
+                    ProgressCount(owned: p.owned, total: p.total)
                     .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                     .lineLimit(1)
                     .frame(width: Self.countWidth, alignment: .trailing)
@@ -219,7 +208,7 @@ struct PackRow: View {
                 Hovering { MarqueeText(text: pack.name, active: $0) }.font(.callout.weight(.medium))
                 Text(p.fusionLeft > 0 ? "\(p.owned)/\(p.total) · 융합 \(p.fusionLeft)장 남음" : p.complete ? "완료 · \(p.owned)/\(p.total)" : "\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                     .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
+                ProgressBar(owned: p.owned, total: p.total)
             }
             Spacer(minLength: 4)
             // 바로 구매 줄은 계속 떠 있고 팩만 바뀌므로, 팩이 바뀌면 "그래도 사기" 상태를 버린다

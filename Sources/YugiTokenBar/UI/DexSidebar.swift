@@ -68,15 +68,8 @@ struct DexSidebar: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(pack.name).lineLimit(1)
                 HStack {
-                    TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.complete ? .green : .accentColor)
-                    HStack(spacing: 3) {
-                        if p.complete {  // 다 모으면 "104 ✓"
-                            Text(verbatim: "\(p.owned)")
-                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        } else {
-                            Text("\(p.owned)/\(p.total)")
-                        }
-                    }
+                    ProgressBar(owned: p.owned, total: p.total)
+                    ProgressCount(owned: p.owned, total: p.total)
                     .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
@@ -149,8 +142,7 @@ private struct DexEraSection<Item: View>: View {
         let game = model.game
         // 시대 범위를 줄이면 부모가 이 섹션을 없애기 전에 몸체가 먼저 다시 그려질 수 있다 → 범위를 지금 DB 에 맞춰 자른다
         let packs = packs.clamped(to: game.db.packs.indices)
-        let progress = packs.map { game.progress($0) }
-        let owned = progress.reduce(0) { $0 + $1.owned }, total = progress.reduce(0) { $0 + $1.total }
+        let (owned, total) = game.progress(packs: packs)
         // ponytail: 기본 사이드바 꺾쇠는 마우스를 올려야 보여서, 상점처럼 항상 보이는 꺾쇠를 직접 그린다
         Section {
             if expanded {
@@ -161,9 +153,7 @@ private struct DexEraSection<Item: View>: View {
                 withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.bold))
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                    DisclosureChevron(expanded: expanded)
                     Text("\(name) · \(packs.count)팩")
                     Spacer()
                     Text("\(owned) / \(total)").monospacedDigit()
@@ -188,7 +178,7 @@ private struct DeckRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(deck.title).lineLimit(1)
                 HStack {
-                    TintBar(value: Double(p.owned) / Double(max(p.total, 1)), tint: p.total > 0 && p.owned == p.total ? .green : .accentColor)
+                    ProgressBar(owned: p.owned, total: p.total)
                     Text("\(p.owned)/\(p.total)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }

@@ -9,12 +9,12 @@ struct OpeningView: View {
     @Environment(\.workMode) private var workMode
 
     var body: some View {
-        let pulls = model.opening
+        let pulls = model.opening.pulls
         let allFlipped = flipped.count == pulls.count
         VStack(spacing: 12) {
-            PanelHeader(title: model.openingTitle) { model.closeOpening() }
+            PanelHeader(title: model.opening.title) { model.closeOpening() }
             // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
-            let packLayout = model.openingPack != nil && pulls.count == 5
+            let packLayout = model.opening.pack != nil && pulls.count == 5
             let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
             let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
             let rareW = (width - 20) / 3 * 1.75
@@ -59,19 +59,11 @@ struct OpeningView: View {
     }
 
     /// 팩의 마지막 칸은 R 이상 확정 레어 슬롯이라 조금 크게 둔다
-    private func isRare(_ i: Int) -> Bool { model.openingPack != nil && i == model.opening.count - 1 }
+    private func isRare(_ i: Int) -> Bool { model.opening.pack != nil && i == model.opening.pulls.count - 1 }
 
     private func cell(_ pull: Pull, _ i: Int) -> some View {
         Hovering { hovered in VStack(spacing: 4) {
-            FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
-                .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(accessibilityLabel(pull, i))
-                .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
-                .accessibilityAction { withAnimation(flip) { _ = flipped.insert(i) } }
-                .accessibilityActions {
-                    if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
-                }
+            flippable(FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }, pull, i)
             // 상점 팩 칸처럼 아래 이름 한 줄(넘치면 마우스를 올린 동안 흘러간다). 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
             MarqueeText(text: model.db.cards[pull.cid]?.name ?? " ", active: hovered && flipped.contains(i))
                 .font(.caption2)
@@ -85,7 +77,7 @@ struct OpeningView: View {
     /// 업무 모드 개봉 줄: 배지 칸(폭 고정, 오른쪽 정렬) · 종류 막대 · 등급 · 이름. 누르기 전엔 "눌러서 공개"만
     private func row(_ pull: Pull, _ i: Int) -> some View {
         let card = model.db.cards[pull.cid]
-        return HStack(spacing: 8) {
+        return flippable(HStack(spacing: 8) {
             if flipped.contains(i) {
                 PullBadge(pull: pull, canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
                     .fixedSize()  // 마우스를 올린 "✕ 売らない"는 칸보다 넓어 왼쪽 여백으로 넘친다
@@ -107,16 +99,23 @@ struct OpeningView: View {
         .padding(.trailing, 10)
         .frame(height: 30)
         .background(.fill.tertiary, in: .rect(cornerRadius: 6))
-        .contentShape(.rect)
-        .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel(pull, i))
-        .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
-        .accessibilityAction { withAnimation(flip) { _ = flipped.insert(i) } }
-        .accessibilityActions {
-            if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
-        }
+        .contentShape(.rect), pull, i)
     }
+
+    /// 누르면(VoiceOver 동작도) 뒤집는 칸. 이름은 뒤집은 뒤에만 읽고, 자동 판매된 카드는 [판매 취소] 동작을 단다
+    private func flippable(_ content: some View, _ pull: Pull, _ i: Int) -> some View {
+        content
+            .onTapGesture { flip(i) }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel(pull, i))
+            .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
+            .accessibilityAction { flip(i) }
+            .accessibilityActions {
+                if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
+            }
+    }
+
+    private func flip(_ i: Int) { withAnimation(flip) { _ = flipped.insert(i) } }
 
     /// 배지 칸 폭: 평소 가장 넓은 "+ⓒ 1.2K" 52pt 가 들어간다 (마우스를 올린 "✕ 売らない" 58pt 는 왼쪽 여백 4pt 로 넘친다)
     private static let badgeWidth: CGFloat = 54
@@ -137,21 +136,21 @@ struct OpeningView: View {
         let rare = pulls.indices.last.flatMap { !lessMotion && isRare($0) && !flipped.contains($0) ? $0 : nil }
         withAnimation(flip) { flipped.formUnion(pulls.indices.filter { $0 != rare }) }
         guard let rare else { return }
-        let id = model.openingID
+        let id = model.opening.id
         Task {
             try? await Task.sleep(for: .milliseconds(600))
-            guard model.openingID == id else { return }
-            withAnimation(flip) { _ = flipped.insert(rare) }
+            guard model.opening.id == id else { return }
+            flip(rare)
         }
     }
 
     /// 다 뒤집은 뒤 한 번 더: 무료 팩이 남았으면 다음 무료 팩을, 팩이면 같은 팩을 코인으로, 무료 카드면 남은 장을. 모두 아니면 nil.
     private var again: (title: String, enabled: Bool, action: () -> Void)? {
         let freePacks = model.game.state.freePacks
-        if model.openingFreePack && freePacks > 0 {
+        if model.opening.freePack && freePacks > 0 {
             return (String(localized: "다음 무료 팩 열기 · \(freePacks)개 남음"), true, { model.openFreePack() })
         }
-        if let pack = model.openingPack {
+        if let pack = model.opening.pack {
             return (String(localized: "한 팩 더 · \(coinText(Balance.packPrice))"), model.game.canAffordPack, { model.buy(pack: pack) })
         }
         let left = model.game.state.pendingFree
@@ -196,18 +195,13 @@ struct PullBadge: View {
         if pull.isNew { tag("NEW", Palette.badgeNew) }
         else if let coins = pull.soldFor {
             Button { onUnsell?() } label: {
-                tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+ⓒ \(Self.short(coins))", hoverSold && canUnsell ? Palette.badgeLoss : Palette.badgeGain)
+                tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+ⓒ \(shortCoins(coins, from: 1_000))", hoverSold && canUnsell ? Palette.badgeLoss : Palette.badgeGain)
             }
             .buttonStyle(.plain)
             .disabled(!canUnsell)
             .onHover { hoverSold = $0 }
             .help(canUnsell ? "판매 취소: 코인을 돌려주고 카드를 가져요" : "코인이 모자라 취소할 수 없어요")
         }
-    }
-
-    /// 배지는 좁아서 1,000 부터 K (SE 1,200 → 1.2K)
-    private static func short(_ n: Int) -> String {
-        n < 1_000 ? "\(n)" : n.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)).locale(Locale(identifier: "en_US")))
     }
 
     private func tag(_ text: LocalizedStringKey, _ color: Color) -> some View {

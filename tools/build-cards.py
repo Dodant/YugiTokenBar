@@ -473,7 +473,7 @@ def split_materials(cards):
     nospace = {n.replace(" ", ""): c for n, c in names.items()}
 
     def material(part):
-        m = re.fullmatch(r"(.+?)\s*×\s*(\d+)", part)
+        m = MAT_COUNT.fullmatch(part)
         part, count = (m.group(1), int(m.group(2))) if m else (part, None)
         if q := re.fullmatch(r'"([^"]+)"', part):  # "A"이나 "B" 는 rule
             cid = names.get(q.group(1)) or nospace.get(q.group(1).replace(" ", ""))
@@ -513,6 +513,31 @@ def find_card(name):
     return hits[0] if hits else None
 
 
+def ko_detail(cid):
+    """KO 상세 페이지 (받은 뒤 1초 쉰다)."""
+    page = get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale=ko")
+    time.sleep(1)
+    return page
+
+
+def new_card(info, cid, image_ids, label):
+    """검색 행 info 에 이미지 id 와 첫 수록판 레어도의 등급을 붙인 카드 (없는 칸은 뺀다)."""
+    return {f: x for f, x in (info | {"imageId": image_ids.get(int(cid)), "tier": TIER.get(label, 5)}).items() if x is not None}
+
+
+def first_packs(out):
+    """cid → 처음 든 팩 순번."""
+    first = {}
+    for i, p in enumerate(out["packs"]):
+        for c in p["cards"]:
+            first.setdefault(c, i)
+    return first
+
+
+def sort_cards(out):
+    out["cards"] = dict(sorted(out["cards"].items(), key=lambda kv: int(kv[0])))
+
+
 def add_missing_materials(out, image_ids, rules=False):
     """융합 몬스터의 100팩에 없는 소재({"name"})를 KO DB 에서 찾아 카드로 넣고, 그 소재를 쓰는 융합 몬스터가 든 팩마다 넣는다
     (이미 그 융합보다 먼저 나오는 카드면 이름만 cid 로 바꾼다: 환상마수 키메라의 유익환상수 키메라).
@@ -535,15 +560,10 @@ def add_missing_materials(out, image_ids, rules=False):
         found[name] = c["cid"]
         if str(c["cid"]) in cards:
             continue
-        label = first_rarity(get_card_page(BASE + f"card_search.action?ope=2&cid={c['cid']}&request_locale=ko"))
-        time.sleep(1)
-        info = c["info"] | {"imageId": image_ids.get(c["cid"]), "tier": TIER.get(label, 5)}
-        cards[str(c["cid"])] = {f: x for f, x in info.items() if x is not None}
+        label = first_rarity(ko_detail(c["cid"]))
+        cards[str(c["cid"])] = new_card(c["info"], c["cid"], image_ids, label)
         print(f"  소재 추가: {c['cid']} {name} ({label})")
-    first = {}  # cid → 처음 든 팩 순번
-    for i, p in enumerate(out["packs"]):
-        for c in p["cards"]:
-            first.setdefault(c, i)
+    first = first_packs(out)
     early = {n for n, fusions in users.items() if first.get(found[n], 999) <= min(first.get(f, 999) for f in fusions)}
     for p in out["packs"]:
         for name, fusions in users.items():
@@ -555,7 +575,7 @@ def add_missing_materials(out, image_ids, rules=False):
                 m["cid"] = found[m.pop("name")]
                 if "count" in m:
                     m["count"] = m.pop("count")  # 키 순서 cid, count
-    out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
+    sort_cards(out)
 
 
 @functools.cache
@@ -588,13 +608,12 @@ def add_mask_change(out, image_ids):
     for cid, info in rows:
         if cid in cards:
             continue
-        date, label = first_print(get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale=ko"))
-        time.sleep(1)
-        cards[cid] = {f: x for f, x in (info | {"imageId": image_ids.get(int(cid)), "tier": TIER.get(label, 5)}).items() if x is not None}
+        date, label = first_print(ko_detail(cid))
+        cards[cid] = new_card(info, cid, image_ids, label)
         pack = out["packs"][max(bisect.bisect_right(dates, date) - 1, 0)]
         pack["cards"].append(int(cid))
         print(f"  마스크 체인지 추가: {cid} {info['name']} ({label}, {date}) → {pack['name']}")
-    out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
+    sort_cards(out)
 
 
 def add_outside_fusions(out, image_ids):
@@ -606,17 +625,13 @@ def add_outside_fusions(out, image_ids):
     cand = {cid: dict(info) for cid, info in ko_fusions().items() if cid not in cards}
     merged = cards | cand
     split_materials(merged)  # 100팩 카드는 이미 뗐으니 후보만 뗀다
-    first_pack = {}
-    for i, p in enumerate(out["packs"]):
-        for c in p["cards"]:
-            first_pack.setdefault(c, i)
+    first_pack = first_packs(out)
     has_rule = lambda info: any("rule" in m for m in info.get("materials", []))
     outside = lambda m: "cid" in m and m["cid"] not in first_pack and has_rule(cand.get(str(m["cid"]), {}))
 
     def add(cid, pack):
-        label = first_rarity(get_card_page(BASE + f"card_search.action?ope=2&cid={cid}&request_locale=ko"))
-        time.sleep(1)
-        cards[cid] = {f: x for f, x in (cand[cid] | {"imageId": image_ids.get(int(cid)), "tier": TIER.get(label, 5)}).items() if x is not None}
+        label = first_rarity(ko_detail(cid))
+        cards[cid] = new_card(cand[cid], cid, image_ids, label)
         pack["cards"].append(int(cid))
         print(f"  융합 추가: {cid} {cand[cid]['name']} ({label}) → {pack['name']}")
 
@@ -632,7 +647,7 @@ def add_outside_fusions(out, image_ids):
         for m in mats:
             if outside(m) and str(m["cid"]) not in cards:
                 add(str(m["cid"]), pack)
-    out["cards"] = dict(sorted(cards.items(), key=lambda kv: int(kv[0])))
+    sort_cards(out)
 
 
 def move_tiers(out):

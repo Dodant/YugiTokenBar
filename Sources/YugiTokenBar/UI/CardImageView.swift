@@ -35,9 +35,9 @@ struct CardImageView: View {
                 CardBack(name: db.cards[cid]?.name ?? "")
             }
         }
-        .aspectRatio(59.0 / 86.0, contentMode: .fit)
-        .clipShape(.rect(cornerRadius: 7))
-        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.cardRim, lineWidth: 1))
+        .aspectRatio(CardShape.ratio, contentMode: .fit)
+        .clipShape(.rect(cornerRadius: CardShape.corner))
+        .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Palette.cardRim, lineWidth: 1))
         .task(id: hidden ? nil : cid) {  // 숨길 때는 nil 이라 로딩하지 않는다
             guard !hidden else { image = nil; return }
             guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
@@ -86,7 +86,13 @@ enum Rarity {
     ]
 
     static func color(tier: Int) -> Color { colors[min(max(tier, 1), colors.count) - 1] }
-    static func color(label: String) -> Color { color(tier: (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1) }
+    static func color(label: String) -> Color { color(tier: CardInfo.tier(label: label)) }
+}
+
+/// 카드 한 장의 가로:세로(59:86)와 모서리. 썸네일·뒷면·자리 표시·융합 연출이 같이 쓴다
+enum CardShape {
+    static let ratio: CGFloat = 59.0 / 86.0
+    static let corner: CGFloat = 7
 }
 
 /// 등급 외에 라이트·다크 값을 같이 두는 색. 화면에서 colorScheme 으로 나누지 않고 여기서 고른다.
@@ -98,6 +104,8 @@ enum Palette {
     static let warning = Color(light: Color(red: 0xB2 / 255, green: 0x50 / 255, blue: 0), dark: .orange)
     /// 위험 글자 (한도 85% 이상)
     static let danger = Color(light: Color(red: 0xC4 / 255, green: 0x28 / 255, blue: 0x1C / 255), dark: Color(red: 1, green: 0x7B / 255, blue: 0x72 / 255))
+    /// 다 모은 팩·덱의 진행 막대와 체크. 시스템 초록이라 외관을 따라 바뀐다
+    static let complete = Color.green
     /// 융합 강조 글자
     static let fusion = Color(light: Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255), dark: Color(red: 0xD8 / 255, green: 0x8C / 255, blue: 1))
     /// 카드 위 흰 글자 배지 바탕. 카드 이미지 위라 외관과 상관없이 고정, 흰 글자 5:1 이상
@@ -107,6 +115,10 @@ enum Palette {
     /// 상점 팩 도장(COMPLETE·FUSION ONLY). 팩 이미지 위 흰 바탕이라 외관과 상관없이 고정
     static let stampComplete = Color(red: 0x1B / 255, green: 0x7F / 255, blue: 0x3B / 255)
     static let stampFusion = Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255)
+    /// 이미지를 못 받았을 때의 카드 뒷면(가운데 → 가장자리 갈색)과 테두리, 팩 봉투. 이미지 자리라 외관과 상관없이 고정
+    static let cardBack = [Color(red: 0.35, green: 0.23, blue: 0.10), Color(red: 0.16, green: 0.09, blue: 0.03)]
+    static let cardBackRim = Color(red: 0.54, green: 0.35, blue: 0.17)
+    static let packFallback: [Color] = [.blue, .purple]
     /// 팝오버 바로 구매 줄 바탕의 왼쪽 위 → 오른쪽 아래 두 색. 팩 순서마다 색상환을 황금각만큼 돌려 이웃 팩끼리 확 다르게, 오른쪽은 왼쪽에서 120° 떨어진 색. 다크는 조금 더 진하게
     static func packGlow(_ index: Int) -> [Color] {
         let hue = (Double(index) * 0.618).truncatingRemainder(dividingBy: 1)
@@ -173,7 +185,7 @@ struct RarityPill: View {
     }
 
     private func pill(_ label: String) -> some View {
-        let tier = (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1
+        let tier = CardInfo.tier(label: label)
         let color = owned ? Rarity.pillColors[min(max(tier, 1), Rarity.pillColors.count) - 1] : Rarity.locked
         return Text(label)
             .font(.system(size: size, weight: .bold))
@@ -212,7 +224,7 @@ private struct CardPlaceholder: View {
     var owned = true
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 7)
+        RoundedRectangle(cornerRadius: CardShape.corner)
             .fill(.fill.tertiary)
             .overlay {
                 if !name.isEmpty {
@@ -237,7 +249,7 @@ struct CardBack: View {
     var body: some View {
         if workMode {
             CardPlaceholder(name: name)
-                .aspectRatio(59.0 / 86.0, contentMode: .fit)
+                .aspectRatio(CardShape.ratio, contentMode: .fit)
         } else {
             back
         }
@@ -248,9 +260,9 @@ struct CardBack: View {
             if let image = ImageCache.cardBack {
                 Image(nsImage: image).resizable()
             } else {
-                RadialGradient(colors: [Color(red: 0.35, green: 0.23, blue: 0.10), Color(red: 0.16, green: 0.09, blue: 0.03)],
+                RadialGradient(colors: Palette.cardBack,
                                center: .center, startRadius: 0, endRadius: 90)
-                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(red: 0.54, green: 0.35, blue: 0.17), lineWidth: 2))
+                    .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Palette.cardBackRim, lineWidth: 2))
             }
             if !name.isEmpty {
                 Text(name)
@@ -264,8 +276,8 @@ struct CardBack: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
-        .aspectRatio(59.0 / 86.0, contentMode: .fit)
-        .clipShape(.rect(cornerRadius: 7))
+        .aspectRatio(CardShape.ratio, contentMode: .fit)
+        .clipShape(.rect(cornerRadius: CardShape.corner))
         .shadow(color: glow ?? .clear, radius: glow == nil ? 0 : 10)
     }
 }
@@ -291,7 +303,7 @@ struct PackImageView: View {
                 } else if let image {
                     Image(nsImage: image).resizable().scaledToFill()
                 } else {
-                    LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    LinearGradient(colors: Palette.packFallback, startPoint: .topLeading, endPoint: .bottomTrailing)
                 }
             }
             .clipShape(.rect(cornerRadius: 6))
@@ -370,7 +382,7 @@ private struct CardTilt: ViewModifier {
                            startRadius: 0, endRadius: max(size.width, size.height) * 0.7)
         }
         .blendMode(.plusLighter)
-        .clipShape(.rect(cornerRadius: 7))
+        .clipShape(.rect(cornerRadius: CardShape.corner))
     }
 }
 

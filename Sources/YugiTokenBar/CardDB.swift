@@ -36,6 +36,8 @@ struct CardInfo: Codable, Sendable, Equatable {
     }
 
     static let rarities = ["N", "R", "SR", "UR", "SE"]
+    /// "SR" → 3. 모르는 표기는 1(N)
+    static func tier(label: String) -> Int { (rarities.firstIndex(of: label) ?? 0) + 1 }
     var rarity: String { Self.rarities[min(max(tier, 1), Self.rarities.count) - 1] }
 
     /// level 칸의 뜻: 엑시즈는 랭크, 링크는 링크 수

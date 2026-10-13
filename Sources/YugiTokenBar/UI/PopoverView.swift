@@ -23,7 +23,7 @@ struct PopoverView: View {
                 Group {
                     switch model.screen {
                     // 개봉마다 새 뷰로 만들어 뒤집기·레어 연출 상태를 처음부터 시작한다
-                    case .opening: OpeningView().id(model.openingID)
+                    case .opening: OpeningView().id(model.opening.id)
                     case .shop: ShopView()
                     case .settings: SettingsView(open: show)
                     case .usage: UsageDetailView()

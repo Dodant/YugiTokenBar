@@ -23,9 +23,7 @@ struct FusableSection: View {
                     HStack(spacing: 6) {
                         Label("융합 가능 · \(cids.count)", systemImage: "arrow.triangle.merge")
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.bold))
-                            .rotationEffect(.degrees(expanded ? 90 : 0))
+                        DisclosureChevron(expanded: expanded)
                     }
                     .font(.headline)
                     .foregroundStyle(Palette.fusion)

@@ -249,7 +249,7 @@ private struct FusionScene {
     /// 융합 카드: 솟아오르며 두 바퀴 돌아 앞면으로 멈추고, 광택·홀로그램·반짝임, 아래에 이름
     private func reveal(_ gc: GraphicsContext, _ W: Double, _ H: Double, _ dt: Double) {
         let (c1, c2) = tierColors
-        let rw = min(190, (H - 120) * 59 / 86, W * 0.5), rh = rw * 86 / 59
+        let rw = min(190, (H - 120) * CardShape.ratio, W * 0.5), rh = rw / CardShape.ratio
         let turn = 1 - pow(1 - clamp(dt / 1.0), 3)
         let pulse = 0.5 + 0.5 * sin(dt * 3.5)
         let yy = -18 + (dt > 1 ? sin((dt - 1) * 1.6) * 4 : 0)
@@ -347,7 +347,7 @@ private struct FusionScene {
         g.translateBy(x: p.x, y: p.y)
         g.rotate(by: .radians(p.rot))
         g.scaleBy(x: max(abs(p.sx), 0.02) * p.scale, y: p.scale)
-        let h = w * 86 / 59
+        let h = w / CardShape.ratio
         let rect = CGRect(x: -w / 2, y: -h / 2, width: w, height: h)
         let shape = Path(roundedRect: rect, cornerRadius: w * 0.05)
         if glow > 0 {
