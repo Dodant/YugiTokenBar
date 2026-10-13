@@ -5,14 +5,17 @@
 
 LocalUsageReader, AppLog, AppEnv, BinaryLocator, ClaudeAccountRoots, CustomScanRoots, Models, ModelPricing,
 UsageEnvironment, LogRepeatSuppressor, UsageCost, OAuthLimitsProvider, KeychainAccess, ProcessRunner, CodexRateLimitsProvider,
-UsageProvider, LocalAdditionalUsageProvider, LocalAsideUsageReader, LocalAntigravityUsageReader, CursorUsageAPI, AppStatePaths
-(뒤의 6개는 Cursor 사용량용. Aside·Antigravity 리더는 `LocalAdditionalUsageProvider`가 참조해서 같이 복사)
+UsageProvider, LocalAdditionalUsageProvider, LocalAsideUsageReader, LocalAntigravityUsageReader, CursorUsageAPI, AppStatePaths,
+LocalUsageCache
+(UsageProvider~AppStatePaths 6개는 Cursor 사용량용. Aside·Antigravity 리더는 `LocalAdditionalUsageProvider`가 참조해서 같이 복사.
+LocalUsageCache 는 파일별 사용량 캐시)
 
 ## 변경점
 1. `UsageCost.swift`: UI 문자열 타입 `L`에 의존하는 `text(_:compact:)`, `explanation(_:)` 제거
 2. `CustomScanRoots.swift`: `curatedRoots(for:)`에서 이 앱이 쓰지 않는 사용자 지정 스캔 루트(antigravity, opencode, aside, hermes, cursor, copilot, kiro) case 제거
 3. `AppLog.swift`: 로그 파일 `YugiTokenBar.log`, 큐 라벨 `yugitokenbar.log`
 4. `AppStatePaths.swift`: 환경변수 `YTB_STATE_DIR`, 기본 폴더 `YugiTokenBar` (Cursor API 캐시 위치)
+5. `LocalUsageCache.swift`: 디스크 캐시 `usage-cache.json`을 `AppStatePaths.directory()`(이 앱 세이브 폴더)에 둔다
 
 ## MIT License
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated

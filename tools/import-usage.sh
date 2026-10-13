@@ -8,7 +8,8 @@ DST=Sources/YugiTokenBar/Usage
 mkdir -p "$DST"
 for f in LocalUsageReader AppLog AppEnv BinaryLocator ClaudeAccountRoots CustomScanRoots Models ModelPricing UsageEnvironment LogRepeatSuppressor UsageCost \
          OAuthLimitsProvider KeychainAccess ProcessRunner CodexRateLimitsProvider \
-         UsageProvider LocalAdditionalUsageProvider LocalAsideUsageReader LocalAntigravityUsageReader CursorUsageAPI AppStatePaths; do
+         UsageProvider LocalAdditionalUsageProvider LocalAsideUsageReader LocalAntigravityUsageReader CursorUsageAPI AppStatePaths \
+         LocalUsageCache; do
   git -C "$SRC" show "$REV:Sources/PokeTokenBar/Core/$f.swift" > "$DST/$f.swift"
 done
 python3 - "$DST" <<'PY'
@@ -24,5 +25,8 @@ edit("UsageCost", lambda s: re.sub(r"\n    func text\(_ l: L.*?\n    }\n\n    fu
 edit("CustomScanRoots", lambda s: re.sub(r'        case "antigravity":.*?(?=        case "pi":)', "", s, flags=re.S))
 # Cursor API 캐시를 이 앱 세이브 폴더에 둔다
 edit("AppStatePaths", lambda s: s.replace('"PTB_STATE_DIR"', '"YTB_STATE_DIR"').replace('appendingPathComponent("PokeTokenBar")', 'appendingPathComponent("YugiTokenBar")'))
+# 파일별 사용량 캐시를 이 앱 세이브 폴더(YTB_STATE_DIR 를 따른다)에 둔다
+edit("LocalUsageCache", lambda s: re.sub(r'(private static let defaultFileURL: URL = \{\n).*?(\n    \}\(\))',
+     r'\1        AppStatePaths.directory().appendingPathComponent("usage-cache.json")\2', s, flags=re.S))
 edit("AppLog", lambda s: s.replace("PokeTokenBar.log", "YugiTokenBar.log").replace('"poketokenbar.log"', '"yugitokenbar.log"'))
 PY
