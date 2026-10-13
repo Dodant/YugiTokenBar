@@ -13,6 +13,7 @@
 - Shortened guidance in Settings, Collection and usage, and moved detailed conditions and controls to ? tooltips.
 - Long pack names in the Shop now scroll sideways to show the full name while you hover over them.
 - The quick-buy row in the menu now has a soft two-color gradient that differs for each pack, and packs are spaced apart as you swipe so they slide past one by one (Work mode keeps the plain single color).
+- In work mode, the opening list now shows a second line per card with its monster type, level, and ATK/DEF (card type for Spells and Traps).
 
 **🐛 Bug fixes**
 - Fixed the quick-buy row in the menu sometimes stopping between two packs while swiping.

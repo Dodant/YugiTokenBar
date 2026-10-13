@@ -24,7 +24,7 @@ struct CardDetailView: View {
                 Text(card.name).font(.title3.weight(.semibold))
                 // 속성·레벨·종류 한 줄, ATK/DEF 한 줄로 짧게
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(summary(card))
+                    Text(card.summary)
                     if let atk = card.atk {
                         Text(card.def.map { "ATK \(atk) / DEF \($0)" } ?? "ATK \(atk)").monospacedDigit()
                     }
@@ -127,23 +127,6 @@ struct CardDetailView: View {
         .formStyle(.grouped)
     }
 
-    /// "어둠 · ★7 · 드래곤족/융합/효과" (랭크·링크는 "랭크 4"·"링크 4", 펜듈럼은 "P스케일 2" 추가). 없는 칸은 뺀다.
-    private func summary(_ card: CardInfo) -> String {
-        var parts: [String] = []
-        if let attr = card.attr { parts.append(attr) }
-        if let level = card.level {
-            let text = switch card.levelKind {
-            case .level: "★\(level)"
-            case .rank: String(localized: "랭크 \(level)")
-            case .link: String(localized: "링크 \(level)")
-            }
-            parts.append(text)
-        }
-        if let scale = card.scale { parts.append(String(localized: "P스케일 \(scale)")) }
-        if let type = card.type { parts.append(type) }
-        return parts.joined(separator: " · ")
-    }
-
     /// 같은 소재가 반복되면 한 줄로 ("사이버 드래곤 × 3"). "× N" 조건의 count 도 곱한다
     private func grouped(_ materials: [Material]) -> [(material: Material, n: Int)] {
         materials.reduce(into: []) { acc, m in
@@ -178,5 +161,37 @@ struct CardDetailView: View {
     private func consumed(_ materials: [Material]) -> String {
         grouped(materials).compactMap { g in g.material.cid.flatMap { model.db.cards[$0]?.name }.map { String(localized: "\($0) \(g.n)장") } }
             .joined(separator: ", ")
+    }
+}
+
+extension CardInfo {
+    /// "어둠 · ★7 · 드래곤족/융합/효과" (랭크·링크는 모든 언어에서 "Rank 4"·"Link 4", 펜듈럼은 "P스케일 2" 추가). 없는 칸은 뺀다.
+    var summary: String {
+        var parts: [String] = []
+        if let attr { parts.append(attr) }
+        if let levelText { parts.append(levelText) }
+        if let scale { parts.append(String(localized: "P스케일 \(scale)")) }
+        if let type { parts.append(type) }
+        return parts.joined(separator: " · ")
+    }
+
+    /// 업무 모드 개봉 줄의 둘째 줄: 몬스터는 "효과 · ★4 · 1600/1500"(종족을 뺀 분류 · 레벨/랭크/링크 · 공/수, 분류의 효과·일반은 뺀다), 마법·함정은 summary
+    var workLine: String {
+        guard let atk else { return summary }
+        // 효과·일반은 너무 흔해서 뺀다 ("융합/효과" → "융합"). 카드 파일 언어마다 표기가 다르다
+        let common: Set<Substring> = ["효과", "Effect", "効果", "일반", "Normal", "通常"]
+        let kind = type.map { $0.split(separator: "/").dropFirst().filter { !common.contains($0) }.joined(separator: "/") }
+        return [kind, levelText, def.map { "\(atk)/\($0)" } ?? atk]
+            .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    private var levelText: String? {
+        level.map { level in
+            switch levelKind {
+            case .level: "★\(level)"
+            case .rank: "Rank \(level)"
+            case .link: "Link \(level)"
+            }
+        }
     }
 }

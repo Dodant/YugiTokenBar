@@ -74,19 +74,26 @@ struct OpeningView: View {
         } }
     }
 
-    /// 업무 모드 개봉 줄: 배지 칸(폭 고정, 오른쪽 정렬) · 종류 막대 · 등급 · 이름. 누르기 전엔 "눌러서 공개"만
+    /// 업무 모드 개봉 줄: 배지 칸(폭 고정, 오른쪽 정렬) · 종류 막대 · 등급 · 이름(아래 줄에 분류·레벨·공/수). 누르기 전엔 "눌러서 공개"만
     private func row(_ pull: Pull, _ i: Int) -> some View {
         let card = model.db.cards[pull.cid]
         return flippable(HStack(spacing: 8) {
             if flipped.contains(i) {
-                PullBadge(pull: pull, canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
-                    .fixedSize()  // 마우스를 올린 "✕ 売らない"는 칸보다 넓어 왼쪽 여백으로 넘친다
-                    .frame(width: Self.badgeWidth, alignment: .trailing)  // 등급 바로 옆에 붙인다
+                // 배지가 없는 줄(새 카드도 판매도 아님)도 칸을 비워 둔다. PullBadge 가 비면 frame 이 사라져 이름이 왼쪽으로 당겨진다
+                Color.clear.frame(width: Self.badgeWidth, height: 1)
+                    .overlay(alignment: .trailing) {  // 등급 바로 옆에 붙인다
+                        PullBadge(pull: pull, canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
+                            .fixedSize()  // 마우스를 올린 "✕ 売らない"는 칸보다 넓어 왼쪽 여백으로 넘친다
+                    }
                 HStack(spacing: 5) {
                     FrameBar(card: card)
                     RarityPill(label: pull.label, size: 10, aligned: true)
                 }
-                Hovering { MarqueeText(text: card?.name ?? "", active: $0) }  // 넘치면 이름만 마우스를 올린 동안 흘러간다
+                VStack(alignment: .leading, spacing: 1) {
+                    Hovering { MarqueeText(text: card?.name ?? "", active: $0) }  // 넘치면 이름만 마우스를 올린 동안 흘러간다
+                    Text(card?.workLine ?? "")
+                        .font(.caption).foregroundStyle(.secondary).monospacedDigit().lineLimit(1)
+                }
                 Spacer(minLength: 0)
             } else {
                 Text("눌러서 공개").foregroundStyle(.tertiary)
@@ -97,7 +104,7 @@ struct OpeningView: View {
         .font(.callout)
         .padding(.leading, 4)
         .padding(.trailing, 10)
-        .frame(height: 30)
+        .frame(height: 42)
         .background(.fill.tertiary, in: .rect(cornerRadius: 6))
         .contentShape(.rect), pull, i)
     }
