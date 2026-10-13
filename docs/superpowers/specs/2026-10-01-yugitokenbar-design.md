@@ -15,7 +15,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량을 보�
 | 기간 | 2003-12-09 『푸른 눈의 백룡의 전설』 ~ 2026-07-14 『카오스 오리진즈』 (같은 분류의 미니 팩 ＋1 어시스트·익스팬션 팩, 얼티미트 스페셜 팩은 제외) |
 | 규모 | 100팩, 수록 8,251장, 고유 카드 **8,226종**(몬스터 5,086 · 마법 1,720 · 함정 1,420. 넣은 소재 17장·융합 26종·마스크 체인지와 마스크드 히어로 11장 포함) (2026-10-08 실측. VRAINS까지 75팩은 6,210종) |
 | 시대 | DM 1~11팩 · GX 12~27 · 5D's 28~43(싱크로) · ZEXAL 44~51(엑시즈) · ARC-V 52~63(펜듈럼) · VRAINS 64~75(링크) · Modern 76~100(VRAINS 이후). 시대 첫 팩 인덱스는 `CardDB.eraStarts` |
-| 표시 이름 | 고른 언어(ko/en/ja)의 카드명 (`cards_KO/JP/EN.json`, `2026-10-07-i18n-design.md`). 카드 풀은 언어와 상관없이 한국 정규 부스터 |
+| 표시 이름 | 고른 언어(ko/en/ja)의 카드명 (`cards_KO/JP/EN.json`, 3절 7). 카드 풀은 언어와 상관없이 한국 정규 부스터 |
 | 팩/레어도 | 한국 정발 팩 기준 (Konami DB `t_rid`) |
 | 카드 정보/효과 | 고른 언어의 Konami DB 텍스트 (ko·ja는 OCG, en은 TCG) |
 | 이미지 | YGOPRODeck 영문 실물 이미지, 카드 이름·텍스트는 고른 언어로 이미지 밖에 별도 표시. 공식 오버프레임(Yugipedia "Extended art") 판이 있는 카드는 그 이미지(`ImageCache.overframe`, passcode → 이미지 URL, 100팩에 든 21종 전부를 손으로 골랐다. 카드별 출처는 `docs/sources.md`) |
@@ -120,7 +120,7 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
                           "text": "…", "imageId": 89631139, "tier": 5 },
                 "4837": { "name": "융합", "attr": "마법", …, "kind": "spell" },
                 "4043": { "name": "용기사 가이아", …, "text": "", "summons": ["fusion"], "materials": [ { "cid": 4044 }, { "cid": 4045 } ] },
-                "7287": { "name": "검투수 헤라클레이노스", …, "materials": [ { "cid": 7286 }, { "rule": "\"검투수\"라는 이름이 붙은 몬스터", "count": 2 } ] } } }
+                "7303": { "name": "검투수 헤라클레이노스", …, "materials": [ { "cid": 7286 }, { "rule": "\"검투수\"라는 이름이 붙은 몬스터", "count": 2 } ] } } }
    ```
    `packs`는 발매일 오름차순이다.
    파일은 팩 하나·카드 하나가 한 줄이다(diff용).
@@ -145,6 +145,7 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
    조건은 테마 하나(`"DD(디디)" 몬스터`, `"포톤"이라는 이름이 붙은`)와 종족·속성·몬스터 종류(융합·싱크로·엑시즈·링크·펜듈럼·의식·효과·일반·튜너·듀얼·툰)·레벨·공격력·수비력으로 읽는다(177종.
    `name` 소재가 섞이거나 못 읽는 조건이나 맞는 카드가 자기뿐인 조건(성령수기 가이아페라이오 등 3종)이 있으면 `picks`가 없다).
    `/`·`또는`으로 나뉜 값은 같은 칸끼리 OR, 다른 칸끼리 AND("전사족 / 화염 속성"은 둘 다, "기계족 / 공룡족"은 어느 쪽), "N장 이상"은 1장, 레벨은 엑시즈·링크에 없고 수비력은 링크에 없다.
+   앞의 "토큰 이외의"는 떼고, "효과 몬스터 이외의 싱크로 몬스터"처럼 "X 몬스터 이외의"는 그 종류를 뺀다.
    테마는 KO 이름(괄호 읽기·띄어쓰기 빼고)에 그 문자열이 든 카드다("DD"에 DDD도 든다, "히어로"는 `NOT_HERO` 제외).
    JP 이름은 한자에 테마 읽기가 붙어(古代の機械＝アンティーク・ギア, 月光＝ムーンライト) 이름만으로 못 찾아서 KO로 정한다.
    테마·이름 둘 중 하나(`"A"이나 "B"`, `"A" 몬스터 또는 "B" 몬스터`)는 둘 중 어느 쪽이 든 카드, "원래 공격력과 원래 수비력이 2500 인"은 공격력·수비력 조건 둘이다.
@@ -154,8 +155,9 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
    `"엘리멘틀 히어로 네오스"(또는 그 카드명이 쓰여진 융합 몬스터)`는 그 카드와 소재 줄에 그 카드가 있는 융합(`"of"`).
    "카드명이 다른"·"속성이 다른" 같은 조건은 읽지 않는다.
    앱 로직(종류·소환법 필터, 레벨/랭크/링크)은 이 코드만 본다.
-5. 검증 출력: 팩 수(100), 팩별 카드 수/레어도 분포, 고유 카드 수, **이미지 미매칭 카드 목록**(미매칭은 수동 확인). 실패 시 non-zero 종료.
-6. Konami 요청은 1초 간격.
+5. 검증 출력: 팩 수(100), 팩별 카드 수/레어도 분포, 고유 카드 수, **이미지 미매칭 카드 목록**(미매칭은 수동 확인).
+   팩이 100개가 아니거나 이름이 빈 카드·봉투 이미지가 없는 팩이 있으면 non-zero로 끝난다.
+6. Konami 요청은 1초 간격, Yugipedia API 요청은 0.5초 간격.
 7. **JP·EN** (`--lang ja|en`, 기본 `all`이면 KO 다음에 차례로): `cards_KO.json`의 cid마다 상세 페이지를 읽는다.
    - 페이지: `card_search.action?ope=2&cid=<cid>&request_locale=<ja|en>`(1초 간격)
    - 읽는 것: 이름(`h1`, ja의 루비·영문 병기 제외)·속성(마법·함정은 아이콘 칸)·종족/타입·효과·펜듈럼 효과·수록 팩 목록
@@ -163,10 +165,35 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
    결과는 `tools/cache/<lang>.jsonl`(gitignore)에 한 줄씩 바로 덧붙여 끊겨도 같은 명령으로 이어 받는다.
    공유 필드(`tier`·`imageId`·`level`·`atk`·`def`·`scale`·`kind`·`summons`·`hero`·`mask`, 팩의 `pid`·`date`·`cards`·`setCode`)는 KO 값을 쓴다.
    팩 봉투 `imageURL`은 그 언어 것을 받는다(3번).
-   대체 규칙, 소재 줄(`MATERIALS_OVERRIDES`), 원판 팩명 매핑(`PACK_NAME_OVERRIDES`)은 `2026-10-07-i18n-design.md` 3절 그대로다.
    상세 페이지가 오류면 30초씩 늘려 쉬며(30·60·90초) 처음 시도를 합쳐 4번까지 받는다.
-   끝에 세 파일의 팩·cid 순서·공유 필드·이름을 검증하고 어긋나면 non-zero로 끝난다.
+   어느 모드든 끝에 있는 언어 파일들을 KO와 대조한다(`verify`): 팩의 `pid`·카드 목록, 카드 cid 순서, 카드 공유 필드, 소재의 cid·count, 모든 카드의 이름.
+   어긋나면 non-zero로 끝난다.
+   그래서 `--extras`로 새 카드를 넣으면 JP·EN을 다시 만들 때까지 검증이 실패한다.
    자체 검사는 `python3 tools/test_build_cards.py`.
+
+   - JP·EN 파일 형식은 KO와 같고, 세 파일 모두 같은 팩 목록·같은 cid·같은 순서다.
+     - 언어마다 다른 필드: 팩 `name`, 카드 `name`·`attr`·`type`·`text`·`pendulum`, `materials`의 `name`·`rule` 소재(EN은 "2 \"Gladiator Beast\" monsters"처럼 수가 문장 안에 있다).
+     - JP·EN의 마법·함정은 `attr`에 아이콘 칸 값("通常魔法"·"Normal Spell" 등)을 넣고 `type`은 뺀다.
+     - EN `type`의 `／`는 `/`로 바꾼다.
+   - **대체 규칙**: 이름이 비어 있으면 그 언어에 그 카드가 없는 것으로 본다.
+     그런 카드는 언어별 필드 전부를 다음 언어에서 가져온다(EN → JP → KO, JP → KO).
+     필드 하나만 섞지 않는다.
+     빌드 스크립트가 대체된 카드를 `cid 이름 (→ JP)` 형식으로 모두 출력하고 개수를 요약한다.
+   - **융합 소재**: JP·EN도 효과 첫 줄이 소재 줄이다.
+     KO 카드에 `materials`가 있으면 그 언어 텍스트의 첫 줄을 떼어 나눈다(EN은 ` + `, JP는 `＋`).
+     조각 수가 KO 소재 수와 같으면 같은 자리끼리 맞춰 `cid` 소재는 KO 그대로, `name`·`rule` 소재는 그 언어 조각으로 채운다(`"…"`·`「…」` 따옴표는 `name`에서 벗기고, 끝의 `× N`·`×３`은 `count`).
+     다르면 KO 소재를 그대로 두고, `name`·`rule` 소재가 있는 카드만 출력한다(전부 `cid`면 문자열이 화면에 안 나와서 상관없다).
+     이렇게 맞지 않는 카드 중 화면에 한글이 새는 것은 `MATERIALS_OVERRIDES`(언어별 cid → 소재 표, 현재 EN 7301·11207)로 고치고, 테스트가 JP·EN 이름·효과·소재에 한글이 없는지 검사한다.
+     어느 경우든 그 언어 텍스트의 첫 줄은 뗀다.
+     `cid` 소재는 앱이 현재 언어의 카드명으로 그린다.
+   - **원판 팩명**: 한국 팩마다 수록 카드들의 그 언어 수록 팩 이름(상세 페이지의 수록 팩 목록)을 세어 가장 많은 것을 팩 `name`으로 쓴다(동률이면 발매일이 빠른 쪽).
+     매핑을 전부 `KO 이름 → JP/EN 이름 (겹친 수/팩 카드 수)`로 출력한다.
+     JP 이름은 DB 표기 뒤의 영어 병기(`[ SOUL OF THE DUELIST ]`, 띄어쓰기가 팩마다 다르다)를 떼고 가타카나 이름만 쓴다.
+     틀린 매핑은 스크립트 상단의 `PACK_NAME_OVERRIDES = {"ja": {pid: 이름}, "en": {...}}`로 고친다.
+     기준은 같은 세트의 이름이다: JP는 OCG가 같은 세트를 냈으면 그 OCG 이름, 아니면 TCG 영어 이름, EN은 TCG 이름(TCG가 이름을 바꾼 세트는 바꾼 이름).
+     가장 흔한 팩이 재록 모음집(DUELIST LEGACY·EXPERT EDITION·DARK REVELATION 등)으로 뽑힌 경우를 덮어쓴다:
+     - 초기 11팩(푸른 눈의 백룡의 전설~천공의 성역)은 일본 팩 두 개를 합친 TCG 세트라(Yugipedia) JP도 TCG 영어 이름.
+     - 사이버 혁명은 JP `サイバネティック・レボリューション`·EN `CYBERNETIC REVOLUTION`.
 
 ## 4. 앱 구조
 
@@ -187,7 +214,7 @@ Sources/YugiTokenBar/
   AppModel.swift       60초마다 사용량 적립(늘어난 토큰이 없으면 저장·화면 갱신 안 함), 5분마다 공식 한도 갱신, 저장
   TodayUsageReader.swift  오늘 provider별 토큰·비용 집계. 로그는 `LocalUsageCache`(파일별 캐시)로 읽고, 이번 실행에서 바뀐 Claude 파일은 붙은 줄만 읽으며, 로컬 Cursor DB는 지난번 rowid 뒤만 읽어 합친다. 사용량 화면용 지난 31일 날짜별 합계(`pastDays`). 지난 날은 바뀌지 않으므로 `~/Library/Caches/YugiTokenBar/usage-days.json`에 두고 없는 날만 로그에서 읽는다(31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초)
   Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·LocalUsageCache·한도 provider + 의존 파일, NOTICE.md(출처·변경점)
-  CardDB.swift         `cards_<KO|JP|EN>.json` 로드(등급은 1~5로 잘라 읽는다), 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 `DexQuery`가 처음 이름순으로 볼 때 한 번 만들어 둔다)
+  CardDB.swift         이번 실행 언어의 `cards_<KO|JP|EN>.json`을 번들 → 저장소 `Resources/` 순서로 찾아 로드(`CardDB.bundled()`, 실패는 원인을 담은 `fatalError`. 등급은 1~5로 잘라 읽는다), 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 `DexQuery`가 처음 이름순으로 볼 때 한 번 만들어 둔다)
   Game.swift           적립·뽑기·판매·덱·융합 (밸런스 상수 `Balance`는 파일 상단)
   GameState.swift      세이브 상태(`GameState`·`LogEntry`·`Deck`)와 저장소(`StateStore`)
   ImageCache.swift     카드(YGOPRODeck, 오버프레임은 Yugipedia·카드숍 이미지를 긴 변 614px로 줄여 두 크기에 공용)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시 (백그라운드에서 디코딩까지 끝내 스크롤 중 메인 스레드가 JPEG를 풀지 않음, 팩은 긴 변 480px로 줄임. 메모리 캐시는 디코딩된 픽셀 바이트 150MB 상한, 넘으면 오래된 것부터 내보내고 디스크에서 다시 읽음. 메모리에 있는 이미지는 셀이 첫 프레임부터 그린다(`cached`, 카드 뒷면이 비치지 않음). 같은 이미지는 한 번만 받고, 기다리던 셀이 모두 사라지면(스크롤로 지나감) 받기를 취소한다. 호스트당 동시 연결 3개, 같은 호스트로 가는 요청 시작은 80ms 간격으로 줄 세운다. 429·503이면 `Retry-After`(없으면 30초, 최대 120초)만큼 그 호스트 전체를 쉬고 한 번 다시 시도하며 그 밖의 실패는 다시 시도하지 않는다)
@@ -200,6 +227,7 @@ Resources/partner.png  파트너 스프라이트 시트(192×208 셀, 8열 × 9�
 Resources/card-back.jpg 카드 뒷면(923×1351, 로고 없음. tools/clean-card-back.py 산출물)
 Tests/YugiTokenBarTests/
 scripts/build-app.sh   .app 빌드·설치 (6절 버전)
+scripts/package-release.sh  릴리스 ZIP 서명·공증·SHA256SUMS (docs/distribution.md)
 tools/build-cards.py
 tools/import-usage.sh  PokeTokenBar 커밋 de617e3 에서 Usage/ 를 복사하고 패치 (NOTICE.md)
 tools/clean-card-back.py  Yugipedia Back-KR.png 에서 로고를 지워 card-back.jpg 를 만듦
@@ -282,7 +310,7 @@ Resources/en.lproj/Localizable.stringsdict  영어 단수·복수(1 card·2 card
 
 ### 내보내기·가져오기
 
-- 내보내기 파일 `YugiTokenBar-Save-YYYYMMDD.json` = 봉투 `{ format: "yugitokenbar.save", schema: 1, appVersion, exportedAt, state }`.
+- 내보내기 파일 `YugiTokenBar-Save-YYYYMMDD.json` = 봉투 `{ format: "yugitokenbar.save", schema: <GameState.schemaVersion>, appVersion, exportedAt, state }`.
   상태 디코딩이 빠진 키를 기본값으로 채워 아무 JSON이나 읽히므로, 기본값이 없는 `format`/`schema`로 먼저 가린다.
   8MB 초과, 다른 format, 더 높은 schema는 거부한다.
 - 가져오기는 들어올 세이브와 지금 세이브의 수치(보유 종류 수, 코인)를 보여주고 확인을 받는다(Return = 취소).
@@ -361,6 +389,8 @@ Resources/en.lproj/Localizable.stringsdict  영어 단수·복수(1 card·2 card
 덱 화면에서 보유 수가 덱에 넣은 장 수보다 적은 카드는 미보유처럼 흐리게 보여서 더 모아야 할 카드를 알 수 있다.
 덱을 지워도 카드는 그대로다.
 덱은 세이브(`decks`)에 저장된다.
+새 덱은 이름 "새 덱 N"을 한국어로 저장한다.
+화면은 `Deck.title`로 그려, 기본 이름(ko "새 덱 N"·en "New Deck N"·ja "新しいデッキ N", 예전 세이브 포함)은 지금 언어로, 사용자가 바꾼 이름은 그대로 보인다(`Deck.defaultPrefixes`, 번역과 맞는지는 `LocalizationTests`).
 
 ### 융합
 
@@ -425,12 +455,15 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 화면의 코인 금액은 "코인" 글자 없이 `ⓒ 1,000`처럼 표시한다(`coinText`).
 10,000 이상은 K·M으로 줄인다(소수 1자리는 줄인 수가 한 자리일 때만, `ⓒ 293K`, `ⓒ 2.4M`, `ⓒ 1M`, `shortCoins`.
 메뉴바 숫자도 같다).
+`shortCoins`(K·M, `en_US` 고정)와 `shortTokens`는 언어와 상관없고, 천 단위 구분과 날짜 표시는 `.formatted()`(`Locale.current`)로 언어를 따른다.
+파일 이름 날짜 같은 고정 형식(`SaveTransfer.stamp`)은 언어와 상관없다.
+레어리티 N·R·SR·UR·SE와 시대 이름은 모든 언어에서 그대로다.
 팝오버 안 화면(상점·개봉·설정)의 ‹ 버튼은 Esc 키로도 눌린다.
 
 **외관(라이트·다크)**: 시스템 설정만 따르고 앱 안에 따로 설정을 두지 않는다. 실행 중에 바꿔도 바로 다시 그린다.
 - 글자·배경·구분선은 의미 기반 시스템 색(`.primary`·`.secondary`·`.fill`·`.bar`, `Divider`)을 먼저 쓰고, 강조는 시스템 강조색(`accentColor`)을 따른다.
   화면마다 `colorScheme`으로 분기하지 않는다.
-- 고유한 색은 `CardImageView.swift`의 `Rarity`(등급 색·알약 색)와 `Palette`(카드 테두리, 주의·위험·융합 글자, 카드 위 배지, 완료 초록, 이미지를 못 받았을 때의 카드 뒷면·팩 봉투)에 라이트·다크 값을 같이 둔다(`Color(light:dark:)`).
+- 고유한 색은 `CardImageView.swift`의 `Rarity`(등급 색·알약 색)와 `Palette`(카드 테두리, 주의·위험·융합 글자, 카드 위 배지, 완료 초록, 상점 도장, 바로 구매 줄 바탕 `packGlow`, 카드 틀 색 `frame`, 이미지를 못 받았을 때의 카드 뒷면·팩 봉투)에 라이트·다크 값을 같이 둔다(`Color(light:dark:)`).
   예외: 레어 연출(`RareEffect`, 개봉 빛)과 융합 연출 색은 그 뷰 안에 두고, 사용량 에이전트 색은 시스템 색이라 `UsageView.agents`에 둔다.
   글자 대비는 WCAG AA 이상(본문 4.5:1, 라이트는 흰 바탕, 다크는 `#2A2A2C` 바탕 기준).
 - 카드·팩 이미지는 원본 그대로 둔다.
@@ -439,6 +472,8 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 - 색을 넣는 진행 막대는 `TintBar`로 직접 그린다(`ProgressView`의 `.tint`는 외관을 바꾸면 풀린다).
   팩·덱 진행은 `ProgressBar`(다 모으면 `Palette.complete` 초록)와 `ProgressCount`(다 모으면 "136 ✓")를 같이 쓴다.
   설정 화면의 그룹 상자는 팝오버 카드와 같은 `.fill.quinary`다.
+- 패널 폭은 언어와 상관없이 같다.
+  긴 영어·일본어 문자열은 그 뷰에서 `lineLimit`·`minimumScaleFactor`·`fixedSize`로 맞춘다(컬렉션 필터 막대의 `ViewThatFits`, 사용량 한도 이름의 `minimumScaleFactor(0.8)`).
 - 메뉴바 아이콘(SF Symbol)은 메뉴바 색을 따른다. 파트너 날개 크리보는 캐릭터라 컬러 그대로 둔다. 융합 연출은 자체 어두운 배경 위라 외관과 상관없다.
 - SF Symbol 꾸밈: 팝오버 메뉴 줄·무료 줄 아이콘은 `.symbolRenderingMode(.hierarchical)`, 사용량 칸의 에이전트 아이콘은 `.symbolColorRenderingMode(.gradient)`.
   사용량 화면의 새로고침 아이콘은 한도를 읽는 동안 `.symbolEffect(.rotate)`로 돈다(`lessMotion`이면 안 돈다).
@@ -462,6 +497,8 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - `CardImageView.swift`(`CardImageView`·`CardBack`·`PackImageView`·`cardTilt`)와 `RareEffect`·`FlipCard`(R 그림자)
     - 줄 목록으로 바꾸는 상점 `EraSection`·개봉 `OpeningView`·컬렉션 `DexView`
     - 봉투를 빼는 바로 구매 `PackRow`·컬렉션 사이드바 `DexSidebar.packItem`
+    - 그림을 빼는 융합 가능 목록 `FusableSection`, 마지막 장면만 보이는 `FusionAnimationView`
+    - 최근 획득 줄과 바로 구매 줄 바탕을 바꾸는 `PopoverView`, 합계 요약을 더하는 `UsageView`(`WorkSummary`)
     - 끌기 미리보기는 뷰 계층 밖에서 그려져 `DexView`가 환경값을 직접 넘긴다.
   - 메뉴바 패널 요약의 최근 획득 줄은 없다(`PopoverView.showRecent`).
     무료 팩·카드 줄처럼 설정 화면에서 끄면 요약으로 돌아왔을 때 다시 생긴다.
@@ -500,6 +537,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
   세이브 저장이 실패하면 아이콘 자리에 경고 삼각형.
   파트너가 해금되면 아이콘 자리에 날개 크리보(18pt, 대기 행만, 셀 위쪽 빈 공간을 잘라 세로 가운데, 숫자와 3pt 띄움, 대기 행 첫 프레임 고정)가 들어간다.
 - **파트너** 「날개 크리보」:
+  - 화면 문구는 "펫"이 아니라 "파트너"로 쓴다.
   - 해금: 「날개 크리보」(cid 6314, 15번째 팩 『잃어버린 천년』 SR, GX 시대라 기본 시대 범위 안)를 1장 이상 가지면 해금.
     영구이며 처음 가졌을 때 `GameState.partnerUnlocked = true`를 저장하고, 이후 팔거나 시대 범위를 바꿔도 유지된다.
     검사는 `AppModel.save()` 직전(`Game.unlockPartnerIfOwned()`, 새로 해금되면 true), 가져오기 직후, 앱 시작 시 한 번 — 팩·무료 카드·융합은 save를 거친다.
@@ -579,9 +617,10 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
       - Claude Code가 30일 지난 기록을 지우므로 앱이 그 전에 읽어 두지 않은 날은 Claude 몫이 빠진다.
     - 읽는 동안 Claude·Codex 줄의 초기화 시각 자리에 도는 표시가 나온다.
     - 한도 이름은 "5시간"·"주간"·모델명.
+    - 한도 막대는 60% 이상이면 `Palette.warning`, 85% 이상이면 `Palette.danger` 색이다.
     - 비용은 기록 비용 우선, 없으면 모델 단가로 추정.
   - [설정], [종료](⌘Q).
-  - 순서는 코인 줄 → 저장 실패 줄(있을 때) → 최근 획득 → 무료 팩 줄 → 무료 카드 줄 → 바로 구매 → 메뉴.
+  - 순서는 코인 줄 → 저장 실패 줄(있을 때) → 세이브 복구 알림 줄(있을 때, 4절 저장) → 최근 획득 → 무료 팩 줄 → 무료 카드 줄 → 바로 구매 → 메뉴.
   - 무료 카드가 쌓여 있으면 [무료 카드 N장 · 열기] 줄이 생기고(5장보다 많으면 [5장 열기]), 다 열면 배지와 줄이 사라진다.
   - 개봉·상점·설정 화면이 덮고 있는 동안 새로 생기는 무료 팩·무료 카드 줄은 돌아왔을 때 보인다(`freeRows`, 팩을 까다 무료 팩이 생겨도 개봉 화면이 늘어나지 않는다).
   - 다 써서 사라지는 줄은 바로 빠져, 마지막 무료 팩을 열면 개봉 화면이 원래 높이가 된다.
@@ -612,14 +651,14 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
   - 개봉 화면의 [한 팩 더]는 막지 않는다.
   - 업무 모드(외관의 업무 모드)에서는 그리드 대신 줄 목록이다(`LazyVStack`의 `ShopRow`):
     - 이름 한 줄(넘치면 …, 줄에 마우스를 올린 동안 `MarqueeText`로 흘러간다).
-    - 그 아래 왼쪽 벽부터 진행 막대(`TintBar`, 다 모으면 초록)와 오른쪽 벽에 붙는 `보유/전체`.
+    - 그 아래 왼쪽 벽부터 진행 막대(`ProgressBar`, 다 모으면 초록)와 오른쪽 벽에 붙는 `보유/전체`.
       다 모으면 `보유` 하나와 초록 체크 동그라미 `checkmark.circle.fill`(예: 136 ✓).
     - 숫자 칸은 폭 60pt 고정(오른쪽 정렬, 한 줄)이라 모든 줄의 막대 길이가 같다.
     - "융합 N장 남음"은 쓰지 않는다("그래도 사기" 두 번 누르기는 그대로).
     - 구매 버튼은 줄마다 깔지 않고 마우스를 올린 동안만 줄 오른쪽에 작은 [ⓒ 1,000](`BuyButton`, `.controlSize(.small)`)이 얹혀 뜬다.
       - 그동안 버튼 뒤의 숫자 칸만 그리드 타일처럼 흐려진다(`.blur(radius: 6)`를 숫자 `Text`에만, 이름·막대는 선명).
       - `Hovering` + `.overlay(alignment: Alignment(horizontal: .trailing, vertical: .barBottom))`: 버튼 아랫선을 막대 아랫선에 맞춘다.
-      - 맞추는 값은 `VerticalAlignment.barBottom`, `TintBar`가 `.alignmentGuide`로 올려 보내는 값.
+      - 맞추는 값은 `VerticalAlignment.barBottom`이고, `ShopRow`가 막대에 `.alignmentGuide`로 건다.
       - 자리를 차지하지 않아 줄 높이·막대 폭은 그대로, 0.15초 페이드.
       - 마우스를 떼면 "그래도 사기" 대기 상태도 사라진다.
     - 봉투 자리·발매년·도장은 없다.
@@ -662,7 +701,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - 구분선 아래 소환법 의식/융합/싱크로/엑시즈/펜듈럼/링크(몬스터의 `summons`에 그 코드가 있는 카드).
       의식 마법은 의식에 안 들어가고, 엑시즈 펜듈럼은 둘 다에 들어간다.
     - 등급 메뉴로 모든 등급/N/R/SR/UR/SE만 보기.
-    - 정렬 메뉴로 팩 순서/높은 등급순/낮은 등급순/이름순/보유 많은 순(같으면 팩 순번).
+    - 정렬 메뉴로 팩 순서/높은 등급순/낮은 등급순/이름순(현재 언어의 카드명)/보유 많은 순(같으면 팩 순번).
     - [미보유 카드 포함] 체크박스를 끄면 가진 카드만.
     - 정렬은 기억, 체크박스는 기본 켜짐이고 창을 열 때마다 다시 켜짐.
     - 막대가 열 폭을 넘으면(영어·일본어, 좁은 창) 세 메뉴의 이름 라벨을 숨기고 값만 보인다(`ViewThatFits`).
@@ -671,6 +710,8 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - 그 오른쪽에 2장 이상일 때만 ×2 표시(순번은 보여주지 않는다).
     - 이미지는 `cards_small`.
   - 오른쪽에 폭 260 고정 상세 정보(구분선으로 폭을 바꾸게 하면 끄는 도중 분할 뷰 레이아웃이 끝나지 않고 앱이 죽는다).
+    - 툴바 [정보](`sidebar.trailing`)로 접고 편다.
+      처음엔 펴져 있고, 카드를 고르거나 전체 선택하면 다시 편다.
     - 지금 융합할 수 있는 카드(`Game.fusable`: 설정이 켜져 있고 「융합」과 소재가 다 있는 범위 안 융합 몬스터 중 아직 없는 것)가 있을 때만 맨 위에 보라색 "융합 가능 · N" 목록이 생긴다.
       - 작은 이미지·이름(업무 모드면 이미지 자리 없이 이름만), 많으면 스크롤.
       - 헤더를 누르면 접고 펴며 오른쪽 꺾쇠로 표시, 접힘 상태 기억 `dex.fusableExpanded`.
@@ -732,6 +773,38 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
   수량이 있는 무료 카드 개봉 버튼은 `Open N`, 다음 무료 팩은 `Open Next · N left`로 표시한다.
   사용량(메뉴 사용량 칸·업무 모드 요약·사용량 화면)의 문구와 날짜는 모든 언어에서 영어다(`Usage`·`Tokens today`·`5h`·`Weekly`·`Resets in …` 등).
   설명·도움말·카드 정보·판매·삭제·세이브 작업과 나머지 UI 문구는 고른 언어로 표시한다.
+  - 번역 어조:
+    - 한국어 원문은 친근한 "~해요"체다.
+    - 영어는 짧은 sentence case로 쓰고, 카드 이름 인용은 `"…"`로 한다.
+    - 일본어는 です・ます체로 쓰고, 카드 이름 인용은 「…」 그대로 둔다.
+    - 한국어 조사가 보간 값에 붙는 문장은 en/ja `.strings` 값에서 `%1$@`·`%2$lld`처럼 위치 지정자로 순서를 바꾼다(키는 그대로).
+  - 유희왕 용어는 영어는 TCG 공식 표기, 일본어는 OCG 공식 표기로 옮기고 일반 단어로 의역하지 않는다(묘지는 "cemetery"가 아니라 "GY").
+    카드 데이터(이름·효과·종족)는 Konami 원문이라 손대지 않는다.
+    화면 문구는 아래 용어집을 따르고, 없는 용어는 Konami 카드 DB(`request_locale=en|ja`)의 표기를 찾아 쓴다.
+
+    | 한국어 | English (TCG) | 日本語 (OCG) |
+    |---|---|---|
+    | 몬스터 / 마법 / 함정 | Monster / Spell / Trap | モンスター / 魔法 / 罠 |
+    | 일반(노멀) 몬스터 / 효과 몬스터 | Normal Monster / Effect Monster | 通常モンスター / 効果モンスター |
+    | 의식 / 융합 / 싱크로 / 엑시즈 / 펜듈럼 / 링크 | Ritual / Fusion / Synchro / Xyz / Pendulum / Link | 儀式 / 融合 / シンクロ / エクシーズ / ペンデュラム / リンク |
+    | 레벨 / 랭크 / 링크 | Level / Rank / Link | レベル / ランク / リンク |
+    | P스케일 | Pendulum Scale | Pスケール |
+    | 공격력 / 수비력 | ATK / DEF | 攻撃力 / 守備力 |
+    | 속성 / 종족 | Attribute / Type | 属性 / 種族 |
+    | 효과 (카드 텍스트) | Effect / card text | 効果 / カードテキスト |
+    | 펜듈럼 효과 | Pendulum Effect | ペンデュラム効果 |
+    | 융합 소재 / 소재 | Fusion Materials / materials | 融合素材 / 素材 |
+    | 융합 소환 / 특수 소환 | Fusion Summon / Special Summon | 融合召喚 / 特殊召喚 |
+    | 덱 / 패 / 묘지 / 필드 | Deck / hand / GY (Graveyard) / field | デッキ / 手札 / 墓地 / フィールド |
+    | 부스터 팩 / 팩 / 팩 개봉 | Booster Pack / pack / open packs | ブースターパック / パック / パック開封 |
+    | 레어리티 | Rarity | レアリティ |
+    | 시크릿 레어 | Secret Rare | シークレットレア |
+    | 날개 크리보 | Winged Kuriboh | ハネクリボー |
+    | 컬렉션 (문장 속 카드 모음) | Collection | コレクション |
+    | 듀얼리스트 | Duelist | デュエリスト |
+
+    메뉴·창 제목의 컬렉션은 위 공통 표기대로 `Dex`다.
+  - 코인 `ⓒ`도 모든 언어에서 그대로다.
 - **설정** (팝오버 내 화면 전환, 상점과 같은 방식):
   - 설명 줄은 기능의 결과를 짧게 보여 준다.
     파트너 조작법·중복 판매의 보관 규칙·융합 조건은 이름 옆 ? 말풍선으로 제공하고 VoiceOver 스위치 힌트에서도 읽는다.
@@ -747,6 +820,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     세이브가 아니라 이 Mac에 저장).
     설명 줄 "카드 이미지와 파트너를 숨겨요".
     켜면 외관의 업무 모드(위).
+  - 절 순서는 일반 → 카드 → 파트너 → 백업 & 이전 → 정보 & 지원이고, 맨 아래 가운데에 작은 흐린 글씨 "Made with Love and Claude"가 있다.
   - 파트너 (카드 절 아래 별도 절, 제목 옆 흐린 이탤릭 "β", 마우스를 올리면 "베타 기능"):
     - [바탕화면 파트너] 스위치(기본 켬, 세이브 `partnerEnabled`).
     - [크기] 슬라이더(64~256, 16 단위 `PartnerTuning.sizeStep`, `partnerSize`).
@@ -775,7 +849,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     범위 밖 보유 카드는 지우지 않고 숨기기만 하며(다시 넓히면 돌아온다), [중복 모두 팔기]는 범위 안 카드만 팔고, 덱 진행도(보유/덱 장 수)와 즐겨찾기 수도 범위 안 카드만 세어 그리드에 보이는 것과 맞춘다.
     이름·이미지 조회(`cards`)는 전체를 그대로 쓴다.
     이름 옆 ? 동그라미에 마우스를 올리면 말풍선(`hoverHint`)으로 "카드·상점·컬렉션이 설정한 시대까지 나와요.
-    / 시대를 옮겨도 카드는 그대로 남아요.", 아래 설명 줄은 지금 범위의 "27팩 · 2,276장".
+    / 시대를 옮겨도 카드는 그대로 남아요.", 아래 설명 줄은 지금 범위의 "27팩 · 2,308장".
     보던 팩이 범위 밖이 되면 컬렉션은 "전체"로.
     컬렉션·상점의 시대 섹션은 받은 팩 범위를 그릴 때마다 지금 DB 에 맞춰 자른다(SwiftUI 가 없어질 섹션을 지우기 전에 몸체를 먼저 그릴 수 있어서).
     범위 밖 팩 인덱스로 구매하면(개봉 화면의 [한 팩 더] 등) 코인을 쓰지 않고 거절한다.
@@ -787,14 +861,23 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - 초안·프리릴리스·main의 미배포 변경은 제외한다.
     - 새 버전이면 그 아래 줄에 "새 버전 v x.y.z이 있어요"와 최신 Release 다운로드 링크를, 실패하면 네트워크 안내를 보여준다.
     - 자동 확인·자동 업데이트는 없다.
-    - 그 아래 [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, [버그 신고하기](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어), PokeTokenBar(MIT) 크레딧 "Inspired by PokeTokenBar"(PokeTokenBar는 GitHub 저장소로 가는 링크)와 [License](`Usage/NOTICE.md` 창).
-    - 맨 아래 출처 두 줄: "Unofficial fan project"(Konami와 관계없음 / 카드 이름·텍스트·이미지 © Konami, 두 줄)와 "Card data & images"(Konami Card Database · YGOPRODeck · Yugipedia. 각각 사이트로 가는 마크다운 링크. Konami DB 링크는 앱 언어의 `request_locale`). 버튼 없이 글만. 자세한 출처는 `docs/sources.md`.
+    - 그 아래 줄마다 라벨과 오른쪽 작은 버튼:
+      - "패치노트" [보기](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창)
+      - "GitHub Repo" [Dodant/YugiTokenBar](저장소를 연다)
+      - "버그 신고하기" [메일 쓰기](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어)
+      - PokeTokenBar(MIT) 크레딧 "Inspired by PokeTokenBar"(PokeTokenBar는 GitHub 저장소로 가는 링크) [License](`Usage/NOTICE.md` 창)
+    - 맨 아래 출처 두 줄은 버튼 없이 글만이다.
+      자세한 출처는 `docs/sources.md`.
+      - "Card data & images"(Konami Card Database · YGOPRODeck · Yugipedia, 각각 사이트로 가는 마크다운 링크)
+      - "Unofficial fan project"(Konami와 관계없음 / 카드 이름·텍스트·이미지 © Konami, 두 줄)
     - 패치노트·License 창(`DocView`)은 `#`/`##` 제목만 크게 그리고, `- ` 줄은 "•" 항목으로(둘째 줄부터 들여쓰기), 나머지 줄은 인라인 마크다운으로 그린다.
-    - PokeTokenBar 크레딧부터 출처 두 줄까지(라벨·힌트·[License])와 라이선스 창 제목은 세 언어 모두 영어로 고정한다. 코드의 영어 키가 그대로 보이고 번역 파일에는 항목이 없다. Konami Card Database 링크는 언어 구분 없는 DB 첫 페이지다.
+    - "GitHub Repo"와 그 버튼, PokeTokenBar 크레딧부터 출처 두 줄까지(라벨·힌트·[License]), "Made with Love and Claude", 라이선스 창 제목은 세 언어 모두 영어로 고정한다.
+      코드의 영어 키가 그대로 보이고 번역 파일에는 항목이 없다.
+      Konami Card Database 링크는 언어 구분 없는 DB 첫 페이지다.
 - **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다.
   `scripts/build-app.sh`가 다음을 한다:
   - 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣는다.
-  - `cards_KO/JP/EN.json`·`ko/en/ja.lproj`·`partner.png`·`card-back.jpg`·`CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md`·`Usage/NOTICE.md`를 Resources에 복사한다.
+  - `cards_KO/JP/EN.json`·`picks.json`·`ko/en/ja.lproj`·`partner.png`·`card-back.jpg`·`CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md`·`Usage/NOTICE.md`를 Resources에 복사한다.
   - Info.plist에 `CFBundleDevelopmentRegion=en`·`CFBundleLocalizations`(en·ko·ja)를 넣는다.
 
 ## 7. 오류 처리
@@ -825,21 +908,27 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 - 시대 범위: `DM`이면 팩·카드·보유 종 수·무료 카드·무료 팩이 DM 팩 안에서만, 해제하면 전체로 돌아온다; 범위 밖 중복은 팔리지 않고 덱 진행도·즐겨찾기 수에서 빠진다
 - 뽑기:
   - 보유 수 상한 없음, 티어가 비면 아래로 갔다가 위로 이동, 완료 팩도 구매 가능, 봉투 안 중복 없음
+  - 슬롯 구성(노멀 3장·4번째 칸 레어 가능·레어 1장), 작은 팩은 카드마다 한 번, 무료 카드는 전체 풀에서 티어 가중치대로
+  - 최근 획득 기록 50건, 코인으로 10팩마다 무료 팩 1개, 날짜별 획득 장 수(`cardsByDay`)
+  - 판매가는 카드 등급대로, [중복 모두 팔기]는 1장씩 남김, 팩 되팔기 기대값이 팩값보다 작음
   - 몬스터 2장 보장(`MonsterGuaranteeTests`)
   - 새 카드 보장과 마지막 미보유 SE(`NewCardGuaranteeTests`)
   - 시대 범위 밖 팩 구매 거절(`EraShrinkTests`)
 - 개봉 화면(`OpeningTests`): 제목·팩이 출처를 따르고, 닫으면 연 화면으로 돌아간다
 - 컬렉션 목록(`DexQueryTests`): 필터·정렬, 띄어쓰기·가운뎃점 무시 검색, 즐겨찾기·최근 획득·덱 범위, 칸 id = cid
-- 이미지 캐시(`ImageCacheTests`): 디스크 캐시, 오버프레임 파일, 메모리 조회, 깨진 파일 재시도, 메모리 상한, 기다리는 셀이 없으면 받기 취소, 축소 디코딩
+- 이미지 캐시(`ImageCacheTests`): 디스크 캐시, 오버프레임 파일, 메모리 조회, 깨진 파일 재시도, 메모리 상한, 기다리는 셀이 없으면 받기 취소, 축소 디코딩, 업무 모드면 조회 없음, 429·503은 `Retry-After` 뒤 한 번만 다시 시도, 404는 다시 시도 안 함, 같은 호스트 요청 간격
 - 해금 없음: 아무 팩이나 구매 가능, 마지막으로 코인으로 산 팩(`lastBoughtPid`, 무료 카드·무료 팩 제외. 시대 범위 밖이면 첫 팩)
-- 덱: 미보유 포함 카드당 3장 한도, 빼기·이름 바꾸기·삭제
+- 덱(`DeckTests`): 미보유 포함 카드당 3장 한도, 여러 장 한 번에 넣기, 새 덱 이름 번호, 언어별 기본 이름, 빼기·이름 바꾸기·삭제, 기억한 사이드바 항목 키 왕복
 - 융합:
   - 설정을 켜면 중복 판매·자동 판매가 소재를 필요한 장 수만큼 남긴다(조건 소재는 그 융합을 만들기 전까지)
   - 「융합」 카드가 없으면 잠김, 소재를 장 수만큼 소비하되 1장은 남기고 1장 지급(「융합」은 남는다), 모자라면 거절, 소재를 모르는 융합은 못 만든다
   - 설정을 켜면 융합 전용 카드가 팩·무료 카드에서 안 나오고 UR 슬롯은 아래 티어로, 끄면 다시 나온다
   - 융합 전용 소재는 모든 시대 범위 안
+  - 마스크 체인지는 같은 속성 히어로, `picks` 줄은 가진 것이 가장 많은 카드부터, 융합 가능 목록, [모두 융합]의 이어 만들기와 모자랄 때 멈춤
+  - 남은 미보유가 융합 전용뿐인 팩은 `cleared`
 - 저장: 왕복 직렬화, `.bak` 복구, 저장 실패 표시가 다음 성공(가져오기 포함)까지 남음
-- 내보내기·가져오기(`SaveTransferTests`): 봉투 왕복, 일반 상태 JSON·더 높은 schema 거부, 가져오기 전 백업과 이 Mac 원장 유지, CHANGELOG 버전 읽기·비교
+- 내보내기·가져오기(`SaveTransferTests`): 봉투 왕복, 일반 상태 JSON·더 높은 schema 거부, 가져오기 전 백업과 이 Mac 원장 유지, CHANGELOG 버전 읽기·비교, 세 언어 CHANGELOG 제목 일치
+- 업데이트 확인(`AppInfoTests`): 정식 릴리스 태그 읽기, 미배포·잘못된 태그 무시
 - 데이터:
   - `cards_KO.json` 팩 100개(미니 팩 없음), 고유 8,226종
   - 시대 7개의 첫 팩 setCode(LOB·SOD·TDGS·REDU·DUEA·COTD·ROTD)
@@ -864,11 +953,11 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
   - 한 번 재생 큐(기준 상태 복귀·중복 방지·클릭 우선)
   - 비행 방향 전환·기준 동작 사이 쉬기(범위 안)·한 번 재생 뒤 쉬지 않음·두리번
   - 바탕화면 파트너를 끄면 타이머 정지(메뉴바 아이콘 유지)
-- 세이브 잠금: 같은 폴더는 한 실행만, 다른 폴더는 따로
-- 세이브 형식: 저장한 `schema` 읽기(키 없음 = 1), 덱 키 누락·깨진 기록 하나는 그 항목만, 날짜별 백업 7개·원본과 `.bak`이 다 깨지면 최근 날짜 백업에서 복구, 백업도 없으면 새 상태와 알림(파일 없음은 알림 없음)
   - 바탕화면 창 대체 위치(화면 밖·조금만 걸침·nil → 주 화면 오른쪽 아래)와 크기 제한(64~256, 192:208)
   - 해금은 영구(가져오기 포함), 가져오기 때 파트너 표시 설정은 이 Mac 값
   - 시트가 없으면 파트너 끔, 새 키 없는 옛 세이브
+- 세이브 잠금: 같은 폴더는 한 실행만, 다른 폴더는 따로
+- 세이브 형식: 저장한 `schema` 읽기(키 없음 = 1), 덱 키 누락·깨진 기록 하나는 그 항목만, 날짜별 백업 7개·원본과 `.bak`이 다 깨지면 최근 날짜 백업에서 복구, 백업도 없으면 새 상태와 알림(파일 없음은 알림 없음)
 
 ## 9. 범위 밖 (YAGNI)
 
@@ -881,6 +970,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 - 스타터/스트럭처/프로모
 - 업적
 - 파트너 돌아다니기·커서 따라가기·호버 말풍선·저전력 모드 정지·다른 파트너 선택·메뉴바에서 기준 상태 동작 재생
+- 실행 중 즉시 언어 전환, 한·영·일 외 언어, 언어별 카드 이미지, K·M 대신 만·万 축약, 라이선스 문서(`NOTICE.md`) 번역
 
 ## 10. 라이선스 메모
 
