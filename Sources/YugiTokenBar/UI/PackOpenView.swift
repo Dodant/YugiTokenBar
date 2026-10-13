@@ -9,12 +9,12 @@ struct OpeningView: View {
     @Environment(\.workMode) private var workMode
 
     var body: some View {
-        let pulls = model.opening
+        let pulls = model.opening.pulls
         let allFlipped = flipped.count == pulls.count
         VStack(spacing: 12) {
-            PanelHeader(title: model.openingTitle) { model.closeOpening() }
+            PanelHeader(title: model.opening.title) { model.closeOpening() }
             // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채운다
-            let packLayout = model.openingPack != nil && pulls.count == 5
+            let packLayout = model.opening.pack != nil && pulls.count == 5
             let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
             let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
             let rareW = (width - 20) / 3 * 1.75
@@ -59,7 +59,7 @@ struct OpeningView: View {
     }
 
     /// 팩의 마지막 칸은 R 이상 확정 레어 슬롯이라 조금 크게 둔다
-    private func isRare(_ i: Int) -> Bool { model.openingPack != nil && i == model.opening.count - 1 }
+    private func isRare(_ i: Int) -> Bool { model.opening.pack != nil && i == model.opening.pulls.count - 1 }
 
     private func cell(_ pull: Pull, _ i: Int) -> some View {
         Hovering { hovered in VStack(spacing: 4) {
@@ -136,10 +136,10 @@ struct OpeningView: View {
         let rare = pulls.indices.last.flatMap { !lessMotion && isRare($0) && !flipped.contains($0) ? $0 : nil }
         withAnimation(flip) { flipped.formUnion(pulls.indices.filter { $0 != rare }) }
         guard let rare else { return }
-        let id = model.openingID
+        let id = model.opening.id
         Task {
             try? await Task.sleep(for: .milliseconds(600))
-            guard model.openingID == id else { return }
+            guard model.opening.id == id else { return }
             flip(rare)
         }
     }
@@ -147,10 +147,10 @@ struct OpeningView: View {
     /// 다 뒤집은 뒤 한 번 더: 무료 팩이 남았으면 다음 무료 팩을, 팩이면 같은 팩을 코인으로, 무료 카드면 남은 장을. 모두 아니면 nil.
     private var again: (title: String, enabled: Bool, action: () -> Void)? {
         let freePacks = model.game.state.freePacks
-        if model.openingFreePack && freePacks > 0 {
+        if model.opening.freePack && freePacks > 0 {
             return (String(localized: "다음 무료 팩 열기 · \(freePacks)개 남음"), true, { model.openFreePack() })
         }
-        if let pack = model.openingPack {
+        if let pack = model.opening.pack {
             return (String(localized: "한 팩 더 · \(coinText(Balance.packPrice))"), model.game.canAffordPack, { model.buy(pack: pack) })
         }
         let left = model.game.state.pendingFree
