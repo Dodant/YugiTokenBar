@@ -30,10 +30,8 @@ struct PopoverView: View {
                     case .summary: EmptyView()
                     }
                 }
-                .transition(.opacity)
             }
-            // 화면 전환은 짧게 겹쳐 사라지고 나타난다 (한 팩 더는 화면이 그대로라 바로 바뀐다)
-            .animation(lessMotion ? nil : .easeOut(duration: 0.15), value: model.screen)
+            // 화면 전환은 바로 바꾼다: 페이드로 겹쳐 그리면 중간에 두 화면의 투명도 합이 1 아래로 처져 뒤 유리 패널이 하얗게 번쩍인다
             .padding(16)
             .frame(width: 340)
             .onChange(of: [covered, model.game.state.freePacks > 0, model.game.state.pendingFree > 0], initial: true) {
@@ -104,9 +102,13 @@ struct PopoverView: View {
             PackRow(index: game.lastBoughtPack).padding(12).hidden()
                 .overlay {
                     ScrollView(.horizontal) {
-                        LazyHStack(spacing: 10) {
+                        // ponytail: LazyHStack 은 안 그린 칸 폭을 어림해서 스냅 위치가 칸 사이에 걸렸다 → 전부 만들되 현재 팩 앞뒤 3칸만 내용을 채운다
+                        HStack(spacing: 10) {
                             ForEach(game.db.packs.indices, id: \.self) { i in
-                                PackRow(index: i).padding(12).containerRelativeFrame(.horizontal)
+                                Group {
+                                    if abs(i - (shownPack ?? game.lastBoughtPack)) <= 3 { PackRow(index: i).padding(12) } else { Color.clear }
+                                }
+                                    .containerRelativeFrame(.horizontal)
                                     .background(workMode ? AnyShapeStyle(.fill.quinary)  // 업무 모드는 한 색으로 밋밋하게
                                                 : AnyShapeStyle(LinearGradient(colors: Palette.packGlow(i), startPoint: .topLeading, endPoint: .bottomTrailing)),
                                                 in: .rect(cornerRadius: 16))
