@@ -4,6 +4,7 @@ import SwiftUI
 /// 누르면 그 카드로 이동해 상세(융합 버튼)를 연다. 아래 [모두 융합]은 확인 뒤 목록을 다 만든다
 struct FusableSection: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.workMode) private var workMode
     let selected: Set<Int>
     let cache: FusableCache
     let jump: (Int) -> Void
@@ -35,7 +36,9 @@ struct FusableSection: View {
                         ForEach(cids, id: \.self) { cid in
                             Button { jump(cid) } label: {
                                 HStack(spacing: 8) {
-                                    CardImageView(db: model.db, cid: cid, owned: false).frame(width: 22)
+                                    if !workMode {  // 업무 모드면 그림 자리 없이 이름만
+                                        CardImageView(db: model.db, cid: cid, owned: false).frame(width: 22)
+                                    }
                                     Text(model.db.cards[cid]?.name ?? "").lineLimit(1)
                                     Spacer(minLength: 0)
                                 }

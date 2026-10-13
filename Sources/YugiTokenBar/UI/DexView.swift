@@ -280,7 +280,7 @@ struct DexView: View {
         let selected = selectedCards.contains(cid)
         return Hovering { hovered in Group {
             if workMode {
-                // 업무 모드 줄: 종류 표시(몬스터 ●·마법·함정 ■) · 등급 · 이름 · 오른쪽에 (마우스를 올리면) − · ☆ · ×n. 고르면 강조색 배경
+                // 업무 모드 줄: 종류 표시(몬스터 ●·마법·함정 ■) · 등급 · 이름 · 분류·레벨·공/수 · 오른쪽에 (마우스를 올리면) − · ☆ · ×n. 고르면 강조색 배경
                 HStack(spacing: 8) {
                     HStack(spacing: 5) {
                         FrameBar(card: model.db.cards[cid], owned: owned, shapes: true)
@@ -288,6 +288,9 @@ struct DexView: View {
                     }
                     MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
                         .foregroundStyle(owned ? .primary : .secondary)
+                    // 개봉 줄 둘째 줄과 같은 "융합 · ★7 · 2500/2100". 이름이 길면 이름 쪽이 줄어든다
+                    Text(model.db.cards[cid]?.workLine ?? "")
+                        .font(.caption).foregroundStyle(.secondary).monospacedDigit().lineLimit(1).fixedSize()
                     Spacer(minLength: 0)
                     if let deckID, hovered { minus(deckID, cid) }
                     star(cid, hovered: hovered)
