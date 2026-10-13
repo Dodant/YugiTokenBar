@@ -18,6 +18,9 @@
 - Fixed English text using plural forms for a single card.
 - Decks you haven't renamed now use the current app language.
 
+**⚡ Performance**
+- Usage logs are now remembered file by file, so restarting the app and the once-a-minute refresh only re-read logs that changed.
+
 ## 0.6.0 — 2026-10-12
 
 Work mode gives your card collection a simpler look.
