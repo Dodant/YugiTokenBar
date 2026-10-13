@@ -60,6 +60,8 @@ final class AppModel {
     @ObservationIgnored private var refreshing = false
     /// 키체인 암호 창을 이번 실행에서 이미 띄웠으면(거절 포함) 자동 갱신은 다시 띄우지 않는다.
     @ObservationIgnored private var keychainPrompted = false
+    /// 마지막으로 공식 한도를 부른 시각 (성공·실패 모두). 사용량 화면을 열 때 이보다 최근이면 다시 부르지 않는다.
+    @ObservationIgnored private var limitsRequestedAt = Date.distantPast
     /// 파트너 「날개 크리보」. 해금 전에는 멈춰 있다.
     @ObservationIgnored let partner: PartnerModel
     /// 바탕화면 파트너 창 (해금되고 처음 보일 때 만든다)
@@ -110,6 +112,7 @@ final class AppModel {
     func refreshLimits(userInitiated: Bool = false) {
         guard !fetchingLimits else { return }
         fetchingLimits = true
+        limitsRequestedAt = Date()
         Task {
             defer { fetchingLimits = false }
             async let codex = try? CodexRateLimitsProvider().fetch()
@@ -117,6 +120,12 @@ final class AppModel {
             if let codex = await codex { codexLimits = codex.visibleSnapshots.first }
             updatePartnerMood()
         }
+    }
+
+    /// 사용량 화면을 열 때. 직전 호출이 1분 안이면 건너뛴다(앱을 다시 띄우자마자 열면 같은 분에 두 번 불러 429 를 받았다).
+    func refreshLimitsIfStale() {
+        guard Date().timeIntervalSince(limitsRequestedAt) >= 60 else { return }
+        refreshLimits(userInitiated: true)
     }
 
     /// 자동 갱신은 키체인을 읽지 않는 경로(~/.claude/.credentials.json·메모리 캐시)를 먼저 쓰고,

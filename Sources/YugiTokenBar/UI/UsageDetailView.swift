@@ -39,7 +39,7 @@ struct UsageDetailView: View {
             .padding(.horizontal, -6)
         }
         .task {
-            model.refreshLimits(userInitiated: true)
+            model.refreshLimitsIfStale()
             await model.loadHistory()
         }
     }
