@@ -4,7 +4,7 @@
 **✨ New features**
 - Added [Report a bug] to Settings > About & support. It opens an email with your app version and system details already filled in.
 - The version row in Settings > About & support now checks the latest published release and opens its download page.
-- Added a Usage screen, opened from the usage section of the menu, that shows tokens and cost for today, this week and this month, a 30-day bar chart, and each agent's input, output and cache tokens.
+- Added a Usage screen, opened from the usage section of the menu, that shows tokens and cost for today, this week and this month, a 14-day bar chart with the cards you earned each day, and each agent's input, output and cache tokens.
 - In Work mode, the usage section of the menu now also shows totals for today, this week and this month, and a 14-day bar chart.
 
 **🎨 Improvements**

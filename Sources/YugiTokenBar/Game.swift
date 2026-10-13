@@ -435,6 +435,12 @@ struct Game: Sendable {
         if state.log.count > Balance.logLimit {
             state.log.removeLast(state.log.count - Balance.logLimit)
         }
+        let fmt = LocalUsageReader.localDayFormatter(), day = fmt.string(from: now)
+        if state.cardsByDay[day] == nil,
+           let cut = Calendar.current.date(byAdding: .day, value: -GameState.cardDaysKept, to: now).map(fmt.string) {
+            state.cardsByDay = state.cardsByDay.filter { $0.key > cut }
+        }
+        state.cardsByDay[day, default: 0] += 1
     }
 
     /// 마지막으로 코인으로 산 팩 (팝오버 바로 구매용). 산 적이 없거나 시대 범위 밖이면 첫 팩. 필드가 없는 옛 세이브는 로그에서 찾는다.

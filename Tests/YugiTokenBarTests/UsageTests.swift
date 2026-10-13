@@ -109,6 +109,10 @@ import Testing
         let chart = UsageDetailView.days(days, now: date(6), count: 6)  // 10/1 ~ 10/6, 날마다 모든 provider 합
         #expect(chart.map(\.tokens) == [30, 0, 0, 0, 300, 4000] && chart[0].byAgent == ["claude_code": 10, "codex": 20])
         #expect(abs(chart[0].cost - 0.3) < 1e-9)
+        // 쓴 날(오늘은 늘 셈)이 count 개가 되게 과거로 넓히고, 모자라면 처음 쓴 날부터
+        let wide = UsageDetailView.days(days, now: date(6), count: 8)  // 9/29 ~ 10/6
+        #expect(UsageDetailView.activeDays(wide, count: 3).map(\.tokens) == [30, 0, 0, 0, 300, 4000])
+        #expect(UsageDetailView.activeDays(wide, count: 9).map(\.tokens) == [1, 30, 0, 0, 0, 300, 4000])
     }
 
     /// 지난 날짜 합계는 파일에 남아, 로그가 지워진 뒤 새 리더도 다시 읽지 않고 같은 값을 낸다

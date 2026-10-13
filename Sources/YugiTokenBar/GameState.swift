@@ -60,6 +60,9 @@ struct GameState: Codable, Sendable, Equatable {
     /// 컬렉션 창에서 만든 덱들
     var decks: [Deck] = []
     var log: [LogEntry] = []
+    /// 로컬 날짜("yyyy-MM-dd") → 그날 얻은 카드 장 수 (사용량 막대 위 숫자). `cardDaysKept`일 지난 날은 지운다
+    var cardsByDay: [String: Int] = [:]
+    static let cardDaysKept = 90
     /// 코인으로 마지막에 산 팩의 pid (팝오버 바로 구매용). nil이면 로그에서 찾는다
     var lastBoughtPid: String?
 
@@ -89,6 +92,7 @@ struct GameState: Codable, Sendable, Equatable {
         partnerOrigin = try c.decodeIfPresent(CGPoint.self, forKey: .partnerOrigin)
         decks = try c.decodeIfPresent([Deck].self, forKey: .decks) ?? d.decks
         log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log
+        cardsByDay = try c.decodeIfPresent([String: Int].self, forKey: .cardsByDay) ?? d.cardsByDay
         lastBoughtPid = try c.decodeIfPresent(String.self, forKey: .lastBoughtPid)
     }
 }

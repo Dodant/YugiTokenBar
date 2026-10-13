@@ -105,6 +105,16 @@ import Testing
         #expect(game.lastBoughtPack == 1)
     }
 
+    /// 얻은 카드는 날짜별로 세고, 새 날짜를 셀 때 cardDaysKept 일 지난 날은 지운다
+    @Test func giveCountsCardsByDay() {
+        var game = rich()
+        let fmt = LocalUsageReader.localDayFormatter(), now = Date()
+        let old = Calendar.current.date(byAdding: .day, value: -(GameState.cardDaysKept + 1), to: now)!
+        game.give(21, source: "free", now: old)
+        for _ in 0..<(Balance.logLimit + 5) { game.give(21, source: "free", now: now) }  // 로그 한도와 상관없이 센다
+        #expect(game.state.cardsByDay == [fmt.string(from: now): Balance.logLimit + 5])
+    }
+
     @Test func freeCardsComeFromWholePool() {
         var game = rich()
         var rng = SeededRNG(seed: 9)

@@ -69,6 +69,7 @@ import Testing
         state.partnerOrigin = CGPoint(x: 10, y: 20)
         state.decks = [Deck(name: "덱", cards: [4007: 1])]
         state.log = [LogEntry(cid: 4007, source: LogEntry.free, date: Date(timeIntervalSince1970: 1_000))]
+        state.cardsByDay = ["2026-10-01": 7]
         state.lastBoughtPid = "P1"
 
         let defaults = Dictionary(uniqueKeysWithValues: Mirror(reflecting: GameState()).children.map { ($0.label!, "\($0.value)") })
