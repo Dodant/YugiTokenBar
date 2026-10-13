@@ -7,7 +7,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
   - 100팩 소재가 있는 조건 없는 100팩 밖 융합은 그 소재의 가장 늦은 팩에 넣음.
   - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음.
 
-GitHub Releases의 ZIP으로 배포한다.
+GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.xml을 읽어 업데이트한다.
 첫 공개 릴리스는 Developer ID 서명·Apple 공증 설정 후 게시한다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
@@ -80,6 +80,7 @@ GitHub Releases의 ZIP으로 배포한다.
 ```bash
 swift test                                            # 전체 테스트
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
+python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/sync-strings.py --check                 # UI 문구 키·번역·en 문자 체계·en 복수형 검사 (컴파일러로 키 추출, ~20초)
 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (Claude 공식 한도·Cursor API는 안 읽음)
 PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도·Cursor API까지 실제로 읽기

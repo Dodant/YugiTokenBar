@@ -34,18 +34,20 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          SPARKLE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
         run: |
           set -euo pipefail
           VERSION=$(awk '/^## [0-9]/{print $2; exit}' CHANGELOG.md)
           [[ "$RELEASE_TAG" == "v$VERSION" ]]
           [[ "$(git describe --tags --exact-match HEAD)" == "$RELEASE_TAG" ]]
-          for name in CERTIFICATE CERTIFICATE_PASSWORD SIGN_IDENTITY APPLE_ID APPLE_PASSWORD TEAM_ID; do
+          for name in CERTIFICATE CERTIFICATE_PASSWORD SIGN_IDENTITY APPLE_ID APPLE_PASSWORD TEAM_ID SPARKLE_KEY; do
             [[ -n "${!name}" ]] || { echo "Missing signing secret: $name" >&2; exit 1; }
           done
       - name: Test
         run: |
           swift test
           python3 tools/sync-strings.py --check
+          python3 tools/test_make_appcast.py
       - name: Import distribution certificate
         env:
           CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
@@ -70,6 +72,7 @@ jobs:
         env:
           YTB_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
           YTB_NOTARY_PROFILE: release
+          YTB_SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
         run: scripts/package-release.sh
       - name: Publish release
         env:
@@ -87,7 +90,7 @@ jobs:
             echo 'Release already exists; refusing to replace published artifacts.' >&2
             exit 1
           fi
-          gh release create "$RELEASE_TAG" "build/release/YugiTokenBar-${RELEASE_TAG#v}.zip" build/release/SHA256SUMS --verify-tag --title "$RELEASE_TAG" --notes-file build/release-notes.md --latest
+          gh release create "$RELEASE_TAG" "build/release/YugiTokenBar-${RELEASE_TAG#v}.zip" build/release/SHA256SUMS build/release/appcast.xml --verify-tag --title "$RELEASE_TAG" --notes-file build/release-notes.md --latest
       - name: Remove temporary signing material
         if: always()
         run: |

@@ -20,12 +20,24 @@ fi
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
+# Sparkle (앱 내 업데이트). 심볼릭 링크를 살려 복사하고, 샌드박스가 아니라 XPC 서비스는 뺀다
+mkdir -p "$APP/Contents/Frameworks"
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
+ditto "$BIN_DIR/Sparkle.framework" "$SPARKLE"
+rm -rf "$SPARKLE/XPCServices" "$SPARKLE/Versions/B/XPCServices"
 cp Resources/cards_*.json Resources/picks.json "$APP/Contents/Resources/"
 cp -R Resources/ko.lproj Resources/en.lproj Resources/ja.lproj "$APP/Contents/Resources/"
 cp Resources/partner.png "$APP/Contents/Resources/partner.png"
 cp Resources/card-back.jpg "$APP/Contents/Resources/card-back.jpg"
 cp CHANGELOG.md CHANGELOG.en.md CHANGELOG.ja.md "$APP/Contents/Resources/"
 cp Sources/YugiTokenBar/Usage/NOTICE.md "$APP/Contents/Resources/NOTICE.md"
+cp .build/artifacts/sparkle/Sparkle/LICENSE "$APP/Contents/Resources/Sparkle-LICENSE.md"
+# 공개 키는 비밀이 아니다. 파일이 없으면(키 만들기 전) 앱은 Sparkle 을 끄고 GitHub 확인만 쓴다
+FEED_URL=${YTB_SPARKLE_FEED_URL:-https://github.com/Dodant/YugiTokenBar/releases/latest/download/appcast.xml}
+PUBLIC_KEY_PLIST=""
+if [[ -f Resources/sparkle-public-key.txt ]]; then
+    PUBLIC_KEY_PLIST="<key>SUPublicEDKey</key><string>$(tr -d '[:space:]' < Resources/sparkle-public-key.txt)</string>"
+fi
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -41,15 +53,21 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>LSUIElement</key><true/>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleLocalizations</key><array><string>en</string><string>ko</string><string>ja</string></array>
+    <key>SUFeedURL</key><string>$FEED_URL</string>
+    $PUBLIC_KEY_PLIST
 </dict>
 </plist>
 PLIST
 if [[ -n "${YTB_SIGN_IDENTITY:-}" ]]; then
-    codesign --force --options runtime --timestamp --sign "$YTB_SIGN_IDENTITY" "$APP"
+    SIGN=(--force --options runtime --timestamp --sign "$YTB_SIGN_IDENTITY")
 else
-    codesign --force -s - "$APP"
+    SIGN=(--force -s -)
 fi
-codesign --verify --strict "$APP"
+# 안쪽부터 서명한다 (--deep 서명은 쓰지 않는다)
+for target in "$SPARKLE/Versions/B/Autoupdate" "$SPARKLE/Versions/B/Updater.app" "$SPARKLE" "$APP"; do
+    codesign "${SIGN[@]}" "$target"
+done
+codesign --verify --deep --strict "$APP"
 echo "built $APP (v$VERSION, build $BUILD)"
 
 if [[ "${1:-}" == "--install" ]]; then

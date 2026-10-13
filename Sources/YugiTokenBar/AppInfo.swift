@@ -45,7 +45,16 @@ enum AppInfo {
         let name = lang == "ko" ? "CHANGELOG" : "CHANGELOG.\(lang)"
         return text(name, repoPath: name + ".md")
     }
-    static var license: String { text("NOTICE", repoPath: "Sources/YugiTokenBar/Usage/NOTICE.md") }
+    /// 라이선스 창: PokeTokenBar 고지(NOTICE) 뒤에 Sparkle LICENSE 전문
+    static var license: String {
+        text("NOTICE", repoPath: "Sources/YugiTokenBar/Usage/NOTICE.md") + "\n\n## Sparkle\n\n"
+            + text("Sparkle-LICENSE", repoPath: ".build/artifacts/sparkle/Sparkle/LICENSE")
+    }
+
+    /// Sparkle 을 켤까: 번들 Info.plist 에 EdDSA 공개 키가 있을 때만 (swift run·키 없는 빌드는 GitHub 확인)
+    static func sparkleEnabled(info: [String: Any]? = Bundle.main.infoDictionary) -> Bool {
+        (info?["SUPublicEDKey"] as? String).map { !$0.isEmpty } ?? false
+    }
 
     private static func text(_ name: String, repoPath: String) -> String {
         let url = Bundle.main.url(forResource: name, withExtension: "md") ?? repoRoot.appendingPathComponent(repoPath)

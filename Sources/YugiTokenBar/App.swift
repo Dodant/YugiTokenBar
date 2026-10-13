@@ -24,6 +24,7 @@ struct YugiTokenBarApp: App {
         let model = AppModel(db: db, store: store)
         _model = State(initialValue: model)
         model.start()
+        _ = Updater.controller  // Sparkle 자동 확인 일정 시작 (공개 키 없는 빌드는 nil)
         // swift run 바이너리엔 Info.plist(LSUIElement)가 없어 창이 키보드 입력을 못 받는다 → .app 과 같은 정책을 직접 건다
         NSApplication.shared.setActivationPolicy(.accessory)
     }
