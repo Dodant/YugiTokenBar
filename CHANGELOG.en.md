@@ -16,7 +16,6 @@
 - In work mode, the opening list now shows a second line per card with its monster type, level, and ATK/DEF (card type for Spells and Traps).
 
 **🐛 Bug fixes**
-- Fixed the quick-buy row in the menu sometimes stopping between two packs while swiping.
 - Fixed English text using plural forms for a single card.
 - Decks you haven't renamed now use the current app language.
 
