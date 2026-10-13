@@ -1,6 +1,9 @@
 # 출처
 
-앱이 쓰는 데이터·이미지·코드의 출처를 모은 문서. 카드 이미지와 텍스트는 Konami 저작물이고, 이 앱은 개인용으로만 쓰며 배포하지 않는다(스펙). 이미지는 번들에 넣지 않고 런타임에 받아 캐시한다.
+앱이 쓰는 데이터·이미지·코드의 출처를 모은 문서.
+카드 이미지와 텍스트는 Konami 저작물이다.
+이 앱은 Konami와 관계없는 비공식·비상업 팬 프로젝트다(unofficial, non-commercial fan project).
+이미지는 번들에 넣지 않고 런타임에 받아 캐시한다.
 
 ## 카드 데이터 (`Resources/cards_KO.json`·`cards_JP.json`·`cards_EN.json`, `tools/build-cards.py`)
 

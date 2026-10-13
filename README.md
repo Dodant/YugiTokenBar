@@ -1,6 +1,7 @@
 # YugiTokenBar
 
-코딩 에이전트 (Claude Code·Codex 등) 토큰 사용량을 보상으로 **한국 정발 유희왕 카드 컬렉션**(정규 부스터 100팩, 8,226종)을 채우는 macOS 메뉴바 앱. 개인용 토이 프로젝트다.
+코딩 에이전트 (Claude Code·Codex 등) 토큰 사용량을 보상으로 **한국 정발 유희왕 카드 컬렉션**(정규 부스터 100팩, 8,226종)을 채우는 macOS 메뉴바 앱.
+Konami와 관계없는 비공식·비상업 팬 프로젝트다(unofficial, non-commercial fan project).
 한국어·영어·일본어 지원(설정 › 일반 › 언어).
 
 ## 어떻게 돌아가나
@@ -59,7 +60,12 @@ scripts/build-app.sh --install                        # /Applications 에 설치
 - 카드 이미지: [YGOPRODeck](https://ygoprodeck.com/) (실행 중에 받아서 캐시)
 - 한글판 팩 이미지: [Yugipedia](https://yugipedia.com/)
 
-유희왕 카드의 이름·텍스트·이미지 저작권은 Konami에 있다. 이 프로젝트는 비공식 팬 프로젝트이며 Konami와 관계없다.
+유희왕 카드의 이름·텍스트·이미지 저작권은 Konami에 있다.
+이 프로젝트는 비공식·비상업 팬 프로젝트이며 Konami와 관계없고, Konami가 승인하거나 후원하지 않는다.
+
+> YugiTokenBar is an unofficial, non-commercial fan project.
+> It is not affiliated with, endorsed, sponsored, or approved by Konami.
+> Yu-Gi-Oh! card names, text, and images are © Konami.
 
 ## 출처
 
