@@ -485,7 +485,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     해금 전에는 메뉴바가 카드 아이콘이다.
   - 동작은 모두 5fps(프레임 간격 0.2초).
     기준 상태는 매 갱신(60초)마다 다시 정하고, 한 번 재생이 끝나면 기준 상태로 돌아간다.
-    기준값(80%, 100k, 1k, 쉬는 시간, 두리번 간격)은 `Partner.swift` 상단 상수(`PartnerTuning`)에 두며 `Balance`에 넣지 않는다.
+    기준값(80%, 100k, 1k, 쉬는 시간, 두리번 간격, 설렘 등급 SR)은 `Partner.swift` 상단 상수(`PartnerTuning`)에 두며 `Balance`에 넣지 않는다.
   - 기준 상태(`PartnerMood.base(tokensPerMinute:limitPercent:)`, 위에서부터 먼저 맞는 것):
     - Claude·Codex 공식 한도 중 가장 높은 %(초기화 시각이 지난 한도는 뺀다, `PartnerMood.limitPercent`) ≥ 80 → 시무룩
     - 분당 토큰 ≥ 100,000 → 비행(오른쪽·왼쪽 번갈아, 제자리)

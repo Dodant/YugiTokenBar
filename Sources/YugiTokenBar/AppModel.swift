@@ -194,7 +194,7 @@ final class AppModel {
         opening = PackOpening(pulls: pulls, title: title, pack: pack, freePack: freePack)
         // 개봉 중에 또 열면(한 팩 더) 돌아갈 곳은 그대로
         if case .opening = screen {} else { screen = .opening(back: screen) }
-        if pulls.contains(where: { $0.tier >= 3 }) { partner.play(.excited) }
+        if pulls.contains(where: { $0.tier >= PartnerTuning.excitedTier }) { partner.play(.excited) }
         save()
     }
 

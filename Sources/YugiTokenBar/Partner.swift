@@ -48,6 +48,8 @@ enum PartnerTuning {
     static let sadPercent = 80.0
     static let flyTokensPerMinute = 100_000
     static let flapTokensPerMinute = 1_000
+    /// 개봉에서 이 등급(3 = SR) 이상이 나오면 설렘
+    static let excitedTier = 3
     /// 기준 동작을 한 바퀴 재생한 뒤 첫 프레임에서 쉬는 시간(초). 범위 안에서 무작위.
     static func rest(_ mood: PartnerMood) -> ClosedRange<Double> {
         switch mood {
