@@ -37,21 +37,23 @@ Work mode hides card images and the partner character; enable it in Settings.
 </table>
 
 <table align="center">
-<thead><tr><th colspan="2">Dex</th></tr><tr><th>Work mode off</th><th>Work mode on</th></tr></thead>
-<tbody><tr>
-<td valign="top" align="center"><img src="docs/image/dex.png" width="320"></td>
-<td valign="top" align="center"><img src="docs/image/dex_workmode.png" width="320"></td>
-</tr></tbody>
+<tbody>
+<tr><th>Dex · Work mode off</th></tr>
+<tr><td align="center"><img src="docs/image/dex.png"></td></tr>
+<tr><th>Dex · Work mode on</th></tr>
+<tr><td align="center"><img src="docs/image/dex_workmode.png"></td></tr>
+</tbody>
 </table>
 
 Enable fusion-only collection in Settings to obtain eligible Fusion Monsters by combining material cards instead of drawing them.
 
 <table align="center">
-<thead><tr><th>Before fusion</th><th>After fusion</th></tr></thead>
-<tbody><tr>
-<td valign="top" align="center"><img src="docs/image/yugo_pre.png" width="320"><br>Materials before fusion</td>
-<td valign="top" align="center"><img src="docs/image/yugo_post.png" width="320"><br>Result after fusion</td>
-</tr></tbody>
+<tbody>
+<tr><th>Before fusion</th></tr>
+<tr><td align="center"><img src="docs/image/yugo_pre.png"><br>Materials</td></tr>
+<tr><th>After fusion</th></tr>
+<tr><td align="center"><img src="docs/image/yugo_post.png"><br>Result</td></tr>
+</tbody>
 </table>
 
 ## Install
