@@ -119,6 +119,25 @@ struct DexQuery: Equatable {
     }
 }
 
+/// game 에서 센 값을 보유·융합 설정·시대가 같은 동안 다시 세지 않는다 (사이드바 통계·"융합 가능" 목록).
+/// 클래스라 채워도 뷰를 다시 그리지 않는다 (DexListCache 와 같은 이유).
+@MainActor final class GameMemo<Value> {
+    private let compute: (Game) -> Value
+    private var key: (owned: [Int: Int], fusionOnly: Bool, era: String)?
+    private var value: Value?
+
+    init(_ compute: @escaping (Game) -> Value) { self.compute = compute }
+
+    func callAsFunction(_ game: Game) -> Value {
+        let s = game.state
+        if let key, let value, key.owned == s.owned, key.fusionOnly == s.fusionOnly, key.era == s.eraLimit { return value }
+        let next = compute(game)
+        key = (s.owned, s.fusionOnly, s.eraLimit)
+        value = next
+        return next
+    }
+}
+
 /// 마지막 조건과 그 결과. 클래스라 채워도 뷰를 다시 그리지 않는다 (FrameStore 와 같은 이유).
 @MainActor final class DexListCache {
     private var query: DexQuery?

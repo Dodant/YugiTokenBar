@@ -13,7 +13,7 @@ struct DexView: View {
     @State private var marqueeBase: Set<Int> = []
     @State private var frames = FrameStore()
     @State private var listCache = DexListCache()
-    @State private var fusableCache = FusableCache()
+    @State private var fusableCache = GameMemo { $0.fusable }
     @State private var showInspector = true
     /// 융합 소재 링크로 이동 중인 카드: 범위를 바꾸면 onChange 가 선택을 비우므로 그 뒤에 고른다
     @State private var jumpTarget: Int?

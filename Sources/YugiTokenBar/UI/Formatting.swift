@@ -32,18 +32,11 @@ extension View {
     /// 카드 이름처럼 이미 그 언어인 데이터 문자열 (키로 찾지 않는다). 카드 썸네일에 쓰여 0.35초 늦게 뜬다
     func hoverHint(verbatim text: String) -> some View { modifier(HoverHint(text: Text(verbatim: text), delayed: true)) }
 
-    /// 패널 안 스크롤의 아래 끝. 살짝 흐려지며(재질 띠) 투명해져서 글자가 반 토막으로 잘려 보이지 않는다.
-    /// 끝까지 내리면 마지막 줄이 띠 위에 오도록 내용 아래에 띠 높이만큼 여백을 둔다.
+    /// 패널 안 스크롤의 아래 끝. 시스템 스크롤 가장자리 효과로 흐려지며 사라져 글자가 반 토막으로 잘려 보이지 않는다.
+    /// 효과는 안전 영역 인셋 아래에만 그려지므로 빈 인셋을 두고, 끝까지 내리면 마지막 줄이 그 위에 온다.
     func panelScrollBottom() -> some View {
-        let height: CGFloat = 16, fade = LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
-        return contentMargins(.bottom, height, for: .scrollContent)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(.ultraThinMaterial)
-                    .mask(LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom))
-                    .frame(height: height)
-                    .allowsHitTesting(false)
-            }
-            .mask { VStack(spacing: 0) { Color.black; fade.frame(height: height) } }
+        safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 16).allowsHitTesting(false) }
+            .scrollEdgeEffectStyle(.soft, for: .bottom)
     }
 }
 

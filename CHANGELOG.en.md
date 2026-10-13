@@ -14,6 +14,8 @@
 - Long pack names in the Shop now scroll sideways to show the full name while you hover over them.
 - The quick-buy row in the menu now has a soft two-color gradient that differs for each pack, and packs are spaced apart as you swipe so they slide past one by one (Work mode keeps the plain single color).
 - In work mode, the opening list and the collection list now show each card's monster type, level, and ATK/DEF (card type for Spells and Traps) with its name.
+- The fade at the bottom of the Shop, Settings and Usage screens now uses the system scroll edge effect.
+- Menu and usage icons now use hierarchical and gradient rendering, and the refresh icon on the usage screen spins while limits are loading.
 
 **🐛 Bug fixes**
 - Fixed English text using plural forms for a single card.
@@ -28,6 +30,8 @@
 - Usage logs are now remembered file by file, so restarting the app and the once-a-minute refresh only re-read logs that changed, and a Claude Code log still being written is read only from where it left off.
 - If Cursor usage can't be fetched, the app now waits 30 minutes before trying again, even after a restart.
 - The desktop partner now stops moving while it can't be seen, such as when the screen is locked or the display is off, to save power.
+- The collection window's sidebar now recounts its progress stats only when your cards or the era range change.
+- The settings screen no longer re-checks the login item status every time it redraws.
 
 ## 0.6.0 — 2026-10-12
 

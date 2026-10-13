@@ -8,15 +8,17 @@ struct DexSidebar: View {
     @State private var renaming: Deck?
     @State private var newName = ""
     @State private var deleting: Deck?
+    @State private var memo = GameMemo(SidebarStats.init)
 
     var body: some View {
         let game = model.game
+        let stats = memo(game)
         List(selection: $scope) {
             Label {
                 HStack {
                     Text("전체")
                     Spacer()
-                    Text("\(game.ownedDistinct) / \(game.db.allCIDs.count)").foregroundStyle(.secondary).monospacedDigit()
+                    Text("\(stats.ownedDistinct) / \(game.db.allCIDs.count)").foregroundStyle(.secondary).monospacedDigit()
                 }
             } icon: {
                 Image(systemName: "square.grid.2x2")
@@ -34,12 +36,12 @@ struct DexSidebar: View {
             .tag(DexScope.favorites)
             Label("최근 획득", systemImage: "clock").tag(DexScope.recent)
             ForEach(game.db.eras, id: \.name) { era in
-                DexEraSection(name: era.name, packs: era.packs) { i in packItem(game, i) }
+                DexEraSection(name: era.name, packs: era.packs, progress: stats.eras[era.name] ?? (0, 0)) { i in packItem(game, i) }
             }
             deckSection
         }
         .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom) { tierStats(game) }
+        .safeAreaInset(edge: .bottom) { tierStats(stats.tiers) }
         .alert("덱 이름", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("이름", text: $newName)
             Button("저장") { if let deck = renaming { model.renameDeck(deck.id, to: newName) } }
@@ -102,9 +104,9 @@ struct DexSidebar: View {
     }
 
     /// 사이드바 아래: 등급마다 보유/전체 종류 수와 모은 비율
-    private func tierStats(_ game: Game) -> some View {
+    private func tierStats(_ tiers: [(owned: Int, total: Int)]) -> some View {
         Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
-            ForEach(Array(game.tierProgress.enumerated()), id: \.offset) { i, p in
+            ForEach(Array(tiers.enumerated()), id: \.offset) { i, p in
                 let label = CardInfo.rarities[i]
                 let ratio = p.total > 0 ? Double(p.owned) / Double(p.total) : 0
                 GridRow {
@@ -128,12 +130,15 @@ private struct DexEraSection<Item: View>: View {
     @Environment(AppModel.self) private var model
     let name: String
     let packs: Range<Int>
+    /// 이 시대 팩들의 보유 / 전체 (부모가 `SidebarStats` 에서 넘긴다)
+    let progress: (owned: Int, total: Int)
     let item: (Int) -> Item
     @AppStorage private var expanded: Bool
 
-    init(name: String, packs: Range<Int>, @ViewBuilder item: @escaping (Int) -> Item) {
+    init(name: String, packs: Range<Int>, progress: (owned: Int, total: Int), @ViewBuilder item: @escaping (Int) -> Item) {
         self.name = name
         self.packs = packs
+        self.progress = progress
         self.item = item
         _expanded = AppStorage(wrappedValue: true, "dex.era.\(name).expanded")
     }
@@ -142,7 +147,6 @@ private struct DexEraSection<Item: View>: View {
         let game = model.game
         // 시대 범위를 줄이면 부모가 이 섹션을 없애기 전에 몸체가 먼저 다시 그려질 수 있다 → 범위를 지금 DB 에 맞춰 자른다
         let packs = packs.clamped(to: game.db.packs.indices)
-        let (owned, total) = game.progress(packs: packs)
         // ponytail: 기본 사이드바 꺾쇠는 마우스를 올려야 보여서, 상점처럼 항상 보이는 꺾쇠를 직접 그린다
         Section {
             if expanded {
@@ -156,13 +160,28 @@ private struct DexEraSection<Item: View>: View {
                     DisclosureChevron(expanded: expanded)
                     Text("\(name) · \(packs.count)팩")
                     Spacer()
-                    Text("\(owned) / \(total)").monospacedDigit()
+                    Text("\(progress.owned) / \(progress.total)").monospacedDigit()
                 }
                 .padding(.leading, 3).padding(.trailing, 6)  // 사이드바 헤더는 행보다 안쪽 여백이 적어서 전체·즐겨찾기 행의 아이콘·숫자 끝에 맞춘다
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
+    }
+}
+
+/// 사이드바가 game 에서 세는 값: 전체 보유 종류 수, 등급별 보유/전체, 시대별 보유/전체.
+/// 카드 선택·코인 적립으로 game 이 바뀌어도 보유·설정·시대가 같으면 8천 장을 다시 훑지 않는다 (`GameMemo`).
+/// 팩 줄의 진행은 List 가 보이는 줄만 만들어 그대로 `Game.progress(_:)` 를 쓴다.
+private struct SidebarStats {
+    let ownedDistinct: Int
+    let tiers: [(owned: Int, total: Int)]
+    let eras: [String: (owned: Int, total: Int)]
+
+    init(_ game: Game) {
+        ownedDistinct = game.ownedDistinct
+        tiers = game.tierProgress
+        eras = Dictionary(uniqueKeysWithValues: game.db.eras.map { ($0.name, game.progress(packs: $0.packs)) })
     }
 }
 

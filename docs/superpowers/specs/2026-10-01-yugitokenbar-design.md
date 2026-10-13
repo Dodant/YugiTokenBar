@@ -173,11 +173,12 @@ Konami 원래 표기(UL 등)는 남기지 않는다.
 - 위치 `~/Documents/YugiTokenBar`, Swift 6, macOS 26+ (Liquid Glass), SwiftPM 실행 타깃, 외부 의존성 없음.
 - 버튼은 Liquid Glass 스타일: 주요 동작(구매·열기·모두 뒤집기)은 `.glassProminent`, 나머지(설정·판매 등)는 `.glass`.
   패널·카드 배경에는 유리를 겹치지 않는다(`.fill.quinary`).
+  유리 버튼이 여럿 모인 곳(개봉 화면 아래 줄, 설정 화면)은 `GlassEffectContainer`로 묶어 한 번에 그린다.
 - `MenuBarExtra(.window)` + 컬렉션 창(`Window`).
   상점·개봉·설정·사용량은 패널 안 화면 전환(요약 위에 겹쳐 그려 패널 높이 고정.
   지금 화면은 `PanelScreen` 하나로, 개봉은 연 화면(요약·상점)을 기억했다 닫으면 그리로 돌아간다.
   바뀔 때 0.15초 페이드, 애니메이션 끄기·동작 줄이기면 바로).
-  패널 안 스크롤(상점·설정·사용량)의 아래 끝은 재질 띠로 흐려지며 사라져(`panelScrollBottom`) 글자가 반 토막으로 잘려 보이지 않는다.
+  패널 안 스크롤(상점·설정·사용량)의 아래 끝은 시스템 스크롤 가장자리 효과(`scrollEdgeEffectStyle(.soft)`, 16pt 빈 인셋 아래)로 흐려지며 사라져(`panelScrollBottom`) 글자가 반 토막으로 잘려 보이지 않는다.
 
 ```
 Sources/YugiTokenBar/
@@ -193,7 +194,7 @@ Sources/YugiTokenBar/
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
   Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기
-  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않음, "융합 가능" 목록(`FusableSection.swift`)은 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage(메뉴 줄), UsageDetail(사용량 화면), CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`, 진행 표시 `TintBar`·`ProgressBar`·`ProgressCount`·`DisclosureChevron`), PartnerPanel(바탕화면 파트너)
+  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않고, 사이드바 통계와 "융합 가능" 목록(`FusableSection.swift`)은 `GameMemo`(`DexQuery.swift`)로 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage(메뉴 줄), UsageDetail(사용량 화면), CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`, 진행 표시 `TintBar`·`ProgressBar`·`ProgressCount`·`DisclosureChevron`), PartnerPanel(바탕화면 파트너)
 CHANGELOG.md           패치노트(한국어) 겸 버전 원본. CHANGELOG.en.md·CHANGELOG.ja.md는 같은 버전 제목의 번역
 Resources/partner.png  파트너 스프라이트 시트(192×208 셀, 8열 × 9행)
 Resources/card-back.jpg 카드 뒷면(923×1351, 로고 없음. tools/clean-card-back.py 산출물)
@@ -437,8 +438,11 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
   카드 위 NEW·코인·개수 배지는 외관과 상관없이 흰 글자가 5:1 이상인 고정 색이다.
 - 색을 넣는 진행 막대는 `TintBar`로 직접 그린다(`ProgressView`의 `.tint`는 외관을 바꾸면 풀린다).
   팩·덱 진행은 `ProgressBar`(다 모으면 `Palette.complete` 초록)와 `ProgressCount`(다 모으면 "136 ✓")를 같이 쓴다.
-  설정 화면의 그룹 상자는 `.fill` 대신 `Color.primary` 7%다(`panelScrollBottom`의 `.mask` 안에서 `.fill`은 다크일 때 검게 그려진다).
+  설정 화면의 그룹 상자는 팝오버 카드와 같은 `.fill.quinary`다.
 - 메뉴바 아이콘(SF Symbol)은 메뉴바 색을 따른다. 파트너 날개 크리보는 캐릭터라 컬러 그대로 둔다. 융합 연출은 자체 어두운 배경 위라 외관과 상관없다.
+- SF Symbol 꾸밈: 팝오버 메뉴 줄·무료 줄 아이콘은 `.symbolRenderingMode(.hierarchical)`, 사용량 칸의 에이전트 아이콘은 `.symbolColorRenderingMode(.gradient)`.
+  사용량 화면의 새로고침 아이콘은 한도를 읽는 동안 `.symbolEffect(.rotate)`로 돈다(`lessMotion`이면 안 돈다).
+  메뉴바 라벨의 심볼에는 효과를 걸지 않는다(상태 항목 다시 그리기가 비싸다).
 - **업무 모드**: 켜면 앱 안의 카드·팩 이미지를 전부 숨긴다.
   - 설정 > 일반 [업무 모드], UserDefaults `workMode`, 세이브와 무관, 기본 끔.
   - 숨기는 곳: 개봉·컬렉션 목록·융합 가능 목록(자리째 뺀다)·끌기 미리보기·오버프레임.

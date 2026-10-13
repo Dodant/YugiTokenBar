@@ -4,6 +4,7 @@ import SwiftUI
 /// 오늘 합계, 이번 주·이번 달, 쓴 날 14개 막대(에이전트별 색으로 쌓고 안 쓴 날은 빨간 선으로 접음), 오늘 많이 쓴 순 에이전트별 입력·출력·캐시와 공식 한도.
 struct UsageDetailView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.lessMotion) private var lessMotion
     /// 마우스를 올린 에이전트 줄. 있으면 막대에 그 몫만 색으로 칠한다
     @State private var hoveredAgent: Provider?
     /// 마우스를 올린 막대의 날짜 (nil 이면 오늘)
@@ -21,7 +22,9 @@ struct UsageDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             PanelHeader(title: String(localized: "사용량"), back: { model.screen = .summary }) {
                 Button { model.refresh(); model.refreshLimits(userInitiated: true) } label: {
-                    Image(systemName: "arrow.clockwise").font(.body.weight(.semibold)).frame(width: 24, height: 24).contentShape(Rectangle())
+                    Image(systemName: "arrow.clockwise").font(.body.weight(.semibold))
+                        .symbolEffect(.rotate, isActive: !lessMotion && model.fetchingLimits)  // 읽는 동안 돈다
+                        .frame(width: 24, height: 24).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
@@ -30,7 +33,7 @@ struct UsageDetailView: View {
             }
             ScrollView {
                 // 에이전트 줄 배경(-6)이 잘리지 않게 안쪽 여백을 두고, 그만큼 스크롤 영역을 넓혀 내용 폭은 그대로
-                // (넓히기는 panelScrollBottom 의 마스크 바깥에서 해야 마스크도 같이 넓어진다)
+                // (넓히기는 panelScrollBottom 바깥에서 해야 가장자리 효과도 같이 넓어진다)
                 content.padding(.horizontal, 8)
             }
             .scrollIndicators(.never)

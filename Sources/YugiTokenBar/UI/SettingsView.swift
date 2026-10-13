@@ -11,19 +11,21 @@ struct SettingsView: View {
     private enum UpdateCheck { case idle, checking, found(String), failed }
     @State private var update = UpdateCheck.idle
     @State private var language = AppLanguage.stored()
-    @State private var launchAtLogin = Self.isRegistered(SMAppService.mainApp)
+    /// 등록 상태는 화면이 나타날 때 읽는다. 초깃값에서 읽으면 패널이 다시 그려질 때마다(코인 적립 등) launchd 에 묻는다
+    @State private var launchAtLogin = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             PanelHeader(title: String(localized: "설정")) { model.screen = .summary }
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                // 유리 버튼이 여럿이라 한 컨테이너에서 같이 그린다
+                GlassEffectContainer { VStack(alignment: .leading, spacing: 16) {
                     generalSection
                     cardSection
                     partnerSection
                     transferSection
                     aboutSection
-                }
+                } }
                 .buttonStyle(.glass)
                 .buttonBorderShape(.capsule)
             }
@@ -43,6 +45,7 @@ struct SettingsView: View {
                       isOn: $launchAtLogin)
                 .disabled(!installed)
                 .onChange(of: launchAtLogin) { setLaunchAtLogin() }
+                .onAppear { launchAtLogin = Self.isRegistered(SMAppService.mainApp) }
             row {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("언어")
@@ -297,7 +300,7 @@ struct SettingsView: View {
             }
             .padding(.leading, 4)
             VStack(spacing: 0) { content() }
-                .background(Color.primary.opacity(0.07), in: .rect(cornerRadius: 16))  // .fill 은 panelScrollBottom 의 .mask 안에서 다크일 때 검게 그려진다
+                .background(.fill.quinary, in: .rect(cornerRadius: 16))  // 팝오버 요약의 카드(panelCard)와 같은 바탕
         }
     }
 

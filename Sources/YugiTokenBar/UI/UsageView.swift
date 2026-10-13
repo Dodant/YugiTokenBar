@@ -104,6 +104,7 @@ struct ProviderUsageRow: View {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint)
+                .symbolColorRenderingMode(.gradient)
                 .frame(width: 26, height: 26)
                 .background(tint.opacity(0.15), in: .rect(cornerRadius: 7))
             VStack(alignment: .leading, spacing: 5) {

@@ -38,7 +38,8 @@ struct OpeningView: View {
                 .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
                 if !packLayout { Spacer(minLength: 0) }
             }
-            HStack(spacing: 8) {
+            // 나란한 유리 버튼은 한 컨테이너에서 같이 그린다
+            GlassEffectContainer { HStack(spacing: 8) {
                 if allFlipped, let again {
                     Button("확인") { model.closeOpening() }.buttonStyle(.glass)
                     Button(again.title, action: again.action)
@@ -51,7 +52,7 @@ struct OpeningView: View {
                     }
                     .keyboardShortcut(.defaultAction)
                 }
-            }
+            } }
             .buttonStyle(.glassProminent)
             .buttonBorderShape(.capsule)
             .controlSize(.large)

@@ -6,7 +6,8 @@ struct FusableSection: View {
     @Environment(AppModel.self) private var model
     @Environment(\.workMode) private var workMode
     let selected: Set<Int>
-    let cache: FusableCache
+    /// 마지막 융합 가능 목록. 카드를 클릭해 선택만 바뀌면 8천 장을 다시 훑지 않는다
+    let cache: GameMemo<[Int]>
     let jump: (Int) -> Void
     @AppStorage("dex.fusableExpanded") private var expanded = true
     @State private var confirmAll = false
@@ -14,7 +15,7 @@ struct FusableSection: View {
     @State private var made = 0
 
     var body: some View {
-        let cids = cache.list(model.game)
+        let cids = cache(model.game)
         // 다 만들면 목록이 사라지므로 결과 알림은 그 바깥에 단다
         VStack(spacing: 0) { if !cids.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
@@ -75,19 +76,5 @@ struct FusableSection: View {
         } message: {
             Text("최근 획득에서 만든 카드를 볼 수 있어요")
         }
-    }
-}
-
-/// 마지막 융합 가능 목록. 카드를 클릭해 선택만 바뀌면 8천 장을 다시 훑지 않는다 (보유·설정·시대가 같으면 결과도 같다)
-@MainActor final class FusableCache {
-    private var key: (owned: [Int: Int], on: Bool, era: String)?
-    private var cids: [Int] = []
-
-    func list(_ game: Game) -> [Int] {
-        let s = game.state
-        if let key, key.owned == s.owned, key.on == s.fusionOnly, key.era == s.eraLimit { return cids }
-        cids = game.fusable
-        key = (s.owned, s.fusionOnly, s.eraLimit)
-        return cids
     }
 }

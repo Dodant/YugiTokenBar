@@ -224,7 +224,7 @@ private struct FreeRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: systemImage).font(.title2).foregroundStyle(.tint).frame(width: 36)
+            Image(systemName: systemImage).font(.title2).foregroundStyle(.tint).symbolRenderingMode(.hierarchical).frame(width: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.callout.weight(.medium)).monospacedDigit()
                 Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
@@ -251,7 +251,7 @@ private struct MenuRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Image(systemName: systemImage).frame(width: 20).foregroundStyle(.secondary)
+                Image(systemName: systemImage).frame(width: 20).foregroundStyle(.secondary).symbolRenderingMode(.hierarchical)
                 Text(title)
                 Spacer()
                 if let trailing { Text(trailing).foregroundStyle(.secondary).monospacedDigit() }
