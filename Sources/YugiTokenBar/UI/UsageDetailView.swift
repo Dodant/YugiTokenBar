@@ -149,11 +149,15 @@ struct UsageDetailView: View {
                     if let focus { Text(verbatim: focus.name).foregroundStyle(focus.tint) }
                     else { Text(Self.costText(shown.cost)).foregroundStyle(.secondary) }
                     if let cards = cardsByDay[shown.id] {
-                        // 문구 없이 카드 모양과 장 수만 (모든 언어 같은 표기)
-                        Label { Text(verbatim: "\(cards)") } icon: { Image(systemName: "rectangle.portrait.on.rectangle.portrait") }
-                            .labelStyle(.titleAndIcon)
-                            .foregroundStyle(.secondary)
-                            .accessibilityLabel(String(localized: "얻은 카드 \(cards)장"))
+                        // 문구 없이 카드 모양과 장 수만 (모든 언어 같은 표기). 기본 크기 아이콘은 caption 줄을 13→15pt 로 키워
+                        // 카드가 있는 날과 없는 날을 오갈 때 위 한 줄이 들썩이므로 작게 (작으면 13pt 그대로)
+                        HStack(spacing: 2) {
+                            Image(systemName: "rectangle.portrait.on.rectangle.portrait").imageScale(.small)
+                            Text(verbatim: "\(cards)")
+                        }
+                        .foregroundStyle(.secondary)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Text(verbatim: "Cards earned: \(cards)"))  // 사용량 문구는 모든 언어에서 영어
                     }
                 }
                 Spacer(minLength: 4)

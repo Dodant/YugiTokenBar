@@ -458,7 +458,6 @@
 "최근 쓴 14일 토큰 사용량" = "Token usage over the last 14 active days";
 /* UsageDetailView.swift:124 */
 "최다" = "Peak";
-"얻은 카드 %lld장" = "Cards earned: %lld";
 /* UsageDetailView.swift:196 */
 "입력" = "Input";
 /* UsageDetailView.swift:197 */
