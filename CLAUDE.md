@@ -11,17 +11,25 @@ GitHub Releases의 ZIP으로 배포한다.
 첫 공개 릴리스는 Developer ID 서명·Apple 공증 설정 후 게시한다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
-- 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 21장·복사한 코드. 이미지 출처를 바꾸면 같이 고친다)
-- 구현 계획: `docs/superpowers/plans/2026-10-01-yugitokenbar.md` (역사 기록. 현재 기준은 스펙)
+- 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 21장·복사한 코드).
+  이미지 출처를 바꾸면 같이 고친다.
+- 배포: `docs/distribution.md` (서명·공증·릴리스 태그)
+- 구현 계획: `docs/superpowers/plans/2026-10-01-yugitokenbar.md` (역사 기록).
+  현재 기준은 스펙이다.
 - 실행 방식: **Subagent-driven** (superpowers:subagent-driven-development) — 사용자가 선택함
 
 ## 규칙
 
-- 개발과 QA 실행은 항상 `YTB_STATE_DIR=$PWD/qa-state`로 한다. 실제 세이브 `~/Library/Application Support/YugiTokenBar/`는 건드리지 않는다.
-  `swift run`은 이 변수가 없어도 `qa-state`를 쓰지만, `.app` 실행은 변수가 없으면 실제 세이브를 쓴다.
+- 개발과 QA 실행은 항상 `YTB_STATE_DIR=$PWD/qa-state`로 한다.
+  실제 세이브 `~/Library/Application Support/YugiTokenBar/`는 건드리지 않는다.
+  `swift run`은 이 변수가 없어도 세이브(`state.json`)는 `qa-state`를 쓰지만, Cursor API 캐시(`PTB_PARITY=1`일 때)는 실제 폴더에 쓴다.
+  `.app` 실행은 변수가 없으면 실제 세이브를 쓴다.
+  `swift run`은 UI가 늘 한국어이고 카드 언어만 설정을 따른다(번역은 `.app`에서만 보인다).
+  설정의 언어 메뉴를 시험했으면 끝나고 시스템 따르기로 되돌린다(번들 ID가 설치된 앱과 같아 그 설정을 같이 쓴다).
 - 세이브 형식을 바꾸면(필드의 의미·타입 변경 등) `GameState.schemaVersion`을 올린다(필드 추가만이면 안 올림, 스펙 4절 저장).
 - `/Applications` 설치(`scripts/build-app.sh --install`)는 사용자에게 먼저 묻는다.
-- 밸런스 수치는 `Game.swift`의 `Balance`에만 둔다. 바꿀 때는 스펙 5절도 같이 고친다.
+- 밸런스 수치는 `Game.swift`의 `Balance`에만 둔다.
+  바꿀 때는 스펙 5절도 같이 고친다.
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 복사본이다.
   직접 고치지 말고 `tools/import-usage.sh`(원본 `~/remote-claude-projects/code/PokeTokenBar-carryover`, 커밋 `de617e3`)로 다시 만든다.
   바꾼 점은 `Usage/NOTICE.md`에 적는다.
@@ -44,19 +52,23 @@ GitHub Releases의 ZIP으로 배포한다.
   JP·EN은 언어당 5~9시간 걸린다.
 - UI 문구는 ko/en/ja 현지화, 기준 언어는 한국어.
   메뉴·섹션·단순 확인·개봉 버튼의 공통 영어 표기(Shop·Dex·Setting·Cards·Decks·Partner·OK·Open), 사용량(메뉴 사용량 칸·사용량 화면) 문구는 세 언어 `Localizable.strings`에서 같은 영어 값으로 지정한다.
-  설정 > 정보 & 지원의 크레딧·출처 줄(Inspired by PokeTokenBar·License·Unofficial fan project·Card data & images와 힌트)과 라이선스 창 제목처럼 세 언어가 같은 영어 문구는 코드에 영어 키를 그대로 쓴다(번역 파일에 항목을 두지 않는다).
+  설정 > 정보 & 지원의 GitHub Repo 줄·크레딧·출처 줄(Inspired by PokeTokenBar·License·Card data & images·Unofficial fan project와 힌트), 설정 맨 아래 Made with Love and Claude, 라이선스 창 제목처럼 세 언어가 같은 영어 문구는 코드에 영어 키를 그대로 쓴다(번역 파일에 항목을 두지 않는다).
   한국어 파일에는 이 영어 표기만 넣고, 다른 문구는 코드의 한국어 키를 그대로 쓴다.
   코드에는 한국어 문장을 그대로 쓰고, `python3 tools/sync-strings.py`로 en/ja `Resources/*.lproj/Localizable.strings`에 키를 덧붙여 번역한다.
   - SwiftUI 리터럴은 자동.
   - `String`으로 만드는 문구는 `String(localized:)`.
   - 문구를 받는 헬퍼는 `LocalizedStringKey`.
   - 영어 단수·복수가 갈리는 문구는 `en.lproj/Localizable.stringsdict`에 복수 규칙을 더한다(키는 strings에도 둔다).
+  - 번역 어조·위치 지정자·유희왕 용어집은 스펙 6절 공통 UI 표기.
 
   커밋 전 `python3 tools/sync-strings.py --check`.
-- 설정은 저장 위치를 나눈다. 기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다. 새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
+- 설정은 저장 위치를 나눈다.
+  기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다.
+  새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
 - 색은 시스템 색(`.primary`·`.secondary`·`.fill`·`accentColor`)을 먼저 쓰고, 고유한 색은 `CardImageView.swift`의 `Rarity`·`Palette`에만 라이트·다크 값을 같이 둔다(스펙 6절 외관).
   화면에서 `colorScheme`으로 분기하지 않는다.
-- **문서는 항상 코드와 동기화한다.** 동작·구조·명령이 바뀌면 같은 커밋에서 스펙(해당 절), `Usage/NOTICE.md`, 이 파일을 함께 고친다.
+- **문서는 항상 코드와 동기화한다.**
+  동작·구조·명령이 바뀌면 같은 커밋에서 스펙(해당 절), `Usage/NOTICE.md`, 이 파일을 함께 고친다.
 - 문서(.md)는 한 줄에 한 문장으로 쓴다.
   문장이 끝나면 줄을 바꾸고, 목록 항목이면 내용 칸만큼 들여 쓴다(렌더링은 같다).
   표·코드 블록은 예외.
@@ -72,5 +84,6 @@ python3 tools/sync-strings.py --check                 # UI 문구 키·번역·e
 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (Claude 공식 한도·Cursor API는 안 읽음)
 PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도·Cursor API까지 실제로 읽기
 scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명, 버전은 CHANGELOG.md)
+YTB_SIGN_IDENTITY=… YTB_NOTARY_PROFILE=… scripts/package-release.sh  # 공개용 서명·공증 ZIP (docs/distribution.md)
 scripts/build-app.sh && YTB_STATE_DIR=$PWD/qa-state build/YugiTokenBar.app/Contents/MacOS/YugiTokenBar -AppleLanguages '(en)'  # 언어별 QA (번역은 .app 에서만 보임, 실행 인자라 설정에 저장 안 됨)
 ```

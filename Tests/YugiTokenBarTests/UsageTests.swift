@@ -189,6 +189,13 @@ import Testing
         #expect(second.count == TodayUsageReader.historyDays)
     }
 
+    /// 개발 실행(테스트 포함)은 지난 날짜 파일을 실앱의 캐시 폴더가 아니라 세이브 폴더에 둔다
+    @Test func devHistoryFileStaysInStateDir() {
+        let file = TodayUsageReader.defaultHistoryFile
+        #expect(file.deletingLastPathComponent() == StateStore.standard().url.deletingLastPathComponent())
+        #expect(!file.path.contains("/Library/Caches/"))
+    }
+
     /// 사용량 화면 에이전트 순서: 오늘 많이 쓴 순, Claude·Codex 는 안 써도 보이고 나머지는 기간 안에 쓴 것만
     @MainActor @Test func agentsRankByTodayUsage() {
         func t(_ n: Int) -> TokenSum { var t = TokenSum(); t.input = n; return t }

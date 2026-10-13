@@ -26,6 +26,7 @@
 - If your save is damaged, the app now also tries daily backups from the last 7 days after the latest backup, and tells you in the menu when it restored one.
 - A single damaged deck or acquisition record no longer resets the whole save; only that item is skipped.
 - An older version of the app now refuses to open a save made by a newer version, so nothing in it is lost.
+- Fixed hard-to-read button text on the save error and save recovery notices in light mode.
 
 **⚡ Performance**
 - Usage logs are now remembered file by file, so restarting the app and the once-a-minute refresh only re-read logs that changed, and a Claude Code log still being written is read only from where it left off.

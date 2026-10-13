@@ -5,7 +5,7 @@ Available in Korean, English, and Japanese.</p>
 
 ## How it works
 
-- It reads today's tokens from your local Claude Code and Codex session logs. Usage from before installation is not counted.
+- It reads today's tokens from your local Claude Code, Codex, Gemini, Grok, Pi, oh-my-pi, and Cursor logs. Usage from before installation is not counted.
 - 10,000 tokens = 1 coin.
   1,000 coins (= 10M tokens) buy one booster pack with 5 cards.
   Buy 10 packs and you get a random pack for free.

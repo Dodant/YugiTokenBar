@@ -26,13 +26,14 @@ GitHub 저장소의 Settings → Secrets and variables → Actions에 다음 비
 그 버전과 같은 태그를 올린다.
 
 ```bash
-git tag v0.6.3
-git push origin v0.6.3
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 태그 push는 `.github/workflows/release.yml`을 실행한다.
 macOS 26 runner에서 테스트·번역 검사 후 arm64·x86_64로 빌드하고 Developer ID 서명·공증·staple·Gatekeeper 검증을 한다.
 최종 ZIP의 SHA-256을 계산하고 ZIP·SHA256SUMS을 Release에 올린다.
+Release 본문은 한국어 `CHANGELOG.md`의 맨 위 버전 항목이다.
 인증서가 없으면 릴리스 게시 전에 실패하며 unsigned 릴리스를 만들지 않는다.
 이미 게시된 Release는 덮어쓰지 않는다.
 초기 실패를 재시도하려면 Actions → Release → Run workflow에서 기존 태그를 입력한다.
