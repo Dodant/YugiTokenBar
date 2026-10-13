@@ -787,7 +787,9 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - 초안·프리릴리스·main의 미배포 변경은 제외한다.
     - 새 버전이면 그 아래 줄에 "새 버전 v x.y.z이 있어요"와 최신 Release 다운로드 링크를, 실패하면 네트워크 안내를 보여준다.
     - 자동 확인·자동 업데이트는 없다.
-    - 그 아래 [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, [버그 신고하기](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어), PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
+    - 그 아래 [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, [버그 신고하기](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어), PokeTokenBar(MIT) 크레딧 "Inspired by PokeTokenBar"(PokeTokenBar는 GitHub 저장소로 가는 링크)와 [License](`Usage/NOTICE.md` 창).
+    - 맨 아래 출처 두 줄: "Unofficial fan project"(Konami와 관계없음 / 카드 이름·텍스트·이미지 © Konami, 두 줄)와 "Card data & images"(Konami Card Database · YGOPRODeck · Yugipedia. 각각 사이트로 가는 마크다운 링크. Konami DB 링크는 앱 언어의 `request_locale`). 버튼 없이 글만. 자세한 출처는 `docs/sources.md`.
+    - PokeTokenBar 크레딧부터 출처 두 줄까지(라벨·힌트·[License])와 라이선스 창 제목은 세 언어 모두 영어로 고정한다. 코드의 영어 키가 그대로 보이고 번역 파일에는 항목이 없다. Konami Card Database 링크는 언어 구분 없는 DB 첫 페이지다.
 - **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다.
   `scripts/build-app.sh`가 다음을 한다:
   - 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣는다.

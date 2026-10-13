@@ -177,7 +177,7 @@ struct SettingsView: View {
             row {
                 Text("GitHub")
                 Spacer()
-                Link("Dodant/YugiTokenBar", destination: AppInfo.repoURL).font(.subheadline)
+                Button("Dodant/YugiTokenBar") { NSWorkspace.shared.open(AppInfo.repoURL) }.controlSize(.small)
             }
             Divider()
             row {
@@ -187,9 +187,19 @@ struct SettingsView: View {
             }
             Divider()
             row {
-                labeled("PokeTokenBar 크레딧", hint: "사용량 읽기 코드 · © 2026 chattymin · MIT")
+                labeled("Inspired by [PokeTokenBar](https://github.com/chattymin/PokeTokenBar)", hint: "Usage reading code · © 2026 chattymin · MIT")
                 Spacer()
-                Button("라이선스") { open("license") }.controlSize(.small)
+                Button("License") { open("license") }.controlSize(.small)
+            }
+            Divider()
+            row {
+                labeled("Unofficial fan project", hint: "Not affiliated with Konami\nCard names, text and images © Konami")
+                Spacer()
+            }
+            Divider()
+            row {
+                labeled("Card data & images", hint: "[Konami Card Database](https://www.db.yugioh-card.com/yugiohdb/) · [YGOPRODeck](https://ygoprodeck.com/) · [Yugipedia](https://yugipedia.com/)")
+                Spacer()
             }
         }
     }

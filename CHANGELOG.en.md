@@ -16,6 +16,7 @@
 - In work mode, the opening list and the collection list now show each card's monster type, level, and ATK/DEF (card type for Spells and Traps) with its name.
 - The fade at the bottom of the Shop, Settings and Usage screens now uses the system scroll edge effect.
 - Menu and usage icons now use hierarchical and gradient rendering, and the refresh icon on the usage screen spins while limits are loading.
+- Settings > About & support now shows the unofficial fan project notice and the sources of card data and images.
 
 **🐛 Bug fixes**
 - Fixed English text using plural forms for a single card.
