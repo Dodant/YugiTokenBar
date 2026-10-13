@@ -349,7 +349,7 @@ struct SettingsView: View {
     }
 }
 
-/// 패치노트·라이선스 창. `#`/`##` 제목만 크게, 나머지 줄은 인라인 마크다운.
+/// 패치노트·라이선스 창. `#`/`##` 제목만 크게, `- ` 줄은 • 항목(둘째 줄부터 들여쓰기), 나머지 줄은 인라인 마크다운.
 struct DocView: View {
     let text: String
 
@@ -361,8 +361,14 @@ struct DocView: View {
                         Text(line.dropFirst(3)).font(.headline).padding(.top, 10)
                     } else if line.hasPrefix("# ") {
                         Text(line.dropFirst(2)).font(.title2.weight(.semibold))
+                    } else if line.hasPrefix("- ") {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("•")
+                            inline(String(line.dropFirst(2)))
+                        }
+                        .padding(.leading, 4)
                     } else if !line.isEmpty {
-                        Text((try? AttributedString(markdown: line)) ?? AttributedString(line))
+                        inline(line)
                     }
                 }
             }
@@ -370,5 +376,9 @@ struct DocView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .textSelection(.enabled)
         }
+    }
+
+    private func inline(_ line: String) -> Text {
+        Text((try? AttributedString(markdown: line)) ?? AttributedString(line))
     }
 }
