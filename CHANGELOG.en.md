@@ -15,6 +15,7 @@
 - The quick-buy row in the menu now has a soft two-color gradient that differs for each pack, and packs are spaced apart as you swipe so they slide past one by one (Work mode keeps the plain single color).
 
 **🐛 Bug fixes**
+- Fixed the quick-buy row in the menu sometimes stopping between two packs while swiping.
 - Fixed English text using plural forms for a single card.
 - Decks you haven't renamed now use the current app language.
 

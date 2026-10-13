@@ -95,7 +95,7 @@ struct PopoverView: View {
             // 트랙패드 좌우 스와이프로 발매순 앞뒤 팩을 넘긴다. 사면 그 팩이 lastBoughtPack 이 되어 그대로 남는다
             // LazyHStack 가로 스크롤은 높이를 내용에서 못 받아 0이 되므로, 숨긴 한 줄로 높이를 잡는다
             PackRow(index: game.lastBoughtPack).padding(12).hidden()
-                .overlay {
+                .overlay { ScrollViewReader { proxy in
                     ScrollView(.horizontal) {
                         LazyHStack(spacing: 10) {
                             ForEach(game.db.packs.indices, id: \.self) { i in
@@ -118,7 +118,11 @@ struct PopoverView: View {
                     .scrollPosition(id: $shownPack)
                     // 한 팩 넘길 때마다 트랙패드에 톡 (Force Touch 트랙패드)
                     .sensoryFeedback(.alignment, trigger: shownPack)
-                }
+                    // 넘기는 도중 끊기면(팝오버가 닫히는 등) viewAligned 가 못 붙이고 두 팩 사이에 멈출 때가 있어, 멈추면 보이는 팩에 다시 붙인다
+                    .onScrollPhaseChange { _, phase in
+                        if phase == .idle, let shownPack { withAnimation(.snappy) { proxy.scrollTo(shownPack, anchor: .leading) } }
+                    }
+                } }
                 .onChange(of: game.lastBoughtPack, initial: true) { shownPack = game.lastBoughtPack }
             .clipShape(.rect(cornerRadius: 16))
 
