@@ -20,4 +20,16 @@ import Testing
             #expect(AppInfo.releaseVersion(from: Data(json.utf8)) == nil)
         }
     }
+
+    @Test func sparkleNeedsPublicKey() {
+        #expect(AppInfo.sparkleEnabled(info: ["SUPublicEDKey": "abc="]))
+        #expect(!AppInfo.sparkleEnabled(info: ["SUPublicEDKey": ""]))
+        #expect(!AppInfo.sparkleEnabled(info: ["SUFeedURL": "https://example.com/appcast.xml"]))
+        #expect(!AppInfo.sparkleEnabled(info: nil))
+    }
+
+    @Test func licenseIncludesSparkle() {
+        #expect(AppInfo.license.contains("## Sparkle"))
+        #expect(AppInfo.license.contains("Andy Matuschak"))
+    }
 }

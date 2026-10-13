@@ -229,6 +229,8 @@ struct SettingsView: View {
     }
 
     private func checkUpdate() {
+        // Sparkle 이 켜진 .app 은 Sparkle 창이 확인·내려받기·설치를 맡는다
+        if Updater.controller != nil { Updater.checkForUpdates(); return }
         update = .checking
         Task {
             if let latest = await AppInfo.fetchLatestVersion() { update = .found(latest) } else { update = .failed }
