@@ -150,6 +150,14 @@ struct Game: Sendable {
         return p
     }
 
+    /// 시대 묶음 헤더의 보유/전체
+    func progress(packs: Range<Int>) -> (owned: Int, total: Int) {
+        packs.reduce((0, 0)) { sum, i in
+            let p = progress(i)
+            return (sum.0 + p.owned, sum.1 + p.total)
+        }
+    }
+
     var canAffordPack: Bool { state.coins >= Balance.packPrice }
 
     // MARK: 판매

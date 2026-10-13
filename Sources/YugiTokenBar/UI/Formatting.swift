@@ -62,6 +62,44 @@ struct TintBar: View {
     }
 }
 
+/// 팩·덱 진행 막대. 다 모으면 초록
+struct ProgressBar: View {
+    let owned: Int
+    let total: Int
+
+    var body: some View {
+        TintBar(value: Double(owned) / Double(max(total, 1)), tint: total > 0 && owned == total ? Palette.complete : .accentColor)
+    }
+}
+
+/// 보유/전체 숫자. 다 모으면 보유와 초록 체크 ("136 ✓")
+struct ProgressCount: View {
+    let owned: Int
+    let total: Int
+
+    var body: some View {
+        HStack(spacing: 3) {
+            if total > 0 && owned == total {
+                Text(verbatim: "\(owned)")
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.complete)
+            } else {
+                Text("\(owned)/\(total)")
+            }
+        }
+    }
+}
+
+/// 접고 펴는 묶음 헤더의 꺾쇠. 펴면 아래를 향한다
+struct DisclosureChevron: View {
+    let expanded: Bool
+
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.caption.weight(.bold))
+            .rotationEffect(.degrees(expanded ? 90 : 0))
+    }
+}
+
 /// 코인 표기: ⓒ 1,000
 /// 만 단위부터 K·M (34,200 → 34K, 2,400,000 → 2.4M). 소수는 줄인 수가 한 자리일 때만. 메뉴바와 `coinText`가 같이 쓴다
 func shortCoins(_ n: Int) -> String {

@@ -98,6 +98,8 @@ enum Palette {
     static let warning = Color(light: Color(red: 0xB2 / 255, green: 0x50 / 255, blue: 0), dark: .orange)
     /// 위험 글자 (한도 85% 이상)
     static let danger = Color(light: Color(red: 0xC4 / 255, green: 0x28 / 255, blue: 0x1C / 255), dark: Color(red: 1, green: 0x7B / 255, blue: 0x72 / 255))
+    /// 다 모은 팩·덱의 진행 막대와 체크. 시스템 초록이라 외관을 따라 바뀐다
+    static let complete = Color.green
     /// 융합 강조 글자
     static let fusion = Color(light: Color(red: 0x96 / 255, green: 0x36 / 255, blue: 0xC9 / 255), dark: Color(red: 0xD8 / 255, green: 0x8C / 255, blue: 1))
     /// 카드 위 흰 글자 배지 바탕. 카드 이미지 위라 외관과 상관없이 고정, 흰 글자 5:1 이상
