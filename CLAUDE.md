@@ -22,7 +22,7 @@ GitHub Releases의 ZIP으로 배포한다.
 
 - 개발과 QA 실행은 항상 `YTB_STATE_DIR=$PWD/qa-state`로 한다.
   실제 세이브 `~/Library/Application Support/YugiTokenBar/`는 건드리지 않는다.
-  `swift run`은 이 변수가 없어도 세이브(`state.json`)는 `qa-state`를 쓰지만, Cursor API 캐시(`PTB_PARITY=1`일 때)는 실제 폴더에, 사용량 날짜 캐시 `usage-days.json`은 변수와 상관없이 `~/Library/Caches/YugiTokenBar/`에 쓴다.
+  `swift run`은 이 변수가 없어도 세이브(`state.json`)는 `qa-state`를 쓰지만, Cursor API 캐시(`PTB_PARITY=1`일 때)는 실제 폴더에 쓴다.
   `.app` 실행은 변수가 없으면 실제 세이브를 쓴다.
   `swift run`은 UI가 늘 한국어이고 카드 언어만 설정을 따른다(번역은 `.app`에서만 보인다).
   설정의 언어 메뉴를 시험했으면 끝나고 시스템 따르기로 되돌린다(번들 ID가 설치된 앱과 같아 그 설정을 같이 쓴다).

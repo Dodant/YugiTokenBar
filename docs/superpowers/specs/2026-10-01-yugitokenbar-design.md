@@ -212,7 +212,7 @@ Sources/YugiTokenBar/
   App.swift            앱 진입, 메뉴바 라벨
   AppLanguage.swift    언어 선택(앱 AppleLanguages, 재시작 후 반영)·이번 실행 언어(`Bundle.preferredLocalizations(from: [en, ko, ja])`, 지원하지 않는 언어는 en)
   AppModel.swift       60초마다 사용량 적립(늘어난 토큰이 없으면 저장·화면 갱신 안 함), 5분마다 공식 한도 갱신, 저장
-  TodayUsageReader.swift  오늘 provider별 토큰·비용 집계. 로그는 `LocalUsageCache`(파일별 캐시)로 읽고, 이번 실행에서 바뀐 Claude 파일은 붙은 줄만 읽으며, 로컬 Cursor DB는 지난번 rowid 뒤만 읽어 합친다. 사용량 화면용 지난 31일 날짜별 합계(`pastDays`). 지난 날은 바뀌지 않으므로 `~/Library/Caches/YugiTokenBar/usage-days.json`에 두고 없는 날만 로그에서 읽는다(31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초)
+  TodayUsageReader.swift  오늘 provider별 토큰·비용 집계. 로그는 `LocalUsageCache`(파일별 캐시)로 읽고, 이번 실행에서 바뀐 Claude 파일은 붙은 줄만 읽으며, 로컬 Cursor DB는 지난번 rowid 뒤만 읽어 합친다. 사용량 화면용 지난 31일 날짜별 합계(`pastDays`). 지난 날은 바뀌지 않으므로 `usage-days.json`(실앱은 `~/Library/Caches/YugiTokenBar/`, `YTB_STATE_DIR`·개발 실행은 세이브 폴더)에 두고 없는 날만 로그에서 읽는다(31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초)
   Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·LocalUsageCache·한도 provider + 의존 파일, NOTICE.md(출처·변경점)
   CardDB.swift         이번 실행 언어의 `cards_<KO|JP|EN>.json`을 번들 → 저장소 `Resources/` 순서로 찾아 로드(`CardDB.bundled()`, 실패는 원인을 담은 `fatalError`. 등급은 1~5로 잘라 읽는다), 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 `DexQuery`가 처음 이름순으로 볼 때 한 번 만들어 둔다)
   Game.swift           적립·뽑기·판매·덱·융합 (밸런스 상수 `Balance`는 파일 상단)
@@ -463,7 +463,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 **외관(라이트·다크)**: 시스템 설정만 따르고 앱 안에 따로 설정을 두지 않는다. 실행 중에 바꿔도 바로 다시 그린다.
 - 글자·배경·구분선은 의미 기반 시스템 색(`.primary`·`.secondary`·`.fill`·`.bar`, `Divider`)을 먼저 쓰고, 강조는 시스템 강조색(`accentColor`)을 따른다.
   화면마다 `colorScheme`으로 분기하지 않는다.
-- 고유한 색은 `CardImageView.swift`의 `Rarity`(등급 색·알약 색)와 `Palette`(카드 테두리, 주의·위험·융합 글자, 카드 위 배지, 완료 초록, 상점 도장, 바로 구매 줄 바탕 `packGlow`, 카드 틀 색 `frame`, 이미지를 못 받았을 때의 카드 뒷면·팩 봉투)에 라이트·다크 값을 같이 둔다(`Color(light:dark:)`).
+- 고유한 색은 `CardImageView.swift`의 `Rarity`(등급 색·알약 색)와 `Palette`(카드 테두리, 주의·위험·융합 글자(저장 실패·세이브 복구 줄의 아이콘·버튼 tint도 `warning`), 카드 위 배지, 완료 초록, 상점 도장, 바로 구매 줄 바탕 `packGlow`, 카드 틀 색 `frame`, 이미지를 못 받았을 때의 카드 뒷면·팩 봉투)에 라이트·다크 값을 같이 둔다(`Color(light:dark:)`).
   예외: 레어 연출(`RareEffect`, 개봉 빛)과 융합 연출 색은 그 뷰 안에 두고, 사용량 에이전트 색은 시스템 색이라 `UsageView.agents`에 둔다.
   글자 대비는 WCAG AA 이상(본문 4.5:1, 라이트는 흰 바탕, 다크는 `#2A2A2C` 바탕 기준).
 - 카드·팩 이미지는 원본 그대로 둔다.

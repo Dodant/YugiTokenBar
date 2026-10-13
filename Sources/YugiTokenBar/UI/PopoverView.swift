@@ -54,14 +54,14 @@ struct PopoverView: View {
                 FreeRow(systemImage: "exclamationmark.triangle.fill", title: "진행 상황을 저장하지 못했어요",
                         hint: error, button: "폴더 열기") { NSWorkspace.shared.activateFileViewerSelecting([model.saveFolder]) }
                     .panelCard()
-                    .tint(.orange)
+                    .tint(Palette.warning)
             }
             if let recovery = model.loadRecovery {
                 FreeRow(systemImage: "exclamationmark.triangle.fill",
                         title: recovery == .backup ? "세이브가 손상되어 백업에서 복구했어요" : "세이브가 손상되어 새로 시작했어요",
                         hint: String(localized: "손상된 파일은 세이브 폴더에 남겨 두었어요."), button: "OK") { model.loadRecovery = nil }
                     .panelCard()
-                    .tint(.orange)
+                    .tint(Palette.warning)
             }
 
             if showRecent ?? !workMode { VStack(alignment: .leading, spacing: 8) {

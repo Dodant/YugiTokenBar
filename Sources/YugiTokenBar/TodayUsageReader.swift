@@ -51,8 +51,7 @@ actor TodayUsageReader {
 
     /// cache: nil 이면 `claudeRoots`만 바꾼 기본 캐시 (디스크 저장은 실앱만, `AppEnv.persistsToUserLocation`)
     init(claudeRoots: [URL]? = nil, cache: LocalUsageCache? = nil,
-         historyFile: URL? = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("YugiTokenBar/usage-days.json"),
+         historyFile: URL? = TodayUsageReader.defaultHistoryFile,
          liveCursor: (@Sendable (Date) async -> LocalAdditionalUsageReader.CursorLoadResult)? =
             AppEnv.allowsLiveLimitsFetch ? { @Sendable in await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: $0) } : nil,
          otherLogs: @escaping @Sendable (Date) -> [(Provider, [LocalUsageReader.Entry])] = TodayUsageReader.localOtherLogs,
@@ -64,6 +63,15 @@ actor TodayUsageReader {
         self.otherLogs = otherLogs
         self.backoffStore = backoffStore
         cursorAPIRetryAt = backoffStore?.object(forKey: Self.retryAtKey) as? Date ?? .distantPast
+    }
+
+    /// 지난 날짜별 합계 파일. 실앱은 캐시 폴더, `YTB_STATE_DIR`·개발 실행은 세이브 폴더(개발 실행이 실앱 기록을 덮지 않게)
+    static var defaultHistoryFile: URL {
+        let override = ProcessInfo.processInfo.environment["YTB_STATE_DIR"] ?? ""
+        let dir = AppEnv.isBundledApp && override.isEmpty
+            ? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("YugiTokenBar")
+            : StateStore.standard().url.deletingLastPathComponent()
+        return dir.appendingPathComponent("usage-days.json")
     }
 
     /// Cursor: 대시보드 API 가 있으면 그것, 실패(`isAuthoritative == false`)하면 `cursorAPIBackoff` 동안 로컬만.
