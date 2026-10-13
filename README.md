@@ -1,75 +1,50 @@
 # YugiTokenBar
 
-코딩 에이전트 (Claude Code·Codex 등) 토큰 사용량을 보상으로 **한국 정발 유희왕 카드 컬렉션**(정규 부스터 100팩, 8,226종)을 채우는 macOS 메뉴바 앱.
-Konami와 관계없는 비공식·비상업 팬 프로젝트다(unofficial, non-commercial fan project).
-한국어·영어·일본어 지원(설정 › 일반 › 언어).
+A macOS menu bar app that fills a **Korean-release Yu-Gi-Oh! card collection** (100 regular booster packs, 8,226 cards) with the tokens your coding agents (Claude Code, Codex, etc.) use.
+Available in Korean, English, and Japanese.
 
-## 어떻게 돌아가나
+## How it works
 
-- 로컬 Claude Code·Codex 세션 로그에서 오늘 쓴 토큰(input + output + cache)을 읽는다. 설치 전 사용량은 적립하지 않는다.
-- 10,000 토큰 = 1코인. 1,000코인(= 1천만 토큰)으로 부스터 1팩(노멀 4 + 레어 이상 1)을 산다. 10팩을 사면 랜덤 부스터 1팩이 무료.
-- 1천만 토큰마다 무료 카드 1장이 쌓이고, 직접 열면 등급 확률에 따라 전체 풀에서 나온다.
-- 등급은 N / R / SR / UR / SE 5단계(UL·HR 등 UR보다 높은 레어도는 SE). 재수록 카드는 가장 높은 등급.
-- 설정에서 시대 범위(DM까지~Modern까지, 기본 GX까지)를 고르면 그 시대까지의 팩·카드만 나온다.
-- 같은 카드를 몇 장이든 모을 수 있다. 남는 카드는 레어도에 따라 코인으로 판다.
-- 하루 5천만 토큰을 쓰면 무료 5장 + 5팩. 다 모으는 데 약 1,000억 토큰이 든다.
+- It reads today's tokens from your local Claude Code and Codex session logs. Usage from before installation is not counted.
+- 10,000 tokens = 1 coin. 1,000 coins (= 10M tokens) buy one booster pack (4 Normal + 1 Rare or higher). Buy 10 packs and you get a random pack for free.
+- Every 10M tokens you earn a free card, drawn from the whole pool by rarity odds.
+- Rarities are N / R / SR / UR / SE. A reprinted card takes its highest rarity.
+- In Settings, pick how far the pools reach (DM … Modern, default GX).
+- You can collect any number of copies. Extra cards sell for coins.
+- Using 50M tokens a day earns 5 free cards + 5 packs. Completing the collection takes about 100B tokens.
 
-## 화면
+## Screens
 
-- **메뉴바**: 코인, 열지 않은 무료 카드 배지
-- **팝오버**: 코인, 다음 무료 카드 게이지, 쌓인 무료 카드 열기, 최근 획득 카드, 바로 구매, 오늘 사용량·비용과 Claude/Codex 공식 한도(5시간·주간)
-- **상점**: DM·GX·5D's·ZEXAL·ARC-V·VRAINS·Modern 시대별로 접고 펴는 100팩 이미지 그리드(한글판 봉투), 마우스를 올리면 구매
-- **팩 개봉**: 메뉴바 패널 안에서 카드를 한 장씩 뒤집어 확인(팩·무료 카드)
-- **컬렉션**: 팩별 진행도, 미보유 카드는 실루엣, 등급별 보기, 한국어 카드 정보, 판매
+- **Menu bar**: coins and a badge for unopened free cards
+- **Popover**: coins, progress to the next free card, recent cards, quick buy, today's usage and cost, and Claude/Codex limits
+- **Shop**: packs grouped by era; hover to buy
+- **Pack opening**: flip cards one by one
+- **Collection**: per-pack progress, view by rarity, card info, selling
 
-## 요구 사항
+| | Work mode off | Work mode on |
+|---|---|---|
+| Popover | <img src="docs/image/mainpage.png" width="280"> | <img src="docs/image/mainpage_workmode.png" width="280"> |
+| Shop | <img src="docs/image/shop.png" width="280"> | <img src="docs/image/shop_workmode.png" width="280"> |
+| Pack opening | <img src="docs/image/packopen.png" width="280"> | <img src="docs/image/packopen_workmode.png" width="280"> |
+| Collection | <img src="docs/image/dex.png" width="280"> | <img src="docs/image/dex_workmode.png" width="280"> |
 
-- macOS 26 이상, Swift 6.2 (Xcode 26)
-- 외부 의존성 없음
+| Usage | Before fusion | After fusion |
+|---|---|---|
+| <img src="docs/image/usage.png" width="200"> | <img src="docs/image/yugo_pre.png" width="280"> | <img src="docs/image/yugo_post.png" width="280"> |
 
-## 설치와 업데이트
+## Install
 
-GitHub Releases에서 앱 ZIP을 다운로드하도록 준비했습니다.
-아직 공개 릴리스는 없으며, 첫 릴리스가 게시된 뒤 다운로드할 수 있습니다.
+Requires macOS 26 or later.
+There is no public release yet; once one is published, download `YugiTokenBar-x.y.z.zip` from [Releases](https://github.com/Dodant/YugiTokenBar/releases), unzip it, and move the app to `/Applications`.
+To update, quit the app and replace it. Your collection is kept.
 
-[Releases](https://github.com/Dodant/YugiTokenBar/releases)에서 `YugiTokenBar-x.y.z.zip`을 받아 압축을 풀고 앱을 `/Applications`로 옮깁니다.
-업데이트할 때는 앱을 종료하고 새 앱으로 교체합니다.
-앱을 교체해도 컬렉션은 Application Support의 별도 세이브에 남습니다.
-배포 ZIP에는 Apple Silicon·Intel 실행 파일을 함께 포함하며, 사용자에게 Xcode 설치를 요구하지 않습니다.
-배포 담당자 설정과 첫 릴리스 절차는 [배포 문서](docs/distribution.md)에 있습니다.
+## Credits
 
-## 실행
-
-```bash
-swift test                                            # 테스트
-YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행
-scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명)
-scripts/build-app.sh --install                        # /Applications 에 설치 후 실행
-```
-
-세이브는 `~/Library/Application Support/YugiTokenBar/`에 저장된다(`YTB_STATE_DIR`로 바꿀 수 있다).
-공식 한도는 `~/.claude/.credentials.json`이나 키체인의 Claude 로그인 정보, `codex app-server`로 읽는다.
-`swift run`으로 개발 실행할 때는 `PTB_PARITY=1`을 붙여야 읽는다.
-
-## 데이터
-
-`Resources/cards_KO.json`은 `python3 tools/build-cards.py`로 만든다.
-
-- 팩·카드 목록, 한국어 카드명·효과, 레어도: [Konami 공식 카드 DB](https://www.db.yugioh-card.com/yugiohdb/?request_locale=ko)
-- 일본어·영어 카드명·효과(`cards_JP.json`·`cards_EN.json`): 같은 Konami DB 카드 상세 페이지(`request_locale=ja|en`)
-- 카드 이미지: [YGOPRODeck](https://ygoprodeck.com/) (실행 중에 받아서 캐시)
-- 한글판 팩 이미지: [Yugipedia](https://yugipedia.com/)
-
-유희왕 카드의 이름·텍스트·이미지 저작권은 Konami에 있다.
-이 프로젝트는 비공식·비상업 팬 프로젝트이며 Konami와 관계없고, Konami가 승인하거나 후원하지 않는다.
+- Card data: [Konami official card database](https://www.db.yugioh-card.com/yugiohdb/?request_locale=ko)
+- Card images: [YGOPRODeck](https://ygoprodeck.com/)
+- Pack images: [Yugipedia](https://yugipedia.com/)
+- Usage-reading code: [PokeTokenBar](https://github.com/chattymin/PokeTokenBar) (MIT, © 2026 chattymin)
 
 > YugiTokenBar is an unofficial, non-commercial fan project.
 > It is not affiliated with, endorsed, sponsored, or approved by Konami.
 > Yu-Gi-Oh! card names, text, and images are © Konami.
-
-## 출처
-
-`Sources/YugiTokenBar/Usage/`는 [PokeTokenBar](https://github.com/chattymin/PokeTokenBar)(MIT, © 2026 chattymin)에서 가져온 코드다.
-출처와 변경점은 [`Usage/NOTICE.md`](Sources/YugiTokenBar/Usage/NOTICE.md)에 적었다.
-
-설계 문서: [`docs/superpowers/specs/2026-10-01-yugitokenbar-design.md`](docs/superpowers/specs/2026-10-01-yugitokenbar-design.md)
