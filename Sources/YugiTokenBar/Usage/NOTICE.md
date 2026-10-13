@@ -16,6 +16,8 @@ LocalUsageCache 는 파일별 사용량 캐시)
 3. `AppLog.swift`: 로그 파일 `YugiTokenBar.log`, 큐 라벨 `yugitokenbar.log`
 4. `AppStatePaths.swift`: 환경변수 `YTB_STATE_DIR`, 기본 폴더 `YugiTokenBar` (Cursor API 캐시 위치)
 5. `LocalUsageCache.swift`: 디스크 캐시 `usage-cache.json`을 `AppStatePaths.directory()`(이 앱 세이브 폴더)에 둔다
+6. `LocalUsageReader.swift`·`LocalUsageCache.swift`: `parseClaudeLine`을 private에서 풀고, `claudeEntries(modifiedSince:skipping:)`가 주어진 경로를 건너뛴다(쓰는 중인 Claude 파일은 `TodayUsageReader`가 붙은 줄만 읽는다)
+7. `CursorUsageAPI.swift`: 토큰 준비·가져오기 성공/실패·캐시 없음 로그를 `AppLog.writeIfChanged`로 남긴다(같은 줄은 바뀔 때와 1시간마다만)
 
 ## MIT License
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated

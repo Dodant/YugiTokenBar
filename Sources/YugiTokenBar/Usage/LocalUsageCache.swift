@@ -167,7 +167,7 @@ actor LocalUsageCache {
         AppStatePaths.directory().appendingPathComponent("usage-cache.json")
     }()
 
-    func claudeEntries(modifiedSince: Date) -> [LocalUsageReader.Entry] {
+    func claudeEntries(modifiedSince: Date, skipping: Set<String> = []) -> [LocalUsageReader.Entry] {
         ensureLoaded()
         let fmt = LocalUsageReader.localDayFormatter()
         // 루트가 여럿이다(CLI 기본 위치 + CLAUDE_CONFIG_DIR + Claude Desktop 임베디드 세션).
@@ -177,7 +177,8 @@ actor LocalUsageCache {
         var all: [LocalUsageReader.Entry] = []
         for root in roots {
             // Blobs cached before `Entry.sessionID` existed get it from their path, without a re-parse.
-            all += collect(root: root, since: modifiedSince, cache: &claudeCache, annotate: { url, entries in
+            all += collect(root: root, since: modifiedSince, cache: &claudeCache,
+                           include: skipping.isEmpty ? nil : { !skipping.contains($0.path) }, annotate: { url, entries in
                 guard entries.contains(where: { $0.sessionID == nil }) else { return entries }
                 let session = LocalUsageReader.claudeSessionID(forTranscript: url)
                 return entries.map { entry in

@@ -515,7 +515,7 @@ enum LocalUsageReader {
         return dedupKeepMax(all)
     }
 
-    private static func parseClaudeLine(_ line: String, fmt: DateFormatter) -> Entry? {
+    static func parseClaudeLine(_ line: String, fmt: DateFormatter) -> Entry? {
         guard let data = line.data(using: .utf8),
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               (obj["type"] as? String) == "assistant",

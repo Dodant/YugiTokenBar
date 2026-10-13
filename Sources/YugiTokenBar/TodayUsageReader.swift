@@ -23,9 +23,10 @@ enum Provider: String, CaseIterable, Sendable {
 /// 오늘(로컬 날짜) provider별 누적 토큰과 비용을 읽는다. 토큰 = input + output + cacheWrite + cacheRead (PokeTokenBar 와 동일).
 /// Claude·Codex·Gemini·Grok·Pi·oh-my-pi 로그는 `LocalUsageCache`(PokeTokenBar)가 파일마다 (경로, 수정 시각, 크기)가
 /// 그대로면 다시 파싱하지 않고, 파싱 결과를 세이브 폴더 `usage-cache.json`에 둬 다음 실행에도 쓴다(실앱만).
+/// 이번 실행에서 바뀌는 것이 보인 Claude 세션 파일(쓰는 중)은 여기서 지난번 읽은 위치 뒤에 붙은 줄만 읽는다(`claudeTails`).
 /// 로컬 Cursor DB(`state.vscdb`)는 행이 덧붙기만 해서 지난번 rowid 뒤만 읽어 합친다.
-/// Cursor 대시보드 API는 실패하면 30분 백오프(그동안 로컬 `state.vscdb`만 읽는다).
-// ponytail: 쓰는 중인 세션 파일은 매번 통째로 다시 읽는다. 더 줄이려면 파일 끝에 붙은 줄만 읽는 증분 파서가 필요(Usage/ 수정)
+/// Cursor 대시보드 API는 실패하면 30분 백오프(그동안 로컬 `state.vscdb`만 읽는다). 백오프 끝 시각은 실앱에서 UserDefaults에 둬 다시 켜도 지킨다.
+// ponytail: Codex·Gemini 등 다른 provider 의 쓰는 중인 파일은 여전히 통째로 다시 읽는다. 무거워지면 Claude 처럼 붙은 줄만 읽는다
 actor TodayUsageReader {
     /// 오늘 몫을 읽는 파일별 캐시 (지난 날짜 `pastDays`는 쓰지 않는다)
     private let cache: LocalUsageCache
@@ -36,7 +37,10 @@ actor TodayUsageReader {
 
     /// 대시보드 API 가 실패하면(토큰 없음·HTTP 오류) 이만큼은 다시 부르지 않고 로컬 `state.vscdb`만 읽는다. 매분 실패하는 네트워크 호출을 막는다.
     static let cursorAPIBackoff: TimeInterval = 30 * 60
-    private var cursorAPIRetryAt = Date.distantPast
+    private var cursorAPIRetryAt: Date
+    /// `cursorAPIRetryAt`을 두는 곳. 실앱만(테스트·개발 실행은 nil)
+    private let backoffStore: UserDefaults?
+    private static let retryAtKey = "cursorAPIRetryAt"
     /// 대시보드 API 경로. 실앱·`PTB_PARITY=1`(`AppEnv.allowsLiveLimitsFetch`)에서만 있고, 테스트는 가짜를 넣는다.
     private let liveCursor: (@Sendable (Date) async -> LocalAdditionalUsageReader.CursorLoadResult)?
 
@@ -51,19 +55,25 @@ actor TodayUsageReader {
             .appendingPathComponent("YugiTokenBar/usage-days.json"),
          liveCursor: (@Sendable (Date) async -> LocalAdditionalUsageReader.CursorLoadResult)? =
             AppEnv.allowsLiveLimitsFetch ? { @Sendable in await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: $0) } : nil,
-         otherLogs: @escaping @Sendable (Date) -> [(Provider, [LocalUsageReader.Entry])] = TodayUsageReader.localOtherLogs) {
+         otherLogs: @escaping @Sendable (Date) -> [(Provider, [LocalUsageReader.Entry])] = TodayUsageReader.localOtherLogs,
+         backoffStore: UserDefaults? = AppEnv.isBundledApp ? .standard : nil) {
         self.claudeRoots = claudeRoots
         self.cache = cache ?? LocalUsageCache(claudeRoots: claudeRoots)
         self.historyFile = historyFile
         self.liveCursor = liveCursor
         self.otherLogs = otherLogs
+        self.backoffStore = backoffStore
+        cursorAPIRetryAt = backoffStore?.object(forKey: Self.retryAtKey) as? Date ?? .distantPast
     }
 
     /// Cursor: 대시보드 API 가 있으면 그것, 실패(`isAuthoritative == false`)하면 `cursorAPIBackoff` 동안 로컬만.
     func cursorEntries(modifiedSince start: Date, now: Date) async -> [LocalUsageReader.Entry] {
         guard let liveCursor, now >= cursorAPIRetryAt else { return localCursorEntries(modifiedSince: start) }
         let result = await liveCursor(start)
-        if !result.isAuthoritative { cursorAPIRetryAt = now.addingTimeInterval(Self.cursorAPIBackoff) }
+        if !result.isAuthoritative {
+            cursorAPIRetryAt = now.addingTimeInterval(Self.cursorAPIBackoff)
+            backoffStore?.set(cursorAPIRetryAt, forKey: Self.retryAtKey)
+        }
         return result.entries
     }
 
@@ -90,7 +100,7 @@ actor TodayUsageReader {
         let today = LocalUsageReader.localDayFormatter().string(from: now)
         let start = Self.start(since: since, now: now)
         let logs: [(Provider, [LocalUsageReader.Entry])] = [
-            (.claude, await cache.claudeEntries(modifiedSince: start)),
+            (.claude, await claudeEntries(modifiedSince: start)),
             (.codex, await cache.codexEntries(modifiedSince: start)),
             (.gemini, await cache.geminiEntries(modifiedSince: start)),
             (.grok, await cache.grokEntries(modifiedSince: start)),
@@ -202,8 +212,62 @@ actor TodayUsageReader {
             .mapValues { bucket($0, day: $0[0].localDay).total }
     }
 
-    /// `LocalUsageReader.claudeEntries(modifiedSince:roots:)` 와 같은 결과를 캐시에서
-    func claudeEntries(modifiedSince: Date) async -> [LocalUsageReader.Entry] {
-        await cache.claudeEntries(modifiedSince: modifiedSince)
+    /// 쓰는 중인 Claude 파일: 읽은 바이트 위치(마지막 줄바꿈 뒤), 그때까지 파일 안에서 dedup 한 기록, 마지막 비용 원장
+    struct ClaudeTail {
+        var offset = 0
+        var entries: [LocalUsageReader.Entry] = []
+        var costState: LocalUsageReader.ClaudeCostState?
+    }
+    private var claudeTails: [String: ClaudeTail] = [:]
+    /// 이번 실행에서 지난번 본 Claude 파일의 (수정 시각, 크기). 이것이 바뀐 파일부터 `claudeTails`로 읽는다
+    private var claudeSeen: [String: (Date, Int)] = [:]
+
+    /// `LocalUsageReader.claudeEntries(modifiedSince:roots:)` 와 같은 결과.
+    /// 바뀌지 않는 파일은 `LocalUsageCache`(디스크까지)에서, 이번 실행에서 바뀐 파일은 붙은 줄만 읽어서.
+    func claudeEntries(modifiedSince start: Date) async -> [LocalUsageReader.Entry] {
+        var tails: [String: ClaudeTail] = [:], seen: [String: (Date, Int)] = [:], hot: [LocalUsageReader.Entry] = []
+        for root in claudeRoots ?? LocalUsageReader.claudeProjectRoots {
+            for url in LocalUsageReader.jsonlFiles(in: root, modifiedSince: start) {
+                guard let v = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
+                      let mtime = v.contentModificationDate else { continue }
+                let sig = (mtime, v.fileSize ?? 0)
+                seen[url.path] = sig
+                guard var tail = claudeTails[url.path] ?? claudeSeen[url.path].flatMap({ $0 == sig ? nil : ClaudeTail() })
+                else { continue }
+                Self.readTail(url, into: &tail)
+                tails[url.path] = tail
+                hot += tail.costState.map { LocalUsageReader.applyReportedCost(tail.entries, $0) } ?? tail.entries
+            }
+        }
+        claudeTails = tails
+        claudeSeen = seen
+        let cold = await cache.claudeEntries(modifiedSince: start, skipping: Set(tails.keys))
+        return LocalUsageReader.dedupKeepMax(cold + hot)
+    }
+
+    /// `tail.offset` 뒤에 붙은 완성된 줄만 `LocalUsageReader.parseClaudeFile`과 같은 규칙으로 읽어 더한다.
+    /// 파일이 줄었으면(새로 씀) 처음부터. 줄바꿈이 없는 마지막 줄은 아직 쓰는 중이라 다음에 읽는다.
+    static func readTail(_ url: URL, into tail: inout ClaudeTail) {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return }
+        defer { try? handle.close() }
+        guard let end = try? handle.seekToEnd() else { return }
+        if end < tail.offset { tail = ClaudeTail() }
+        guard (try? handle.seek(toOffset: UInt64(tail.offset))) != nil, let data = try? handle.readToEnd(),
+              let cut = data.lastIndex(of: UInt8(ascii: "\n")) else { return }
+        tail.offset += cut - data.startIndex + 1
+        let fmt = LocalUsageReader.localDayFormatter(), session = LocalUsageReader.claudeSessionID(forTranscript: url)
+        var new: [LocalUsageReader.Entry] = []
+        for line in String(decoding: data[..<cut], as: UTF8.self).split(separator: "\n") {
+            autoreleasepool {
+                if line.contains("\"cost-state\"") {
+                    if let s = LocalUsageReader.parseClaudeCostStateLine(String(line)) { tail.costState = s }
+                } else if line.contains("\"usage\""), line.contains("\"assistant\""),
+                          var e = LocalUsageReader.parseClaudeLine(String(line), fmt: fmt) {
+                    e.sessionID = session
+                    new.append(e)
+                }
+            }
+        }
+        if !new.isEmpty { tail.entries = LocalUsageReader.dedupKeepMax(tail.entries + new) }
     }
 }

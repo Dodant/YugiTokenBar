@@ -29,4 +29,16 @@ edit("AppStatePaths", lambda s: s.replace('"PTB_STATE_DIR"', '"YTB_STATE_DIR"').
 edit("LocalUsageCache", lambda s: re.sub(r'(private static let defaultFileURL: URL = \{\n).*?(\n    \}\(\))',
      r'\1        AppStatePaths.directory().appendingPathComponent("usage-cache.json")\2', s, flags=re.S))
 edit("AppLog", lambda s: s.replace("PokeTokenBar.log", "YugiTokenBar.log").replace('"poketokenbar.log"', '"yugitokenbar.log"'))
+# 쓰는 중인 Claude 세션 파일은 TodayUsageReader 가 새로 붙은 줄만 읽는다: 줄 파서를 열고, 파일별 캐시가 그 파일을 건너뛰게 한다
+edit("LocalUsageReader", lambda s: s.replace("    private static func parseClaudeLine(", "    static func parseClaudeLine("))
+edit("LocalUsageCache", lambda s: s.replace("func claudeEntries(modifiedSince: Date) -> [LocalUsageReader.Entry] {",
+     "func claudeEntries(modifiedSince: Date, skipping: Set<String> = []) -> [LocalUsageReader.Entry] {")
+     .replace("all += collect(root: root, since: modifiedSince, cache: &claudeCache, annotate:",
+              "all += collect(root: root, since: modifiedSince, cache: &claudeCache,\n                           include: skipping.isEmpty ? nil : { !skipping.contains($0.path) }, annotate:"))
+# 매번 같은 Cursor API 상태 줄은 바뀔 때와 1시간마다만 남긴다
+edit("CursorUsageAPI", lambda s: s
+     .replace('AppLog.write("cursor api: session token ready', 'AppLog.writeIfChanged("cursor-api-token", "cursor api: session token ready')
+     .replace('AppLog.write("cursor api: fetched ', 'AppLog.writeIfChanged("cursor-api-fetch", "cursor api: fetched ')
+     .replace('AppLog.write("cursor api: fetch failed — ', 'AppLog.writeIfChanged("cursor-api-fetch", "cursor api: fetch failed — ')
+     .replace('AppLog.write("cursor api: fetch failed and no cache")', 'AppLog.writeIfChanged("cursor-api-fallback", "cursor api: fetch failed and no cache")'))
 PY

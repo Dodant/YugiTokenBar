@@ -184,7 +184,7 @@ Sources/YugiTokenBar/
   App.swift            앱 진입, 메뉴바 라벨
   AppLanguage.swift    언어 선택(앱 AppleLanguages, 재시작 후 반영)·이번 실행 언어(`Bundle.preferredLocalizations(from: [en, ko, ja])`, 지원하지 않는 언어는 en)
   AppModel.swift       60초마다 사용량 적립(늘어난 토큰이 없으면 저장·화면 갱신 안 함), 5분마다 공식 한도 갱신, 저장
-  TodayUsageReader.swift  오늘 provider별 토큰·비용 집계. 로그는 `LocalUsageCache`(파일별 캐시)로 읽고, 로컬 Cursor DB는 지난번 rowid 뒤만 읽어 합친다. 사용량 화면용 지난 31일 날짜별 합계(`pastDays`). 지난 날은 바뀌지 않으므로 `~/Library/Caches/YugiTokenBar/usage-days.json`에 두고 없는 날만 로그에서 읽는다(31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초)
+  TodayUsageReader.swift  오늘 provider별 토큰·비용 집계. 로그는 `LocalUsageCache`(파일별 캐시)로 읽고, 이번 실행에서 바뀐 Claude 파일은 붙은 줄만 읽으며, 로컬 Cursor DB는 지난번 rowid 뒤만 읽어 합친다. 사용량 화면용 지난 31일 날짜별 합계(`pastDays`). 지난 날은 바뀌지 않으므로 `~/Library/Caches/YugiTokenBar/usage-days.json`에 두고 없는 날만 로그에서 읽는다(31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초)
   Usage/               PokeTokenBar(MIT)에서 복사한 LocalUsageReader·LocalUsageCache·한도 provider + 의존 파일, NOTICE.md(출처·변경점)
   CardDB.swift         `cards_<KO|JP|EN>.json` 로드(등급은 1~5로 잘라 읽는다), 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 `DexQuery`가 처음 이름순으로 볼 때 한 번 만들어 둔다)
   Game.swift           적립·뽑기·판매·덱·융합 (밸런스 상수 `Balance`는 파일 상단)
@@ -220,10 +220,16 @@ Resources/en.lproj/Localizable.stringsdict  영어 단수·복수(1 card·2 card
   - 캐시는 실앱에서만 세이브 폴더의 `usage-cache.json`(zlib 압축)에 바뀐 것이 있을 때 최대 60초에 한 번 저장하고, 다음 실행은 그것을 읽어 처음부터 다시 파싱하지 않는다.
     40일보다 오래된 파일 몫은 저장할 때 지운다.
     파서 규칙이 바뀌면 그 provider 몫만 버린다(`LocalUsageCache`의 파서 버전).
-  - 쓰는 중인 세션 파일은 매번 통째로 다시 읽는다.
+  - 이번 실행에서 수정 시각·크기가 바뀌는 것이 보인 Claude 파일(쓰는 중인 세션)은 `TodayUsageReader`가 맡아, 지난번 읽은 위치 뒤에 붙은 완성된 줄만 읽어 그 파일의 기록·비용 원장(`cost-state`)에 더한다(`claudeTails`, 메모리만).
+    `LocalUsageCache`는 그 파일을 건너뛴다(`skipping`).
+    줄바꿈이 없는 마지막 줄은 아직 쓰는 중이라 다음에 읽고, 파일이 줄면 처음부터 읽는다.
+    처음 보는 파일·바뀌지 않는 파일은 `LocalUsageCache`가 맡으므로, 다시 켠 직후에도 디스크 캐시를 쓴다.
+  - 다른 provider의 쓰는 중인 세션 파일은 바뀔 때마다 통째로 다시 읽는다.
 
   Cursor는 실앱·`PTB_PARITY=1`에서만 대시보드 API(`CursorUsageAPI`, Cursor 로그인 토큰)를 쓰고, 실패하거나 개발 실행이면 로컬 `state.vscdb`를 읽는다.
   API가 실패하면(토큰 없음·HTTP 오류) 30분(`TodayUsageReader.cursorAPIBackoff`) 동안은 다시 부르지 않고 로컬만 읽는다(매분 실패하는 네트워크 호출을 막으려고).
+  백오프 끝 시각은 실앱에서 UserDefaults(`cursorAPIRetryAt`)에 둬, 앱을 다시 켜도 그동안 부르지 않는다.
+  같은 성공·실패 로그 줄은 상태가 바뀔 때와 1시간마다만 남긴다(`AppLog.writeIfChanged`).
   API 캐시는 세이브 폴더의 `cursor-usage-api-cache.json`.
   로컬 `state.vscdb`는 행이 덧붙기만 해서, 읽기 시작 시각이 지난번과 같으면 그때의 rowid 뒤만 읽어 지난 기록과 합친다(DB를 새로 써 rowid가 거꾸로 가면 처음부터).
 - 매 갱신마다 오늘의 provider별 누적 토큰을 구하고, `claimedByProvider`와의 **양수 차이만** 적립한다.
@@ -791,7 +797,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 
 `Tests/YugiTokenBarTests` (시드 고정 RNG 주입):
 - 적립: 같은 누적치를 두 번 반영해도 한 번만 적립, 날짜 변경 시 원장 리셋과 지난 날짜 몫 적립, 첫 실행은 적립 0, 시계가 과거로 가면 무시, 상태가 그대로면 저장하지 않음
-- 사용량(`UsageTests`): 네 버킷 합, `TodayUsageReader` 파일별 캐시가 원래 리더와 같은 결과, 지난 날 읽기 시작일, 날짜별 합계에서 오늘 제외, 사용량 화면 기간 합(양 끝 포함)·막대의 날짜별 합·지난 날짜 합계 파일(로그가 지워져도 새 리더가 같은 값)·에이전트 순서, Cursor API 실패 뒤 백오프·성공 뒤 매번 호출
+- 사용량(`UsageTests`): 네 버킷 합, `TodayUsageReader` 파일별 캐시가 원래 리더와 같은 결과, 쓰는 중인 파일을 붙은 줄만 읽어도 통째로 읽은 것과 같음(덜 쓴 마지막 줄·비용 원장), 지난 날 읽기 시작일, 날짜별 합계에서 오늘 제외, 사용량 화면 기간 합(양 끝 포함)·막대의 날짜별 합·지난 날짜 합계 파일(로그가 지워져도 새 리더가 같은 값)·에이전트 순서, Cursor API 실패 뒤 백오프(다시 켜도 유지)·성공 뒤 매번 호출
 - 사용량 캐시(`UsageCacheTests`): 로컬 Cursor DB는 새 행만 읽어 합치고 DB를 새로 쓰면 처음부터, 파일별 캐시를 디스크에 두면 새 인스턴스도 바뀌지 않은 파일을 다시 파싱하지 않음
 - 한도(`LimitsTests`): 모델별 주간·신형 응답만 올 때의 막대, 초기화까지 남은 시간 문구, 코인 K·M 줄임(`shortCoins`)
 - 코인과 무료 카드: 10M 경계, 나머지 이월

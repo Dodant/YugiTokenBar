@@ -20,7 +20,8 @@
 - Decks you haven't renamed now use the current app language.
 
 **⚡ Performance**
-- Usage logs are now remembered file by file, so restarting the app and the once-a-minute refresh only re-read logs that changed.
+- Usage logs are now remembered file by file, so restarting the app and the once-a-minute refresh only re-read logs that changed, and a Claude Code log still being written is read only from where it left off.
+- If Cursor usage can't be fetched, the app now waits 30 minutes before trying again, even after a restart.
 
 ## 0.6.0 — 2026-10-12
 

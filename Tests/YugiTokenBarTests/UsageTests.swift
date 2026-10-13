@@ -34,6 +34,22 @@ import Testing
         #expect(await calls.n == 2)
     }
 
+    /// 백오프는 실앱에서 UserDefaults 에 둬, 다시 켠 앱(새 리더)도 그동안 부르지 않는다
+    @Test func cursorAPIBackoffSurvivesRestart() async {
+        actor Calls { var n = 0; func bump() { n += 1 } }
+        let calls = Calls(), suite = UUID().uuidString
+        func reader() -> TodayUsageReader {
+            TodayUsageReader(claudeRoots: [tempDir()], liveCursor: { _ in
+                await calls.bump()
+                return .init(entries: [], highWaterByPath: [:], didReset: false, isAuthoritative: false)
+            }, backoffStore: UserDefaults(suiteName: suite))
+        }
+        let t0 = Date(), since = t0.addingTimeInterval(-3600)
+        _ = await reader().cursorEntries(modifiedSince: since, now: t0)
+        _ = await reader().cursorEntries(modifiedSince: since, now: t0.addingTimeInterval(60))
+        #expect(await calls.n == 1)
+    }
+
     /// 대시보드 API 가 성공(권위 있는 결과)하면 백오프 없이 매번 부른다
     @Test func cursorAPIKeepsCallingAfterSuccess() async {
         actor Calls { var n = 0; func bump() { n += 1 } }
@@ -71,6 +87,44 @@ import Testing
         #expect(await total() == 125)
         try FileManager.default.removeItem(at: b)
         #expect(await total() == 105)
+    }
+
+    /// 쓰는 중인 파일은 붙은 줄만 읽어도 통째로 다시 읽은 것과 같다 (덜 쓴 마지막 줄·비용 원장 포함)
+    @Test func claudeTailMatchesFullParse() async throws {
+        let root = tempDir(), project = root.appendingPathComponent("proj")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let ts = ISO8601DateFormatter().string(from: Date())
+        func line(_ id: String, _ output: Int) -> String {
+            #"{"type":"assistant","timestamp":"\#(ts)","requestId":"r\#(id)","message":{"id":"m\#(id)","model":"claude-opus-5-5","usage":{"input_tokens":10,"output_tokens":\#(output)}}}"# + "\n"
+        }
+        let cost = #"{"type":"cost-state","modelUsage":{"claude-opus-5-5":{"costUSD":2.5}}}"# + "\n"
+        let file = project.appendingPathComponent("s.jsonl"), fmt = LocalUsageReader.localDayFormatter()
+        let since = Date().addingTimeInterval(-3600), today = fmt.string(from: Date())
+        func append(_ text: String) throws {
+            let h = try FileHandle(forWritingTo: file)
+            try h.seekToEnd(); try h.write(contentsOf: Data(text.utf8)); try h.close()
+        }
+        func full() -> (Int, Double) {
+            let b = TodayUsageReader.bucket(LocalUsageReader.parseClaudeFile(file, fmt: fmt), day: today)
+            return (b.total, (b.cost * 1e6).rounded())
+        }
+        func sum(_ entries: [LocalUsageReader.Entry]) -> (Int, Double) {
+            let b = TodayUsageReader.bucket(entries, day: today)
+            return (b.total, (b.cost * 1e6).rounded())
+        }
+        try line("1", 5).write(to: file, atomically: true, encoding: .utf8)
+        var tail = TodayUsageReader.ClaudeTail()
+        let reader = TodayUsageReader(claudeRoots: [root])
+        for chunk in [line("1", 50) + String(line("2", 7).dropLast(20)), String(line("2", 7).suffix(20)) + cost, line("3", 1)] {
+            TodayUsageReader.readTail(file, into: &tail)
+            #expect(sum(tail.costState.map { LocalUsageReader.applyReportedCost(tail.entries, $0) } ?? tail.entries) == full())
+            #expect(sum(await reader.claudeEntries(modifiedSince: since)) == full())
+            try append(chunk)
+        }
+        TodayUsageReader.readTail(file, into: &tail)
+        #expect(tail.offset == (try Data(contentsOf: file)).count)
+        #expect(sum(LocalUsageReader.applyReportedCost(tail.entries, tail.costState!)) == full())
+        #expect(sum(await reader.claudeEntries(modifiedSince: since)) == full())
     }
 
     /// 읽기 시작: 원장 날짜 0시, 오늘보다 뒤면 오늘, 너무 오래면 catchUpDays 전까지

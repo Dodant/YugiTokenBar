@@ -71,7 +71,7 @@ enum CursorUsageAPI {
             AppLog.writeIfChanged("cursor-api-session", "cursor api: no session token — \(LocalAdditionalUsageReader.cursorAuthDiagnostics())")
             return UsageResult(entries: [], isAuthoritative: false)
         }
-        AppLog.write("cursor api: session token ready (\(token.count) chars)")
+        AppLog.writeIfChanged("cursor-api-token", "cursor api: session token ready (\(token.count) chars)")
         let accountIdentifier = cacheAccountIdentifier(from: token)
 
         switch await fetchFilteredEvents(token: token, modifiedSince: modifiedSince) {
@@ -80,12 +80,12 @@ enum CursorUsageAPI {
                 entries: fresh,
                 accountIdentifier: accountIdentifier,
                 coveredSince: modifiedSince)
-            AppLog.write("cursor api: fetched \(fresh.count) events")
+            AppLog.writeIfChanged("cursor-api-fetch", "cursor api: fetched \(fresh.count) events")
             return UsageResult(
                 entries: fresh.filter { $0.date >= modifiedSince },
                 isAuthoritative: true)
         case .failure(let reason):
-            AppLog.write("cursor api: fetch failed — \(reason)")
+            AppLog.writeIfChanged("cursor-api-fetch", "cursor api: fetch failed — \(reason)")
             if let stale = cachedEntries(accountIdentifier: accountIdentifier, modifiedSince: modifiedSince) {
                 let age = Date().timeIntervalSince(stale.fetchedAt)
                 if age > cacheMaxAge {
@@ -100,7 +100,7 @@ enum CursorUsageAPI {
                     entries: stale.entries.filter { $0.date >= modifiedSince },
                     isAuthoritative: authoritative)
             }
-            AppLog.write("cursor api: fetch failed and no cache")
+            AppLog.writeIfChanged("cursor-api-fallback", "cursor api: fetch failed and no cache")
             return UsageResult(entries: [], isAuthoritative: false)
         }
     }
