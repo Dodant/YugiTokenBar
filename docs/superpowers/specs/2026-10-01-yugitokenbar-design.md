@@ -190,7 +190,7 @@ Sources/YugiTokenBar/
   CardDB.swift         `cards_<KO|JP|EN>.json` 로드(등급은 1~5로 잘라 읽는다), 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 `DexQuery`가 처음 이름순으로 볼 때 한 번 만들어 둔다)
   Game.swift           적립·뽑기·판매·덱·융합 (밸런스 상수 `Balance`는 파일 상단)
   GameState.swift      세이브 상태(`GameState`·`LogEntry`·`Deck`)와 저장소(`StateStore`)
-  ImageCache.swift     카드(YGOPRODeck, 오버프레임은 Yugipedia·카드숍 이미지를 긴 변 614px로 줄여 두 크기에 공용)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시 (백그라운드에서 디코딩까지 끝내 스크롤 중 메인 스레드가 JPEG를 풀지 않음, 팩은 긴 변 480px로 줄임. 메모리 캐시는 디코딩된 픽셀 바이트 150MB 상한, 넘으면 오래된 것부터 내보내고 디스크에서 다시 읽음. 메모리에 있는 이미지는 셀이 첫 프레임부터 그린다(`cached`, 카드 뒷면이 비치지 않음). 같은 이미지는 한 번만 받고, 기다리던 셀이 모두 사라지면(스크롤로 지나감) 받기를 취소한다. 호스트당 동시 연결 3개)
+  ImageCache.swift     카드(YGOPRODeck, 오버프레임은 Yugipedia·카드숍 이미지를 긴 변 614px로 줄여 두 크기에 공용)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시 (백그라운드에서 디코딩까지 끝내 스크롤 중 메인 스레드가 JPEG를 풀지 않음, 팩은 긴 변 480px로 줄임. 메모리 캐시는 디코딩된 픽셀 바이트 150MB 상한, 넘으면 오래된 것부터 내보내고 디스크에서 다시 읽음. 메모리에 있는 이미지는 셀이 첫 프레임부터 그린다(`cached`, 카드 뒷면이 비치지 않음). 같은 이미지는 한 번만 받고, 기다리던 셀이 모두 사라지면(스크롤로 지나감) 받기를 취소한다. 호스트당 동시 연결 3개, 같은 호스트로 가는 요청 시작은 80ms 간격으로 줄 세운다. 429·503이면 `Retry-After`(없으면 30초, 최대 120초)만큼 그 호스트 전체를 쉬고 한 번 다시 시도하며 그 밖의 실패는 다시 시도하지 않는다)
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
   Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기

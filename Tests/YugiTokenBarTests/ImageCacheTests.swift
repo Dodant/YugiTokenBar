@@ -159,3 +159,69 @@ private func onePixel() -> CGImage? {
     CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 0,
               space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?.makeImage()
 }
+
+/// 미리 넣어 둔 상태 코드를 차례로 돌려주는 가짜 서버. 요청 시각을 기록한다.
+private final class StubProtocol: URLProtocol, @unchecked Sendable {
+    nonisolated(unsafe) static var codes: [Int] = []
+    nonisolated(unsafe) static var retryAfter: String?
+    nonisolated(unsafe) static var times: [Date] = []
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.times.append(Date())
+        let code = Self.codes.isEmpty ? 200 : Self.codes.removeFirst()
+        let headers = Self.retryAfter.map { ["Retry-After": $0] }
+        let response = HTTPURLResponse(url: request.url!, statusCode: code, httpVersion: nil, headerFields: headers)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data([1, 2, 3]))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+
+@Suite(.serialized) struct ImageFetchTests {
+    private func stubSession() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubProtocol.self]
+        return URLSession(configuration: config)
+    }
+
+    private func run(codes: [Int], retryAfter: String? = nil, interval: TimeInterval = 0) async -> (Data?, [Date]) {
+        StubProtocol.codes = codes
+        StubProtocol.retryAfter = retryAfter
+        StubProtocol.times = []
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("a.jpg")
+        let data = await ImageCache.fetch(URL(string: "https://example.test/a")!, file: file, session: stubSession(),
+                                          throttle: ImageCache.Throttle(interval: interval))
+        return (data, StubProtocol.times)
+    }
+
+    @Test func retriesOnceAfterRetryAfter() async {
+        let (data, times) = await run(codes: [429, 200], retryAfter: "0.3")
+        #expect(data != nil)
+        #expect(times.count == 2)
+        #expect(times[1].timeIntervalSince(times[0]) >= 0.3)
+    }
+
+    @Test func givesUpAfterSecond429() async {
+        let (data, times) = await run(codes: [429, 429, 200], retryAfter: "0")
+        #expect(data == nil)
+        #expect(times.count == 2)
+    }
+
+    @Test func doesNotRetryNotFound() async {
+        let (data, times) = await run(codes: [404, 200])
+        #expect(data == nil)
+        #expect(times.count == 1)
+    }
+
+    @Test func spacesRequestsToOneHost() async {
+        let throttle = ImageCache.Throttle(interval: 0.1)
+        let start = Date()
+        await throttle.wait("h"); await throttle.wait("h"); await throttle.wait("h")
+        #expect(Date().timeIntervalSince(start) >= 0.2)
+        let other = Date()
+        await throttle.wait("other")
+        #expect(Date().timeIntervalSince(other) < 0.05)
+    }
+}
