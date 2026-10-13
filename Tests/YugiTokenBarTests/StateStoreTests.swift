@@ -81,7 +81,8 @@ import Testing
         state.lastBoughtPid = "P1"
 
         let defaults = Dictionary(uniqueKeysWithValues: Mirror(reflecting: GameState()).children.map { ($0.label!, "\($0.value)") })
-        let unfilled = Mirror(reflecting: state).children.filter { defaults[$0.label!] == "\($0.value)" }.map { $0.label! }
+        let unfilled = Mirror(reflecting: state).children
+            .filter { $0.label != "schema" && defaults[$0.label!] == "\($0.value)" }.map { $0.label! }  // schema 는 늘 지금 버전
         #expect(unfilled.isEmpty, "기본값 그대로인 필드: \(unfilled)")
 
         let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
@@ -132,5 +133,57 @@ import Testing
 
         let bak = try JSONDecoder().decode(GameState.self, from: Data(contentsOf: store.backupURL))
         #expect(bak.coins == 1)
+    }
+
+    /// 저장은 지금 형식 버전을 적고, 키가 없는 옛 세이브는 1, 더 새 버전이 쓴 세이브는 그 값을 읽는다 (앱이 열지 않는다)
+    @Test func savedSchemaIsWrittenAndRead() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        #expect(store.savedSchema() == nil)
+        try store.save(GameState())
+        #expect(store.savedSchema() == GameState.schemaVersion)
+        try Data(#"{"coins":1}"#.utf8).write(to: store.url)
+        #expect(store.savedSchema() == 1)
+        try Data(#"{"schema":99,"coins":1}"#.utf8).write(to: store.url)
+        #expect(store.savedSchema() == 99)
+    }
+
+    /// 덱의 키가 빠지거나 기록 하나가 깨져도 세이브 전체를 버리지 않는다 (그 항목만 기본값·건너뜀)
+    @Test func brokenNestedItemsDoNotDiscardTheSave() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        try Data(#"""
+        {"coins":5,"decks":[{"name":"a","cards":{}}],
+         "log":[{"cid":1,"source":"free","date":0},{"cid":"x"}]}
+        """#.utf8).write(to: store.url)
+        let (state, recovery) = store.loadReportingRecovery()
+        #expect(recovery == nil)
+        #expect(state.coins == 5)
+        #expect(state.decks.map(\.name) == ["a"])
+        #expect(state.log.map(\.cid) == [1])
+    }
+
+    /// 날짜마다 그날 첫 저장 전 파일을 남기고 최근 7개만 둔다. 원본과 .bak 이 다 깨지면 가장 최근 날짜 백업에서 복구한다
+    @Test func dailyBackupsRecoverWhenBackupIsAlsoBroken() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        for day in 1...10 {
+            var state = GameState()
+            state.coins = day
+            try store.save(state, now: Date(timeIntervalSince1970: Double(day) * 86_400 + 43_200))
+        }
+        #expect(store.dailyBackups().count == StateStore.dailyBackupsKept)
+        try Data("{깨짐".utf8).write(to: store.url)
+        try Data("{깨짐".utf8).write(to: store.backupURL)
+        let (state, recovery) = store.loadReportingRecovery()
+        #expect(recovery == .backup)
+        #expect(state.coins == 9)  // 10일째 저장 직전 파일
+    }
+
+    /// 손상됐는데 백업도 없으면 새 상태로 시작하고 그 사실을 알린다. 처음 실행(파일 없음)은 알리지 않는다
+    @Test func corruptWithoutBackupStartsFreshAndSaysSo() throws {
+        let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
+        #expect(store.loadReportingRecovery().recovery == nil)
+        try Data("{깨짐".utf8).write(to: store.url)
+        let (state, recovery) = store.loadReportingRecovery()
+        #expect(recovery == .fresh)
+        #expect(state == GameState())
     }
 }

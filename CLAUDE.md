@@ -18,6 +18,8 @@ GitHub Releases의 ZIP으로 배포한다.
 ## 규칙
 
 - 개발과 QA 실행은 항상 `YTB_STATE_DIR=$PWD/qa-state`로 한다. 실제 세이브 `~/Library/Application Support/YugiTokenBar/`는 건드리지 않는다.
+  `swift run`은 이 변수가 없어도 `qa-state`를 쓰지만, `.app` 실행은 변수가 없으면 실제 세이브를 쓴다.
+- 세이브 형식을 바꾸면(필드의 의미·타입 변경 등) `GameState.schemaVersion`을 올린다(필드 추가만이면 안 올림, 스펙 4절 저장).
 - `/Applications` 설치(`scripts/build-app.sh --install`)는 사용자에게 먼저 묻는다.
 - 밸런스 수치는 `Game.swift`의 `Balance`에만 둔다. 바꿀 때는 스펙 5절도 같이 고친다.
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 복사본이다.

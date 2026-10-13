@@ -4,7 +4,7 @@ import Foundation
 /// 기본값이 없는 format/schema 로 세이브 파일인지 먼저 가린다.
 struct SaveEnvelope: Codable, Equatable {
     static let formatID = "yugitokenbar.save"
-    static let schemaVersion = 1
+    static let schemaVersion = GameState.schemaVersion
     /// 정상 세이브는 수백 KB 이하. 거대한 JSON 이 메인 스레드를 오래 잡지 않게 막는다.
     static let maxFileBytes = 8 * 1024 * 1024
 
@@ -79,7 +79,7 @@ extension StateStore {
     }
 }
 
-private func stamp(_ date: Date, _ format: String) -> String {
+func stamp(_ date: Date, _ format: String) -> String {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.dateFormat = format

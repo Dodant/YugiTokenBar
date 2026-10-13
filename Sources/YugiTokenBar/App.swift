@@ -10,12 +10,13 @@ struct YugiTokenBarApp: App {
         signal(SIGPIPE, SIG_IGN)
         let store = StateStore.standard()
         guard store.lock() else {
-            let alert = NSAlert()
-            alert.messageText = String(localized: "YugiTokenBar가 이미 실행 중이에요")
-            alert.informativeText = String(localized: "메뉴바에서 실행 중인 YugiTokenBar를 종료한 뒤 다시 열어 주세요.")
-            NSApplication.shared.activate()
-            alert.runModal()
-            exit(0)
+            Self.quit(String(localized: "YugiTokenBar가 이미 실행 중이에요"),
+                      String(localized: "메뉴바에서 실행 중인 YugiTokenBar를 종료한 뒤 다시 열어 주세요."))
+        }
+        // 새 버전 앱이 쓴 세이브를 옛 버전이 저장하면 모르는 내용이 사라진다 → 열지 않는다
+        if let schema = store.savedSchema(), schema > GameState.schemaVersion {
+            Self.quit(String(localized: "더 새 버전 앱에서 쓴 세이브예요"),
+                      String(localized: "세이브를 지키려고 이 버전은 열지 않아요. 최신 버전을 받아 열어 주세요."))
         }
         // ponytail: 카드 파일은 번들 리소스이고 CardDBTests 가 검증하므로 실패 시 화면 대신 명확한 메시지로 종료
         let db: CardDB
@@ -25,6 +26,17 @@ struct YugiTokenBarApp: App {
         model.start()
         // swift run 바이너리엔 Info.plist(LSUIElement)가 없어 창이 키보드 입력을 못 받는다 → .app 과 같은 정책을 직접 건다
         NSApplication.shared.setActivationPolicy(.accessory)
+    }
+
+    /// 알림을 띄우고 끝낸다 (모델을 만들기 전, 세이브를 건드리지 않고)
+    private static func quit(_ title: String, _ message: String) -> Never {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.window.level = .floating  // 다른 앱을 쓰는 중이면 activate 가 거절돼 창이 뒤에 숨는다
+        NSApplication.shared.activate()
+        alert.runModal()
+        exit(0)
     }
 
     var body: some Scene {

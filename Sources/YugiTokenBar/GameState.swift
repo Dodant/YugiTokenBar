@@ -26,7 +26,27 @@ struct Deck: Codable, Sendable, Equatable, Identifiable {
     var title: String { defaultNumber.map { String(localized: "새 덱 \($0)") } ?? name }
 }
 
+/// 빠진 키는 기본값 (나중에 필드를 더해도 옛 세이브가 읽히게). 멤버별 init 을 남기려고 확장에 둔다.
+extension Deck {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
+        cards = try c.decodeIfPresent([Int: Int].self, forKey: .cards) ?? [:]
+    }
+}
+
+/// 배열 안 항목 하나를 못 읽으면 nil. 덱·기록 하나가 깨져도 세이브 전체가 "손상"이 되지 않게.
+private struct Lossy<T: Decodable>: Decodable {
+    let value: T?
+    init(from decoder: Decoder) { value = try? T(from: decoder) }
+}
+
 struct GameState: Codable, Sendable, Equatable {
+    /// 세이브 형식 버전. 형식을 바꾸면(필드 의미·타입 변경 등) 올린다. 더 높은 세이브는 열지 않는다(`StateStore.savedSchema`).
+    static let schemaVersion = 1
+    /// 저장할 때 늘 지금 버전으로 쓴다 (읽을 때는 `StateStore.savedSchema` 가 따로 본다)
+    let schema = GameState.schemaVersion
     var coins = 0
     var coinRemainder = 0
     var dropProgress = 0
@@ -90,8 +110,8 @@ struct GameState: Codable, Sendable, Equatable {
         partnerEnabled = try c.decodeIfPresent(Bool.self, forKey: .partnerEnabled) ?? d.partnerEnabled
         partnerSize = try c.decodeIfPresent(Double.self, forKey: .partnerSize) ?? d.partnerSize
         partnerOrigin = try c.decodeIfPresent(CGPoint.self, forKey: .partnerOrigin)
-        decks = try c.decodeIfPresent([Deck].self, forKey: .decks) ?? d.decks
-        log = try c.decodeIfPresent([LogEntry].self, forKey: .log) ?? d.log
+        decks = try c.decodeIfPresent([Lossy<Deck>].self, forKey: .decks)?.compactMap(\.value) ?? d.decks
+        log = try c.decodeIfPresent([Lossy<LogEntry>].self, forKey: .log)?.compactMap(\.value) ?? d.log
         cardsByDay = try c.decodeIfPresent([String: Int].self, forKey: .cardsByDay) ?? d.cardsByDay
         lastBoughtPid = try c.decodeIfPresent(String.self, forKey: .lastBoughtPid)
     }
@@ -103,14 +123,29 @@ struct StateStore {
     var backupURL: URL { url.appendingPathExtension("bak") }
 
     /// `YTB_STATE_DIR` 가 있으면 그 폴더를 쓴다(개발·QA 때 실제 세이브와 분리).
+    /// 없으면 .app 은 실제 세이브, `swift run` 같은 개발 실행은 저장소의 `qa-state` (실수로 실제 세이브를 쓰지 않게).
     static func standard() -> StateStore {
         let override = ProcessInfo.processInfo.environment["YTB_STATE_DIR"] ?? ""
-        let dir = override.isEmpty
+        let dir = !override.isEmpty ? URL(fileURLWithPath: override, isDirectory: true)
+            : AppEnv.isBundledApp
             ? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("YugiTokenBar")
-            : URL(fileURLWithPath: override, isDirectory: true)
+            : AppInfo.repoRoot.appendingPathComponent("qa-state")
         return StateStore(url: dir.appendingPathComponent("state.json"))
     }
+
+    /// 날짜별 백업을 몇 개 남길지
+    static let dailyBackupsKept = 7
+
+    /// state.json 이 기록한 형식 버전 (키가 없는 옛 세이브는 1, 파일이 없거나 JSON 이 아니면 nil)
+    func savedSchema() -> Int? {
+        struct Header: Decodable { let schema: Int? }
+        guard let data = try? Data(contentsOf: url), let header = try? JSONDecoder().decode(Header.self, from: data) else { return nil }
+        return header.schema ?? 1
+    }
+
+    /// 손상된 state.json 을 무엇으로 대신했는지
+    enum Recovery: Equatable { case backup, fresh }
 
     /// 같은 세이브 폴더를 쓰는 다른 실행이 있으면 false (둘이 번갈아 저장하면 서로의 진행을 덮는다).
     /// 잠금은 이 프로세스가 끝날 때 풀린다(fd 를 일부러 닫지 않음). 잠금 파일을 못 만들면 막지 않는다.
@@ -124,28 +159,49 @@ struct StateStore {
         return false
     }
 
-    func load() -> GameState {
-        if let state = Self.decode(url) { return state }
-        if FileManager.default.fileExists(atPath: url.path) {
+    func load() -> GameState { loadReportingRecovery().state }
+
+    /// 원본 → .bak → 날짜별 백업(최근부터) → 새 상태. recovery: 원본을 못 읽어 다른 것으로 대신했으면 무엇으로 했는지.
+    func loadReportingRecovery() -> (state: GameState, recovery: Recovery?) {
+        if let state = Self.decode(url) { return (state, nil) }
+        let existed = FileManager.default.fileExists(atPath: url.path)
+        if existed {
             // 손상된 원본은 지우지 않고 옆에 보관한다(데이터 유실 방지).
             let aside = url.deletingLastPathComponent()
                 .appendingPathComponent("state.corrupt-\(Int(Date().timeIntervalSince1970)).json")
             try? FileManager.default.copyItem(at: url, to: aside)
-            AppLog.write("state.json 손상 → \(aside.lastPathComponent) 보관, .bak 복구 시도")
+            AppLog.write("state.json 손상 → \(aside.lastPathComponent) 보관, 백업 복구 시도")
         }
-        return Self.decode(backupURL) ?? GameState()
+        for backup in [backupURL] + dailyBackups().reversed() {
+            if let state = Self.decode(backup) { return (state, .backup) }
+        }
+        return (GameState(), existed ? .fresh : nil)
     }
 
-    func save(_ state: GameState) throws {
+    func save(_ state: GameState, now: Date = Date()) throws {
         let fm = FileManager.default
-        try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let dir = url.deletingLastPathComponent()
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
         let data = try JSONEncoder().encode(state)
         // 현재 파일이 멀쩡할 때만 백업을 갱신한다(손상본이 좋은 .bak을 덮어쓰지 않도록).
         if Self.decode(url) != nil {
             try? fm.removeItem(at: backupURL)
             try fm.copyItem(at: url, to: backupURL)
+            // .bak 은 직전 저장(1분 전)뿐이라, 잘못된 상태가 두 번 저장되면 같이 덮인다 → 그날 첫 저장 전 파일도 남긴다
+            let daily = dir.appendingPathComponent("state.daily-\(stamp(now, "yyyy-MM-dd")).json")
+            if !fm.fileExists(atPath: daily.path), (try? fm.copyItem(at: url, to: daily)) != nil {
+                for old in dailyBackups().dropLast(Self.dailyBackupsKept) { try? fm.removeItem(at: old) }
+            }
         }
         try data.write(to: url, options: .atomic)
+    }
+
+    /// 날짜별 백업, 오래된 것부터
+    func dailyBackups() -> [URL] {
+        let dir = url.deletingLastPathComponent()
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+        return names.filter { $0.hasPrefix("state.daily-") && $0.hasSuffix(".json") }.sorted()
+            .map { dir.appendingPathComponent($0) }
     }
 
     private static func decode(_ url: URL) -> GameState? {

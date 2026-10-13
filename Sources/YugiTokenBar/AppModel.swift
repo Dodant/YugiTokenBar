@@ -53,6 +53,8 @@ final class AppModel {
     private(set) var fetchingLimits = false
     /// 마지막 저장이 실패했으면 그 이유 (팝오버·메뉴바가 경고한다. 다음 저장이 되면 지운다)
     private(set) var saveError: String?
+    /// 시작할 때 state.json 이 손상돼 백업이나 새 상태로 대신했으면 그 사실 (팝오버 알림, [OK]로 닫는다)
+    var loadRecovery: StateStore.Recovery?
 
     // 아래는 화면이 읽지 않는 내부 상태라 관찰하지 않는다
     @ObservationIgnored private let store: StateStore
@@ -80,7 +82,8 @@ final class AppModel {
     init(db: CardDB, store: StateStore = .standard(), partner: PartnerModel? = nil) {
         self.store = store
         self.partner = partner ?? PartnerModel()
-        let state = store.load()
+        let (state, recovery) = store.loadReportingRecovery()
+        self.loadRecovery = recovery
         self.game = Game(db: db, state: state)
         self.partnerSeen = state
     }
