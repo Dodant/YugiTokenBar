@@ -112,6 +112,18 @@ struct StateStore {
         return StateStore(url: dir.appendingPathComponent("state.json"))
     }
 
+    /// 같은 세이브 폴더를 쓰는 다른 실행이 있으면 false (둘이 번갈아 저장하면 서로의 진행을 덮는다).
+    /// 잠금은 이 프로세스가 끝날 때 풀린다(fd 를 일부러 닫지 않음). 잠금 파일을 못 만들면 막지 않는다.
+    func lock() -> Bool {
+        let dir = url.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let fd = open(dir.appendingPathComponent("state.lock").path, O_CREAT | O_RDWR, 0o644)
+        guard fd >= 0 else { return true }
+        if flock(fd, LOCK_EX | LOCK_NB) == 0 { return true }
+        close(fd)
+        return false
+    }
+
     func load() -> GameState {
         if let state = Self.decode(url) { return state }
         if FileManager.default.fileExists(atPath: url.path) {

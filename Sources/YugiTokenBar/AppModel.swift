@@ -66,6 +66,9 @@ final class AppModel {
     @ObservationIgnored let partner: PartnerModel
     /// 바탕화면 파트너 창 (해금되고 처음 보일 때 만든다)
     @ObservationIgnored private var partnerPanel: PartnerPanel?
+    /// 바탕화면 파트너 창이 실제로 보이는지. 가려지거나 화면이 잠기거나 꺼진 동안은 false 이고 프레임 타이머를 멈춘다.
+    /// 처음엔 true: 해금 직후 반응(설렘)이 창이 보였다는 알림보다 먼저 재생되므로.
+    @ObservationIgnored private var partnerVisible = true
     /// 오늘 사용량 (Claude 로그는 파일별로 캐시)
     @ObservationIgnored private let usageReader = TodayUsageReader()
     @ObservationIgnored private var lastUsage: UsageSample?
@@ -361,10 +364,7 @@ final class AppModel {
     /// 해금·설정에 맞춰 파트너를 돌리고 바탕화면 창을 보이거나 숨긴다.
     func updatePartner() {
         guard game.state.partnerUnlocked, partner.isReady else { partnerPanel?.hide(); return }
-        // 업무 모드에서는 창을 숨기고 타이머도 멈춘다 (partnerEnabled 는 그대로)
-        let desktop = game.state.partnerEnabled && !workMode
-        partner.start(desktop: desktop)
-        guard desktop else { partnerPanel?.hide(); return }
+        guard partnerOnDesktop else { partner.start(desktop: false); partnerPanel?.hide(); return }
         let panel = partnerPanel ?? PartnerPanel(
             frame: partner.desktop,
             onClick: { [weak self] in self?.partner.interrupt(.puzzled) },
@@ -372,9 +372,20 @@ final class AppModel {
             onMoved: { [weak self] origin in
                 self?.game.state.partnerOrigin = origin
                 self?.save()
+            },
+            onVisibility: { [weak self] visible in
+                guard let self else { return }
+                partnerVisible = visible
+                if partnerOnDesktop { partner.start(desktop: visible) }
             })
         partnerPanel = panel
         panel.show(size: game.state.partnerSize, origin: game.state.partnerOrigin)
+        partner.start(desktop: partnerVisible)
+    }
+
+    /// 업무 모드에서는 창을 숨기고 타이머도 멈춘다 (partnerEnabled 는 그대로)
+    private var partnerOnDesktop: Bool {
+        game.state.partnerUnlocked && partner.isReady && game.state.partnerEnabled && !workMode
     }
 }
 

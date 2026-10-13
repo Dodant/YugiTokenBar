@@ -474,3 +474,7 @@
 "한도를 읽지 못했어요. 새로고침해 보세요" = "Couldn't load limits. Try refreshing.";
 /* UsageView.swift:196 */
 "오늘" = "Today";
+/* App.swift:14 */
+"YugiTokenBar가 이미 실행 중이에요" = "YugiTokenBar is already running";
+/* App.swift:15 */
+"메뉴바에서 실행 중인 YugiTokenBar를 종료한 뒤 다시 열어 주세요." = "Quit the YugiTokenBar running in the menu bar, then open it again.";

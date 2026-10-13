@@ -6,10 +6,21 @@ struct YugiTokenBarApp: App {
 
     init() {
         _ = AppLanguage.launchChoice  // 실행할 때의 언어 선택을 고정 (설정에서 바꾸면 재시작 안내)
+        // 끝난 codex 자식의 stdin 에 쓰면 SIGPIPE 가 앱을 죽인다 → 무시하고 EPIPE 로 받는다 (ProcessRunner)
+        signal(SIGPIPE, SIG_IGN)
+        let store = StateStore.standard()
+        guard store.lock() else {
+            let alert = NSAlert()
+            alert.messageText = String(localized: "YugiTokenBar가 이미 실행 중이에요")
+            alert.informativeText = String(localized: "메뉴바에서 실행 중인 YugiTokenBar를 종료한 뒤 다시 열어 주세요.")
+            NSApplication.shared.activate()
+            alert.runModal()
+            exit(0)
+        }
         // ponytail: 카드 파일은 번들 리소스이고 CardDBTests 가 검증하므로 실패 시 화면 대신 명확한 메시지로 종료
         let db: CardDB
         do { db = try CardDB.bundled() } catch { fatalError("카드 파일 로드 실패: \(error)") }
-        let model = AppModel(db: db)
+        let model = AppModel(db: db, store: store)
         _model = State(initialValue: model)
         model.start()
         // swift run 바이너리엔 Info.plist(LSUIElement)가 없어 창이 키보드 입력을 못 받는다 → .app 과 같은 정책을 직접 건다

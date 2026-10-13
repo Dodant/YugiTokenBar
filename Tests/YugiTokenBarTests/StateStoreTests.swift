@@ -3,6 +3,14 @@ import Testing
 @testable import YugiTokenBar
 
 @Suite struct StateStoreTests {
+    /// 같은 세이브 폴더는 한 실행만 잡을 수 있다 (두 번째 실행은 막히고, 다른 폴더는 따로 잡힌다)
+    @Test func lockAllowsOneOwnerPerSaveFolder() {
+        let url = tempDir().appendingPathComponent("state.json")
+        #expect(StateStore(url: url).lock())
+        #expect(!StateStore(url: url).lock())
+        #expect(StateStore(url: tempDir().appendingPathComponent("state.json")).lock())
+    }
+
     /// 저장이 실패하면 모델이 이유를 들고 있다가(경고 표시), 다음 저장이 되면 지운다
     @MainActor @Test func modelReportsSaveFailureUntilNextSuccess() throws {
         let dir = tempDir()

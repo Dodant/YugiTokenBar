@@ -6,8 +6,13 @@ import SwiftUI
     private let panel: NSPanel
     private static let margin = 24.0
 
-    init(frame: FrameBox, onClick: @escaping () -> Void, onHide: @escaping () -> Void, onMoved: @escaping (CGPoint) -> Void) {
+    /// onVisibility: 보임 여부가 바뀔 때. 안 보이는 동안 프레임 타이머를 멈추는 데 쓴다.
+    init(frame: FrameBox, onClick: @escaping () -> Void, onHide: @escaping () -> Void, onMoved: @escaping (CGPoint) -> Void,
+         onVisibility: @escaping @MainActor (Bool) -> Void) {
         panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
+        _ = NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: panel, queue: .main) {
+            [panel] _ in MainActor.assumeIsolated { onVisibility(panel.occlusionState.contains(.visible)) }
+        }
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false

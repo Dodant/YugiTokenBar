@@ -245,6 +245,8 @@ Resources/en.lproj/Localizable.stringsdict  영어 단수·복수(1 card·2 card
 ### 저장
 
 `~/Library/Application Support/YugiTokenBar/state.json`, 원자적 쓰기, 쓰기 전 직전 파일을 `state.json.bak`으로 보존.
+같은 폴더의 `state.lock`을 실행하는 동안 `flock`으로 잡아(`StateStore.lock()`), 같은 세이브를 쓰는 두 번째 실행은 [YugiTokenBar가 이미 실행 중이에요] 알림 뒤 바로 끝난다(두 실행이 번갈아 저장하면 서로의 진행을 덮으므로).
+잠금은 프로세스가 끝나면 풀리고, `YTB_STATE_DIR`가 다르면 따로 잡힌다.
 
 ```
 { coins, coinRemainder, dropProgress,
@@ -513,6 +515,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 
     해금 전에는 만들지 않고, `partnerEnabled`가 꺼지면 숨긴다(타이머도 멈춘다.
     메뉴바 아이콘은 고정이라 돌 이유가 없다).
+    창이 보이지 않는 동안(가려짐·화면 잠금·디스플레이 꺼짐, `NSWindow.didChangeOcclusionStateNotification`)도 타이머를 멈추고 보이면 다시 켠다.
     마우스: 4pt 넘게 끌면 창 이동(끝날 때 `partnerOrigin` 저장), 아니면 클릭 → 갸웃만 재생한다(MenuBarExtra(macOS 26)에는 창을 코드로 여는 API가 없고 상태바 버튼에 target/action도 없어서 파트너가 패널을 열 수 없다).
     우클릭·Ctrl 클릭 [숨기기] → `partnerEnabled = false`.
     창 가운데가 어느 화면에도 없으면(모니터 분리, 화면 밖으로 끌어냄, 키워서 넘침 등) 주 화면(메뉴바가 있는 화면) 오른쪽 아래(여백 24pt).
@@ -543,7 +546,8 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
         지난 날짜는 사용량 화면과 같은 `pastUsage`(디스크 캐시)를 팝오버를 열 때 읽고, 그 전까지 막대는 흐리고 주·달은 자리 표시.
     - 한도는 5분마다 읽고, 실패하면 직전 값을 유지한다:
       - PokeTokenBar의 `OAuthLimitsProvider`(Claude OAuth usage, `~/.claude/.credentials.json` → 없으면 실행당 한 번 키체인)
-      - `CodexRateLimitsProvider`(`codex app-server`)
+      - `CodexRateLimitsProvider`(`codex app-server`).
+        먼저 끝난 자식의 stdin에 쓰다 SIGPIPE로 앱이 죽지 않도록 앱 시작 때 `signal(SIGPIPE, SIG_IGN)`을 건다.
     - 칸은 메뉴 줄처럼 마우스를 올리면 배경이 생기는 버튼이고, 누르면 사용량 화면으로 간다.
     - 사용량 화면(`UsageDetailView`):
       - 오늘 사용한 토큰(큰 숫자·정확한 수·비용), 이번 주·이번 달 토큰·비용(달력 주·달, 오늘 포함).
@@ -788,6 +792,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
 | state.json 손상 | 원본 보관 → `.bak` 복구 → 실패 시 새 상태 |
 | state.json 저장 실패 | 로그를 남기고 메뉴바 아이콘이 경고로 바뀌며 팝오버 코인 줄 아래에 [진행 상황을 저장하지 못했어요 · 폴더 열기] 줄(`saveError`). 다음 저장이 되면 사라진다 |
 | state.json 키 누락(옛 버전) | 기본값으로 채워 로드 |
+| 같은 세이브를 쓰는 앱이 이미 실행 중 | 알림 뒤 새로 연 쪽을 끝낸다 (`state.lock`) |
 | 카드 파일 손상 | 번들 리소스이고 `CardDBTests`가 검증한다. 로드 실패 시 원인을 담은 `fatalError` |
 | 수십억 토큰이 한꺼번에 적립 | 나눗셈으로 `pendingFree`에 한 번에 더함, 루프 없음 |
 | partner.png 를 못 읽음 | 로그를 남기고 파트너를 끈다(메뉴바는 카드 아이콘, 설정 스위치는 그대로) |
@@ -844,6 +849,7 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
   - 한 번 재생 큐(기준 상태 복귀·중복 방지·클릭 우선)
   - 비행 방향 전환·기준 동작 사이 쉬기(범위 안)·한 번 재생 뒤 쉬지 않음·두리번
   - 바탕화면 파트너를 끄면 타이머 정지(메뉴바 아이콘 유지)
+- 세이브 잠금: 같은 폴더는 한 실행만, 다른 폴더는 따로
   - 바탕화면 창 대체 위치(화면 밖·조금만 걸침·nil → 주 화면 오른쪽 아래)와 크기 제한(64~256, 192:208)
   - 해금은 영구(가져오기 포함), 가져오기 때 파트너 표시 설정은 이 Mac 값
   - 시트가 없으면 파트너 끔, 새 키 없는 옛 세이브
