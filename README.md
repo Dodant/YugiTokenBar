@@ -1,7 +1,7 @@
-# YugiTokenBar
+<h1 align="center">YugiTokenBar</h1>
 
-A macOS menu bar app that fills a **Yu-Gi-Oh! card collection** with the tokens your coding agents (Claude Code, Codex, etc.) use.
-Available in Korean, English, and Japanese.
+<p align="center">A macOS menu bar app that fills a <strong>Yu-Gi-Oh! card collection</strong> with the tokens your coding agents (Claude Code, Codex, etc.) use.<br>
+Available in Korean, English, and Japanese.</p>
 
 ## How it works
 
@@ -25,19 +25,27 @@ Available in Korean, English, and Japanese.
 
 Work mode hides card images and the partner character; enable it in Settings.
 
-| | Work mode off | Work mode on |
-|---|---|---|
-| Menu bar | <img src="docs/image/menuicon.png" width="120"> | <img src="docs/image/menuicon_workmode.png" width="120"> |
-| Popover | <img src="docs/image/mainpage.png" width="300"> | <img src="docs/image/mainpage_workmode.png" width="300"> |
-| Shop | <img src="docs/image/shop.png" width="300"> | <img src="docs/image/shop_workmode.png" width="300"> |
-| Pack | <img src="docs/image/packopen.png" width="300"> | <img src="docs/image/packopen_workmode.png" width="300"> |
-| Dex | <img src="docs/image/dex.png" width="300"> | <img src="docs/image/dex_workmode.png" width="300"> |
+<table align="center">
+<thead><tr><th></th><th>Work mode off</th><th>Work mode on</th></tr></thead>
+<tbody>
+<tr><th>Menu bar</th><td valign="top" align="center"><img src="docs/image/menuicon.png" height="54"></td><td valign="top" align="center"><img src="docs/image/menuicon_workmode.png" height="54"></td></tr>
+<tr><th>Popover</th><td valign="top" align="center"><img src="docs/image/mainpage.png" width="300"></td><td valign="top" align="center"><img src="docs/image/mainpage_workmode.png" width="300"></td></tr>
+<tr><th>Shop</th><td valign="top" align="center"><img src="docs/image/shop.png" width="300"></td><td valign="top" align="center"><img src="docs/image/shop_workmode.png" width="300"></td></tr>
+<tr><th>Pack</th><td valign="top" align="center"><img src="docs/image/packopen.png" width="300"></td><td valign="top" align="center"><img src="docs/image/packopen_workmode.png" width="300"></td></tr>
+<tr><th>Dex</th><td valign="top" align="center"><img src="docs/image/dex.png" width="300"></td><td valign="top" align="center"><img src="docs/image/dex_workmode.png" width="300"></td></tr>
+</tbody>
+</table>
 
 Enable fusion-only collection in Settings to obtain eligible Fusion Monsters by combining material cards instead of drawing them.
 
-| Usage | Before fusion<br>(Fusion On) | After fusion<br>(Fusion On) |
-|---|---|---|
-| <img src="docs/image/usage.png" width="200"><br>Today's token usage | <img src="docs/image/yugo_pre.png" width="300"><br>Materials before fusion | <img src="docs/image/yugo_post.png" width="300"><br>Result after fusion |
+<table align="center">
+<thead><tr><th>Usage</th><th>Before fusion<br>(Fusion On)</th><th>After fusion<br>(Fusion On)</th></tr></thead>
+<tbody><tr>
+<td valign="top" align="center"><img src="docs/image/usage.png" width="200"><br>Today's token usage</td>
+<td valign="top" align="center"><img src="docs/image/yugo_pre.png" width="300"><br>Materials before fusion</td>
+<td valign="top" align="center"><img src="docs/image/yugo_post.png" width="300"><br>Result after fusion</td>
+</tr></tbody>
+</table>
 
 ## Install
 
