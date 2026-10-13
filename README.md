@@ -32,16 +32,23 @@ Work mode hides card images and the partner character; enable it in Settings.
 <tr><th>Popover</th><td valign="top" align="center"><img src="docs/image/mainpage.png" width="300"></td><td valign="top" align="center"><img src="docs/image/mainpage_workmode.png" width="300"></td></tr>
 <tr><th>Shop</th><td valign="top" align="center"><img src="docs/image/shop.png" width="300"></td><td valign="top" align="center"><img src="docs/image/shop_workmode.png" width="300"></td></tr>
 <tr><th>Pack</th><td valign="top" align="center"><img src="docs/image/packopen.png" width="300"></td><td valign="top" align="center"><img src="docs/image/packopen_workmode.png" width="300"></td></tr>
-<tr><th>Dex</th><td valign="top" align="center"><img src="docs/image/dex.png" width="300"></td><td valign="top" align="center"><img src="docs/image/dex_workmode.png" width="300"></td></tr>
+<tr><th>Usage</th><td valign="top" align="center"><img src="docs/image/usage.png" width="200"><br>Today's token usage</td><td></td></tr>
 </tbody>
+</table>
+
+<table align="center">
+<thead><tr><th colspan="2">Dex</th></tr><tr><th>Work mode off</th><th>Work mode on</th></tr></thead>
+<tbody><tr>
+<td valign="top" align="center"><img src="docs/image/dex.png" width="300"></td>
+<td valign="top" align="center"><img src="docs/image/dex_workmode.png" width="300"></td>
+</tr></tbody>
 </table>
 
 Enable fusion-only collection in Settings to obtain eligible Fusion Monsters by combining material cards instead of drawing them.
 
 <table align="center">
-<thead><tr><th>Usage</th><th>Before fusion<br>(Fusion On)</th><th>After fusion<br>(Fusion On)</th></tr></thead>
+<thead><tr><th>Before fusion<br>(Fusion On)</th><th>After fusion<br>(Fusion On)</th></tr></thead>
 <tbody><tr>
-<td valign="top" align="center"><img src="docs/image/usage.png" width="200"><br>Today's token usage</td>
 <td valign="top" align="center"><img src="docs/image/yugo_pre.png" width="300"><br>Materials before fusion</td>
 <td valign="top" align="center"><img src="docs/image/yugo_post.png" width="300"><br>Result after fusion</td>
 </tr></tbody>
