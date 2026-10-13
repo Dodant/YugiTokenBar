@@ -7,7 +7,6 @@
 /* App.swift:32 */
 "패치노트" = "Patch notes";
 /* App.swift:35 */
-"라이선스" = "License";
 /* AppInfo.swift:20 */
 "개발 빌드" = "Development build";
 /* AppInfo.swift:31 */
@@ -179,10 +178,6 @@
 "자동 백업도 여기 있어요" = "Automatic backups are here too";
 /* SettingsView.swift:180 */
 "보기" = "View";
-/* SettingsView.swift:190 */
-"PokeTokenBar 크레딧" = "PokeTokenBar credits";
-/* SettingsView.swift:190 */
-"사용량 읽기 코드 · © 2026 chattymin · MIT" = "Usage reading code · © 2026 chattymin · MIT";
 /* ShopView.swift:72 */
 "%lld팩" = "Packs: %lld";
 /* ShopView.swift:160 */

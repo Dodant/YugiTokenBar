@@ -57,7 +57,7 @@ struct YugiTokenBarApp: App {
         Window("패치노트", id: "changelog") { DocView(text: AppInfo.changelog) }
             .defaultSize(width: 520, height: 600)
 
-        Window("라이선스", id: "license") { DocView(text: AppInfo.license) }
+        Window("License", id: "license") { DocView(text: AppInfo.license) }
             .defaultSize(width: 620, height: 600)
     }
 

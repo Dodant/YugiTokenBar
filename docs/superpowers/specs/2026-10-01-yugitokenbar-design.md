@@ -190,7 +190,7 @@ Sources/YugiTokenBar/
   CardDB.swift         `cards_<KO|JP|EN>.json` 로드(등급은 1~5로 잘라 읽는다), 조회 (`tier(cid)`, 컬렉션 이름순 키 `nameRanks`는 `DexQuery`가 처음 이름순으로 볼 때 한 번 만들어 둔다)
   Game.swift           적립·뽑기·판매·덱·융합 (밸런스 상수 `Balance`는 파일 상단)
   GameState.swift      세이브 상태(`GameState`·`LogEntry`·`Deck`)와 저장소(`StateStore`)
-  ImageCache.swift     카드(YGOPRODeck, 오버프레임은 Yugipedia·카드숍 이미지를 긴 변 614px로 줄여 두 크기에 공용)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시 (백그라운드에서 디코딩까지 끝내 스크롤 중 메인 스레드가 JPEG를 풀지 않음, 팩은 긴 변 480px로 줄임. 메모리 캐시는 디코딩된 픽셀 바이트 150MB 상한, 넘으면 오래된 것부터 내보내고 디스크에서 다시 읽음. 메모리에 있는 이미지는 셀이 첫 프레임부터 그린다(`cached`, 카드 뒷면이 비치지 않음). 같은 이미지는 한 번만 받고, 기다리던 셀이 모두 사라지면(스크롤로 지나감) 받기를 취소한다. 호스트당 동시 연결 3개)
+  ImageCache.swift     카드(YGOPRODeck, 오버프레임은 Yugipedia·카드숍 이미지를 긴 변 614px로 줄여 두 크기에 공용)·팩(Yugipedia/YGOPRODeck) 이미지 디스크 + 메모리 캐시 (백그라운드에서 디코딩까지 끝내 스크롤 중 메인 스레드가 JPEG를 풀지 않음, 팩은 긴 변 480px로 줄임. 메모리 캐시는 디코딩된 픽셀 바이트 150MB 상한, 넘으면 오래된 것부터 내보내고 디스크에서 다시 읽음. 메모리에 있는 이미지는 셀이 첫 프레임부터 그린다(`cached`, 카드 뒷면이 비치지 않음). 같은 이미지는 한 번만 받고, 기다리던 셀이 모두 사라지면(스크롤로 지나감) 받기를 취소한다. 호스트당 동시 연결 3개, 같은 호스트로 가는 요청 시작은 80ms 간격으로 줄 세운다. 429·503이면 `Retry-After`(없으면 30초, 최대 120초)만큼 그 호스트 전체를 쉬고 한 번 다시 시도하며 그 밖의 실패는 다시 시도하지 않는다)
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
   Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기
@@ -787,7 +787,9 @@ SE는 팩당 2~4종에 2%라 특정 SE 1장에 100~200팩이 들어 더 길어�
     - 초안·프리릴리스·main의 미배포 변경은 제외한다.
     - 새 버전이면 그 아래 줄에 "새 버전 v x.y.z이 있어요"와 최신 Release 다운로드 링크를, 실패하면 네트워크 안내를 보여준다.
     - 자동 확인·자동 업데이트는 없다.
-    - 그 아래 [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, [버그 신고하기](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어), PokeTokenBar(MIT) 크레딧과 [라이선스](`Usage/NOTICE.md` 창).
+    - 그 아래 [패치노트](앱 언어의 `CHANGELOG.md`·`CHANGELOG.en.md`·`CHANGELOG.ja.md` 창), GitHub 링크, [버그 신고하기](`AppInfo.supportEmail`로 `mailto:`. 제목에 버전, 본문 끝에 버전·macOS·언어), PokeTokenBar(MIT) 크레딧 "Inspired by PokeTokenBar"(PokeTokenBar는 GitHub 저장소로 가는 링크)와 [License](`Usage/NOTICE.md` 창).
+    - 맨 아래 출처 두 줄: "Unofficial fan project"(Konami와 관계없음 / 카드 이름·텍스트·이미지 © Konami, 두 줄)와 "Card data & images"(Konami Card Database · YGOPRODeck · Yugipedia. 각각 사이트로 가는 마크다운 링크. Konami DB 링크는 앱 언어의 `request_locale`). 버튼 없이 글만. 자세한 출처는 `docs/sources.md`.
+    - PokeTokenBar 크레딧부터 출처 두 줄까지(라벨·힌트·[License])와 라이선스 창 제목은 세 언어 모두 영어로 고정한다. 코드의 영어 키가 그대로 보이고 번역 파일에는 항목이 없다. Konami Card Database 링크는 언어 구분 없는 DB 첫 페이지다.
 - **버전**: 원본은 `CHANGELOG.md` 맨 위 `## x.y.z` 하나다.
   `scripts/build-app.sh`가 다음을 한다:
   - 이 값을 `CFBundleShortVersionString`에, `git rev-list --count HEAD`를 `CFBundleVersion`에 넣는다.

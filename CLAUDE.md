@@ -43,7 +43,8 @@ GitHub Releases의 ZIP으로 배포한다.
   옵션(`--reformat`·`--extras`·`--lang`)과 요청 간격·이어 받기는 스펙 3절.
   JP·EN은 언어당 5~9시간 걸린다.
 - UI 문구는 ko/en/ja 현지화, 기준 언어는 한국어.
-  메뉴·섹션·단순 확인·개봉 버튼의 공통 영어 표기(Shop·Dex·Setting·Cards·Decks·Partner·OK·Open)와 사용량(메뉴 사용량 칸·사용량 화면) 문구는 세 언어 `Localizable.strings`에서 같은 영어 값으로 지정한다.
+  메뉴·섹션·단순 확인·개봉 버튼의 공통 영어 표기(Shop·Dex·Setting·Cards·Decks·Partner·OK·Open), 사용량(메뉴 사용량 칸·사용량 화면) 문구는 세 언어 `Localizable.strings`에서 같은 영어 값으로 지정한다.
+  설정 > 정보 & 지원의 크레딧·출처 줄(Inspired by PokeTokenBar·License·Unofficial fan project·Card data & images와 힌트)과 라이선스 창 제목처럼 세 언어가 같은 영어 문구는 코드에 영어 키를 그대로 쓴다(번역 파일에 항목을 두지 않는다).
   한국어 파일에는 이 영어 표기만 넣고, 다른 문구는 코드의 한국어 키를 그대로 쓴다.
   코드에는 한국어 문장을 그대로 쓰고, `python3 tools/sync-strings.py`로 en/ja `Resources/*.lproj/Localizable.strings`에 키를 덧붙여 번역한다.
   - SwiftUI 리터럴은 자동.
