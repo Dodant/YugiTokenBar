@@ -63,15 +63,7 @@ struct OpeningView: View {
 
     private func cell(_ pull: Pull, _ i: Int) -> some View {
         Hovering { hovered in VStack(spacing: 4) {
-            FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
-                .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(accessibilityLabel(pull, i))
-                .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
-                .accessibilityAction { withAnimation(flip) { _ = flipped.insert(i) } }
-                .accessibilityActions {
-                    if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
-                }
+            flippable(FlipCard(pull: pull, db: model.db, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }, pull, i)
             // 상점 팩 칸처럼 아래 이름 한 줄(넘치면 마우스를 올린 동안 흘러간다). 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
             MarqueeText(text: model.db.cards[pull.cid]?.name ?? " ", active: hovered && flipped.contains(i))
                 .font(.caption2)
@@ -85,7 +77,7 @@ struct OpeningView: View {
     /// 업무 모드 개봉 줄: 배지 칸(폭 고정, 오른쪽 정렬) · 종류 막대 · 등급 · 이름. 누르기 전엔 "눌러서 공개"만
     private func row(_ pull: Pull, _ i: Int) -> some View {
         let card = model.db.cards[pull.cid]
-        return HStack(spacing: 8) {
+        return flippable(HStack(spacing: 8) {
             if flipped.contains(i) {
                 PullBadge(pull: pull, canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }
                     .fixedSize()  // 마우스를 올린 "✕ 売らない"는 칸보다 넓어 왼쪽 여백으로 넘친다
@@ -107,16 +99,23 @@ struct OpeningView: View {
         .padding(.trailing, 10)
         .frame(height: 30)
         .background(.fill.tertiary, in: .rect(cornerRadius: 6))
-        .contentShape(.rect)
-        .onTapGesture { withAnimation(flip) { _ = flipped.insert(i) } }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel(pull, i))
-        .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
-        .accessibilityAction { withAnimation(flip) { _ = flipped.insert(i) } }
-        .accessibilityActions {
-            if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
-        }
+        .contentShape(.rect), pull, i)
     }
+
+    /// 누르면(VoiceOver 동작도) 뒤집는 칸. 이름은 뒤집은 뒤에만 읽고, 자동 판매된 카드는 [판매 취소] 동작을 단다
+    private func flippable(_ content: some View, _ pull: Pull, _ i: Int) -> some View {
+        content
+            .onTapGesture { flip(i) }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel(pull, i))
+            .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
+            .accessibilityAction { flip(i) }
+            .accessibilityActions {
+                if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
+            }
+    }
+
+    private func flip(_ i: Int) { withAnimation(flip) { _ = flipped.insert(i) } }
 
     /// 배지 칸 폭: 평소 가장 넓은 "+ⓒ 1.2K" 52pt 가 들어간다 (마우스를 올린 "✕ 売らない" 58pt 는 왼쪽 여백 4pt 로 넘친다)
     private static let badgeWidth: CGFloat = 54
@@ -141,7 +140,7 @@ struct OpeningView: View {
         Task {
             try? await Task.sleep(for: .milliseconds(600))
             guard model.openingID == id else { return }
-            withAnimation(flip) { _ = flipped.insert(rare) }
+            flip(rare)
         }
     }
 
