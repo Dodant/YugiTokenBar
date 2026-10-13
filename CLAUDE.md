@@ -10,12 +10,12 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
 GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.xml을 읽어 업데이트한다.
 첫 공개 릴리스는 Developer ID 서명·Apple 공증 설정 후 게시한다.
 
-- 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준)
+- 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준, 로컬 전용)
 - 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 21장·복사한 코드).
   이미지 출처를 바꾸면 같이 고친다.
 - 배포: `docs/distribution.md` (서명·공증·릴리스 태그)
-- 구현 계획: `docs/superpowers/plans/2026-10-01-yugitokenbar.md` (역사 기록).
-  현재 기준은 스펙이다.
+- 구현 계획: `docs/superpowers/plans/` (로컬 전용, 현재 기준은 스펙).
+- superpowers 파일(`docs/superpowers/`·`.superpowers/` 등 어느 위치의 `superpowers` 폴더든)은 git에 넣지 않는다.
 - 실행 방식: **Subagent-driven** (superpowers:subagent-driven-development) — 사용자가 선택함
 
 ## 규칙
