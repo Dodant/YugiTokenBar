@@ -195,18 +195,13 @@ struct PullBadge: View {
         if pull.isNew { tag("NEW", Palette.badgeNew) }
         else if let coins = pull.soldFor {
             Button { onUnsell?() } label: {
-                tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+ⓒ \(Self.short(coins))", hoverSold && canUnsell ? Palette.badgeLoss : Palette.badgeGain)
+                tag(hoverSold && canUnsell ? "✕ 안 팔기" : "+ⓒ \(shortCoins(coins, from: 1_000))", hoverSold && canUnsell ? Palette.badgeLoss : Palette.badgeGain)
             }
             .buttonStyle(.plain)
             .disabled(!canUnsell)
             .onHover { hoverSold = $0 }
             .help(canUnsell ? "판매 취소: 코인을 돌려주고 카드를 가져요" : "코인이 모자라 취소할 수 없어요")
         }
-    }
-
-    /// 배지는 좁아서 1,000 부터 K (SE 1,200 → 1.2K)
-    private static func short(_ n: Int) -> String {
-        n < 1_000 ? "\(n)" : n.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)).locale(Locale(identifier: "en_US")))
     }
 
     private func tag(_ text: LocalizedStringKey, _ color: Color) -> some View {

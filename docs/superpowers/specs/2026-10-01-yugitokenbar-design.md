@@ -193,7 +193,7 @@ Sources/YugiTokenBar/
   SaveTransfer.swift   세이브 내보내기 봉투, 가져오기 전 백업
   AppInfo.swift        버전, 저장소 주소, 번들 문서(CHANGELOG·NOTICE), 업데이트 확인
   Partner.swift        파트너 「날개 크리보」: 시트 자르기, 상태 판정, 애니메이션 진행, 프레임 내보내기
-  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않음, "융합 가능" 목록(`FusableSection.swift`)은 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage(메뉴 줄), UsageDetail(사용량 화면), CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`), PartnerPanel(바탕화면 파트너)
+  UI/                  Popover, Shop, Settings(+DocView), PackOpen(패널 안 개봉), Dex(컬렉션. `DexView`가 본체, 그리드 목록은 `DexQuery.swift`의 조건 `DexQuery`가 바뀔 때만 다시 거르고 정렬, 사이드바(`DexSidebar.swift`)와 중복 팔기 버튼(`DexView.swift` 안)은 별도 뷰라 카드 선택으로 다시 세지 않음, "융합 가능" 목록(`FusableSection.swift`)은 보유·설정·시대가 같으면 다시 훑지 않음, 카드 한 장 상세는 `CardDetailView.swift`, 융합 연출은 `FusionAnimationView.swift`), Usage(메뉴 줄), UsageDetail(사용량 화면), CardImageView, Formatting(공용 표기·말풍선 헬퍼: `shortCoins`·`coinText`·`shortTokens`·`hoverHint`·`panelScrollBottom`, 진행 표시 `TintBar`·`ProgressBar`·`ProgressCount`·`DisclosureChevron`), PartnerPanel(바탕화면 파트너)
 CHANGELOG.md           패치노트(한국어) 겸 버전 원본. CHANGELOG.en.md·CHANGELOG.ja.md는 같은 버전 제목의 번역
 Resources/partner.png  파트너 스프라이트 시트(192×208 셀, 8열 × 9행)
 Resources/card-back.jpg 카드 뒷면(923×1351, 로고 없음. tools/clean-card-back.py 산출물)

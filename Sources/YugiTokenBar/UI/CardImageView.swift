@@ -35,9 +35,9 @@ struct CardImageView: View {
                 CardBack(name: db.cards[cid]?.name ?? "")
             }
         }
-        .aspectRatio(59.0 / 86.0, contentMode: .fit)
-        .clipShape(.rect(cornerRadius: 7))
-        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Palette.cardRim, lineWidth: 1))
+        .aspectRatio(CardShape.ratio, contentMode: .fit)
+        .clipShape(.rect(cornerRadius: CardShape.corner))
+        .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Palette.cardRim, lineWidth: 1))
         .task(id: hidden ? nil : cid) {  // 숨길 때는 nil 이라 로딩하지 않는다
             guard !hidden else { image = nil; return }
             guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
@@ -86,7 +86,13 @@ enum Rarity {
     ]
 
     static func color(tier: Int) -> Color { colors[min(max(tier, 1), colors.count) - 1] }
-    static func color(label: String) -> Color { color(tier: (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1) }
+    static func color(label: String) -> Color { color(tier: CardInfo.tier(label: label)) }
+}
+
+/// 카드 한 장의 가로:세로(59:86)와 모서리. 썸네일·뒷면·자리 표시·융합 연출이 같이 쓴다
+enum CardShape {
+    static let ratio: CGFloat = 59.0 / 86.0
+    static let corner: CGFloat = 7
 }
 
 /// 등급 외에 라이트·다크 값을 같이 두는 색. 화면에서 colorScheme 으로 나누지 않고 여기서 고른다.
@@ -175,7 +181,7 @@ struct RarityPill: View {
     }
 
     private func pill(_ label: String) -> some View {
-        let tier = (CardInfo.rarities.firstIndex(of: label) ?? 0) + 1
+        let tier = CardInfo.tier(label: label)
         let color = owned ? Rarity.pillColors[min(max(tier, 1), Rarity.pillColors.count) - 1] : Rarity.locked
         return Text(label)
             .font(.system(size: size, weight: .bold))
@@ -214,7 +220,7 @@ private struct CardPlaceholder: View {
     var owned = true
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 7)
+        RoundedRectangle(cornerRadius: CardShape.corner)
             .fill(.fill.tertiary)
             .overlay {
                 if !name.isEmpty {
@@ -239,7 +245,7 @@ struct CardBack: View {
     var body: some View {
         if workMode {
             CardPlaceholder(name: name)
-                .aspectRatio(59.0 / 86.0, contentMode: .fit)
+                .aspectRatio(CardShape.ratio, contentMode: .fit)
         } else {
             back
         }
@@ -252,7 +258,7 @@ struct CardBack: View {
             } else {
                 RadialGradient(colors: [Color(red: 0.35, green: 0.23, blue: 0.10), Color(red: 0.16, green: 0.09, blue: 0.03)],
                                center: .center, startRadius: 0, endRadius: 90)
-                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(red: 0.54, green: 0.35, blue: 0.17), lineWidth: 2))
+                    .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Color(red: 0.54, green: 0.35, blue: 0.17), lineWidth: 2))
             }
             if !name.isEmpty {
                 Text(name)
@@ -266,8 +272,8 @@ struct CardBack: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
-        .aspectRatio(59.0 / 86.0, contentMode: .fit)
-        .clipShape(.rect(cornerRadius: 7))
+        .aspectRatio(CardShape.ratio, contentMode: .fit)
+        .clipShape(.rect(cornerRadius: CardShape.corner))
         .shadow(color: glow ?? .clear, radius: glow == nil ? 0 : 10)
     }
 }
@@ -372,7 +378,7 @@ private struct CardTilt: ViewModifier {
                            startRadius: 0, endRadius: max(size.width, size.height) * 0.7)
         }
         .blendMode(.plusLighter)
-        .clipShape(.rect(cornerRadius: 7))
+        .clipShape(.rect(cornerRadius: CardShape.corner))
     }
 }
 

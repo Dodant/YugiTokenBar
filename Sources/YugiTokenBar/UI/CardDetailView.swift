@@ -117,9 +117,9 @@ struct CardDetailView: View {
                 }
             }
             Section("수록 팩") {
-                ForEach(packs(cid), id: \.name) { item in
-                    LabeledContent(item.name) {
-                        RarityPill(label: item.label, owned: n > 0, size: 11)
+                ForEach(model.db.packs.filter { $0.cards.contains(cid) }, id: \.name) { pack in
+                    LabeledContent(pack.name) {
+                        RarityPill(label: model.db.cards[cid]?.rarity ?? "N", owned: n > 0, size: 11)
                     }
                 }
             }
@@ -178,10 +178,5 @@ struct CardDetailView: View {
     private func consumed(_ materials: [Material]) -> String {
         grouped(materials).compactMap { g in g.material.cid.flatMap { model.db.cards[$0]?.name }.map { String(localized: "\($0) \(g.n)장") } }
             .joined(separator: ", ")
-    }
-
-    private func packs(_ cid: Int) -> [(name: String, label: String)] {
-        let label = model.db.cards[cid]?.rarity ?? "N"
-        return model.db.packs.filter { $0.cards.contains(cid) }.map { ($0.name, label) }
     }
 }
