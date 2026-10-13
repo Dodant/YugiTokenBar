@@ -1,6 +1,6 @@
 # YugiTokenBar
 
-A macOS menu bar app that fills a **Korean-release Yu-Gi-Oh! card collection** (100 regular booster packs, 8,226 cards) with the tokens your coding agents (Claude Code, Codex, etc.) use.
+A macOS menu bar app that fills a **Yu-Gi-Oh! card collection** with the tokens your coding agents (Claude Code, Codex, etc.) use.
 Available in Korean, English, and Japanese.
 
 ## How it works
@@ -48,7 +48,8 @@ To update, quit the app and replace it. Your collection is kept.
 ## Credits
 
 - Card data: [Konami official card database](https://www.db.yugioh-card.com/yugiohdb/?request_locale=ko)
-- Card images: [YGOPRODeck](https://ygoprodeck.com/)
+- Most card images: [YGOPRODeck](https://ygoprodeck.com/)
+- Some over-frame images: [Yugipedia](https://yugipedia.com/) and card shop scans from [CardRush](https://www.cardrush.jp/) and [Blue Rabbit](https://www.rabbit-blue.com/)
 - Pack images: [Yugipedia](https://yugipedia.com/)
 - Usage-reading code: [PokeTokenBar](https://github.com/chattymin/PokeTokenBar) (MIT, © 2026 chattymin)
 
