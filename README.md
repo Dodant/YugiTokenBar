@@ -66,3 +66,8 @@ To update, quit the app and replace it. Your collection is kept.
 > YugiTokenBar is an unofficial, non-commercial fan project.
 > It is not affiliated with, endorsed, sponsored, or approved by Konami.
 > Yu-Gi-Oh! card names, text, and images are © Konami.
+
+## License
+
+The code is under the [MIT License](LICENSE).
+Card data, card images, the card back, and the partner sprite are Konami's works or fan art of them, so the MIT License does not cover them.
