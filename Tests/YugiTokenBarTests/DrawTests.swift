@@ -129,13 +129,25 @@ import Testing
         #expect(full.drawFree(using: &rng) != nil)  // 다 가져도 계속 나온다
     }
 
+    @Test func freeCardsSkipOwnedCards() {
+        // 노멀 50종 중 49종을 가지면 무료 카드는 남은 1종만, 등급 확률은 남은 티어끼리 다시 나눈다
+        let big = makeDB([(1...50).map { ($0, 1) } + (51...100).map { ($0, 4) }])
+        var state = GameState()
+        for cid in 1...49 { state.owned[cid] = 1 }
+        let game = Game(db: big, state: state)
+        var rng = SeededRNG(seed: 5)
+        let draws = (0..<2_000).map { _ in game.drawFree(using: &rng)! }
+        #expect(draws.allSatisfy { $0 >= 50 })
+        #expect((1_900...1_990).contains(draws.filter { $0 == 50 }.count))  // 기대 1,958 (N:UR = 70:1.5)
+    }
+
     @Test func freeCardsFollowTierWeights() {
         // 노멀 50종 + 울트라(4) 50종: 티어 안 균등이면 울트라 ≈ 2%, 카드 수 비례였다면 ≈ 50%
         let big = makeDB([(1...50).map { ($0, 1) } + (51...100).map { ($0, 4) }])
         let game = Game(db: big, state: GameState())
         var rng = SeededRNG(seed: 5)
         let ultras = (0..<2_000).filter { _ in game.drawFree(using: &rng)! > 50 }.count
-        #expect((20...65).contains(ultras))  // 기대 40 (N 70% + 빈 R·SR 28% → N 으로 내려감, 빈 SE 0.5% → UR, UR 2%)
+        #expect((20...65).contains(ultras))  // 기대 42 (빈 R·SR·SE 를 빼고 N:UR = 70:1.5 로 다시 나눔)
     }
 
     @Test func logKeepsNewestFifty() {

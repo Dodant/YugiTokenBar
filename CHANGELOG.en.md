@@ -4,6 +4,9 @@
 **🎨 Improvements**
 - After changing the language in Settings > General, you can press [Reopen to apply] to reopen the app right away in the new language.
 
+**⚖️ Balance**
+- Free cards now only give cards you don't have yet. Rarity odds still apply, split among the rarities you haven't completed.
+
 ## 0.6.1 — 2026-10-12
 **✨ New features**
 - Added [Report a bug] to Settings > About & support. It opens an email with your app version and system details already filled in.

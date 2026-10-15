@@ -331,17 +331,17 @@ struct Game: Sendable {
 
     // MARK: 뽑기
 
-    /// 전체 카드에서 `freeWeights`로 티어를 고르고 그 안에서 균등 선택.
-    /// 그 티어가 비었으면 팩과 같이 아래 → 위 티어 순으로 찾는다.
+    /// 아직 없는 카드 중에서 `freeWeights`로 티어를 고르고 그 안에서 균등 선택(다 가졌으면 전체 카드에서).
+    /// 남은 카드가 없는 티어는 빼고 나머지 티어의 비율대로 다시 나눈다(N이 다 차면 R:SR:UR:SE = 23:5:1.5:0.5).
     func drawFree<R: RandomNumberGenerator>(using rng: inout R) -> Int? {
+        let pool = db.allCIDs.filter { !isFusionOnly($0) }
+        let missing = pool.filter { copies($0) == 0 }
         var byTier: [Int: [Int]] = [:]
-        for cid in db.allCIDs where !isFusionOnly(cid) {
-            byTier[db.tier(cid), default: []].append(cid)
-        }
-        for t in Self.fallbackOrder(pickTier(Balance.freeWeights, using: &rng)) {
-            if let cid = byTier[t]?.randomElement(using: &rng) { return cid }
-        }
-        return nil
+        for cid in missing.isEmpty ? pool : missing { byTier[db.tier(cid), default: []].append(cid) }
+        let weights = Balance.freeWeights.filter { byTier[$0.tier] != nil }
+        guard !weights.isEmpty else { return byTier.values.first?.randomElement(using: &rng) }  // freeWeights 밖 티어뿐
+        let total = weights.reduce(0) { $0 + $1.weight }
+        return byTier[pickTier(weights.map { ($0.tier, $0.weight / total) }, using: &rng)]?.randomElement(using: &rng)
     }
 
     static func fallbackOrder(_ tier: Int) -> [Int] {
