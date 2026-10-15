@@ -14,6 +14,17 @@ struct SettingsView: View {
     /// 등록 상태는 화면이 나타날 때 읽는다. 초깃값에서 읽으면 패널이 다시 그려질 때마다(코인 적립 등) launchd 에 묻는다
     @State private var launchAtLogin = false
 
+    /// 이 앱이 끝나길 기다렸다가 같은 실행 파일·인자·환경(YTB_STATE_DIR 등)으로 다시 띄운다. 끝날 때 세이브를 쓰므로 겹쳐 띄우지 않는다
+    private func relaunch() {
+        guard let exe = Bundle.main.executablePath else { return }
+        let sh = Process()
+        sh.executableURL = URL(fileURLWithPath: "/bin/sh")
+        sh.arguments = ["-c", "while kill -0 \"$0\" 2>/dev/null; do sleep 0.2; done; exec \"$@\"",
+                        String(ProcessInfo.processInfo.processIdentifier), exe] + CommandLine.arguments.dropFirst()
+        guard (try? sh.run()) != nil else { return }
+        NSApp.terminate(nil)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             PanelHeader(title: String(localized: "설정")) { model.screen = .summary }
@@ -54,7 +65,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("언어")
                     if language != AppLanguage.launchChoice {
-                        Text("다시 시작하면 적용돼요").font(.caption2).foregroundStyle(.secondary)
+                        Button("다시 열어 적용") { relaunch() }.buttonStyle(.link).font(.caption2)
                     }
                 }
                 Spacer()

@@ -1,5 +1,9 @@
 # Patch notes
 
+## 0.6.2 — 2026-10-15
+**🎨 Improvements**
+- After changing the language in Settings > General, you can press [Reopen to apply] to reopen the app right away in the new language.
+
 ## 0.6.1 — 2026-10-12
 **✨ New features**
 - Added [Report a bug] to Settings > About & support. It opens an email with your app version and system details already filled in.

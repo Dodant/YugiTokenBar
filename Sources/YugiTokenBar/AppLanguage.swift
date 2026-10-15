@@ -44,6 +44,6 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         }
     }
 
-    /// 이번 실행을 시작할 때의 선택 (설정에서 바꾸면 "다시 시작하면 적용돼요"를 보이는 기준)
+    /// 이번 실행을 시작할 때의 선택 (설정에서 바꾸면 "다시 열어 적용" 버튼을 보이는 기준)
     static let launchChoice = stored()
 }
