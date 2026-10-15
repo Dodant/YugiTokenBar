@@ -483,3 +483,13 @@
 "세이브가 손상되어 백업에서 복구했어요" = "Your save was damaged and was restored from a backup";
 /* PopoverView.swift:63 */
 "세이브가 손상되어 새로 시작했어요" = "Your save was damaged, so the game started fresh";
+/* SettingsView.swift:92 */
+"추가 스캔 폴더" = "Extra scan folders";
+/* SettingsView.swift:94 */
+"프로바이더" = "Provider";
+/* SettingsView.swift:94 */
+"원격 머신 로그를 이 Mac에 복사해 온 폴더 등" = "e.g. logs copied here from a remote machine";
+/* SettingsView.swift:95 */
+"기본 위치 밖 로그만 넣어요. 콤마·줄바꿈으로 구분하고 * 와일드카드를 써요. Claude는 projects 폴더, Codex는 sessions 폴더를 넣어요." = "Only for logs outside the default location. Separate with commas or new lines; * wildcards work. Use the projects folder for Claude and the sessions folder for Codex.";
+/* SettingsView.swift:114 */
+"찾은 폴더: %lld" = "Folders found: %lld";

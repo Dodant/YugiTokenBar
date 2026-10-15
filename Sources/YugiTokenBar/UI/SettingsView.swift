@@ -13,6 +13,9 @@ struct SettingsView: View {
     @State private var language = AppLanguage.stored()
     /// 등록 상태는 화면이 나타날 때 읽는다. 초깃값에서 읽으면 패널이 다시 그려질 때마다(코인 적립 등) launchd 에 묻는다
     @State private var launchAtLogin = false
+    /// 추가 스캔 폴더를 고치는 provider 와 그 칸의 글 (UserDefaults `customScanRoots.<id>`)
+    @State private var scanProvider = Provider.claude
+    @State private var scanRoots = CustomScanRoots.storedValue(for: Provider.claude.rawValue) ?? ""
 
     /// 이 앱이 끝나길 기다렸다가 같은 실행 파일·인자·환경(YTB_STATE_DIR 등)으로 다시 띄운다. 끝날 때 세이브를 쓰므로 겹쳐 띄우지 않는다
     private func relaunch() {
@@ -32,6 +35,7 @@ struct SettingsView: View {
                 // 유리 버튼이 여럿이라 한 컨테이너에서 같이 그린다
                 GlassEffectContainer { VStack(alignment: .leading, spacing: 16) {
                     generalSection
+                    scanSection
                     cardSection
                     partnerSection
                     transferSection
@@ -78,6 +82,39 @@ struct SettingsView: View {
                 .onChange(of: language) { AppLanguage.store(language) }
             }
             toggleRow("업무 모드", hint: "카드 이미지와 파트너를 숨겨요", isOn: Bindable(model).workMode)
+        }
+    }
+
+    // ponytail: 원격 머신 로그는 사용자가 rsync 등으로 이 Mac 에 복사해 와야 하고, 동기화가 자정을 넘기면 전날 몫은 적립에서 빠진다.
+    // 정식 해결은 원격에서 사용량을 보내 주는 쪽(원격 에이전트·서버)이다.
+    /// 기본 위치 밖 로그 폴더. 읽는 쪽은 PokeTokenBar `CustomScanRoots`가 이미 이 키를 읽는다
+    private var scanSection: some View {
+        section("추가 스캔 폴더") {
+            row {
+                labeled("프로바이더", hint: "원격 머신 로그를 이 Mac에 복사해 온 폴더 등",
+                        detail: "기본 위치 밖 로그만 넣어요. 콤마·줄바꿈으로 구분하고 * 와일드카드를 써요. Claude는 projects 폴더, Codex는 sessions 폴더를 넣어요.")
+                Spacer()
+                Picker("프로바이더", selection: $scanProvider) {
+                    ForEach(UsageView.agents.filter { $0.id != .cursor }, id: \.id) { Text(verbatim: $0.name).tag($0.id) }
+                }
+                .labelsHidden()
+                .controlSize(.small)
+                .fixedSize()
+                .onChange(of: scanProvider) { scanRoots = CustomScanRoots.storedValue(for: scanProvider.rawValue) ?? "" }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                TextField(text: $scanRoots, prompt: Text(verbatim: "~/remote-logs/*/claude/projects"), axis: .vertical) { Text("추가 스캔 폴더") }
+                    .lineLimit(1...4)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: scanRoots) {
+                        UserDefaults.standard.set(scanRoots, forKey: CustomScanRoots.defaultsKey(for: scanProvider.rawValue))
+                        LocalUsageReader.invalidateProjectRootsCache()
+                    }
+                if !scanRoots.isEmpty {
+                    Text("찾은 폴더: \(CustomScanRoots.expand(scanRoots).count)").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 12).padding(.bottom, 8)
         }
     }
 

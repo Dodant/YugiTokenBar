@@ -49,6 +49,22 @@ Enable fusion-only collection in Settings to obtain eligible Fusion Monsters by 
 
 <p align="center"><a href="docs/video/fusion-demo.mp4"><img src="docs/video/fusion-demo.gif" width="720" alt="Fusion demo"></a></p>
 
+## Remote machines
+
+Usage on a remote machine (SSH, cloud sessions) is logged there, so the app cannot see it.
+As a stopgap, copy the logs to this Mac and add the folder in Settings > Extra scan folders:
+
+```bash
+# every few minutes (cron/launchd); -a keeps file times
+rsync -a gpu1:~/.claude/projects/ ~/remote-logs/gpu1/claude/projects/
+rsync -a gpu1:~/.codex/sessions/  ~/remote-logs/gpu1/codex/sessions/
+```
+
+Then set Claude to `~/remote-logs/*/claude/projects` and Codex to `~/remote-logs/*/codex/sessions`.
+Keep the folder outside Documents, Desktop, and Downloads so macOS does not ask for access.
+The same request is counted once even if it shows up in several folders.
+Usage synced after midnight is not credited to the previous day.
+
 ## Install
 
 Requires macOS 26 or later.

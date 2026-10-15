@@ -1,6 +1,9 @@
 # Patch notes
 
 ## 0.6.2 — 2026-10-15
+**✨ New features**
+- Added [Extra scan folders] to Settings. Add Claude, Codex, Gemini, Grok, Pi, or oh-my-pi log folders outside the default location, such as logs copied from a remote machine, and their usage is credited too.
+
 **🎨 Improvements**
 - After changing the language in Settings > General, you can press [Reopen to apply] to reopen the app right away in the new language.
 
