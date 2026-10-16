@@ -1,4 +1,8 @@
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 import Foundation
 
 /// Extra Claude Code config folders (`CLAUDE_CONFIG_DIR` logins) whose official limits are shown
@@ -170,10 +174,12 @@ enum ClaudeAccountRoots {
     /// raw value (`/Users/example/.claude-work` → `-dd1118a7`). Claude Code does not normalize that
     /// value (checked with 2.1.274: the same folder with a trailing slash is logged out), so the
     /// folder is also tried the way shell completion writes it, with a trailing slash.
+    #if os(macOS)
     static func keychainServices(for root: URL) -> [String] {
         let path = root.standardizedFileURL.path
         return [path, path + "/"].map { "\(OAuthCredentialData.claudeKeychainService)-\(hashPrefix($0))" }
     }
+    #endif
 
     /// First 8 hex characters of the SHA-256 of the folder path. Also the folder's stable id for
     /// tab selection and alert/candy keys, so no path ends up in the save file.
