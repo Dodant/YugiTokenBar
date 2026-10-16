@@ -25,6 +25,7 @@ LocalUsageCache는 파일별 사용량 캐시다.
 14. `LocalUsageCache.swift`: zlib 압축은 Darwin에서만 쓰고 Linux에서는 평문 JSON 캐시를 읽고 쓴다.
 15. `AppLog.swift`: Linux 로그를 `AppStatePaths.directory()` 아래에 둔다.
 16. `AppEnv.swift`: Linux에서 실행 파일의 `/.build` 포함 여부로 설치 실행을 판별한다(`isInstalledRun`).
+17. `BinaryLocator.swift`: 셸 stdout을 throwing API `readToEnd()`로 읽어 타임아웃으로 핸들을 닫을 때 발생하는 읽기 오류를 빈 데이터로 처리한다.
 
 ## MIT License
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated

@@ -138,7 +138,7 @@ enum BinaryLocator {
         let drained = DispatchSemaphore(value: 0)
         let handle = output.fileHandleForReading
         DispatchQueue.global().async {
-            box.data = handle.readDataToEndOfFile()
+            box.data = (try? handle.readToEnd()) ?? Data()
             drained.signal()
         }
 

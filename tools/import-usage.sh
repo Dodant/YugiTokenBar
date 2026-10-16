@@ -50,6 +50,11 @@ def platform_import(s, module, fallback):
     return replace_exact(s, f"import {module}\n",
         f"#if canImport({module})\nimport {module}\n#else\nimport {fallback}\n#endif\n")
 
+# 타임아웃이 stdout 을 닫을 때 ObjC 예외 대신 읽기 오류로 처리한다.
+edit("BinaryLocator", lambda s: replace_exact(s,
+    "            box.data = handle.readDataToEndOfFile()",
+    "            box.data = (try? handle.readToEnd()) ?? Data()"))
+
 edit("OAuthLimitsProvider", lambda s: "#if os(macOS)\n" + s.rstrip() + "\n#endif\n")
 edit("ClaudeAccountRoots", lambda s: replace_exact(
     platform_import(s, "CryptoKit", "Crypto"),
