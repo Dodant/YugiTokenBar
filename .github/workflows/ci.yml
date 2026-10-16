@@ -1,0 +1,46 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+env:
+  YTB_STATE_DIR: ${{ github.workspace }}/qa-state
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos:
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: |
+          swift test
+          python3 tools/sync-strings.py --check
+          python3 tools/test_build_cards.py
+          python3 tools/test_make_appcast.py
+      - name: Linux dependencies stay out of the macOS graph
+        run: |
+          set -euo pipefail
+          dependencies=$(swift package show-dependencies)
+          if grep -qi -e swift-crypto -e csqlite -e adwaita <<< "$dependencies"; then
+            printf '%s\n' "$dependencies"
+            exit 1
+          fi
+          git diff --exit-code Package.resolved
+  linux:
+    runs-on: ubuntu-24.04
+    container: swift:6.4.1
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - run: apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev pkg-config
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: linux-swift-6.4.1-${{ runner.arch }}-${{ hashFiles('Package.swift') }}
+      - run: swift build
+      - run: swift test
