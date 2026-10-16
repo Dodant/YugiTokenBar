@@ -105,8 +105,10 @@ actor TodayUsageReader {
     /// detail: 오늘 provider별 입력·출력·캐시 합계 (사용량 화면)
     func read(since: String? = nil, now: Date = Date())
         async -> (date: String, byProvider: [String: Int], earlier: [String: [String: Int]], detail: [String: TokenSum]) {
-        let today = LocalUsageReader.localDayFormatter().string(from: now)
+        let fmt = LocalUsageReader.localDayFormatter()
+        let today = fmt.string(from: now)
         let start = Self.start(since: since, now: now)
+        let startDay = fmt.string(from: start)
         let logs: [(Provider, [LocalUsageReader.Entry])] = [
             (.claude, await claudeEntries(modifiedSince: start)),
             (.codex, await cache.codexEntries(modifiedSince: start)),
@@ -119,7 +121,7 @@ actor TodayUsageReader {
         var earlier: [String: [String: Int]] = [:], detail: [String: TokenSum] = [:]
         for (provider, entries) in logs {
             detail[provider.rawValue] = TokenSum(Self.bucket(entries, day: today))
-            for (day, total) in Self.totalsByDay(entries, before: today) { earlier[day, default: [:]][provider.rawValue] = total }
+            for (day, total) in Self.totalsByDay(entries, from: startDay, before: today) { earlier[day, default: [:]][provider.rawValue] = total }
         }
         return (today, detail.mapValues(\.total), earlier, detail)
     }
@@ -214,9 +216,10 @@ actor TodayUsageReader {
         return b
     }
 
-    /// 오늘보다 앞 날짜별 토큰 합계 (`bucket`과 같은 계산)
-    static func totalsByDay(_ entries: [LocalUsageReader.Entry], before today: String) -> [String: Int] {
-        Dictionary(grouping: entries.filter { $0.localDay < today }, by: \.localDay)
+    /// 읽기 시작일(포함)부터 오늘 전까지 날짜별 토큰 합계 (`bucket`과 같은 계산).
+    /// 수정 시각이 최근인 파일에도 시작일보다 오래된 기록이 있을 수 있다.
+    static func totalsByDay(_ entries: [LocalUsageReader.Entry], from startDay: String, before today: String) -> [String: Int] {
+        Dictionary(grouping: entries.filter { startDay <= $0.localDay && $0.localDay < today }, by: \.localDay)
             .mapValues { bucket($0, day: $0[0].localDay).total }
     }
 

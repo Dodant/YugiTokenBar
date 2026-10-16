@@ -169,7 +169,7 @@ final class AppModel {
         refreshing = true
         Task {
             defer { refreshing = false }
-            let usage = await usageReader.read(since: game.state.claimedDate)  // actor 라서 메인 스레드 밖에서 읽는다
+            let usage = await usageReader.read(since: game.state.claimedDate ?? Game.firstRunSince())  // actor 라서 메인 스레드 밖에서 읽는다
             // 같은 값이라도 넣으면 읽는 화면이 다시 그려질 수 있어 바뀔 때만
             if todayDetail != usage.detail { todayDetail = usage.detail }
             let sample = UsageSample(date: usage.date, total: usage.byProvider.values.reduce(0, +), at: Date())

@@ -145,8 +145,32 @@ import Testing
                                    input: input, output: 0, cacheWrite: 0, cacheRead: 0)
         }
         let totals = TodayUsageReader.totalsByDay([entry("2026-10-05", 10), entry("2026-10-05", 5), entry("2026-10-06", 7), entry("2026-10-07", 100)],
-                                                  before: "2026-10-07")
+                                                  from: "2026-10-05", before: "2026-10-07")
         #expect(totals == ["2026-10-05": 15, "2026-10-06": 7])
+    }
+
+    /// 최근에 수정한 세션 파일에 오래된 기록도 있으면, 첫 실행의 14일 범위 밖은 적립하지 않는다
+    @Test func firstRunReadExcludesOldEntriesInRecentFile() async throws {
+        let root = tempDir(), project = root.appendingPathComponent("proj")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let cal = Calendar.current, iso = ISO8601DateFormatter()
+        let now = try #require(cal.date(from: DateComponents(year: 2026, month: 10, day: 16, hour: 12)))
+        func line(_ day: Int, _ tokens: Int) throws -> String {
+            let date = try #require(cal.date(from: DateComponents(year: 2026, month: 10, day: day, hour: 12)))
+            let ts = iso.string(from: date)
+            return #"{"type":"assistant","timestamp":"\#(ts)","requestId":"r\#(day)","message":{"id":"m\#(day)","model":"claude-opus-5-5","usage":{"input_tokens":\#(tokens),"output_tokens":0}}}"# + "\n"
+        }
+        let log = project.appendingPathComponent("s.jsonl")
+        try (line(1, 100) + line(2, 200) + line(15, 300)).write(to: log, atomically: true, encoding: .utf8)
+        let cache = LocalUsageCache(claudeRoots: [root], codexRoots: [], geminiRoots: [], grokRoots: [], piRoots: [], ompRoots: [],
+                                    fileURL: tempDir().appendingPathComponent("cache.json"))
+        let reader = TodayUsageReader(claudeRoots: [root], cache: cache, historyFile: nil, liveCursor: { _ in
+            .init(entries: [], highWaterByPath: [:], didReset: false, isAuthoritative: true)
+        })
+        let usage = await reader.read(since: Game.firstRunSince(now: now), now: now)
+        #expect(usage.earlier["2026-10-01"] == nil)
+        #expect(usage.earlier["2026-10-02"]?[Provider.claude.rawValue] == 200)
+        #expect(usage.earlier["2026-10-15"]?[Provider.claude.rawValue] == 300)
     }
 
     /// 사용량 화면 합계: 고른 날짜 범위(양 끝 포함)의 모든 provider 를 더한다

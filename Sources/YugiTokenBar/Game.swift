@@ -6,6 +6,8 @@ enum Balance {
     /// 코인으로 이만큼 사면 무료 팩 1장 (무료 팩으로 깐 건 세지 않는다)
     static let packsPerFreePack = 10
     static let tokensPerFreeCard = 10_000_000
+    /// 첫 실행에 적립하는 지난 일수. 그 전 사용량은 적립하지 않는다 (catchUpDays 30 안)
+    static let firstRunCreditDays = 14
     /// 팩 4번째 장이 노멀 대신 레어(R)가 될 확률
     static let slot4RareChance = 0.30
     /// 팩 5번째 장의 티어 확률 (R / SR / UR / SE). 그 티어가 없는 팩은 아래 → 위 티어 순으로 찾는다.
@@ -63,16 +65,22 @@ struct Game: Sendable {
 
     // MARK: 토큰 적립
 
+    /// 첫 실행에 읽기 시작할 날짜(오늘 − firstRunCreditDays, 지역 날짜). 원장이 없을 때 `read(since:)`에 넘긴다
+    static func firstRunSince(now: Date = Date()) -> String {
+        let day = Calendar.current.date(byAdding: .day, value: -Balance.firstRunCreditDays, to: now) ?? now
+        return LocalUsageReader.localDayFormatter().string(from: day)
+    }
+
     /// 오늘의 provider별 누적 토큰을 받아 늘어난 만큼만 적립한다. 원장은 같은 날 안에서 절대 내려가지 않는다
     /// (일시적으로 0이나 작은 값이 읽혀도 나중에 같은 토큰을 두 번 적립하지 않도록). 반환: 이번에 쌓인 무료 카드 장 수.
     /// earlier: 원장 날짜부터 어제까지의 날짜별 누적. 날짜가 바뀌면 원장 날짜는 남은 만큼, 그 뒤 앱이 꺼져 있던 날은 전부 적립한다.
     @discardableResult
     mutating func claim(today: String, byProvider: [String: Int], earlier: [String: [String: Int]] = [:]) -> Int {
-        guard state.claimedDate != nil else {
-            // 첫 실행: 설치 전 사용량은 적립하지 않는다.
-            state.claimedDate = today
-            state.claimedByProvider = byProvider
-            return 0
+        if state.claimedDate == nil {
+            // 첫 실행: 지난 firstRunCreditDays일(earlier)과 오늘을 전부 적립한다. 읽힌 사용량이 없으면 다음 갱신에서 다시 첫 실행으로 본다.
+            guard byProvider.values.contains(where: { $0 > 0 }) || earlier.values.contains(where: { $0.values.contains(where: { $0 > 0 }) }) else { return 0 }
+            state.claimedDate = earlier.keys.min() ?? today
+            state.claimedByProvider = [:]
         }
         if let d = state.claimedDate, today < d { return 0 }  // 시계/시간대가 과거로 가도 원장을 리셋하지 않는다.
         var delta = 0
