@@ -1,3 +1,4 @@
+#if os(macOS)
 import CoreGraphics
 import Foundation
 import Testing
@@ -313,3 +314,4 @@ import Testing
         #expect(s.width == 192 && s.height == 208)
     }
 }
+#endif

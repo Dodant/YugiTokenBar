@@ -28,8 +28,10 @@ import Testing
         #expect(!AppInfo.sparkleEnabled(info: nil))
     }
 
+    #if os(macOS)
     @Test func licenseIncludesSparkle() {
         #expect(AppInfo.license.contains("## Sparkle"))
         #expect(AppInfo.license.contains("Andy Matuschak"))
     }
+    #endif
 }

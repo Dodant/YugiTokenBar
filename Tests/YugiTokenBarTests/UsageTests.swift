@@ -184,6 +184,7 @@ import Testing
         #expect(t.tokens == 330)
         #expect(abs(t.cost - 3.3) < 1e-9)
         #expect(TodayUsageReader.total(days, from: date(6), through: date(6)).tokens == 4000)
+        #if os(macOS)
         let chart = UsageDetailView.days(days, now: date(6), count: 6)  // 10/1 ~ 10/6, 날마다 모든 provider 합
         #expect(chart.map(\.tokens) == [30, 0, 0, 0, 300, 4000] && chart[0].byAgent == ["claude_code": 10, "codex": 20])
         #expect(abs(chart[0].cost - 0.3) < 1e-9)
@@ -191,6 +192,7 @@ import Testing
         let wide = UsageDetailView.days(days, now: date(6), count: 8)  // 9/29 ~ 10/6
         #expect(UsageDetailView.activeDays(wide, count: 3).map(\.tokens) == [30, 0, 0, 0, 300, 4000])
         #expect(UsageDetailView.activeDays(wide, count: 9).map(\.tokens) == [1, 30, 0, 0, 0, 300, 4000])
+        #endif
     }
 
     /// 지난 날짜 합계는 파일에 남아, 로그가 지워진 뒤 새 리더도 다시 읽지 않고 같은 값을 낸다
@@ -220,6 +222,7 @@ import Testing
         #expect(!file.path.contains("/Library/Caches/"))
     }
 
+    #if os(macOS)
     /// 사용량 화면 에이전트 순서: 오늘 많이 쓴 순, Claude·Codex 는 안 써도 보이고 나머지는 기간 안에 쓴 것만
     @MainActor @Test func agentsRankByTodayUsage() {
         func t(_ n: Int) -> TokenSum { var t = TokenSum(); t.input = n; return t }
@@ -227,4 +230,5 @@ import Testing
         let order = UsageDetailView.ranked(usage, today: ["codex": t(30), "claude_code": t(10)]).map(\.id)
         #expect(order == [.codex, .claude, .gemini])
     }
+    #endif
 }

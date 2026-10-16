@@ -17,6 +17,9 @@ exec docker run --rm \
     -v "$PWD/Sources:/work/Sources:ro" \
     -v "$PWD/Tests:/work/Tests:ro" \
     -v "$PWD/Resources:/work/Resources:ro" \
+    -v "$PWD/CHANGELOG.md:/work/CHANGELOG.md:ro" \
+    -v "$PWD/CHANGELOG.en.md:/work/CHANGELOG.en.md:ro" \
+    -v "$PWD/CHANGELOG.ja.md:/work/CHANGELOG.ja.md:ro" \
     -v "$PWD/.build-linux:/work/.build-linux" \
     -v "$PWD/qa-state:/work/qa-state" \
     -e YTB_STATE_DIR=/work/qa-state \

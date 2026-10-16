@@ -11,6 +11,7 @@ import Testing
         #expect(StateStore(url: tempDir().appendingPathComponent("state.json")).lock())
     }
 
+    #if os(macOS)
     /// 저장이 실패하면 모델이 이유를 들고 있다가(경고 표시), 다음 저장이 되면 지운다
     @MainActor @Test func modelReportsSaveFailureUntilNextSuccess() throws {
         let dir = tempDir()
@@ -24,7 +25,9 @@ import Testing
         model.toggleFavorite(1)
         #expect(model.saveError == nil)
     }
+    #endif
 
+    #if os(macOS)
     /// 저장 실패 경고가 떠 있어도 가져오기 저장이 성공하면 사라진다
     @MainActor @Test func importSaveClearsSaveError() throws {
         let dir = tempDir()
@@ -38,6 +41,7 @@ import Testing
         _ = try model.importSave(SaveEnvelope(appVersion: "0.4.3", exportedAt: Date(), state: GameState()))
         #expect(model.saveError == nil)
     }
+    #endif
 
     @Test func roundTrip() throws {
         let store = StateStore(url: tempDir().appendingPathComponent("state.json"))

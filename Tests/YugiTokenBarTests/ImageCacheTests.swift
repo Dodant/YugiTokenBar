@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import Testing
 @testable import YugiTokenBar
@@ -225,3 +226,4 @@ private final class StubProtocol: URLProtocol, @unchecked Sendable {
         #expect(Date().timeIntervalSince(other) < 0.05)
     }
 }
+#endif

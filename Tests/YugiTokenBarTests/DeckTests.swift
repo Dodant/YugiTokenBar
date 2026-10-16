@@ -21,6 +21,7 @@ import Testing
         #expect(p.owned == 1 && p.total == 4)
     }
 
+    #if os(macOS)
     /// 여러 장을 한 번에 넣으면 한도에 걸린 것만 빼고 넣은 장 수를 돌려준다 (저장은 한 번)
     @MainActor @Test func modelAddsSelectionAtOnce() {
         let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
@@ -32,6 +33,7 @@ import Testing
         #expect(model.game.deck(deck.id)?.cards == [1: 2])
         #expect(store.load().decks.first?.cards == [1: 2])
     }
+    #endif
 
     @Test func newDeckNameSkipsExisting() {
         var game = Game(db: makeDB([[(1, 1)]]), state: GameState())
@@ -48,7 +50,8 @@ import Testing
         game.state.decks = [Deck(name: "New Deck 1"), Deck(name: "新しいデッキ 2"), Deck(name: "드래곤 덱")]
         #expect(game.state.decks.map(\.defaultNumber) == [1, 2, nil])
         #expect(game.state.decks[2].title == "드래곤 덱")
-        #expect(game.state.decks[0].title == String(localized: "새 덱 1"))
+        let number = 1
+        #expect(game.state.decks[0].title == String(localized: "새 덱 \(number)"))
         #expect(game.addDeck().name == "새 덱 4")
         #expect(Deck(name: "New Deck X").defaultNumber == nil)
     }
