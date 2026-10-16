@@ -1,9 +1,5 @@
 # Patch notes
 
-## 0.7.0 — 2026-10-16
-**⚖️ Balance**
-- On first launch, tokens used in the last 14 days are credited as coins.
-
 ## 0.6.2 — 2026-10-15
 **✨ New features**
 - Added [Extra scan folders] to Settings. Add Claude, Codex, Gemini, Grok, Pi, or oh-my-pi log folders outside the default location, such as logs copied from a remote machine, and their usage is credited too.
@@ -13,6 +9,7 @@
 
 **⚖️ Balance**
 - Free cards now only give cards you don't have yet. Rarity odds still apply, split among the rarities you haven't completed.
+- On first launch, tokens used in the last 14 days are credited as coins.
 
 ## 0.6.1 — 2026-10-12
 **✨ New features**
