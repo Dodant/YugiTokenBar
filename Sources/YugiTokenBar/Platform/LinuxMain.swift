@@ -14,6 +14,7 @@ enum LinuxMain {
         print("YugiTokenBar core on Linux")
         print("save: \(store.url.path)")
         print("log: \(AppLog.logFileURL.path)")
+        print("cache: \(TodayUsageReader.defaultHistoryFile.path)")
         print("coins: \(coinText(state.coins))  owned: \(state.distinctOwned)/\(db.cards.count)")
         print("today \(usage.date): \(usage.byProvider.sorted { $0.key < $1.key }.map { "\($0.key)=\(shortTokens($0.value))" }.joined(separator: " "))")
     }

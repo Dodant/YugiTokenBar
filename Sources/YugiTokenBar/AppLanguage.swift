@@ -22,7 +22,22 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 
     /// 사용자 언어 목록(nil 이면 앱 AppleLanguages → 시스템 순)에서 처음 지원하는 언어, 없으면 en
     static func resolve(_ preferences: [String]? = nil) -> String {
-        Bundle.preferredLocalizations(from: supported, forPreferences: preferences).first ?? "en"
+        #if os(Linux)
+        let environment = ProcessInfo.processInfo.environment
+        let selected = stored()
+        let choices = preferences ?? (selected != .system ? [selected.rawValue] :
+            (environment["LANGUAGE"] ?? "").split(separator: ":").map(String.init)
+                + ["LC_ALL", "LC_MESSAGES", "LANG"].compactMap { environment[$0] })
+        for choice in choices {
+            // A LANGUAGE list must be split by the caller, not treated as a single locale.
+            guard !choice.contains(":") else { continue }
+            let language = choice.prefix { $0.isASCII && $0.isLetter }.lowercased()
+            if supported.contains(language) { return language }
+        }
+        return "en"
+        #else
+        return Bundle.preferredLocalizations(from: supported, forPreferences: preferences).first ?? "en"
+        #endif
     }
 
     /// 이번 실행의 언어. 실행 중에 설정을 바꿔도 그대로다
