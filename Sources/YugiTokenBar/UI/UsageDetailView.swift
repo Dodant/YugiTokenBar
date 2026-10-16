@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// 팝오버 안 사용량 화면 (상점처럼 요약 위에 겹쳐 그린다).
@@ -292,3 +293,4 @@ struct UsageDetailView: View {
 
     static func costText(_ cost: Double) -> String { String(format: "$%.2f", cost) }
 }
+#endif

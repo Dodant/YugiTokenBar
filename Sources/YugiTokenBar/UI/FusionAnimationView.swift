@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// 융합 연출에 쓸 카드: 융합 결과와 소재(장 수만큼 반복)
@@ -399,3 +400,4 @@ private struct FusionScene {
         return x - x.rounded(.down)
     }
 }
+#endif

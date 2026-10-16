@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// 팝오버 안 개봉 화면 한 번의 내용. 새로 열 때마다 통째로 바꾼다
@@ -397,3 +398,4 @@ enum PanelScreen: Equatable {
     case summary, shop, settings, usage
     indirect case opening(back: PanelScreen)
 }
+#endif

@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import ImageIO
 
@@ -200,3 +201,4 @@ final class ImageCache {
         return nil
     }
 }
+#endif

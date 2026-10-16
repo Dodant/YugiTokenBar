@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import ImageIO
 
@@ -277,3 +278,4 @@ extension PartnerAnim {
         if desktop.image !== image { desktop.image = image }
     }
 }
+#endif

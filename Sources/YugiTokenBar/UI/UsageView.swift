@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// Claude Code·Codex 공식 한도(5시간·주간·모델별 주간) + 오늘 토큰·비용. 누르면 사용량 화면(`UsageDetailView`)으로 간다.
@@ -201,3 +202,4 @@ private struct WorkSummary: View {
         .task { await model.loadHistory() }
     }
 }
+#endif
