@@ -235,13 +235,10 @@ struct CardDB: Sendable {
 
     /// .app 안에서는 Contents/Resources/cards_XX.json, `swift run`·테스트에서는 저장소의 Resources/cards_XX.json.
     static func bundled(lang: String = AppLanguage.current) throws -> CardDB {
-        if let url = Bundle.main.url(forResource: fileName(lang), withExtension: "json") {
-            return try load(from: url)
-        }
-        return try load(from: repoURL(lang))
+        try load(from: PlatformPaths.resource("\(fileName(lang)).json"))
     }
 
     static func repoURL(_ lang: String) -> URL {
-        AppInfo.repoRoot.appendingPathComponent("Resources/\(fileName(lang)).json")
+        PlatformPaths.repoResource("\(fileName(lang)).json")
     }
 }

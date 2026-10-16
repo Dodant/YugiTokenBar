@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import Security
 
@@ -572,3 +573,4 @@ enum OAuthCredentialData {
         return Date(timeIntervalSince1970: seconds)
     }
 }
+#endif

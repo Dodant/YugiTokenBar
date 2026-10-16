@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// "융합 가능" 목록. inspector 클로저는 부모가 다시 그려져도 갱신되지 않을 때가 있어 모델을 직접 구독하는 뷰로 뺐다.
@@ -78,3 +79,4 @@ struct FusableSection: View {
         }
     }
 }
+#endif

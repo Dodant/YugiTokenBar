@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import Sparkle
 
@@ -25,3 +26,4 @@ import Sparkle
         controller?.checkForUpdates(nil)
     }
 }
+#endif

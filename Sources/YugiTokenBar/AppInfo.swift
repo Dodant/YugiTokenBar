@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// 버전·저장소·번들 문서. 버전과 패치노트의 원본은 저장소 루트의 CHANGELOG.md(한국어) 하나다
 /// (scripts/build-app.sh 가 맨 위 `## x.y.z` 를 Info.plist 에 넣는다). CHANGELOG.en.md·ja.md 는 그 번역이다.
@@ -57,7 +60,7 @@ enum AppInfo {
     }
 
     private static func text(_ name: String, repoPath: String) -> String {
-        let url = Bundle.main.url(forResource: name, withExtension: "md") ?? repoRoot.appendingPathComponent(repoPath)
+        let url = PlatformPaths.installedResource(name + ".md") ?? repoRoot.appendingPathComponent(repoPath)
         return (try? String(contentsOf: url, encoding: .utf8)) ?? String(localized: "\(repoPath)를 읽지 못했어요.")
     }
 

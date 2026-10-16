@@ -16,6 +16,16 @@ LocalUsageCache는 파일별 사용량 캐시다.
 5. `LocalUsageCache.swift`: 디스크 캐시 `usage-cache.json`을 `AppStatePaths.directory()`(`YTB_STATE_DIR`, 없으면 `~/Library/Application Support/YugiTokenBar`)에 둔다
 6. `LocalUsageReader.swift`·`LocalUsageCache.swift`: `parseClaudeLine`을 private에서 풀고, `claudeEntries(modifiedSince:skipping:)`가 주어진 경로를 건너뛴다(쓰는 중인 Claude 파일은 `TodayUsageReader`가 붙은 줄만 읽는다)
 7. `CursorUsageAPI.swift`: 토큰 준비·가져오기 성공/실패·캐시 없음 로그를 `AppLog.writeIfChanged`로 남긴다(같은 줄은 바뀔 때와 1시간마다만)
+8. `OAuthLimitsProvider.swift`: 파일 전체를 `#if os(macOS)`로 감싼다.
+9. `ClaudeAccountRoots.swift`·`CursorUsageAPI.swift`: Linux에서는 CryptoKit 대신 swift-crypto의 `Crypto`를 가져오고, `keychainServices`는 macOS 전용으로 둔다.
+10. `CursorUsageAPI.swift`: Linux의 URLSession을 위해 `FoundationNetworking`을 가져온다.
+11. `CustomScanRoots.swift`: Linux에서는 Darwin 대신 Glibc를 가져온다.
+12. `LocalAdditionalUsageProvider.swift`·`LocalAsideUsageReader.swift`·`LocalAntigravityUsageReader.swift`: Linux에서는 SQLite3 대신 `CSQLite`를 가져온다.
+13. `LocalAdditionalUsageProvider.cursorStandardRoots`: Linux의 Cursor 기본 폴더를 `~/.config/Cursor{, Nightly}/User/globalStorage`로 둔다.
+14. `LocalUsageCache.swift`: zlib 압축은 Darwin에서만 쓰고 Linux에서는 평문 JSON 캐시를 읽고 쓴다.
+15. `AppLog.swift`: Linux 로그를 `AppStatePaths.directory()` 아래에 둔다.
+16. `AppEnv.swift`: Linux에서 실행 파일의 `/.build` 포함 여부로 설치 실행을 판별한다(`isInstalledRun`).
+17. `BinaryLocator.swift`: 셸 stdout을 throwing API `readToEnd()`로 읽어 타임아웃으로 핸들을 닫을 때 발생하는 읽기 오류를 빈 데이터로 처리한다.
 
 ## MIT License
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated

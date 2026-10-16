@@ -1,6 +1,7 @@
 # YugiTokenBar
 
 Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션을 채우는 macOS 메뉴바 앱.
+코어(게임·세이브·사용량)는 Linux에서도 빌드·테스트된다(`scripts/linux-build.sh`, Linux 창은 설계 문서 2026-10-16의 3단계).
 - 컬렉션: 정규 부스터 100팩, 8,226종.
   - 어시스트 팩 같은 미니 팩 제외.
   - 100팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에 넣음.
@@ -19,6 +20,15 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 - 실행 방식: **Subagent-driven** (superpowers:subagent-driven-development) — 사용자가 선택함
 
 ## 규칙
+
+- 플랫폼: SwiftUI·AppKit·Sparkle을 쓰는 파일은 첫 줄 `#if os(macOS)`, Linux 전용 진입점은 `#if os(Linux)`로 감싼다.
+  Linux 전용 의존성은 `Package.swift`의 `#if os(Linux)` 블록 안에만 두고 CSQLite·swift-crypto(현재 `exact: "3.15.1"`, 3단계에서 adwaita-swift) 외에는 더하지 않는다.
+  macOS 그래프는 Sparkle 2.9.6 하나이며 `swift package show-dependencies`·`Package.resolved`를 CI에서 검사한다.
+  Linux의 `Package.resolved`는 `.build-linux/`에 두고 커밋하지 않는다.
+  `scripts/linux-build.sh`는 소스·리소스·패치노트를 각각 읽기 전용으로 마운트하고 Linux 잠금 파일을 쓰기 가능한 컨테이너 패키지 루트로 복사한 뒤 명령 종료 시 되돌려 복사한다.
+  `String(localized:)`는 Linux에서 `Platform/Localizer.swift`가 같은 `.strings`로 처리하므로 그대로 쓴다.
+  Linux 전용 코드의 출력·로그는 영어로 쓴다(`sync-strings.py`가 한글 리터럴을 키로 본다).
+  Linux에서는 공식 한도·Cursor 대시보드 API를 읽지 않고 Cursor 로컬 DB만 센다.
 
 - 개발과 QA 실행은 항상 `YTB_STATE_DIR=$PWD/qa-state`로 한다.
   실제 세이브 `~/Library/Application Support/YugiTokenBar/`는 건드리지 않는다.
@@ -79,6 +89,8 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 
 ```bash
 swift test                                            # 전체 테스트
+scripts/linux-build.sh test                           # Docker(swift:6.4.1) Linux 코어 테스트, 산출물·핀 .build-linux/
+scripts/linux-build.sh run YugiTokenBar               # Linux CLI, 격리 qa-state 사용
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/sync-strings.py --check                 # UI 문구 키·번역·en 문자 체계·en 복수형 검사 (컴파일러로 키 추출, ~20초)

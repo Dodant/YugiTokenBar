@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 struct PopoverView: View {
@@ -276,3 +277,4 @@ private extension View {
         padding(12).background(.fill.quinary, in: .rect(cornerRadius: 16))
     }
 }
+#endif

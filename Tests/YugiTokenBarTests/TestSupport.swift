@@ -44,6 +44,7 @@ func tempDir() -> URL {
     return dir
 }
 
+#if os(macOS)
 /// 세이브를 먼저 써 둔 임시 저장소로 AppModel 을 만든다 (파트너 시트는 읽지 않는다)
 @MainActor func makeModel(_ db: CardDB, _ edit: (inout GameState) -> Void = { _ in }) throws -> (AppModel, StateStore) {
     let store = StateStore(url: tempDir().appendingPathComponent("state.json"))
@@ -52,3 +53,4 @@ func tempDir() -> URL {
     try store.save(state)
     return (AppModel(db: db, store: store, partner: PartnerModel(sheet: nil)), store)
 }
+#endif

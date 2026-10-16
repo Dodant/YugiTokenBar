@@ -3,6 +3,7 @@ import Testing
 @testable import YugiTokenBar
 
 @Suite struct LimitsTests {
+    #if os(macOS)
     @Test func claudeMetersIncludeModelScopedWeekly() throws {
         let json = #"""
         {"five_hour":{"utilization":50,"resets_at":"2026-10-01T09:00:00Z"},
@@ -15,7 +16,9 @@ import Testing
         #expect(meters.map(\.label) == ["5시간", "주간", "Fable"])
         #expect(meters.map(\.percent) == [50, 52.4, 65])
     }
+    #endif
 
+    #if os(macOS)
     /// 신형 limits[] 만 오면 session → "5시간", weekly_all → "주간", 나머지는 모델명. 위 줄 초기화 시각은 session 의 것
     @MainActor @Test func claudeMetersFromNewLimitsOnly() throws {
         let json = #"""
@@ -28,13 +31,16 @@ import Testing
         let session = try #require(status.limits?.first?.resetDate)
         #expect(UsageView.claudeReset(status) == session)
     }
+    #endif
 
+    #if os(macOS)
     @Test func resetTextInKorean() {
         let now = Date(timeIntervalSince1970: 0)
         #expect(UsageView.resetText(now.addingTimeInterval(48 * 60), now: now) == "48분 후 초기화")
         #expect(UsageView.resetText(now.addingTimeInterval(126 * 60), now: now) == "2시간 6분 후 초기화")
         #expect(UsageView.resetText(now.addingTimeInterval(-60), now: now) == "0분 후 초기화")
     }
+    #endif
 
     @Test func shortCoinsKeepsDecimalOnlyForOneDigit() {
         #expect(shortCoins(2_400) == 2_400.formatted())

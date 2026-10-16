@@ -10,6 +10,11 @@ import Testing
         #expect(AppLanguage.resolve(["en-GB"]) == "en")
         #expect(AppLanguage.resolve(["fr-FR"]) == "en")
         #expect(AppLanguage.resolve(["de", "ko"]) == "ko")  // 목록 안에서 처음 지원하는 언어
+        #if os(Linux)
+        #expect(AppLanguage.resolve(["ko_KR.UTF-8"]) == "ko")
+        #expect(AppLanguage.resolve(["C", "POSIX"]) == "en")
+        #expect(AppLanguage.resolve(["zh_CN.UTF-8:ja_JP"]) == "en")
+        #endif
         #expect(AppLanguage.supported.allSatisfy { CardDB.fileName($0).hasPrefix("cards_") })
     }
 
@@ -37,7 +42,9 @@ import Testing
 
     private static func strings(_ lang: String) throws -> [String: String] {
         let url = AppInfo.repoRoot.appendingPathComponent("Resources/\(lang).lproj/Localizable.strings")
-        return try #require(NSDictionary(contentsOf: url) as? [String: String], "\(lang) strings 를 읽지 못함")
+        let table = Localizer.parseStrings(try String(contentsOf: url, encoding: .utf8))
+        try #require(!table.isEmpty, "\(lang) strings 를 읽지 못함")
+        return table
     }
 
     private static func specifiers(_ s: String) -> [String] {
@@ -57,6 +64,7 @@ import Testing
         #expect(en.count >= 3)
     }
 
+    #if os(macOS)
     /// en 복수형(stringsdict): 키는 strings 에도 있고(sync-strings 가 보는 곳), 1장·2장이 단수·복수로 나온다
     @Test func englishPlurals() throws {
         // en.lproj 만 든 임시 번들 (Resources 를 그대로 쓰면 시스템 언어의 lproj 를 고른다)
@@ -78,6 +86,8 @@ import Testing
         let save = "가져올 세이브: 카드 %lld종 · %@\n(%@, v%@)\n지금 세이브: 카드 %lld종 · %@\n\n지금 세이브는 세이브 폴더에 자동 백업돼요."
         #expect(String(format: format(save), locale: locale, 1, "a", "b", "c", 2, "d").hasPrefix("Save to import: 1 card · a\n(b, vc)\nCurrent save: 2 cards · d"))
     }
+
+    #endif
 
     /// 기본 덱 이름을 알아보는 앞부분이 번역과 맞다 (번역을 바꾸면 Deck.defaultPrefixes 도)
     @Test func defaultDeckPrefixesMatchTranslations() throws {

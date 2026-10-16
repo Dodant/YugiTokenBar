@@ -6,8 +6,12 @@ enum AppLog {
     static var logFileURL: URL { url }
 
     private static let url: URL = {
+        #if os(Linux)
+        let dir = AppStatePaths.directory()  // YugiTokenBar 패치: Linux 는 ~/Library 가 없어 세이브 폴더에 둔다
+        #else
         let dir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Logs")
+        #endif
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("YugiTokenBar.log")
     }()

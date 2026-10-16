@@ -433,7 +433,11 @@ actor LocalUsageCache {
         // with live data.
         guard persistsToDisk, let raw = try? Data(contentsOf: fileURL) else { return }
         // zlib 압축 스냅샷(현행) → 실패 시 평문 JSON(구버전 캐시) 폴백
+        #if canImport(Darwin)
         let data = (try? (raw as NSData).decompressed(using: .zlib) as Data) ?? raw
+        #else
+        let data = raw
+        #endif
         guard let snap = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
         claudeCache = snap.claude
         codexCache = snap.codex
@@ -504,7 +508,11 @@ actor LocalUsageCache {
             ompParserVersion: Self.ompParserVersion)
         if let data = try? JSONEncoder().encode(snap) {
             // JSON 은 zlib 로 크게 압축됨(수 MB → 수백 KB). 실패 시 평문 저장(로드가 양쪽 다 처리).
+            #if canImport(Darwin)
             let out = (try? (data as NSData).compressed(using: .zlib) as Data) ?? data
+            #else
+            let out = data
+            #endif
             try? out.write(to: fileURL, options: .atomic)
             dirty = false
             lastSave = now()

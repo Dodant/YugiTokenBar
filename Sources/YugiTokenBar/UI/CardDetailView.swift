@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// 오른쪽 패널의 카드 한 장 정보: 이미지·효과·융합 소재(이동·융합)·보유와 판매·수록 팩
@@ -195,3 +196,4 @@ extension CardInfo {
         }
     }
 }
+#endif

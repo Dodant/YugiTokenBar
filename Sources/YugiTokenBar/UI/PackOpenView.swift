@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// 팝오버 안 팩·무료 카드 개봉 화면. 상점처럼 요약 화면 위에 겹쳐 그린다(패널 높이 고정).
@@ -390,3 +391,4 @@ private struct RareEffect: ViewModifier {
         withAnimation(.easeInOut(duration: 2.2).delay(0.35).repeatForever()) { pulse = true }
     }
 }
+#endif

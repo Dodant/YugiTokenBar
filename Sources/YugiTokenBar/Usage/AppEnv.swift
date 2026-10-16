@@ -6,8 +6,17 @@ enum AppEnv {
     /// "실앱 전용" 부수효과의 단일 게이트 — `swift test`/로우 바이너리(dev 실행)에선 false.
     /// bundleIdentifier(Info.plist)와 경로 접미사를 함께 확인(둘 다 실앱에서만 참).
     static var isBundledApp: Bool {
+        #if os(Linux)
+        isInstalledRun(executablePath: Bundle.main.executablePath ?? CommandLine.arguments[0])
+        #else
         Bundle.main.bundleIdentifier != nil && Bundle.main.bundlePath.hasSuffix(".app")
+        #endif
     }
+
+    #if os(Linux)
+    /// YugiTokenBar 패치: Linux 는 번들이 없어 실행 파일 위치로 본다. `/.build`(swift run·swift test·.build-linux) 아래면 개발 실행
+    static func isInstalledRun(executablePath: String) -> Bool { !executablePath.contains("/.build") }
+    #endif
 
     /// `PTB_PARITY=1` — a QA/parity run where live endpoints are allowed (the same flag the parity
     /// smoke tests already use). Only ever opens a gate that `isBundledApp` keeps closed.

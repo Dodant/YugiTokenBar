@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// 융합 연출에 쓸 카드: 융합 결과와 소재(장 수만큼 반복)
@@ -261,7 +262,8 @@ private struct FusionScene {
             var g = g
             g.blendMode = .plusLighter
             let dur = tier >= 5 ? 1.6 : 1.4
-            for (n, off) in (tier >= 5 ? [0, 0.28] : [0]).enumerated() where shineT >= off {
+            let offsets: [Double] = tier >= 5 ? [0, 0.28] : [0]
+            for (n, off) in offsets.enumerated() where shineT >= off {
                 let q = tier >= 4 ? ((shineT - off) / dur).truncatingRemainder(dividingBy: 1) : clamp((shineT - off) / 0.9)
                 let x0 = -w * 1.2 + q * w * 2.6, bw = w * (n == 0 ? 0.55 : 0.25)
                 let edge1 = tier >= 4 ? c1.opacity(0.53) : .white.opacity(0.2), edge2 = tier >= 4 ? c2.opacity(0.53) : .white.opacity(0.2)
@@ -399,3 +401,4 @@ private struct FusionScene {
         return x - x.rounded(.down)
     }
 }
+#endif

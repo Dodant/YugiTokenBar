@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 struct ShopView: View {
@@ -257,3 +258,4 @@ struct BuyButton: View {
         .disabled(!model.game.canAffordPack)
     }
 }
+#endif
