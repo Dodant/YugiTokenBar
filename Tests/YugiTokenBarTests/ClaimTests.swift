@@ -148,6 +148,7 @@ import Testing
     }
 }
 
+#if os(macOS)
 /// 매분 갱신: 늘어난 토큰이 없으면 저장하지 않고(파일을 다시 만들지 않음), 늘면 적립하고 저장한다
 @MainActor @Test func modelClaimSavesOnlyWhenStateChanges() throws {
     let file = tempDir().appendingPathComponent("state.json")
@@ -161,4 +162,5 @@ import Testing
     #expect(FileManager.default.fileExists(atPath: file.path))
     #expect(model.game.state.coins == 1)
 }
+#endif
 

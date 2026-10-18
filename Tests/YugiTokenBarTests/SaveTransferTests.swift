@@ -18,6 +18,7 @@ import Testing
         #expect(throws: SaveTransferError.newerSchema) { try SaveEnvelope.decode(Data(newer.utf8)) }
     }
 
+    #if os(macOS)
     @MainActor @Test func importBacksUpAndKeepsLocalLedger() throws {
         let dir = tempDir()
         let store = StateStore(url: dir.appendingPathComponent("state.json"))
@@ -42,6 +43,7 @@ import Testing
         #expect(saved.claimedDate == "2026-10-02" && saved.claimedByProvider == ["claude": 500])
         #expect(model.game.state == saved)
     }
+    #endif
 
     @Test func changelogVersionAndCompare() {
         let text = "# 패치노트\n\n## 0.10.0 — 2026-10-02\n- x\n## 0.9.1\n"

@@ -1,3 +1,4 @@
+#if os(macOS)
 import AppKit
 import SwiftUI
 
@@ -110,3 +111,4 @@ final class PartnerHostingView: NSHostingView<PartnerView> {
 
     @objc private func hidePartner() { onHide() }
 }
+#endif

@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import Testing
 @testable import YugiTokenBar
@@ -36,3 +37,4 @@ import Testing
         #expect(!model.opening.freePack)
     }
 }
+#endif

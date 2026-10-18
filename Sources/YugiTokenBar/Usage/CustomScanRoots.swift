@@ -1,4 +1,8 @@
+#if canImport(Darwin)
 import Darwin
+#else
+import Glibc
+#endif
 import Foundation
 
 /// Per-provider extra scan folders from Settings (#177).

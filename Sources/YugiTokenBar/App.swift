@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 @main
@@ -90,3 +91,4 @@ private struct MenuBarLabel: View {
         }
     }
 }
+#endif

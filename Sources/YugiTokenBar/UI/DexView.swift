@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 struct DexView: View {
@@ -562,3 +563,4 @@ private struct SellDuplicatesButton: View {
         }
     }
 }
+#endif

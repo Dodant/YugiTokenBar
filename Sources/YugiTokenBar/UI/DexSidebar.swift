@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// 컬렉션 사이드바. 따로 둬서 카드를 클릭(선택)해도 팩·등급 통계를 다시 세지 않는다.
@@ -212,3 +213,4 @@ private struct DeckRow: View {
         } isTargeted: { targeted = $0 }
     }
 }
+#endif

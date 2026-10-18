@@ -53,7 +53,7 @@ actor TodayUsageReader {
     init(claudeRoots: [URL]? = nil, cache: LocalUsageCache? = nil,
          historyFile: URL? = TodayUsageReader.defaultHistoryFile,
          liveCursor: (@Sendable (Date) async -> LocalAdditionalUsageReader.CursorLoadResult)? =
-            AppEnv.allowsLiveLimitsFetch ? { @Sendable in await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: $0) } : nil,
+            TodayUsageReader.defaultLiveCursor,
          otherLogs: @escaping @Sendable (Date) -> [(Provider, [LocalUsageReader.Entry])] = TodayUsageReader.localOtherLogs,
          backoffStore: UserDefaults? = AppEnv.isBundledApp ? .standard : nil) {
         self.claudeRoots = claudeRoots
@@ -63,6 +63,15 @@ actor TodayUsageReader {
         self.otherLogs = otherLogs
         self.backoffStore = backoffStore
         cursorAPIRetryAt = backoffStore?.object(forKey: Self.retryAtKey) as? Date ?? .distantPast
+    }
+
+    /// Linux uses local Cursor databases only; it never fetches the dashboard API.
+    static var defaultLiveCursor: (@Sendable (Date) async -> LocalAdditionalUsageReader.CursorLoadResult)? {
+        #if os(Linux)
+        nil
+        #else
+        AppEnv.allowsLiveLimitsFetch ? { @Sendable in await LocalAdditionalUsageReader.cursorEntriesAsync(modifiedSince: $0) } : nil
+        #endif
     }
 
     /// 지난 날짜별 합계 파일. 실앱은 캐시 폴더, `YTB_STATE_DIR`·개발 실행은 세이브 폴더(개발 실행이 실앱 기록을 덮지 않게)

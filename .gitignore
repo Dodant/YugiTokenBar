@@ -1,5 +1,6 @@
 .superpowers/
 .build/
+.build-linux/
 .DS_Store
 build/
 qa-state/

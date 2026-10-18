@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// 카드 이미지. 로딩 중·실패 시 카드 뒷면 + 고른 언어의 카드 이름, owned=false 면 흑백 실루엣.
@@ -392,3 +393,4 @@ extension View {
         modifier(CardTilt(tier: tier, angleScale: angleScale, enabled: enabled))
     }
 }
+#endif

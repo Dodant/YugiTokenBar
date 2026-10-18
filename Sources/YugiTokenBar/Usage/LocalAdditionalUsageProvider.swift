@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(SQLite3)
 import SQLite3
+#else
+import CSQLite
+#endif
 
 enum LocalAdditionalSource: String, Sendable {
     case opencode
@@ -688,24 +692,26 @@ enum LocalAdditionalUsageReader {
 
     // MARK: Cursor database
 
+    /// YugiTokenBar 패치: OS 별 Cursor 기본 데이터 폴더. Linux 는 ~/.config (설계 문서 5.3)
+    static func cursorStandardRoots(home: URL) -> [URL] {
+        #if os(Linux)
+        ["Cursor", "Cursor Nightly"].map { home.appendingPathComponent(".config/\($0)/User/globalStorage") }
+        #else
+        ["Cursor", "Cursor Nightly"].map { home.appendingPathComponent("Library/Application Support/\($0)/User/globalStorage") }
+        #endif
+    }
+
 
     static var defaultCursorRoots: [URL] {
-        environmentPaths("CURSOR_DATA_DIR") ?? [
-            FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Library/Application Support/Cursor/User/globalStorage"),
-            FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Library/Application Support/Cursor Nightly/User/globalStorage"),
-        ]
+        environmentPaths("CURSOR_DATA_DIR")
+            ?? Self.cursorStandardRoots(home: FileManager.default.homeDirectoryForCurrentUser)
     }
 
     static func cursorRoots(
         customRootsValue: String? = nil,
         home: URL = FileManager.default.homeDirectoryForCurrentUser
     ) -> [URL] {
-        let curated = environmentPaths("CURSOR_DATA_DIR") ?? [
-            home.appendingPathComponent("Library/Application Support/Cursor/User/globalStorage"),
-            home.appendingPathComponent("Library/Application Support/Cursor Nightly/User/globalStorage"),
-        ]
+        let curated = environmentPaths("CURSOR_DATA_DIR") ?? Self.cursorStandardRoots(home: home)
         return CustomScanRoots.union(defaults: curated, extraRaw: customRootsValue)
     }
 

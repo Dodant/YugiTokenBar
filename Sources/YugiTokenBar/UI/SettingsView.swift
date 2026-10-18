@@ -1,3 +1,4 @@
+#if os(macOS)
 import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
@@ -436,3 +437,4 @@ struct DocView: View {
         Text((try? AttributedString(markdown: line)) ?? AttributedString(line))
     }
 }
+#endif
