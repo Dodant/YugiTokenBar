@@ -263,4 +263,18 @@ import Testing
         let packs = Set((0..<20).compactMap { _ in game.openFreePack(using: &rng)?.pack })
         #expect(packs.count == 2)
     }
+
+    @Test func potOfGreedGivesTwoFreePacks() {
+        let pot = CardDB.potOfGreed
+        let db = makeDB([[(pot, 1)]])
+        var game = Game(db: db, state: GameState())
+        game.state.coins = 1_000_000
+        var rng = SeededRNG(seed: 1)
+        let pulls = game.buy(pack: 0, using: &rng)
+        #expect(pulls.map(\.bonusPacks) == [Balance.potOfGreedFreePacks])
+        #expect(game.state.freePacks == Balance.potOfGreedFreePacks)
+        game.state.pendingFree = 1
+        #expect(game.openFree(using: &rng).first?.bonusPacks == 2)  // 무료 카드에서도
+        #expect(game.state.freePacks == 4)
+    }
 }

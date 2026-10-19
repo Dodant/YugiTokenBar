@@ -5,6 +5,8 @@ enum Balance {
     static let packPrice = 1_000
     /// 코인으로 이만큼 사면 무료 팩 1장 (무료 팩으로 깐 건 세지 않는다)
     static let packsPerFreePack = 10
+    /// 이스터에그: 「욕망의 항아리」(드로우 2장)가 나오면 무료 팩을 이만큼 준다 (팩·무료 카드 모두, 자동 판매돼도)
+    static let potOfGreedFreePacks = 2
     static let tokensPerFreeCard = 10_000_000
     /// 첫 실행에 적립하는 지난 일수. 그 전 사용량은 적립하지 않는다 (catchUpDays 30 안)
     static let firstRunCreditDays = 14
@@ -56,6 +58,8 @@ struct Pull: Sendable, Equatable {
     var soldFor: Int? = nil
     /// 받은 직후 오버프레임 그림이 해금돼 있었는지 (한 팩에 2·3장째가 같이 나오면 3장째부터)
     var overframe = false
+    /// 「욕망의 항아리」로 받은 무료 팩 수
+    var bonusPacks = 0
     var label: String { CardInfo.rarities[tier - 1] }
 }
 
@@ -504,7 +508,9 @@ struct Game: Sendable {
         let keep = keep(cid)  // 지급 전 값: 오버프레임을 해금한 장(3장째)은 팔지 않는다
         give(cid, source: source)
         let overframe = showsOverframe(cid)
-        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid, keep: keep), overframe: overframe)
+        let bonusPacks = cid == CardDB.potOfGreed ? Balance.potOfGreedFreePacks : 0
+        state.freePacks += bonusPacks
+        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid, keep: keep), overframe: overframe, bonusPacks: bonusPacks)
     }
 
     /// 설정이 켜져 있고 `keep` 장을 넘으면 바로 1장 판다. 반환: 받은 코인.

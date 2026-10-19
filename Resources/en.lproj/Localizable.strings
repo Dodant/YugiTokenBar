@@ -503,3 +503,5 @@
 "카드마다 1장씩은 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." = "1 copy of each card stays and cards with locked overframe artwork aren't sold, so your collection is unchanged.";
 /* DexView.swift:205 */
 "✦ 오버프레임" = "✦ Overframe";
+/* PackOpenView.swift:138 */
+"무료 팩 +%lld" = "Free pack +%lld";

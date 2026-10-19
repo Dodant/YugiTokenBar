@@ -198,6 +198,8 @@ struct CardDB: Sendable {
     static let fusionSpell = 4837
     /// 「마스크 체인지」(익스트림 빅토리에 넣은 프리미엄 팩 Vol.6 SE). 1장 이상 있어야 마스크드 히어로를 만들 수 있고 소비되지 않는다.
     static let maskChange = 9066
+    /// 「욕망의 항아리」. 나오면 무료 팩 `Balance.potOfGreedFreePacks`개 (이스터에그)
+    static let potOfGreed = 4844
     /// 「날개 크리보」(잃어버린 천년 SR). 가지면 파트너가 해금된다.
     static let partnerCard = 6314
     /// 시대를 대표하는 소환법 코드 (설정의 시대 범위 메뉴 표시용, 이름은 CardInfo.summonTitle)
