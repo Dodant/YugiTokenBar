@@ -2,6 +2,7 @@
 
 ## 0.6.2 — 2026-10-15
 **✨ New features**
+- Added the new booster pack BEYOND THE BRAVE, bringing the collection to 101 packs and 8,306 cards, with 307 cards that can be made by Fusion. Its 4 cards with official overframe versions (The Great Gallant Bandit, Red-Eyes Black Dragon Exceed, and more) are also shown with artwork extending past the card frame.
 - Added [Extra scan folders] to Settings. Add Claude, Codex, Gemini, Grok, Pi, or oh-my-pi log folders outside the default location, such as logs copied from a remote machine, and their usage is credited too.
 
 **🎨 Improvements**

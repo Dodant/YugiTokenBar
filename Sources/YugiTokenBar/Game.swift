@@ -48,7 +48,7 @@ struct Pull: Sendable, Equatable {
 }
 
 struct Game: Sendable {
-    /// 100팩 전체
+    /// 101팩 전체
     let fullDB: CardDB
     var state: GameState
     /// 시대 이름 → 그 시대까지 자른 DB (미리 만들어 두고 고르기만 한다)

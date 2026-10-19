@@ -5,28 +5,28 @@ import Testing
 @Suite struct CardDBTests {
     @Test func bundledDataMatchesKoreanBoostersThroughModern() throws {
         let db = try CardDB.load(from: CardDB.repoURL("ko"))
-        #expect(db.packs.count == 100)
+        #expect(db.packs.count == 101)
         #expect(db.packs.first?.name == "푸른 눈의 백룡의 전설")
-        #expect(db.packs.last?.name == "카오스 오리진즈")
+        #expect(db.packs.last?.name == "비욘드 더 브레이브")
         #expect(!db.packs.contains { $0.name.contains("어시스트") || $0.cards.count < 40 })  // 미니 팩은 뺀다
-        #expect(db.packs.allSatisfy { $0.date < "2026-07-15" })
+        #expect(db.packs.allSatisfy { $0.date < "2026-10-14" })
         #expect(db.packs.map(\.date) == db.packs.map(\.date).sorted())
         #expect(db.packs.first?.setCode == "LOB")
         #expect(db.eras.map(\.name) == ["DM", "GX", "5D's", "ZEXAL", "ARC-V", "VRAINS", "Modern"])
         let kinds = Dictionary(grouping: db.cards.values, by: \.kind).mapValues(\.count)
-        #expect(kinds == [.monster: 5086, .spell: 1720, .trap: 1420])
+        #expect(kinds == [.monster: 5137, .spell: 1738, .trap: 1431])
         // 팩마다 노멀 몬스터가 보장 장 수 이상이라 몬스터 슬롯이 다른 티어로 올라가지 않는다
         #expect(db.packs.allSatisfy { p in p.cards.filter { db.tier($0) == 1 && db.cards[$0]?.kind == .monster }.count >= Balance.monstersPerPack })
-        #expect(db.eras.map(\.packs) == [0..<11, 11..<27, 27..<43, 43..<51, 51..<63, 63..<75, 75..<100])
+        #expect(db.eras.map(\.packs) == [0..<11, 11..<27, 27..<43, 43..<51, 51..<63, 63..<75, 75..<101])
         // 시대 첫 팩: 듀얼리스트의 투혼(GX), 듀얼리스트의 태동(싱크로), 리턴 오브 더 듀얼리스트(엑시즈), 더 듀얼리스트 어드벤트(펜듈럼), 코드 오브 더 듀얼리스트(링크), 라이즈 오브 더 듀얼리스트(Modern)
         #expect(db.eras.map { db.packs[$0.packs.lowerBound].setCode } == ["LOB", "SOD", "TDGS", "REDU", "DUEA", "COTD", "ROTD"])
         #expect(db.packs.allSatisfy { $0.setCode != nil && $0.imageURL != nil })
-        #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 100팩 모두 한글판
-        #expect(db.allCIDs.count == 8226)
+        #expect(db.packs.allSatisfy { $0.imageURL!.contains("BoosterKR") })  // 101팩 모두 한글판
+        #expect(db.allCIDs.count == 8306)
         // 재수록 카드는 수록 팩 중 가장 높은 등급: 유벨(환영의 어둠 N, 팬텀 나이트메어 QCSE → SE)
         #expect(db.cards.values.first { $0.name == "유벨" }?.rarity == "SE")
         let tiers = Dictionary(grouping: db.cards.values, by: \.tier).mapValues(\.count)
-        #expect(tiers == [1: 4774, 2: 1733, 3: 907, 4: 502, 5: 310])
+        #expect(tiers == [1: 4814, 2: 1751, 3: 917, 4: 510, 5: 314])
         // 팩 표지 몬스터는 SE (악몽의 미궁·어둠의 유산은 표지가 마법·함정이라 빠진다)
         #expect(db.cards[4007]?.rarity == "SE" && db.cards[4223]?.rarity == "SE")  // 푸른 눈의 백룡, 블랙 데몬즈 드래곤
         for pack in db.packs {
@@ -46,16 +46,16 @@ import Testing
         // 종류 메뉴의 소환법: 의식 마법(댄스의 유혹)은 "의식"에 안 잡히고, 엑시즈 펜듈럼(패왕흑룡)은 둘 다
         #expect(db.cards[4682]?.matches(kind: "ritual") == false && db.cards[4682]?.matches(kind: "spell") == true)
         #expect(["monster", "xyz", "pendulum"].allSatisfy { db.cards[11835]?.matches(kind: $0) == true })
-        #expect(db.cards.values.filter { $0.matches(kind: "fusion") }.count == 323)
-        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): 마스크드 히어로 10종·NEX 2종·베어트론 빼고 310종, 전부 카드인 건 118종
+        #expect(db.cards.values.filter { $0.matches(kind: "fusion") }.count == 326)
+        // 융합 소재(build-cards.py 가 효과 첫 줄에서 뗀다): 마스크드 히어로 10종·NEX 2종·베어트론 빼고 313종, 전부 카드인 건 118종
         let fusions = db.cards.values.filter { $0.matches(kind: "fusion") }
-        #expect(fusions.filter { $0.materials != nil }.count == 310)
+        #expect(fusions.filter { $0.materials != nil }.count == 313)
         #expect(fusions.filter { $0.materials?.allSatisfy { $0.cid != nil } == true }.count == 118)
         #expect(db.cards[20769]?.materials?.first == Material(rule: "\"엘리멘틀 히어로 페더맨\"이나 \"엘리멘틀 히어로 버스트 레이디\""))  // "A"이나 "B" 는 조건
         #expect(db.cards[4043]?.materials == [Material(cid: 4044), Material(cid: 4045)] && db.cards[4043]?.text == "")  // 용기사 가이아: 바닐라라 효과가 빈다
-        // 조건 없는 융합의 100팩에 없는 소재 8장은 그 융합이 든 팩에 넣는다: 미노켄타우로스의 미노타우로스(스타터 덱 카드, 강철의 습격자)
+        // 조건 없는 융합의 101팩에 없는 소재 8장은 그 융합이 든 팩에 넣는다: 미노켄타우로스의 미노타우로스(스타터 덱 카드, 강철의 습격자)
         #expect(db.cards[4098]?.materials?.first == Material(cid: 4032) && db.packs[1].cards.contains(4032))
-        // 100팩 밖 융합 중 조건 없고 100팩 소재가 있는 25종은 100팩 소재가 처음 나온 팩 중 가장 늦은 팩에 넣는다: 합체마신－게이트 가디언(강철의 습격자)
+        // 101팩 밖 융합 중 조건 없고 101팩 소재가 있는 25종은 101팩 소재가 처음 나온 팩 중 가장 늦은 팩에 넣는다: 합체마신－게이트 가디언(강철의 습격자)
         #expect(db.packs[1].cards.contains(18325) && db.cards[18325]?.materials == [Material(cid: 4377), Material(cid: 4378), Material(cid: 4379)])
         // 밖 소재도 같은 팩에: 극화염의 검사(화염의 검사 + 조건 융합 투의염참룡), 메테오 블랙 드래곤(붉은 눈의 흑룡 + 메테오 드래곤)
         #expect(db.cards[19727]?.materials == [Material(cid: 4021), Material(cid: 19728)] && [19727, 19728, 4719, 4718].allSatisfy(db.packs[0].cards.contains))
@@ -63,16 +63,16 @@ import Testing
         // 마스크 체인지·마스크드 히어로 10종은 한국 첫 수록일 직전 팩에: 마스크 체인지(익스트림 빅토리), 아토믹(듀얼리스트 어드밴스)
         #expect(db.packs.firstIndex { $0.cards.contains(CardDB.maskChange) } == 38 && db.cards[CardDB.maskChange]?.kind == .spell)
         #expect(db.packs.firstIndex { $0.cards.contains(21614) } == 95 && db.cards.values.filter { $0.mask == true }.count == 10)
-        #expect(db.cards.values.filter { $0.hero == true }.count == 87 && db.fusionCIDs.count == 305)
-        // 조건이 섞인 융합의 100팩 밖 소재도 그 융합의 팩에 넣어서 이름만 남은 소재가 없다: 지천의 기사 가이아드레이크의 대지의 기사 가이아 나이트(폭풍의 스타스트라이크)
+        #expect(db.cards.values.filter { $0.hero == true }.count == 91 && db.fusionCIDs.count == 307)
+        // 조건이 섞인 융합의 101팩 밖 소재도 그 융합의 팩에 넣어서 이름만 남은 소재가 없다: 지천의 기사 가이아드레이크의 대지의 기사 가이아 나이트(폭풍의 스타스트라이크)
         #expect(db.cards.values.allSatisfy { $0.materials?.allSatisfy { $0.name == nil } ?? true })
         #expect(db.cards[9116]?.materials?.first == Material(cid: 7697) && db.packs[36].cards.contains(7697))
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
-        // 만들 수 있는 융합 305종(카드 소재 118·조건 소재 177·마스크드 히어로 10)은 소재 줄마다 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
-        #expect(db.cards.values.filter { $0.picks != nil }.count == 305)
+        // 만들 수 있는 융합 307종(카드 소재 118·조건 소재 179·마스크드 히어로 10)은 소재 줄마다 맞는 카드 목록(picks)이 있다: 투의염참룡(자기 빼고 드래곤족 + 전사족 / 화염 속성)
+        #expect(db.cards.values.filter { $0.picks != nil }.count == 307)
         #expect(db.cards[12777]?.picks?.first?.any.contains(6315) == true)  // 앤틱 기어 데블의 "앤틱 기어" 몬스터에 앤틱 기어 골렘
         #expect(db.cards[4043]?.picks == [Pick(any: [4044]), Pick(any: [4045])] && db.cards[21614]?.picks?.first?.any.count == 9)  // 용기사 가이아(카드 소재), 마스크드 히어로 아토믹(화염 HERO)
-        #expect(db.cards[19728]?.picks?.map(\.any.count) == [437, 74] && db.cards[19728]?.picks?[0].any.contains(4007) == true)
+        #expect(db.cards[19728]?.picks?.map(\.any.count) == [443, 74] && db.cards[19728]?.picks?[0].any.contains(4007) == true)
         #expect(db.cards[12953]?.picks?.map { $0.join == true } == [false, true, true, true])  // 패왕룡 즈아크: 종류마다 1장씩
         // 「융합」 마법은 첫 팩에 있어서 어느 시대 범위에서도 구할 수 있다
         #expect(db.cards[CardDB.fusionSpell].map { ($0.name, $0.kind) } ?? ("", .monster) == ("융합", .spell))

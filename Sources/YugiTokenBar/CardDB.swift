@@ -83,7 +83,7 @@ enum CardKind: String, CaseIterable, Sendable {
     }
 }
 
-/// 융합 소재 하나: cid 는 100팩의 카드, name 은 100팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
+/// 융합 소재 하나: cid 는 101팩의 카드, name 은 101팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
 struct Material: Codable, Sendable, Equatable {
     var cid: Int? = nil
     var name: String? = nil

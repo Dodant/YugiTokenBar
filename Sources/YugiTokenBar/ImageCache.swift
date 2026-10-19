@@ -55,7 +55,7 @@ final class ImageCache {
     }
 
     /// passcode → 공식 오버프레임(Yugipedia "Extended art") 이미지. 워터마크(SAMPLE) 없는 실물 스캔·공식 이미지만.
-    /// 100팩에 든 오버프레임 21종 전부. 카드별 출처는 docs/sources.md.
+    /// 101팩에 든 오버프레임 25종 전부. 카드별 출처는 docs/sources.md.
     /// ponytail: 손으로 고른 표. 새 오버프레임이 나오면 Card Gallery 의 `-EA`·LOSP 등 파일을 확인해 한 줄 추가한다(docs/sources.md 표도).
     static let overframe: [Int: String] = [
         35952884: "https://ms.yugipedia.com//e/e7/ShootingQuasarDragon-RA05-EN-UR-1E-EA.png",
@@ -70,6 +70,10 @@ final class ImageCache {
         98127546: "https://ms.yugipedia.com//c/c1/UnderworldGoddessoftheClosedWorld-LOSP-JP-PScR.png",
         25592142: "https://ms.yugipedia.com//5/56/AstellaroftheWhiteForest-CF02-JP-OP.png",
         61980241: "https://ms.yugipedia.com//8/81/ElzetteoftheWhiteForest-CF02-JP-OP.png",
+        24203749: "https://ms.yugipedia.com//a/ac/TheGreatGallantBandit-BETB-JP-PScR.png",
+        50208444: "https://ms.yugipedia.com//8/80/ElementalSagaDoriado-BETB-JP-PScR.png",
+        17242022: "https://ms.yugipedia.com//8/82/RedEyesBlackDragonExceed-BETB-EN-UR-1E-EA.png",
+        79791695: "https://ms.yugipedia.com//b/b7/CXyzHopeChaosBarianDragon-BETB-EN-UR-1E-EA.png",
         // Yugipedia 에 워터마크 판뿐인 카드는 일본 카드숍(카드러시·블루래빗) 상품 스캔
         82344137: "https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_1.jpg",
         44001993: "https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_2.jpg",
