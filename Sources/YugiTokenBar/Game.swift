@@ -153,6 +153,11 @@ struct Game: Sendable {
         return out
     }
 
+    /// 시대 범위 안 오버프레임 판이 있는 카드의 해금 수 / 전체 수
+    var overframeProgress: (owned: Int, total: Int) {
+        db.allCIDs.filter(hasOverframe).reduce((0, 0)) { sum, cid in (sum.0 + (showsOverframe(cid) ? 1 : 0), sum.1 + 1) }
+    }
+
     /// 팩 진행도를 한 번에 센다 (상점은 모든 팩을 그릴 때마다 부른다)
     func progress(_ pack: Int) -> PackProgress {
         var p = PackProgress(total: db.packs[pack].cards.count)

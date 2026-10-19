@@ -123,16 +123,16 @@ struct DexQuery: Equatable {
 /// 클래스라 채워도 뷰를 다시 그리지 않는다 (DexListCache 와 같은 이유).
 @MainActor final class GameMemo<Value> {
     private let compute: (Game) -> Value
-    private var key: (owned: [Int: Int], fusionOnly: Bool, era: String)?
+    private var key: (owned: [Int: Int], overframes: Set<Int>, fusionOnly: Bool, era: String)?
     private var value: Value?
 
     init(_ compute: @escaping (Game) -> Value) { self.compute = compute }
 
     func callAsFunction(_ game: Game) -> Value {
         let s = game.state
-        if let key, let value, key.owned == s.owned, key.fusionOnly == s.fusionOnly, key.era == s.eraLimit { return value }
+        if let key, let value, key.owned == s.owned, key.overframes == s.overframes, key.fusionOnly == s.fusionOnly, key.era == s.eraLimit { return value }
         let next = compute(game)
-        key = (s.owned, s.fusionOnly, s.eraLimit)
+        key = (s.owned, s.overframes, s.fusionOnly, s.eraLimit)
         value = next
         return next
     }

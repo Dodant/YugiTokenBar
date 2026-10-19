@@ -499,3 +499,5 @@
 "같은 카드를 %lld장 모으면 오버프레임 그림이 해금돼요" = "Collect %lld copies of this card to unlock its overframe artwork";
 /* DexView.swift:351 */
 "오버프레임 그림 미해금" = "Overframe artwork locked";
+/* DexSidebar.swift:116 */
+"진행도" = "Progress";

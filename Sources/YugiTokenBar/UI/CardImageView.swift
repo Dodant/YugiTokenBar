@@ -77,6 +77,9 @@ enum Rarity {
     /// 연출(팩 개봉·융합)용 금빛. SR 등급색과는 다른 값이다.
     static let gold = Color(red: 1, green: 0.8, blue: 0.25)
 
+    /// 해금한 오버프레임 ✦ 배지·진행 막대 (하늘색, 검정 글자)
+    static let overframe = Color(red: 0x6C / 255, green: 0xC8 / 255, blue: 0xF5 / 255)
+
     /// 아직 획득하지 못한 카드 (밝은 회색, N 회청색과 구분)
     static let locked = Color(red: 0xA0 / 255, green: 0xA0 / 255, blue: 0xA0 / 255)
 
@@ -200,23 +203,25 @@ struct RarityPill: View {
     }
 }
 
-/// 오버프레임 판이 있는 카드 표시 (컬렉션 칸 오른쪽 아래). 해금했으면 금빛 ✦, 아니면 회색 ✦ + 모은 장 수/3
+/// 오버프레임 판이 있는 카드 표시 (컬렉션 칸 오른쪽 아래). 해금했으면 하늘색 ✦, 아니면 회색 ✦ + 모은 장 수/3
 struct OverframeBadge: View {
     let unlocked: Bool
     let copies: Int
     var size: CGFloat = 9
+    /// 카드 한 장의 해금 도움말 (사이드바 진행도 줄처럼 카드가 아닌 곳은 끈다)
+    var hint = true
 
     var body: some View {
-        HStack(spacing: size * 0.25) {
-            Image(systemName: "sparkles")
-            if !unlocked { Text(verbatim: "\(min(copies, Balance.overframeCopies))/\(Balance.overframeCopies)").monospacedDigit() }
-        }
-        .font(.system(size: size, weight: .bold))
+        // 기호를 글자 안에 넣고 0.85배로 줄여 높이를 등급 알약(글자만)과 같게 한다 (0.9배부터 1pt 높아진다)
+        let count = unlocked ? "" : " \(min(copies, Balance.overframeCopies))/\(Balance.overframeCopies)"
+        Text("\(Text(Image(systemName: "sparkles")).font(.system(size: size * 0.85, weight: .bold)))\(Text(verbatim: count))")
+            .monospacedDigit()
+            .font(.system(size: size, weight: .bold))
         .foregroundStyle(.black)
         .padding(.horizontal, size * 0.6)
         .padding(.vertical, size * 0.15)
-        .background(unlocked ? Rarity.gold : Rarity.locked, in: Capsule())
-        .help(unlocked ? String(localized: "오버프레임 그림 해금")
+        .background(unlocked ? Rarity.overframe : Rarity.locked, in: Capsule())
+        .help(!hint ? "" : unlocked ? String(localized: "오버프레임 그림 해금")
               : String(localized: "같은 카드를 \(Balance.overframeCopies)장 모으면 오버프레임 그림이 해금돼요"))
     }
 }

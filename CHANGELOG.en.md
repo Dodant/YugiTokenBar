@@ -1,5 +1,12 @@
 # Patch notes
 
+## 0.6.3 — 2026-10-19
+**✨ New features**
+- Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] keep up to 3 copies. In the collection, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked.
+
+**🎨 Improvements**
+- You can now collapse the progress at the bottom left of the collection by clicking its [Progress] header.
+
 ## 0.6.2 — 2026-10-15
 **✨ New features**
 - Added the new booster pack BEYOND THE BRAVE, bringing the collection to 101 packs and 8,306 cards, with 307 cards that can be made by Fusion. Its 4 cards with official overframe versions (The Great Gallant Bandit, Red-Eyes Black Dragon Exceed, and more) are also shown with artwork extending past the card frame.
@@ -11,7 +18,6 @@
 **⚖️ Balance**
 - Free cards now only give cards you don't have yet. Rarity odds still apply, split among the rarities you haven't completed.
 - On first launch, tokens used in the last 14 days are credited as coins.
-- Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] keep up to 3 copies. In the collection, cards with overframe artwork show a ✦ badge with how many copies you have.
 
 ## 0.6.1 — 2026-10-12
 **✨ New features**
