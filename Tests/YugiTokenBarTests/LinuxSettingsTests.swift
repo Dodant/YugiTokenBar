@@ -28,6 +28,7 @@ import Testing
         func redraw() { LinuxShellView(snapshot: model.snapshot, model: model).updateStorage(storage, data: data, updateProperties: true, type: AdwaitaMainView.self) }
         redraw()
         adw_window_set_content(UnsafeMutableRawPointer(window).assumingMemoryBound(to: AdwWindow.self), UnsafeMutablePointer<GtkWidget>(try #require(storage.opaquePointer)))
+        model.latestVersionFetcher = { nil } // no test may reach GitHub, even if the model is later started
         model.onPublish = { _ in redraw() }
         gtk_window_present(UnsafeMutableRawPointer(window).assumingMemoryBound(to: GtkWindow.self))
         await LinuxGTK.pump(model)

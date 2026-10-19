@@ -16,6 +16,7 @@ if [[ ${1:-} != --inner ]]; then
 fi
 
 app=/work/.build-linux/debug/YugiTokenBar
+app_real=$(readlink -f "$app")
 fail() { echo "FAIL: $*"; exit 1; }
 sha() { [[ -f $1 ]] && sha256sum "$1" | cut -d" " -f1 || echo absent; }
 starttime() { awk '{print $22}' /proc/$1/stat; }
@@ -34,7 +35,7 @@ run() { # name, extra env assignments...
         YTB_STATE_DIR="$root/state" YTB_SMOKE_RESTART=1 YTB_SMOKE_ENV_MARK=kept LANG=C.UTF-8 "$@" \
         stdbuf -oL "$app" >"$out" 2>&1 &
     pid=$!
-    for _ in $(seq 100); do [[ $(tr '\0' ' ' </proc/$pid/cmdline 2>/dev/null) == *YugiTokenBar* ]] && break; sleep .1; done
+    for _ in $(seq 100); do [[ $(readlink /proc/$pid/exe 2>/dev/null) == "$app_real" ]] && break; sleep .1; done
     cmd_before=$(tr '\0' ' ' </proc/$pid/cmdline); start_before=$(starttime $pid); exe_before=$(readlink /proc/$pid/exe)
     echo "[$name] pid=$pid cmdline=$cmd_before"
     case $name in

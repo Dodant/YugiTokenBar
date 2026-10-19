@@ -23,8 +23,10 @@ private struct EraChoice { let name: String; let label: String }
     @State private var scanRoots = CustomScanRoots.storedValue(for: Provider.claude.rawValue) ?? ""
     @State private var showChangelog = false
     @State private var showLicense = false
+    /// Read once when a dialog opens; redraws (60 s refresh) must not re-read the files.
+    @State private var dialogText = ""
 
-    @ViewBuilder private func row(_ title: String, hint: String? = nil, @ViewBuilder control: () -> Body) -> Body {
+    @ViewBuilder private func row(_ title: String, hint: String? = nil, @ViewBuilder control: () -> Body = { [] }) -> Body {
         let trailing = control()
         HStack(spacing: 10) {
             VStack(spacing: 2) {
@@ -102,14 +104,14 @@ private struct EraChoice { let name: String; let label: String }
                     Button(L("GitHub에서 받기")) { model.open(AppInfo.releasesURL) }.linuxSmokeID("settings-releases")
                 }
             }
-            row(L("패치노트")) { Button(L("보기")) { showChangelog = true }.linuxSmokeID("settings-changelog") }
+            row(L("패치노트")) { Button(L("보기")) { dialogText = AppInfo.changelog; showChangelog = true }.linuxSmokeID("settings-changelog") }
             row("GitHub Repo") { Button("Dodant/YugiTokenBar") { model.open(AppInfo.repoURL) }.linuxSmokeID("settings-repo") }
             row(L("버그 신고하기")) { Button(L("메일 쓰기")) { model.open(AppInfo.bugReportURL) }.linuxSmokeID("settings-bug") }
             row("Inspired by PokeTokenBar", hint: "Usage reading code · © 2026 chattymin · MIT") {
-                Button("License") { showLicense = true }.linuxSmokeID("settings-license")
+                Button("License") { dialogText = AppInfo.license; showLicense = true }.linuxSmokeID("settings-license")
             }
-            row("Card data & images", hint: "Konami Card Database · YGOPRODeck · Yugipedia") { Text("") }
-            row("Unofficial fan project", hint: "Not affiliated with Konami\nCard names, text and images © Konami") { Text("") }
+            row("Card data & images", hint: "Konami Card Database · YGOPRODeck · Yugipedia")
+            row("Unofficial fan project", hint: "Not affiliated with Konami\nCard names, text and images © Konami")
             if let error = snapshot.systemError { Text(error).wrap().halign(.start).style("error") }
             Text("Made with Love and Claude").style("dim-label").padding()
         }
@@ -129,10 +131,10 @@ private struct EraChoice { let name: String; let label: String }
         .fileImporter(open: $importer, filters: [.mimeType("application/json")], title: L("세이브 가져오기"),
                       onOpen: { model.prepareImport(at: $0) })
         .dialog(visible: $showChangelog, title: L("패치노트"), id: "changelog", width: 640, height: 520) {
-            if showChangelog { ScrollView { Text(AppInfo.changelog).wrap().halign(.start).padding() }.vexpand() }
+            if showChangelog { ScrollView { Text(dialogText).wrap().halign(.start).padding() }.vexpand() }
         }
         .dialog(visible: $showLicense, title: "License", id: "license", width: 640, height: 520) {
-            if showLicense { ScrollView { Text(AppInfo.license).wrap().halign(.start).padding() }.vexpand() }
+            if showLicense { ScrollView { Text(dialogText).wrap().halign(.start).padding() }.vexpand() }
         }
         .dialog(visible: Binding(get: { snapshot.pendingImport != nil }, set: { if !$0 { model.cancelImport() } }),
                 title: L("세이브를 바꿀까요?"), id: "import", width: 420) { importDialog }
