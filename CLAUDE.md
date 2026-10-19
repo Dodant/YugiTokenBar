@@ -35,6 +35,8 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
   Linux는 stringsdict를 처리하지 않으므로 영어 수량은 `Free cards: N` 같은 명사형 레이블로 번역한다.
   Linux 전용 코드의 출력·로그는 영어로 쓴다(`sync-strings.py`가 한글 리터럴을 키로 본다).
   Linux에서는 공식 한도·Cursor 대시보드 API를 읽지 않고 Cursor 로컬 DB만 센다.
+  Linux 언어 변경은 저장·defaults 기록 뒤 `execv`로 같은 PID에서 다시 열고, 세이브 잠금 fd는 `O_CLOEXEC`로 열어 새 이미지가 다시 얻게 한다.
+  Linux에서 URL·폴더는 GIO 기본 handler(`LinuxSystemActions`)로만 열고 셸이나 `flatpak-spawn --host`는 쓰지 않는다.
 
 - 개발과 QA 실행은 항상 `YTB_STATE_DIR=$PWD/qa-state`로 한다.
   실제 세이브 `~/Library/Application Support/YugiTokenBar/`는 건드리지 않는다.
@@ -127,6 +129,7 @@ scripts/linux-build.sh test                           # Docker(Swift 6.4.1·GTK 
 scripts/linux-build.sh build                          # GTK 실행 파일 빌드 (실행은 GTK 디스플레이·DBus 세션 필요)
 scripts/test-linux-images.sh                         # Xvfb 실제 GTK 이미지·소유권·취소 검사(선택: YTB_GTK_IMAGE_ONLINE=1)
 scripts/test-linux-ui.sh                             # Xvfb 실제 Shop·Dex 버튼·개봉·상세·판매·저장 검사
+scripts/test-linux-restart.sh                         # Docker Xvfb에서 실제 execv 재시작·실패 경로 QA (PID·잠금·세이브 바이트)
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/test_sync_strings.py                    # Linux L 키 scanner·형식 인수 검사(네트워크 없음)

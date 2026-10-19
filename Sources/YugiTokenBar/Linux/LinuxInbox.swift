@@ -6,6 +6,7 @@ final class LinuxInbox: @unchecked Sendable {
     enum Event: Sendable {
         case usage(UInt64, UInt64, UInt64, Result<LinuxUsageSnapshot, StringFailure>)
         case history(UInt64, UInt64, UInt64, String, Result<UsageByDay, StringFailure>)
+        case update(UInt64, String?)
     }
     struct StringFailure: Error, Sendable { let message: String }
     private let lock = NSLock()

@@ -39,6 +39,9 @@ struct LinuxSnapshot: Sendable, Equatable {
     var pendingImport: LinuxPendingImport?
     var transferMessage: String?
     var transferError: String?
+    var latestVersion: String?
+    var restartError: String?
+    var systemError: String?
     var revision: UInt64 = 0
 
     /// Keep the sample's calendar day attached to its provider totals across midnight.
@@ -60,7 +63,8 @@ struct LinuxSnapshot: Sendable, Equatable {
         lhs.usageError == rhs.usageError && lhs.historyError == rhs.historyError &&
         lhs.saveError == rhs.saveError && lhs.dirty == rhs.dirty &&
         lhs.pendingImport == rhs.pendingImport && lhs.transferMessage == rhs.transferMessage &&
-        lhs.transferError == rhs.transferError
+        lhs.transferError == rhs.transferError && lhs.latestVersion == rhs.latestVersion &&
+        lhs.restartError == rhs.restartError && lhs.systemError == rhs.systemError
     }
 }
 

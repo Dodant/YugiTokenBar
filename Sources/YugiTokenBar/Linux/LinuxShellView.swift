@@ -18,6 +18,7 @@ enum LinuxSection: String, CaseIterable, Identifiable {
 @MainActor struct LinuxShellView: View {
     let snapshot: LinuxSnapshot
     let model: LinuxModel
+    var restart: () -> Void = {}
     @State private var section: String = LinuxSection.shop.rawValue
     @State private var rescueExporter: Signal = .init()
 
@@ -33,6 +34,7 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                     Button(item.title) {
                         if item == .shop { model.closeOpening() }
                         if item == .usage { model.loadHistory() }
+                        if item == .settings { model.checkForUpdate() }
                         section = item.rawValue
                     }.linuxSmokeID("sidebar-\(item.rawValue)")
                     .style("flat").hexpand()
@@ -48,7 +50,7 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                 } else if section == LinuxSection.usage.rawValue {
                     LinuxUsageView(snapshot: snapshot, model: model)
                 } else {
-                    LinuxSettingsView(snapshot: snapshot, model: model)
+                    LinuxSettingsView(snapshot: snapshot, model: model, restart: restart)
                 }
                 if snapshot.refreshing { Text(L("사용량을 읽고 있어요…")) }
                 if let error = snapshot.usageError { Text(error).padding() }
@@ -57,7 +59,9 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                     HStack(spacing: 10) {
                         Button(L("다시 시도")) { model.retrySave() }
                         Button(L("내보내기")) { rescueExporter.signal() }.linuxSmokeID("dirty-export")
-                    }
+                        Button(L("폴더 열기")) { model.openSaveFolder() }.linuxSmokeID("dirty-open-folder")
+                    }.halign(.center).padding()
+                    if let error = snapshot.systemError { Text(error).wrap().style("error") }
                 }
             }
             .linuxSaveExporter($rescueExporter, model: model)

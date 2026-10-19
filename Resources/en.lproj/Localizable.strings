@@ -571,3 +571,9 @@
 "내보내지 못했어요: %@" = "Couldn't export: %@";
 /* LinuxModel.swift:211 */
 "가져오지 못했어요: %@" = "Couldn't import: %@";
+/* LinuxModel.swift:209 */
+"열지 못했어요: %@" = "Couldn't open: %@";
+/* LinuxApp.swift:164 */
+"다시 열지 못했어요: %@" = "Couldn't reopen the app: %@";
+/* LinuxSettingsView.swift:90 */
+"셸 설정 파일에서만 내보낸 경로는 Flatpak 앱이 찾지 못할 수 있어요. Flatpak 앱은 홈 폴더 안만 볼 수 있어요." = "Paths exported only in shell startup files may not be found by the Flatpak app, which can only see your home folder.";

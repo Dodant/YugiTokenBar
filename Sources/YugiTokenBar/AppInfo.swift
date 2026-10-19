@@ -20,10 +20,16 @@ enum AppInfo {
         c.queryItems = [
             URLQueryItem(name: "subject", value: "[YugiTokenBar] " + String(localized: "버그 신고") + " (\(versionText))"),
             URLQueryItem(name: "body", value: String(localized: "어떤 일이 있었는지 적어 주세요:") +
-                "\n\n\n---\nYugiTokenBar \(versionText) · macOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion) · \(AppLanguage.current)"),
+                "\n\n\n---\nYugiTokenBar \(versionText) · \(osName) \(os.majorVersion).\(os.minorVersion).\(os.patchVersion) · \(AppLanguage.current)"),
         ]
         return c.url!
     }
+
+    #if os(Linux)
+    private static let osName = "Linux"
+    #else
+    private static let osName = "macOS"
+    #endif
 
     /// 저장소 루트. `swift run`·테스트에서 번들 대신 읽는 파일(cards_XX.json·partner.png·문서)의 기준
     static let repoRoot = URL(fileURLWithPath: #filePath)
@@ -35,12 +41,28 @@ enum AppInfo {
     static var bundleVersion: String? { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String }
     static var buildNumber: String? { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String }
 
+    private static var developmentBuildText: String { String(localized: "개발 빌드") }
+
+    #if os(Linux)
+    /// Flatpak 빌드가 설치하는 version.txt (개발 실행에는 없다)
+    static var installedVersion: String? { installedVersion(at: PlatformPaths.installedResource("version.txt")) }
+    static func installedVersion(at url: URL?) -> String? {
+        guard let url, let raw = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : (value.hasPrefix("v") ? String(value.dropFirst()) : value)
+    }
+    static var versionText: String { installedVersion.map { "v\($0)" } ?? developmentBuildText }
+    static var currentVersion: String {
+        installedVersion ?? topVersion(ofChangelog: text("CHANGELOG", repoPath: "CHANGELOG.md")) ?? "0"
+    }
+    #else
     static var versionText: String {
-        bundleVersion.map { "v\($0) (\(buildNumber ?? "?"))" } ?? String(localized: "개발 빌드")
+        bundleVersion.map { "v\($0) (\(buildNumber ?? "?"))" } ?? developmentBuildText
     }
 
     /// 업데이트 비교에 쓰는 현재 버전. 개발 빌드는 로컬 CHANGELOG 기준.
     static var currentVersion: String { bundleVersion ?? topVersion(ofChangelog: text("CHANGELOG", repoPath: "CHANGELOG.md")) ?? "0" }
+    #endif
 
     /// 앱 언어의 패치노트: ko → CHANGELOG.md, en·ja → CHANGELOG.en.md·CHANGELOG.ja.md
     static var changelog: String { changelog(lang: AppLanguage.current) }
@@ -49,10 +71,37 @@ enum AppInfo {
         return text(name, repoPath: name + ".md")
     }
     /// 라이선스 창: PokeTokenBar 고지(NOTICE) 뒤에 Sparkle LICENSE 전문
+    #if os(Linux)
+    /// Linux 라이선스 창: NOTICE 뒤에 패키지별 LICENSE. 설치본은 licenses/ 폴더, 개발 실행은 .build-linux/checkouts.
+    static var license: String { license(installed: PlatformPaths.installedResource("licenses"),
+                                         checkouts: repoRoot.appendingPathComponent(".build-linux/checkouts")) }
+    static func license(installed: URL?, checkouts: URL) -> String {
+        var parts = [text("NOTICE", repoPath: "Sources/YugiTokenBar/Usage/NOTICE.md")]
+        let fm = FileManager.default
+        func read(_ url: URL) -> String? { try? String(contentsOf: url, encoding: .utf8) }
+        if let installed, let names = try? fm.contentsOfDirectory(atPath: installed.path) {
+            for name in names.sorted() {
+                let url = installed.appendingPathComponent(name)
+                if let body = read(url) { parts.append("## \(url.deletingPathExtension().lastPathComponent)\n\n\(body)") }
+            }
+        } else {
+            for package in ["adwaita-swift", "meta", "meta-sqlite", "levenshtein-transformations", "SQLite.swift",
+                            "CSQLite", "swift-crypto", "swift-asn1", "XMLCoder"] {
+                let dir = checkouts.appendingPathComponent(package)
+                guard let file = (try? fm.contentsOfDirectory(atPath: dir.path))?.sorted()
+                    .first(where: { $0.uppercased().hasPrefix("LICENSE") }),
+                      let body = read(dir.appendingPathComponent(file)) else { continue }
+                parts.append("## \(package)\n\n\(body)")
+            }
+        }
+        return parts.joined(separator: "\n\n")
+    }
+    #else
     static var license: String {
         text("NOTICE", repoPath: "Sources/YugiTokenBar/Usage/NOTICE.md") + "\n\n## Sparkle\n\n"
             + text("Sparkle-LICENSE", repoPath: ".build/artifacts/sparkle/Sparkle/LICENSE")
     }
+    #endif
 
     /// Sparkle 을 켤까: 번들 Info.plist 에 EdDSA 공개 키가 있을 때만 (swift run·키 없는 빌드는 GitHub 확인)
     static func sparkleEnabled(info: [String: Any]? = Bundle.main.infoDictionary) -> Bool {

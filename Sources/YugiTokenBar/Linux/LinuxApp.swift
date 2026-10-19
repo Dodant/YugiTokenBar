@@ -1,6 +1,7 @@
 #if os(Linux)
 import Adwaita
 import Foundation
+import Glibc
 
 /// GTK owns UI publication; Swift worker tasks only enqueue Sendable events.
 @main @MainActor struct LinuxApp: App {
@@ -41,6 +42,7 @@ import Foundation
             // GTK activate may repeat; reuse the single window and timer registration.
             instance.app.showWindow("main")
             instance.lifecycle.activate()
+            LinuxRestartSmoke.run(instance.lifecycle)
         }
         instance.lifecycle.stop()
         AppLog.writeAndFlush("Linux application exited normally")
@@ -51,7 +53,7 @@ import Foundation
         Window(id: "main") { _ in
             VStack {
                 if let snapshot, let model = lifecycle.model {
-                    LinuxShellView(snapshot: snapshot, model: model)
+                    LinuxShellView(snapshot: snapshot, model: model, restart: { lifecycle.restart() })
                 } else {
                     Text("YugiTokenBar").padding(30)
                 }
@@ -108,8 +110,12 @@ import Foundation
     var onQuitFailure: (() -> Void)?
     private var registeredEpoch: UInt64?
     private(set) var finished = false
+    /// Registers a repeating GLib source (delay, work -> keep running). Tests replace it to inspect liveness.
+    var scheduler: (Duration, @escaping () -> Bool) -> Void = { delay, work in Idle(delay: delay, closure: work) }
 
     init(model: LinuxModel?, app: AdwaitaApp) { self.model = model; self.app = app }
+
+    var isRegistered: Bool { registeredEpoch != nil }
 
     func activate() {
         guard !finished, let model else { return }
@@ -118,17 +124,53 @@ import Foundation
         let epoch = model.lifecycleEpoch
         guard registeredEpoch != epoch else { return }
         registeredEpoch = epoch
-        Idle(delay: .milliseconds(100)) { [weak model] in
+        scheduler(.milliseconds(100)) { [weak model] in
             guard let model, model.running, model.lifecycleEpoch == epoch else { return false }
             model.drainEvents()
             LinuxImageLoader.shared.drain()
             return true
         }
-        Idle(delay: .seconds(60)) { [weak model] in
+        scheduler(.seconds(60)) { [weak model] in
             guard let model, model.running, model.lifecycleEpoch == epoch else { return false }
             model.refresh()
             return true
         }
+    }
+
+    /// The running executable, resolved through /proc so a PATH lookup or a moved argv[0] cannot change the target.
+    nonisolated static func currentExecutable() -> String? {
+        var buffer = [CChar](repeating: 0, count: Int(PATH_MAX) + 1)
+        let count = readlink("/proc/self/exe", &buffer, buffer.count - 1)
+        return count > 0 ? String(decoding: buffer.prefix(count).map { UInt8(bitPattern: $0) }, as: UTF8.self) : nil
+    }
+
+    /// execv with the full argv and the inherited environment. Returns errno only when exec failed.
+    nonisolated static func systemExec(_ path: String, _ args: [String]) -> Int32 {
+        var argv: [UnsafeMutablePointer<CChar>?] = args.map { strdup($0) } + [nil]
+        defer { for pointer in argv { free(pointer) } }
+        _ = execv(path, &argv)
+        return errno
+    }
+
+    /// Save, flush defaults, stop every worker, then replace this process image. If exec returns, resume with a
+    /// fresh epoch: the stopped epoch's GLib sources return false on their next tick and stay dead.
+    @discardableResult func restart(executable: String? = LinuxLifecycle.currentExecutable(),
+                                    exec: (String, [String]) -> Int32 = LinuxLifecycle.systemExec) -> Bool {
+        guard !finished, let model else { return false }
+        model.recordRestartError(nil)
+        guard model.retrySave() else { model.recordRestartError(L("저장하지 못했어요")); return false }
+        guard UserDefaults.standard.synchronize() else { model.recordRestartError(L("저장하지 못했어요")); return false }
+        guard let executable else {
+            model.recordRestartError(L("다시 열지 못했어요: %@", .text("executable not found"))); return false
+        }
+        stop()
+        AppLog.writeAndFlush("Restarting for language change")
+        AppLog.flush()
+        let code = exec(executable, CommandLine.arguments)
+        // Only reached when exec failed. The state lock fd was never closed, so it is still held.
+        activate()
+        model.recordRestartError(L("다시 열지 못했어요: %@", .text(String(cString: strerror(code)))))
+        return false
     }
 
     @discardableResult func requestQuit() -> Bool {
@@ -147,6 +189,39 @@ import Foundation
         AppLog.writeAndFlush("Linux application quitting")
         AppLog.flush()
         app.quit()
+    }
+}
+
+/// scripts/test-linux-restart.sh drives a real exec through the built binary. Inert unless YTB_SMOKE_RESTART=1.
+@MainActor enum LinuxRestartSmoke {
+    private static var started = false
+
+    static func run(_ lifecycle: LinuxLifecycle) {
+        let env = ProcessInfo.processInfo.environment
+        guard env["YTB_SMOKE_RESTART"] == "1", !started else { return }
+        started = true
+        let override = env["YTB_SMOKE_RESTART_EXEC"]
+        func say(_ line: String) { print(line); fflush(nil) }
+        guard lifecycle.model != nil else { say("SMOKE_RESTART_NO_MODEL"); return } // e.g. the state lock was not re-acquired
+        if env["YTB_SMOKE_RESTARTED"] == "1" {
+            say("SMOKE_RESTART_OK language=\(AppLanguage.current) stored=\(AppLanguage.stored().rawValue)")
+            // Linger so the script can inspect the live process before the normal quit.
+            Idle(delay: .seconds(4)) { _ = lifecycle.requestQuit(); return false }
+            return
+        }
+        AppLanguage.store(.ja)
+        setenv("YTB_SMOKE_RESTARTED", "1", 1)
+        Idle {
+            let exec: (String, [String]) -> Int32 = override.map { target in
+                { _, args in LinuxLifecycle.systemExec(target, args) }
+            } ?? LinuxLifecycle.systemExec
+            _ = lifecycle.restart(exec: exec)
+            // Reached only when exec failed: try again once on the resumed epoch, then quit normally.
+            say("SMOKE_RESTART_FAILED error=\(lifecycle.model?.snapshot.restartError ?? "-")")
+            _ = lifecycle.restart(exec: exec)
+            say("SMOKE_RESTART_FAILED_AGAIN epoch=\(lifecycle.model?.lifecycleEpoch ?? 0)")
+            Idle(delay: .seconds(4)) { _ = lifecycle.requestQuit(); return false }
+        }
     }
 }
 #endif

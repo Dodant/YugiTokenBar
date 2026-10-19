@@ -155,7 +155,13 @@ struct StateStore {
     func lock() -> Bool {
         let dir = url.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let fd = open(dir.appendingPathComponent("state.lock").path, O_CREAT | O_RDWR, 0o644)
+        #if os(Linux)
+        // 재시작(execv)이 잠금 fd 를 새 이미지로 넘기면 새 프로세스가 같은 잠금을 다시 얻지 못한다
+        let flags = O_CREAT | O_RDWR | O_CLOEXEC
+        #else
+        let flags = O_CREAT | O_RDWR
+        #endif
+        let fd = open(dir.appendingPathComponent("state.lock").path, flags, 0o644)
         guard fd >= 0 else { return true }
         if flock(fd, LOCK_EX | LOCK_NB) == 0 { return true }
         close(fd)

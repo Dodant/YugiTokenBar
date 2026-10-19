@@ -20,6 +20,15 @@ import Foundation
     private(set) var lifecycleEpoch: UInt64 = 0
     private(set) var running = false
     private var rng = SystemRandomNumberGenerator()
+    /// Tests inject a fake; nothing outside the settings screen's update check talks to GitHub.
+    var latestVersionFetcher: @Sendable () async -> String? = { await AppInfo.fetchLatestVersion() }
+    /// Default desktop handler; tests inject a fake so no real application is launched.
+    var opener: (URL) -> String? = { LinuxSystemActions.open($0) }
+    var usageHistoryFile: URL? = TodayUsageReader.defaultHistoryFile
+    var scanRootsDebounce: Duration = .milliseconds(800)
+    private var scanTask: Task<Void, Never>?
+    private var updateTask: Task<Void, Never>?
+    private var updateChecked = false
 
     init(game: Game, store: StateStore, service: LinuxUsageService = .live()) {
         snapshot = LinuxSnapshot(game: game)
@@ -42,6 +51,7 @@ import Foundation
         running = false; lifecycleEpoch &+= 1
         inbox.close(); readTask?.cancel(); historyTask?.cancel()
         refreshAgain = false; queuedProgress = false
+        updateTask?.cancel(); updateTask = nil; scanTask?.cancel(); scanTask = nil
         readTask = nil; historyTask = nil
         let changed = snapshot.refreshing || snapshot.loadingHistory
         snapshot.refreshing = false; snapshot.loadingHistory = false
@@ -80,6 +90,17 @@ import Foundation
         }
     }
 
+    /// Same policy as the macOS Settings check (published stable releases only, AppInfo.releaseVersion),
+    /// run at most once per launch after a result; a failed or cancelled check may be retried.
+    func checkForUpdate() {
+        guard running, !updateChecked, updateTask == nil else { return }
+        let epoch = lifecycleEpoch, inbox = inbox, fetch = latestVersionFetcher
+        updateTask = Task.detached {
+            let latest = await fetch()
+            inbox.send(.update(epoch, latest))
+        }
+    }
+
     func drainEvents() {
         for event in inbox.drain() {
             switch event {
@@ -105,6 +126,11 @@ import Foundation
                     refreshAgain = false; queuedProgress = false
                     refresh(showProgress: progress)
                 }
+            case let .update(epoch, latest):
+                guard running, epoch == lifecycleEpoch else { continue }
+                updateTask = nil
+                guard let latest else { continue }
+                updateChecked = true; snapshot.latestVersion = latest; publish()
             case let .history(id, generation, epoch, date, result):
                 guard running, id == historyID, generation == stateGeneration, epoch == lifecycleEpoch else { continue }
                 historyTask = nil; snapshot.loadingHistory = false
@@ -178,6 +204,33 @@ import Foundation
     func setEraLimit(_ value: String) {
         guard value.isEmpty || game.fullDB.eras.contains(where: { $0.name == value }), game.state.eraLimit != value else { return }
         snapshot.game.state.eraLimit = value; snapshot.opening = nil; pruneDexSelection(); persist(); publish()
+    }
+    func open(_ url: URL) {
+        recordSystemError(opener(url).map { L("열지 못했어요: %@", .text($0)) })
+    }
+    func openSaveFolder() { open(store.url.deletingLastPathComponent()) }
+
+    /// Same storage as macOS (UserDefaults customScanRoots.<id>). The reader caches are dropped at once;
+    /// the fresh reader is built after typing pauses, because it also clears the day history file.
+    func setScanRoots(_ value: String, provider: String) {
+        UserDefaults.standard.set(value, forKey: CustomScanRoots.defaultsKey(for: provider))
+        LocalUsageReader.invalidateProjectRootsCache()
+        scanTask?.cancel()
+        let delay = scanRootsDebounce
+        scanTask = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled, let self else { return }
+            self.scanTask = nil
+            if self.running { self.resetUsageReader(historyFile: self.usageHistoryFile) }
+        }
+    }
+
+    /// Settings status lines; a GIO open error stays visible until the next attempt.
+    func recordSystemError(_ message: String?) {
+        guard snapshot.systemError != message else { return }; snapshot.systemError = message; publish()
+    }
+    func recordRestartError(_ message: String?) {
+        guard snapshot.restartError != message else { return }; snapshot.restartError = message; publish()
     }
     func selectDexPack(_ index: Int?) {
         guard snapshot.dexPack != index else { return }
