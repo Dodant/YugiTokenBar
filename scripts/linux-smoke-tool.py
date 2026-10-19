@@ -19,10 +19,10 @@ def today():
     return datetime.date.today().isoformat()
 
 
-def write_log(run, entries, name="synthetic"):
+def write_log(run, entries, name="synthetic", claude_dir=None):
     """Claude Code JSONL under <run>/claude/projects/<project>/<session>.jsonl (the app gets CLAUDE_CONFIG_DIR=<run>/claude,
     because Foundation on Linux resolves the home directory from the passwd entry, not $HOME); entries = [(days_ago, input_tokens)]."""
-    folder = os.path.join(run, "claude", "projects", "smoke")
+    folder = os.path.join(claude_dir or os.path.join(run, "claude"), "projects", "smoke")
     os.makedirs(folder, exist_ok=True)
     now = datetime.datetime.now(datetime.timezone.utc)
     with open(os.path.join(folder, name + ".jsonl"), "w") as out:
@@ -31,6 +31,73 @@ def write_log(run, entries, name="synthetic"):
             out.write(json.dumps({"type": "assistant", "timestamp": when, "requestId": f"smoke-{index}",
                                   "message": {"id": f"msg-{index}", "model": "claude-opus-5-5",
                                               "usage": {"input_tokens": tokens, "output_tokens": 0}}}) + "\n")
+
+
+# Flatpak QA (scripts/test-flatpak.sh): a fresh HOME with logs at the default locations, which the sandbox reads through home:ro.
+FLATPAK_CLAUDE = [(0, 1_000_000), (10, 5_000_000)]
+FLATPAK_CODEX_TODAY = 5_000_000
+
+
+def write_codex(home, tokens):
+    """One Codex rollout under <home>/.codex/sessions/YYYY/MM/DD with a single token_count event of today."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    folder = os.path.join(home, ".codex", "sessions", now.strftime("%Y"), now.strftime("%m"), now.strftime("%d"))
+    os.makedirs(folder, exist_ok=True)
+    usage = {"input_tokens": tokens, "cached_input_tokens": 0, "output_tokens": 0, "total_tokens": tokens}
+    with open(os.path.join(folder, "rollout-smoke.jsonl"), "w") as out:
+        out.write(json.dumps({"timestamp": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"), "type": "event_msg",
+                              "payload": {"type": "token_count", "info": {"last_token_usage": usage, "total_token_usage": usage}}}) + "\n")
+
+
+def expect_flatpak_purchase(state_dir):
+    """First-run credit of every synthetic token, then exactly one pack bought by YTB_SMOKE_SCREEN=open."""
+    with open(os.path.join(state_dir, "state.json")) as handle:
+        state = json.load(handle)
+    total = sum(tokens for _, tokens in FLATPAK_CLAUDE) + FLATPAK_CODEX_TODAY
+    coins, remainder = divmod(total, TOKENS_PER_COIN)
+    if (state["coins"], state["coinRemainder"]) != (coins - 1000, remainder):
+        fail(f"expected {coins} credited coins minus one pack, got {state['coins']} (+{state['coinRemainder']})")
+    ledger = {"claude_code": FLATPAK_CLAUDE[0][1], "codex": FLATPAK_CODEX_TODAY}
+    if state.get("claimedDate") != today() or state.get("claimedByProvider") != ledger:
+        fail(f"ledger {state.get('claimedDate')} {state.get('claimedByProvider')}, expected {today()} {ledger}")
+    if sum(state["owned"].values()) != 5 or state["packStamp"] != 1:
+        fail(f"expected one pack (5 cards, packStamp 1), got {sum(state['owned'].values())} cards, packStamp {state['packStamp']}")
+    print(f"FLATPAK_PURCHASE_OK credited={coins} coins={state['coins']} cards=5 ledger={ledger}")
+
+
+def write_envelope(path):
+    """A Mac-style export (SaveEnvelope: default JSONEncoder, so exportedAt is seconds since 2001-01-01) of the smoke fixture."""
+    with open(FIXTURE) as handle:
+        state = json.load(handle)
+    exported = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime(2001, 1, 1, tzinfo=datetime.timezone.utc)
+    dump(path, {"appVersion": "0.6.2", "exportedAt": exported.total_seconds(), "format": "yugitokenbar.save",
+                "schema": state["schema"], "state": state})
+
+
+def expect_import(state_dir, before_path):
+    """The imported fixture replaced the collection, the local ledger stayed and the pre-import save was backed up."""
+    before = json.load(open(before_path))
+    state = json.load(open(os.path.join(state_dir, "state.json")))
+    fixture = json.load(open(FIXTURE))
+    if state["owned"] != fixture["owned"] or state["coins"] != fixture["coins"]:
+        fail(f"import did not replace the collection: coins {state['coins']}, {len(state['owned'])} kinds")
+    if (state["claimedDate"], state["claimedByProvider"]) != (before["claimedDate"], before["claimedByProvider"]):
+        fail("import replaced the local usage ledger")
+    backups = sorted(name for name in os.listdir(state_dir) if name.startswith("state.import-backup-"))
+    if not backups: fail("no import backup")
+    backup = json.load(open(os.path.join(state_dir, backups[-1])))
+    if backup.get("format") != "yugitokenbar.save" or backup["state"]["owned"] != before["owned"] or backup["state"]["coins"] != before["coins"]:
+        fail(f"{backups[-1]} is not the pre-import save")
+    print(f"IMPORT_OK coins={state['coins']} kinds={len(state['owned'])} backup={backups[-1]}")
+
+
+def expect_export(path, state_dir):
+    """The exported file is an envelope of the save that was current when it was written."""
+    envelope = json.load(open(path))
+    state = json.load(open(os.path.join(state_dir, "state.json")))
+    if envelope.get("format") != "yugitokenbar.save" or envelope["state"]["owned"] != state["owned"]:
+        fail(f"{path} is not an export of the current save")
+    print(f"EXPORT_OK {path} appVersion={envelope['appVersion']} coins={envelope['state']['coins']}")
 
 
 def normalise(state):
@@ -150,6 +217,13 @@ def main(argv):
             fail(f"expected {divmod(total, TOKENS_PER_COIN)} coins and remainder, got {state['coins']} (+{state['coinRemainder']})")
         if not state.get("claimedDate"): fail("no usage ledger was written")
         print(f"FIRST_RUN_OK coins={state['coins']} claimedDate={state['claimedDate']} claimed={state['claimedByProvider']}")
+    elif cmd == "flatpak-home":   # flatpak-home <home>
+        write_log(None, FLATPAK_CLAUDE, claude_dir=os.path.join(argv[2], ".claude"))
+        write_codex(argv[2], FLATPAK_CODEX_TODAY)
+    elif cmd == "expect-flatpak-purchase": expect_flatpak_purchase(argv[2])
+    elif cmd == "envelope": write_envelope(argv[2])
+    elif cmd == "expect-export": expect_export(argv[2], argv[3])
+    elif cmd == "expect-import": expect_import(argv[2], argv[3])
     elif cmd == "expect":   # expect <run> <key> <value-json>
         state = load_state(argv[2])
         if state.get(argv[3]) != json.loads(argv[4]): fail(f"{argv[3]} = {state.get(argv[3])!r}, expected {argv[4]}")

@@ -1,0 +1,39 @@
+{
+  "id": "io.github.dodant.YugiTokenBar",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "50",
+  "sdk": "org.gnome.Sdk",
+  "sdk-extensions": ["org.freedesktop.Sdk.Extension.swift6"],
+  "command": "YugiTokenBar",
+  "finish-args": [
+    "--share=network",
+    "--share=ipc",
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--device=dri",
+    "--filesystem=home:ro"
+  ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/swift6/bin",
+    "build-args": ["--share=network"]
+  },
+  "modules": [
+    {
+      "name": "yugitokenbar",
+      "buildsystem": "simple",
+      "build-commands": ["sh packaging/flatpak-build.sh"],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "..",
+          "skip": [".git", ".build", ".build-linux", "build", "qa-state", ".superpowers", "docs"]
+        },
+        {
+          "type": "file",
+          "path": "../build/flatpak/Package.resolved",
+          "dest-filename": "linux.resolved"
+        }
+      ]
+    }
+  ]
+}

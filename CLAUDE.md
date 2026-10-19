@@ -37,6 +37,7 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
   Linux는 stringsdict를 처리하지 않으므로 영어 수량은 `Free cards: N` 같은 명사형 레이블로 번역한다.
   Linux 전용 코드의 출력·로그는 영어로 쓴다(`sync-strings.py`가 한글 리터럴을 키로 본다).
   Linux에서는 공식 한도·Cursor 대시보드 API를 읽지 않고 Cursor 로컬 DB만 센다.
+  Linux 배포는 Flatpak(`packaging/io.github.dodant.YugiTokenBar.json`)이며 `packaging/flatpak-build.sh`가 검증된 Linux 잠금으로 빌드해 `/app/share/yugitokenbar/`에 리소스·`version.txt`(CHANGELOG 맨 위 버전)·`licenses/<패키지>.md`를 설치한다(docs/distribution.md).
   Linux 언어 변경은 저장·defaults 기록 뒤 `execv`로 같은 PID에서 다시 열고, 세이브 잠금 fd는 `O_CLOEXEC`로 열어 새 이미지가 다시 얻게 한다.
   Linux에서 URL·폴더는 GIO 기본 handler(`LinuxSystemActions`)로만 열고 셸이나 `flatpak-spawn --host`는 쓰지 않는다.
 
@@ -134,6 +135,8 @@ scripts/test-linux-ui.sh                             # Xvfb 실제 Shop·Dex·Us
 scripts/test-linux-restart.sh                         # Docker Xvfb에서 실제 execv 재시작·실패 경로 QA (PID·잠금·세이브 바이트)
 scripts/linux-smoke.sh all                            # Docker Xvfb에서 실제 바이너리로 5화면 PNG·세이브 검사 (산출물 .build-linux/probes/smoke/, 화면 하나만 주려면 shop|dex|open|usage|setting)
 scripts/linux-scenarios.sh all                        # 첫 실행 적립·저장 실패 후 재시도·잠금·새 스키마 시나리오 (산출물 .build-linux/probes/scenarios/)
+scripts/build-flatpak.sh --arch aarch64               # privileged gnome-50 컨테이너에서 Flatpak 번들 build/release/YugiTokenBar-<version>-<arch>.flatpak (잠금 SHA 전후 확인)
+scripts/test-flatpak.sh run                           # 같은 컨테이너에서 user 설치·ldd·새 HOME 첫 적립과 팩 구매 (portal 은 포털 데몬이 있는 컨테이너에서, 산출물 .build-linux/probes/flatpak/)
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/test_sync_strings.py                    # Linux L 키 scanner·형식 인수 검사(네트워크 없음)

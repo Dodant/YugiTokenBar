@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=YugiTokenBar
+Comment=Fill a Yu-Gi-Oh! card collection with your AI coding token usage
+Comment[ko]=AI 코딩 토큰 사용량으로 유희왕 카드 컬렉션을 채워요
+Comment[ja]=AIコーディングのトークン使用量で遊戯王カードコレクションを集めます
+Exec=YugiTokenBar
+Icon=io.github.dodant.YugiTokenBar
+Terminal=false
+Categories=Game;Utility;
+StartupNotify=true

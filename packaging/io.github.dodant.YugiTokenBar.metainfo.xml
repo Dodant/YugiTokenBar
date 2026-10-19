@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.dodant.YugiTokenBar</id>
+  <name>YugiTokenBar</name>
+  <summary>Fill a Yu-Gi-Oh! card collection with AI coding token usage</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="io.github.dodant">
+    <name>Maestr Oh</name>
+  </developer>
+  <description>
+    <p>YugiTokenBar reads the local usage logs of Claude Code, Codex and other AI coding tools and turns the tokens into coins.</p>
+    <p>Spend the coins on booster packs to collect the Korean releases of Yu-Gi-Oh! cards.</p>
+    <p>This is an unofficial fan project and is not affiliated with Konami.</p>
+  </description>
+  <launchable type="desktop-id">io.github.dodant.YugiTokenBar.desktop</launchable>
+  <url type="homepage">https://github.com/Dodant/YugiTokenBar</url>
+  <url type="bugtracker">https://github.com/Dodant/YugiTokenBar/issues</url>
+  <releases>
+    <release version="0.6.3" date="2026-10-19"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>
