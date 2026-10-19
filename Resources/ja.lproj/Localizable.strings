@@ -539,3 +539,15 @@
 "카드 데이터를 읽지 못했어요: %@" = "カードデータを読み込めませんでした: %@";
 /* LinuxShellView.swift:27 */
 "%@ 사용량 %@" = "%@ 使用量 %@";
+/* LinuxShopView.swift:17 */
+"무료 카드 %lld" = "無料カード：%lld";
+/* LinuxShopView.swift:20 */
+"무료 팩 %lld" = "無料パック：%lld";
+/* LinuxShopView.swift:71 */
+"닫기" = "閉じる";
+/* LinuxShopView.swift:86 */
+"자동 판매 +%@" = "自動売却：+%@";
+/* LinuxShopView.swift:87 */
+"오버프레임" = "オーバーフレーム";
+/* LinuxShopView.swift:89 */
+"팩 완성 보상 %lld" = "パック完成報酬：%lld";

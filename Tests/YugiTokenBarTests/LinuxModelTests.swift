@@ -148,7 +148,10 @@ private actor ControlledLinuxReader {
         let (model, _) = makeLinuxModel(state: state, db: db, reader: reader)
         #expect(model.game.progress(0).cleared); #expect(!model.game.progress(0).done)
         #expect(!model.buy(pack: -1)); #expect(!model.buy(pack: 1)); #expect(!model.sell(1))
-        #expect(model.buy(pack: 0)); #expect(model.buy(pack: 0)); #expect(model.game.progress(0).done)
+        #expect(model.buy(pack: 0)); #expect(!model.buy(pack: 0))
+        #expect(!model.openFree()); #expect(!model.openFreePack())
+        model.closeOpening()
+        #expect(model.buy(pack: 0)); #expect(model.game.progress(0).done)
         #expect(!model.buy(pack: 0)); #expect(model.sell(1)); #expect(model.game.showsOverframe(1))
     }
 

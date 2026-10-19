@@ -134,22 +134,29 @@ import Foundation
         replaceUsageService(.live(reader: TodayUsageReader(historyFile: historyFile)))
     }
 
+    /// A cleared pack remains useful only when a drawable card is still needed.
+    func canBuy(pack: Int) -> Bool {
+        guard snapshot.opening == nil, game.db.packs.indices.contains(pack), game.canAffordPack else { return false }
+        return !game.progress(pack).cleared || game.db.packs[pack].cards.contains {
+            game.wanted($0) && !game.isFusionOnly($0)
+        }
+    }
     @discardableResult func buy(pack: Int) -> Bool {
-        guard game.db.packs.indices.contains(pack), game.state.coins >= Balance.packPrice,
-              !game.progress(pack).done else { return false }
+        guard canBuy(pack: pack) else { return false }
         let pulls = snapshot.game.buy(pack: pack, using: &rng)
         guard !pulls.isEmpty else { return false }
         snapshot.opening = LinuxOpening(pulls: pulls, title: game.db.packs[pack].name, pack: pack)
         persist(); publish(); return true
     }
     @discardableResult func openFree() -> Bool {
+        guard snapshot.opening == nil else { return false }
         let pulls = snapshot.game.openFree(using: &rng)
         guard !pulls.isEmpty else { return false }
         snapshot.opening = LinuxOpening(pulls: pulls, title: L("무료 카드"))
         persist(); publish(); return true
     }
     @discardableResult func openFreePack() -> Bool {
-        guard let result = snapshot.game.openFreePack(using: &rng) else { return false }
+        guard snapshot.opening == nil, let result = snapshot.game.openFreePack(using: &rng) else { return false }
         snapshot.opening = LinuxOpening(pulls: result.pulls, title: game.db.packs[result.pack].name, pack: result.pack, freePack: true)
         persist(); publish(); return true
     }

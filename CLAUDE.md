@@ -2,7 +2,8 @@
 
 Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션을 채우는 macOS 메뉴바 앱.
 코어(게임·세이브·사용량)는 Linux에서도 빌드·테스트되며 GTK 일반 창·사이드바·저장 오류 종료 가드를 제공한다(`scripts/linux-build.sh`).
-Linux의 Shop·Dex·Usage·Setting 본문은 3단계 후속 작업에서 연결한다.
+Linux의 Shop은 시대별 팩·무료 카드·무료 팩과 연출 없는 개봉 그리드를 제공한다.
+Dex·Usage·Setting 본문은 3단계 후속 작업에서 연결한다.
 - 컬렉션: 정규 부스터 101팩, 8,306종.
   - 어시스트 팩 같은 미니 팩 제외.
   - 101팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에 넣음.
@@ -88,6 +89,12 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
   `LinuxPicture`는 GObject weak notification에서 구독을 해제하고 lifecycle stop/resume은 살아 있는 구독자를 새 flight로 재개한다.
   `YTB_SMOKE_NO_IMAGES=1`은 디스크 캐시·네트워크 전송을 모두 생략하고 bundled card-back만 표시한다.
   호출자는 오버프레임 URL 존재 여부가 아니라 `game.showsOverframe(cid)`를 `ImageSource.card`에 전달한다.
+  개봉 화면은 획득 당시 해금 여부인 `Pull.overframe`을 사용해 뒤에 해금된 그림을 앞선 카드에 소급하지 않는다.
+- Linux Shop의 `LinuxModel.canBuy(pack:)`를 버튼 sensitive와 구매 명령이 공유한다.
+  잔액 부족·개봉 중·범위 밖은 거절하고 `cleared` 팩은 `wanted && !isFusionOnly`인 실제 뽑을 수 있는 필요 카드가 있어야 구매할 수 있다.
+  미보유 융합만 남으면 FUSION ONLY를 표시하고 막되 더 필요한 오버프레임·융합 소재가 있으면 구매할 수 있다.
+  개봉 중 구매·무료 카드·무료 팩 명령을 거절하고 닫기 또는 사이드바 Shop 재선택으로 목록에 돌아간다.
+  무료 카드는 `Balance.freeOpenBatch`(현재 6장)만큼 열며 무료 팩은 기존 무작위 팩 규칙을 쓴다.
 - Linux 상태 변경·저장은 `@MainActor LinuxModel`에서 직렬화하고 백그라운드 사용량 결과는 Sendable 값으로 `LinuxInbox`에만 넣는다.
   GTK 루프가 `drainEvents()`를 호출하며 request ID·state generation·lifecycle epoch로 오래된 결과를 버린다.
   읽는 동안 들어온 갱신 요청은 겹치지 않는 후속 읽기 한 번으로 모으고 결과를 현재 게임에 적립한다.
@@ -118,6 +125,7 @@ swift test                                            # 전체 테스트
 scripts/linux-build.sh test                           # Docker(Swift 6.4.1·GTK 4·libadwaita) Linux 테스트, 이미지 캐시 갱신·산출물·핀 .build-linux/
 scripts/linux-build.sh build                          # GTK 실행 파일 빌드 (실행은 GTK 디스플레이·DBus 세션 필요)
 scripts/test-linux-images.sh                         # Xvfb 실제 GTK 이미지·소유권·취소 검사(선택: YTB_GTK_IMAGE_ONLINE=1)
+scripts/test-linux-shop.sh                           # Xvfb 실제 Shop 버튼·개봉·무료 보상·저장 검사
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/test_sync_strings.py                    # Linux L 키 scanner·형식 인수 검사(네트워크 없음)

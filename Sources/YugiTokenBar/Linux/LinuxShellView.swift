@@ -29,13 +29,21 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                     Text("\(provider.linuxDisplayName)  \(shortTokens(snapshot.todayDetail[provider.rawValue]?.total ?? 0))")
                 }
                 List(LinuxSection.allCases, selection: $section) { item in
-                    Text(item.title).padding()
+                    Button(item.title) {
+                        if item == .shop { model.closeOpening() }
+                        section = item.rawValue
+                    }.linuxSmokeID("sidebar-\(item.rawValue)")
+                    .style("flat").hexpand()
                 }.sidebarStyle()
             }
             .navigationTitle("YugiTokenBar")
         } content: {
             VStack {
-                Text((LinuxSection(rawValue: section) ?? .shop).title).padding(30)
+                if section == LinuxSection.shop.rawValue {
+                    LinuxShopView(snapshot: snapshot, model: model)
+                } else {
+                    Text((LinuxSection(rawValue: section) ?? .shop).title).padding(30)
+                }
                 if snapshot.refreshing { Text(L("사용량을 읽고 있어요…")) }
                 if let error = snapshot.usageError { Text(error).padding() }
                 if snapshot.dirty {
