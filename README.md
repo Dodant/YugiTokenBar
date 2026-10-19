@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/image/appicon.png" width="128" alt="YugiTokenBar icon"></p>
+
 <h1 align="center">YugiTokenBar</h1>
 
 <p align="center">A macOS menu bar app that fills a <strong>Yu-Gi-Oh! card collection</strong> with the tokens your coding agents (Claude Code, Codex, etc.) use.<br>
