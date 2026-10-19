@@ -3,6 +3,12 @@ import Testing
 @testable import YugiTokenBar
 
 @Suite struct DexQueryTests {
+    /// 등급 메뉴의 "✦ 오버프레임": 오버프레임 판이 있는 카드만 (보유·해금과 상관없이)
+    @MainActor @Test func overframeFilterKeepsOnlyOverframeCards() {
+        let game = Game(db: oneBoxDB([1: overframeCard("카드1"), 2: card("카드2"), 3: overframeCard("카드3", 1)]), state: GameState())
+        #expect(DexQuery(tier: DexQuery.overframeTier).entries(in: game).visible.map(\.cid) == [1, 3])
+    }
+
     /// 전체는 팩 순서로 재수록을 한 번만. 등급·종류·검색 → 미보유 숨기기 → 정렬(같으면 순번). number 는 걸러도 처음 순번 그대로
     @MainActor @Test func filtersAndSorts() {
         var game = Game(db: makeDB([[(3, 1), (1, 4)], [(1, 4), (2, 2)]]), state: GameState())

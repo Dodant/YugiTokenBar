@@ -51,6 +51,13 @@ Work mode hides card images and the partner character; enable it in Settings.
 </tbody>
 </table>
 
+<table align="center">
+<thead><tr><th>Over-frame locked (1/3)</th><th>Over-frame unlocked</th></tr></thead>
+<tbody>
+<tr><td align="center"><img src="docs/image/overframe_locked.png" width="216"></td><td align="center"><img src="docs/image/overframe_unlocked.png" width="216"></td></tr>
+</tbody>
+</table>
+
 Enable fusion-only collection in Settings to obtain eligible Fusion Monsters by combining material cards instead of drawing them.
 
 <p align="center"><a href="docs/video/fusion-demo.mp4"><img src="docs/video/fusion-demo.gif" width="720" alt="Fusion demo"></a></p>

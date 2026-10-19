@@ -2,7 +2,7 @@
 
 ## 0.6.3 — 2026-10-19
 **✨ New features**
-- Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked.
+- Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked. Choose [✦ Overframe] in the rarity menu to see only overframe cards.
 
 **🎨 Improvements**
 - You can now collapse the progress at the bottom left of the Dex by clicking its [Progress] header.

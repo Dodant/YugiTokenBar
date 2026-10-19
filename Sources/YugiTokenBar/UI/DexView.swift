@@ -20,7 +20,7 @@ struct DexView: View {
     @State private var jumpTarget: Int?
     @State private var scrollTarget: Int?
     @State private var fusing: FusionShow?
-    /// 0 = 모든 등급, 1~5 = CardInfo.tier
+    /// 0 = 모든 등급, 1~5 = CardInfo.tier, `DexQuery.overframeTier` = 오버프레임만
     @State private var tierFilter = 0
     /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 코드 (CardInfo.matches)
     @State private var kindFilter = ""
@@ -201,6 +201,8 @@ struct DexView: View {
             Text("SR 슈퍼").tag(3)
             Text("UR 울트라").tag(4)
             Text("SE 시크릿").tag(5)
+            Divider()
+            Text("✦ 오버프레임").tag(DexQuery.overframeTier)
         }
         .fixedSize()
         Picker("정렬", selection: sortBinding) {

@@ -501,3 +501,5 @@
 "카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." = "1 copy of each card and the Fusion Materials you need stay, and cards with locked overframe artwork aren't sold, so your collection is unchanged.";
 /* DexView.swift:567 */
 "카드마다 1장씩은 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." = "1 copy of each card stays and cards with locked overframe artwork aren't sold, so your collection is unchanged.";
+/* DexView.swift:205 */
+"✦ 오버프레임" = "✦ Overframe";
