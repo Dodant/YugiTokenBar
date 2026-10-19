@@ -16,6 +16,11 @@ struct LinuxOpening: Identifiable, Sendable, Equatable {
     var freePack = false
 }
 
+struct LinuxPendingImport: Sendable, Equatable {
+    var envelope: SaveEnvelope
+    var fileName: String
+}
+
 struct LinuxSnapshot: Sendable, Equatable {
     var game: Game
     var opening: LinuxOpening?
@@ -31,6 +36,9 @@ struct LinuxSnapshot: Sendable, Equatable {
     var historyError: String?
     var saveError: String?
     var dirty = false
+    var pendingImport: LinuxPendingImport?
+    var transferMessage: String?
+    var transferError: String?
     var revision: UInt64 = 0
 
     /// Keep the sample's calendar day attached to its provider totals across midnight.
@@ -50,7 +58,9 @@ struct LinuxSnapshot: Sendable, Equatable {
         lhs.history == rhs.history && lhs.historyDate == rhs.historyDate &&
         lhs.refreshing == rhs.refreshing && lhs.loadingHistory == rhs.loadingHistory &&
         lhs.usageError == rhs.usageError && lhs.historyError == rhs.historyError &&
-        lhs.saveError == rhs.saveError && lhs.dirty == rhs.dirty
+        lhs.saveError == rhs.saveError && lhs.dirty == rhs.dirty &&
+        lhs.pendingImport == rhs.pendingImport && lhs.transferMessage == rhs.transferMessage &&
+        lhs.transferError == rhs.transferError
     }
 }
 

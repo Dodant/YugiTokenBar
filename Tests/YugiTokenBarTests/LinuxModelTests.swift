@@ -243,4 +243,132 @@ private actor ControlledLinuxReader {
     }
 }
 
+@Suite @MainActor struct LinuxTransferTests {
+    private func envelopeFile(_ state: GameState, schema: Int? = nil, in dir: URL = tempDir()) throws -> URL {
+        var envelope = SaveEnvelope(appVersion: "9.9.9", exportedAt: Date(timeIntervalSince1970: 1_700_000_000), state: state)
+        if let schema { envelope.schema = schema }
+        let url = dir.appendingPathComponent("incoming.json")
+        try envelope.encoded().write(to: url); return url
+    }
+
+    @Test func exportRoundTripsThroughEnvelopeAndGIOWrite() throws {
+        var state = GameState(); state.coins = 42; state.owned = [1: 2]
+        let (model, _) = makeLinuxModel(state: state, reader: ControlledLinuxReader())
+        let decoded = try SaveEnvelope.decode(model.exportedSave())
+        #expect(decoded.state == model.game.state)
+        let target = tempDir().appendingPathComponent(SaveEnvelope.fileName(Date()))
+        try Data("old".utf8).write(to: target)
+        model.export(to: target)
+        #expect(model.snapshot.transferError == nil); #expect(model.snapshot.transferMessage != nil)
+        #expect(try SaveEnvelope.decode(Data(contentsOf: target)).state == model.game.state)
+        model.export(to: target.deletingLastPathComponent().appendingPathComponent("missing/out.json"))
+        #expect(model.snapshot.transferError != nil); #expect(model.snapshot.transferMessage == nil)
+    }
+
+    @Test func prepareImportValidatesBeforeOfferingReplacement() throws {
+        let (model, _) = makeLinuxModel(reader: ControlledLinuxReader())
+        let dir = tempDir(), big = dir.appendingPathComponent("big.json")
+        try Data(repeating: 0x20, count: SaveEnvelope.maxFileBytes + 1).write(to: big)
+        model.prepareImport(at: big)
+        #expect(model.snapshot.pendingImport == nil)
+        #expect(model.snapshot.transferError?.contains(SaveTransferError.tooLarge.localizedDescription) == true)
+        let plain = dir.appendingPathComponent("plain.json"); try Data("{\"coins\": 5}".utf8).write(to: plain)
+        model.prepareImport(at: plain)
+        #expect(model.snapshot.transferError?.contains(SaveTransferError.notASaveFile.localizedDescription) == true)
+        model.prepareImport(at: try envelopeFile(GameState(), schema: GameState.schemaVersion + 1))
+        #expect(model.snapshot.transferError?.contains(SaveTransferError.newerSchema.localizedDescription) == true)
+        model.prepareImport(at: dir.appendingPathComponent("absent.json"))
+        #expect(model.snapshot.transferError != nil); #expect(model.snapshot.pendingImport == nil)
+        var incoming = GameState(); incoming.coins = 9
+        model.prepareImport(at: try envelopeFile(incoming))
+        #expect(model.snapshot.transferError == nil)
+        #expect(model.snapshot.pendingImport?.envelope.state.coins == 9)
+        #expect(model.snapshot.pendingImport?.fileName == "incoming.json")
+    }
+
+    @Test func confirmImportKeepsLedgerBacksUpSavesAndDropsStaleRead() async throws {
+        let reader = ControlledLinuxReader()
+        var local = GameState()
+        local.coins = 5; local.claimedDate = "2026-10-19"; local.claimedByProvider = ["codex": 5]
+        local.overframes = [1]; local.partnerUnlocked = true; local.partnerEnabled = false
+        let (model, store) = makeLinuxModel(state: local, db: oneBoxDB([1: overframeCard("a"), 2: card("b")]), reader: reader)
+        model.selectDexPack(0); model.selectDexCard(2)
+        model.start(); await until { await reader.readCount == 1 }
+        var incoming = GameState()
+        incoming.coins = 77; incoming.owned = [2: 3]; incoming.claimedDate = "2026-01-01"
+        incoming.claimedByProvider = ["claude_code": 99]; incoming.overframes = [999]; incoming.partnerSize = 200
+        model.prepareImport(at: try envelopeFile(incoming))
+        let generation = model.stateGeneration
+        var published: [LinuxSnapshot] = []
+        model.onPublish = { published.append($0) }
+        #expect(model.confirmImport())
+        let state = model.game.state
+        #expect(state.coins == 77); #expect(state.owned == [2: 3])
+        #expect(state.claimedDate == "2026-10-19"); #expect(state.claimedByProvider == ["codex": 5])
+        #expect(state.overframes == [1]); #expect(state.partnerUnlocked); #expect(!state.partnerEnabled)
+        #expect(state.partnerSize == 128)
+        #expect(model.stateGeneration == generation &+ 1); #expect(model.snapshot.pendingImport == nil)
+        #expect(!published.isEmpty); #expect(model.snapshot.transferError == nil)
+        #expect(store.load() == state)
+        let folder = store.url.deletingLastPathComponent()
+        let backups = try FileManager.default.contentsOfDirectory(atPath: folder.path).filter { $0.hasPrefix("state.import-backup-") }
+        #expect(backups.count == 1)
+        #expect(model.snapshot.transferMessage?.contains(backups[0]) == true)
+        #expect(try SaveEnvelope.decode(Data(contentsOf: folder.appendingPathComponent(backups[0]))).state == local)
+        #expect(model.snapshot.dexCard == 2)
+        await until { await reader.readCount == 2 }
+        await reader.finish(.init(date: "2026-10-20", byProvider: ["codex": 50_000])) // read that predates the import
+        for _ in 0..<10 { await Task.yield(); model.drainEvents() }
+        #expect(model.game.state == state)
+        await reader.finish(.init(date: "2026-10-19")); await receive(model) { !model.snapshot.refreshing }
+        #expect(model.game.state.claimedDate == "2026-10-19"); model.stop()
+    }
+
+    @Test func failedImportKeepsEverythingButTheErrorLine() throws {
+        let directory = tempDir(), blocked = directory.appendingPathComponent("blocked")
+        try Data().write(to: blocked)
+        var local = GameState(); local.coins = 2000
+        let (model, _) = makeLinuxModel(state: local, store: StateStore(url: blocked.appendingPathComponent("state.json")),
+                                        reader: ControlledLinuxReader())
+        #expect(model.buy(pack: 0))
+        var incoming = GameState(); incoming.coins = 3
+        model.prepareImport(at: try envelopeFile(incoming))
+        let before = model.game.state, opening = model.snapshot.opening
+        let pending = model.snapshot.pendingImport, generation = model.stateGeneration
+        #expect(!model.confirmImport())
+        #expect(model.game.state == before); #expect(model.snapshot.opening == opening)
+        #expect(model.snapshot.pendingImport == pending); #expect(model.stateGeneration == generation)
+        #expect(model.snapshot.transferError != nil); #expect(model.snapshot.transferMessage == nil)
+    }
+
+    @Test func cancelImportOnlyClearsPending() throws {
+        var local = GameState(); local.coins = 8
+        let (model, _) = makeLinuxModel(state: local, reader: ControlledLinuxReader())
+        model.prepareImport(at: try envelopeFile(GameState()))
+        let generation = model.stateGeneration
+        model.cancelImport()
+        #expect(model.snapshot.pendingImport == nil); #expect(model.game.state == local)
+        #expect(model.stateGeneration == generation); #expect(model.snapshot.transferError == nil)
+        #expect(!model.confirmImport())
+    }
+
+    @Test func macRoundTripKeepsHiddenFieldsAndLocalLedger() throws {
+        var mac = GameState()
+        mac.coins = 123; mac.coinRemainder = 4; mac.owned = [1: 1, 3: 2]; mac.favorites = [2]
+        mac.partnerUnlocked = true; mac.partnerEnabled = false; mac.partnerSize = 192
+        mac.partnerOrigin = CGPoint(x: 10, y: 20); mac.fusionOnly = true; mac.eraLimit = "GX"
+        mac.decks = [Deck(name: "덱", cards: [1: 1, 3: 2])]
+        mac.claimedDate = "2026-09-01"; mac.claimedByProvider = ["grok": 7]; mac.lastBoughtPid = "p0"
+        var local = GameState(); local.claimedDate = "2026-10-19"; local.claimedByProvider = ["codex": 1]
+        let (model, _) = makeLinuxModel(state: local, reader: ControlledLinuxReader())
+        model.prepareImport(at: try envelopeFile(mac))
+        #expect(model.confirmImport())
+        var expected = mac.withLedger(of: local)
+        expected.overframes = []
+        #expect(model.game.state == expected)
+        #expect(model.game.state.partnerUnlocked); #expect(model.game.state.partnerOrigin == nil)
+        #expect(model.game.state.decks == mac.decks)
+    }
+}
+
 #endif

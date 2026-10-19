@@ -565,3 +565,9 @@
 "지난 31일을 읽고 있어요…" = "Reading the last 31 days…";
 /* LinuxUsageView.swift:41 */
 "지난 31일 기록이 없어요" = "No usage in the last 31 days";
+/* LinuxModel.swift:201 */
+"내보냈어요: %@" = "Exported: %@";
+/* LinuxModel.swift:204 */
+"내보내지 못했어요: %@" = "Couldn't export: %@";
+/* LinuxModel.swift:211 */
+"가져오지 못했어요: %@" = "Couldn't import: %@";

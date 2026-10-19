@@ -192,6 +192,53 @@ import Foundation
         guard let pack = snapshot.dexPack, let cid = snapshot.dexCard,
               game.db.packs[pack].cards.contains(cid), game.db.cards[cid] != nil else { snapshot.dexCard = nil; return }
     }
+    func exportedSave() throws -> Data {
+        try SaveEnvelope(appVersion: AppInfo.currentVersion, exportedAt: Date(), state: game.state).encoded()
+    }
+    func export(to url: URL) {
+        do {
+            try LinuxSaveTransfer.write(try exportedSave(), to: url)
+            snapshot.transferMessage = L("내보냈어요: %@", .text(url.lastPathComponent)); snapshot.transferError = nil
+        } catch {
+            snapshot.transferMessage = nil
+            snapshot.transferError = L("내보내지 못했어요: %@", .text(error.localizedDescription))
+        }
+        publish()
+    }
+    func prepareImport(at url: URL) {
+        snapshot.transferMessage = nil; snapshot.transferError = nil; snapshot.pendingImport = nil
+        do { snapshot.pendingImport = LinuxPendingImport(envelope: try LinuxSaveTransfer.readEnvelope(at: url), fileName: url.lastPathComponent) }
+        catch { snapshot.transferError = L("가져오지 못했어요: %@", .text(error.localizedDescription)) }
+        publish()
+    }
+    func cancelImport() {
+        guard snapshot.pendingImport != nil else { return }; snapshot.pendingImport = nil; publish()
+    }
+    /// Mirrors AppModel.importSave: memory and the usage generation change only after the save is written.
+    @discardableResult func confirmImport() -> Bool {
+        guard let pending = snapshot.pendingImport else { return false }
+        do {
+            let backup = try store.backupBeforeImport(game.state, appVersion: AppInfo.currentVersion)
+            var imported = game
+            imported.state = pending.envelope.state.withLedger(of: game.state)
+            imported.state.overframes = imported.state.overframes.filter(imported.hasOverframe)
+            imported.unlockOwnedOverframes()
+            imported.unlockPartnerIfOwned()
+            try store.save(imported.state)
+            snapshot.game = imported; snapshot.opening = nil; pruneDexSelection()
+            snapshot.dirty = false; snapshot.saveError = nil; snapshot.pendingImport = nil
+            snapshot.transferError = nil
+            snapshot.transferMessage = L("이전 세이브는 %@로 백업했어요.", .text(backup.lastPathComponent))
+            publish()
+            // The kept ledger decides what a fresh read credits; stale results from before the import are dropped.
+            replaceUsageService(service)
+            return true
+        } catch {
+            snapshot.transferMessage = nil
+            snapshot.transferError = L("가져오지 못했어요: %@", .text(error.localizedDescription))
+            publish(); return false
+        }
+    }
     @discardableResult func retrySave() -> Bool {
         guard snapshot.dirty else { return true }; persist(); publish(); return !snapshot.dirty
     }

@@ -19,6 +19,7 @@ enum LinuxSection: String, CaseIterable, Identifiable {
     let snapshot: LinuxSnapshot
     let model: LinuxModel
     @State private var section: String = LinuxSection.shop.rawValue
+    @State private var rescueExporter: Signal = .init()
 
     var view: Body {
         NavigationSplitView {
@@ -47,15 +48,19 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                 } else if section == LinuxSection.usage.rawValue {
                     LinuxUsageView(snapshot: snapshot, model: model)
                 } else {
-                    Text((LinuxSection(rawValue: section) ?? .shop).title).padding(30)
+                    LinuxSettingsView(snapshot: snapshot, model: model)
                 }
                 if snapshot.refreshing { Text(L("사용량을 읽고 있어요…")) }
                 if let error = snapshot.usageError { Text(error).padding() }
                 if snapshot.dirty {
                     Text(L("저장하지 못했어요")).padding()
-                    Button(L("다시 시도")) { model.retrySave() }
+                    HStack(spacing: 10) {
+                        Button(L("다시 시도")) { model.retrySave() }
+                        Button(L("내보내기")) { rescueExporter.signal() }.linuxSmokeID("dirty-export")
+                    }
                 }
             }
+            .linuxSaveExporter($rescueExporter, model: model)
             .topToolbar { HeaderBar.empty() }
             .navigationTitle((LinuxSection(rawValue: section) ?? .shop).title)
         }
