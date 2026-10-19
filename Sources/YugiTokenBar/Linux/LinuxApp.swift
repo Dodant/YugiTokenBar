@@ -43,10 +43,12 @@ import Glibc
             instance.app.showWindow("main")
             instance.lifecycle.activate()
             LinuxRestartSmoke.run(instance.lifecycle)
+            LinuxSmokeDriver.run(instance.lifecycle)
         }
         instance.lifecycle.stop()
         AppLog.writeAndFlush("Linux application exited normally")
         AppLog.flush()
+        if LinuxSmokeDriver.failed { exit(2) }
     }
 
     var scene: Scene {

@@ -57,7 +57,7 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                 if snapshot.dirty {
                     Text(L("저장하지 못했어요")).padding()
                     HStack(spacing: 10) {
-                        Button(L("다시 시도")) { model.retrySave() }
+                        Button(L("다시 시도")) { model.retrySave() }.linuxSmokeID("dirty-retry")
                         Button(L("내보내기")) { rescueExporter.signal() }.linuxSmokeID("dirty-export")
                         Button(L("폴더 열기")) { model.openSaveFolder() }.linuxSmokeID("dirty-open-folder")
                     }.halign(.center).padding()

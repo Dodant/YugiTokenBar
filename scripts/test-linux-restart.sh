@@ -6,8 +6,8 @@ cd "$(dirname "$0")/.."
 
 if [[ ${1:-} != --inner ]]; then
     mkdir -p .build-linux/probes qa-state
-    scripts/linux-build.sh build >.build-linux/probes/task11-restart-build.log 2>&1 || { tail -30 .build-linux/probes/task11-restart-build.log; exit 1; }
-    rm -rf qa-state/task11-restart
+    scripts/linux-build.sh build >.build-linux/probes/restart-build.log 2>&1 || { tail -30 .build-linux/probes/restart-build.log; exit 1; }
+    rm -rf qa-state/restart
     exec docker run --rm -v "$PWD:/work" -w /work -e GTK_A11Y=none -e GSK_RENDERER=cairo ytb-linux-dev bash -c '
         Xvfb :89 -screen 0 1280x1024x24 >/tmp/restart-xvfb.log 2>&1 & server=$!
         trap "kill $server 2>/dev/null || true" EXIT
@@ -27,7 +27,7 @@ wait_for() { # file pattern seconds
 
 run() { # name, extra env assignments...
     local name=$1; shift
-    local root=/work/qa-state/task11-restart/$name
+    local root=/work/qa-state/restart/$name
     mkdir -p "$root/home" "$root/config" "$root/state"
     printf '{"coins":123}' > "$root/state/state.json"
     local out=$root/out.log state_before; state_before=$(sha "$root/state/state.json")
@@ -36,6 +36,7 @@ run() { # name, extra env assignments...
         stdbuf -oL "$app" >"$out" 2>&1 &
     pid=$!
     for _ in $(seq 100); do [[ $(readlink /proc/$pid/exe 2>/dev/null) == "$app_real" ]] && break; sleep .1; done
+    [[ $(readlink /proc/$pid/exe 2>/dev/null) == "$app_real" ]] || fail "app never exec'd"
     cmd_before=$(tr '\0' ' ' </proc/$pid/cmdline); start_before=$(starttime $pid); exe_before=$(readlink /proc/$pid/exe)
     echo "[$name] pid=$pid cmdline=$cmd_before"
     case $name in

@@ -27,6 +27,8 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
   Linux 전용 의존성은 `Package.swift`의 `#if os(Linux)` 블록 안에만 두고 CSQLite·swift-crypto(`exact: "3.15.1"`)·adwaita-swift(`revision: "af5598fbd6f2425841f426ad388d7a7edd6c90e6"`, `Adwaita`·`CAdw`) 외에는 더하지 않는다.
   macOS 그래프는 Sparkle 2.9.6 하나이며 `swift package show-dependencies`·`Package.resolved`를 CI에서 검사한다.
   Linux의 `Package.resolved`는 `.build-linux/`에 두고 커밋하지 않는다.
+  Linux CI는 같은 Dockerfile로 빌드·테스트·스모크·시나리오를 돌리고 PNG·로그·정규화된 세이브를 `linux-smoke` 아티팩트로 올린다.
+  스모크는 `Tests/Fixtures/linux-smoke/state.json`(테스트 전용 세이브)을 실행마다 새 `qa-state/smoke/<실행>/` 폴더로 복사해 쓴다.
   `scripts/linux-build.sh`는 소스·리소스·패치노트를 각각 읽기 전용으로 마운트하고 Linux 잠금 파일을 쓰기 가능한 컨테이너 패키지 루트로 복사한 뒤 명령 종료 시 되돌려 복사한다.
   `String(localized:)`는 Linux에서 `Platform/Localizer.swift`가 같은 `.strings`로 처리하므로 그대로 쓴다.
   Linux UI는 `L("카드 %lld · %@", .int(count), .text(name))`처럼 단일 정적 키와 명시적 타입 인수를 쓴다.
@@ -128,8 +130,10 @@ swift test                                            # 전체 테스트
 scripts/linux-build.sh test                           # Docker(Swift 6.4.1·GTK 4·libadwaita) Linux 테스트, 이미지 캐시 갱신·산출물·핀 .build-linux/
 scripts/linux-build.sh build                          # GTK 실행 파일 빌드 (실행은 GTK 디스플레이·DBus 세션 필요)
 scripts/test-linux-images.sh                         # Xvfb 실제 GTK 이미지·소유권·취소 검사(선택: YTB_GTK_IMAGE_ONLINE=1)
-scripts/test-linux-ui.sh                             # Xvfb 실제 Shop·Dex 버튼·개봉·상세·판매·저장 검사
+scripts/test-linux-ui.sh                             # Xvfb 실제 Shop·Dex·Usage·Settings 버튼·개봉·상세·판매·저장 검사
 scripts/test-linux-restart.sh                         # Docker Xvfb에서 실제 execv 재시작·실패 경로 QA (PID·잠금·세이브 바이트)
+scripts/linux-smoke.sh all                            # Docker Xvfb에서 실제 바이너리로 5화면 PNG·세이브 검사 (산출물 .build-linux/probes/smoke/, 화면 하나만 주려면 shop|dex|open|usage|setting)
+scripts/linux-scenarios.sh all                        # 첫 실행 적립·저장 실패 후 재시도·잠금·새 스키마 시나리오 (산출물 .build-linux/probes/scenarios/)
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/test_sync_strings.py                    # Linux L 키 scanner·형식 인수 검사(네트워크 없음)

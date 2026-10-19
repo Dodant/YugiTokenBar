@@ -33,14 +33,34 @@ jobs:
           git diff --exit-code Package.resolved
   linux:
     runs-on: ubuntu-24.04
-    container: swift:6.4.1
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - run: apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev pkg-config
       - uses: actions/cache@v4
         with:
-          path: .build
-          key: linux-swift-6.4.1-${{ runner.arch }}-${{ hashFiles('Package.swift') }}
-      - run: swift build
-      - run: swift test
+          path: .build-linux
+          key: linux-${{ hashFiles('Package.swift', 'docker/linux-dev.Dockerfile') }}
+      - name: Build (Docker image from docker/linux-dev.Dockerfile)
+        run: scripts/linux-build.sh build
+      - name: Test
+        run: scripts/linux-build.sh test
+      - name: Native GTK UI tests
+        run: YTB_SMOKE_NO_IMAGES=1 scripts/test-linux-ui.sh
+      - name: Native image tests (offline)
+        run: scripts/test-linux-images.sh
+      - name: Screen smoke
+        run: scripts/linux-smoke.sh all
+      - name: Scenarios
+        run: scripts/linux-scenarios.sh all
+      - name: Exec restart
+        run: scripts/test-linux-restart.sh
+      - name: Upload screens and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-smoke
+          path: |
+            .build-linux/probes/**/*.png
+            .build-linux/probes/**/*.log
+            .build-linux/probes/**/*-state.json
+          if-no-files-found: warn
