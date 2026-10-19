@@ -179,6 +179,9 @@ import Testing
         for _ in 0..<300 { #expect(game.drawFree(using: &rng) != 10) }
         // UR 슬롯에 융합 전용뿐이면 아래 티어로 내려간다 (SR 「융합」)
         #expect(game.draw(pack: 0, tier: 4, excluding: [11], using: &rng) == CardDB.fusionSpell)
+        game.state.owned[10] = 1  // 융합으로 만들었으면 팩에서도 나온다
+        #expect(!game.isFusionOnly(10) && game.draw(pack: 0, tier: 4, excluding: [11], using: &rng) == 10)
+        game.state.owned[10] = nil
         game.state.fusionOnly = false
         var free: Set<Int> = []
         for _ in 0..<300 { if let cid = game.drawFree(using: &rng) { free.insert(cid) } }

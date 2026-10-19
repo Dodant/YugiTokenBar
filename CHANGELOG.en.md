@@ -6,6 +6,7 @@
 
 **🎨 Improvements**
 - You can now collapse the progress at the bottom left of the Dex by clicking its [Progress] header.
+- With [Fusion Monsters by Fusion Summon only] on, cards you've already made by Fusion can now also come from packs and free cards.
 
 **🐛 Bug fixes**
 - Fixed the app quitting as soon as the Dex window opened at certain window widths.

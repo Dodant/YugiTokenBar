@@ -328,7 +328,8 @@ struct Game: Sendable {
     func wanted(_ cid: Int) -> Bool { copies(cid) < keep(cid) }
 
     /// 설정이 켜져 있으면 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
-    func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) }
+    /// 1장이라도 가지면(융합으로 만들었으면) 다시 팩·무료 카드에서 나온다.
+    func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) && copies(cid) == 0 }
 
     /// 마스크드 히어로는 「마스크 체인지」, 나머지는 「융합」이 있어야 만든다 (소비하지 않는다)
     func craftSpell(_ cid: Int) -> Int { db.cards[cid]?.mask == true ? CardDB.maskChange : CardDB.fusionSpell }
