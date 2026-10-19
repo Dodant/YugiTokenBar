@@ -23,6 +23,18 @@ final class AppModel {
     var workMode = UserDefaults.standard.bool(forKey: AppModel.workModeKey) {
         didSet { UserDefaults.standard.set(workMode, forKey: Self.workModeKey); updatePartner() }
     }
+    /// 메뉴바 아이콘 옆에 보일 것. 업무 모드처럼 이 Mac 의 UserDefaults 에 둔다.
+    enum MenuBarInfo: String, CaseIterable, Identifiable {
+        case coins, todayUsage, sessionUsage, weeklyUsage, sessionWeeklyUsage, sessionReset, collection, none
+        var id: Self { self }
+    }
+    static let menuBarInfoKey = "menuBarInfo"
+    var menuBarInfo = MenuBarInfo(rawValue: UserDefaults.standard.string(forKey: AppModel.menuBarInfoKey) ?? "") ?? .coins {
+        didSet { UserDefaults.standard.set(menuBarInfo.rawValue, forKey: Self.menuBarInfoKey); clock = Date() }
+    }
+    /// 메뉴바 [세션 초기화까지]의 시계 (분마다). 메뉴바 라벨 안 TimelineView 는 상태 항목을 지워 버려 모델이 돌린다.
+    /// 그 표시일 때만 바꿔 다른 표시는 라벨을 다시 그리지 않는다
+    private(set) var clock = Date()
     /// 팝오버 안 지금 화면
     var screen: PanelScreen = .summary
     /// 오늘 provider별 입력·출력·캐시·비용 (메뉴 사용량 칸·사용량 화면)
@@ -46,6 +58,17 @@ final class AppModel {
         switch p {
         case .claude: claudeLimits.flatMap(UsageView.claudeReset)
         case .codex: codexLimits?.primary?.resetDate
+        default: nil
+        }
+    }
+
+    /// 5시간(세션)·주간 한도 % (메뉴바 표시). 못 읽었거나 공식 한도가 없는 provider 는 nil
+    func limitPercent(for p: Provider, weekly: Bool) -> Double? {
+        switch p {
+        case .claude: claudeLimits.flatMap { s in
+            (weekly ? s.sevenDay : s.fiveHour)?.utilization ?? s.limits?.first { $0.kind == (weekly ? "weekly_all" : "session") }?.percent
+        }
+        case .codex: (weekly ? codexLimits?.secondary : codexLimits?.primary).map { Double($0.usedPercent) }
         default: nil
         }
     }
@@ -102,6 +125,7 @@ final class AppModel {
         unlockOnLaunch()
         updatePartner()
         every(.seconds(60)) { $0.refresh() }
+        every(.seconds(60)) { if $0.menuBarInfo == .sessionReset { $0.clock = Date() } }
         // ponytail: 5분 고정 주기. 429 가 잦으면 Retry-After 백오프 추가
         every(.seconds(300)) { $0.refreshLimits() }
     }

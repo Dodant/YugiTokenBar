@@ -4,8 +4,10 @@
 **✨ New features**
 - Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked. Choose [✦ Overframe] in the rarity menu to see only overframe cards.
 - Drawing certain cards now makes something special happen.
+- In Setting > General, [Menu bar shows] lets the menu bar show today's tokens and cost, Claude and Codex session and weekly usage or time until the session resets (in each agent's color), or your Dex progress instead of coins, or hide the number.
 
 **🎨 Improvements**
+- Renamed the [Turn off animations] setting to [Reduce motion] and moved it to General.
 - You can now collapse the progress at the bottom left of the Dex by clicking its [Progress] header.
 - You can now open up to 6 free cards at a time, shown in two rows of 2 for 4 cards and two rows of 3 for 6 cards.
 - The free card and free pack icons in the menu now use a color that stands out against the background.

@@ -83,6 +83,30 @@ struct SettingsView: View {
                 .onChange(of: language) { AppLanguage.store(language) }
             }
             toggleRow("업무 모드", hint: "카드 이미지와 파트너를 숨겨요", isOn: Bindable(model).workMode)
+            toggleRow("동작 줄이기", hint: "카드 연출과 화면 전환 애니메이션을 줄여요",
+                      isOn: Bindable(model).animationsOff)
+            row {
+                Text("메뉴바 표시")
+                Spacer()
+                Picker("메뉴바 표시", selection: Bindable(model).menuBarInfo) {
+                    // 메뉴 항목은 글자 하나로 그려져 이름 옆에 예시를 " - "로 붙인다 (짧게 에이전트 하나 값만)
+                    ForEach([
+                        (AppModel.MenuBarInfo.coins, String(localized: "코인 · 무료"), "3,420 · 1"),
+                        (.todayUsage, String(localized: "오늘 사용량"), "273M · $92"),
+                        (.sessionUsage, String(localized: "세션 사용량"), "74%"),
+                        (.weeklyUsage, String(localized: "주간 사용량"), "17%"),
+                        (.sessionWeeklyUsage, String(localized: "세션·주간 사용량"), "74/17%"),
+                        (.sessionReset, String(localized: "세션 초기화까지"), "2h 53m"),
+                        (.collection, String(localized: "컬렉션"), "2311/8306"),
+                        (.none, String(localized: "없음"), ""),
+                    ], id: \.0) { info, name, example in
+                        Text(verbatim: example.isEmpty ? name : "\(name) - \(example)").tag(info)
+                    }
+                }
+                .labelsHidden()
+                .controlSize(.small)
+                .fixedSize()
+            }
         }
     }
 
@@ -141,8 +165,6 @@ struct SettingsView: View {
             toggleRow("중복 카드 자동 판매", hint: "새로 나온 중복 카드를 코인으로 바꿔요",
                       detail: "이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 \(Balance.overframeCopies)장까지 남기고, 융합에 필요한 소재도 남겨요.",
                       isOn: Bindable(model).autoSellDuplicates)
-            toggleRow("애니메이션 끄기", hint: "카드를 연출 없이 바로 보여줘요",
-                      isOn: Bindable(model).animationsOff)
             row {
                 let db = model.game.fullDB
                 VStack(alignment: .leading, spacing: 1) {

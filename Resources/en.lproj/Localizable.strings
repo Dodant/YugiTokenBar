@@ -123,9 +123,9 @@
 /* SettingsView.swift:83 */
 "새로 나온 중복 카드를 코인으로 바꿔요" = "Sell newly drawn duplicates for coins";
 /* SettingsView.swift:88 */
-"애니메이션 끄기" = "Turn off animations";
+"동작 줄이기" = "Reduce motion";
 /* SettingsView.swift:88 */
-"카드를 연출 없이 바로 보여줘요" = "Show cards without animations";
+"카드 연출과 화면 전환 애니메이션을 줄여요" = "Tones down card effects and screen transitions";
 /* SettingsView.swift:102 */
 "시대 범위" = "Era range";
 /* SettingsView.swift:99 */
@@ -499,3 +499,19 @@
 "엑조디아!" = "Exodia!";
 /* SettingsView.swift:142 */
 "이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 %lld장까지 남기고, 융합에 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Cards with overframe artwork are kept until you have the %lld copies that unlock it, and the materials you need for Fusion are kept too.";
+/* SettingsView.swift:87 */
+"메뉴바 표시" = "Menu bar shows";
+/* SettingsView.swift:91 */
+"주간 사용량" = "Weekly usage";
+/* SettingsView.swift:93 */
+"없음" = "None";
+/* SettingsView.swift:91 */
+"세션 사용량" = "Session usage";
+/* SettingsView.swift:93 */
+"오늘 사용량" = "Today's usage";
+/* SettingsView.swift:96 */
+"세션·주간 사용량" = "Session & weekly usage";
+/* SettingsView.swift:97 */
+"세션 초기화까지" = "Until session resets";
+/* SettingsView.swift:94 */
+"코인 · 무료" = "Coins · Free";

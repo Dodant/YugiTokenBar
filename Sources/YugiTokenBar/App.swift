@@ -46,7 +46,8 @@ struct YugiTokenBarApp: App {
             PopoverView().environment(model).environment(\.animationsOff, model.game.state.animationsOff)
                 .environment(\.workMode, model.workMode)
         } label: {
-            MenuBarLabel(title: menuTitle, icon: model.partner.menu, unlocked: model.game.state.partnerUnlocked && !model.workMode, saveFailed: model.saveError != nil)
+            MenuBarLabel(title: menuTitle, usage: menuUsage, icon: model.partner.menu,
+                         unlocked: model.game.state.partnerUnlocked && !model.workMode, saveFailed: model.saveError != nil)
         }
         .menuBarExtraStyle(.window)
 
@@ -63,32 +64,90 @@ struct YugiTokenBarApp: App {
             .defaultSize(width: 620, height: 600)
     }
 
+    /// 설정에서 고른 숫자. 열지 않은 무료 카드 배지는 코인에만 붙는다. 에이전트별 값은 색이 있어 `menuUsage`로 따로 그린다
     private var menuTitle: String {
         let state = model.game.state
-        let coins = shortCoins(state.coins)
-        return state.pendingFree > 0 ? "\(coins) · \(state.pendingFree)" : coins
+        switch model.menuBarInfo {
+        case .coins:
+            let coins = shortCoins(state.coins)
+            return state.pendingFree > 0 ? "\(coins) · \(state.pendingFree)" : coins
+        case .todayUsage:
+            // 메뉴바 칸을 아끼려고 소수점 없이
+            let today = model.todayDetail.values, tokens = Double(today.map(\.total).reduce(0, +))
+            let short = tokens >= 1e6 ? String(format: "%.0fM", tokens / 1e6) : tokens >= 1e3 ? String(format: "%.0fK", tokens / 1e3) : String(Int(tokens))
+            return "\(short) · \(String(format: "$%.0f", today.map(\.cost).reduce(0, +)))"
+        case .collection: return "\(model.game.ownedDistinct)/\(model.game.db.allCIDs.count)"
+        case .sessionUsage, .weeklyUsage, .sessionWeeklyUsage, .sessionReset, .none: return ""
+        }
+    }
+
+    /// 공식 한도를 읽은 에이전트(Claude·Codex)의 세션(5시간)·주간 %나 세션 남은 시간과 색 (사용량 칸과 같은 색)
+    private var menuUsage: [(text: String, tint: Color)] {
+        UsageView.agents.compactMap { a in
+            let session = model.limitPercent(for: a.id, weekly: false).map { Int($0.rounded()) }
+            let weekly = model.limitPercent(for: a.id, weekly: true).map { Int($0.rounded()) }
+            let text: String? = switch model.menuBarInfo {
+            case .sessionUsage: session.map { "\($0)%" }
+            case .weeklyUsage: weekly.map { "\($0)%" }
+            case .sessionWeeklyUsage: session == nil && weekly == nil ? nil : "\(session.map(String.init) ?? "–")/\(weekly.map(String.init) ?? "–")%"
+            case .sessionReset: model.limitReset(for: a.id).map { Self.shortReset($0, now: model.clock) }
+            default: nil
+            }
+            return text.map { ($0, a.tint) }
+        }
+    }
+
+    /// "2d 3h", "1h 23m", "48m" (사용량 문구라 모든 언어에서 영어)
+    static func shortReset(_ date: Date, now: Date) -> String {
+        let mins = max(0, Int(date.timeIntervalSince(now) / 60))
+        let h = mins / 60, m = mins % 60
+        return h >= 24 ? "\(h / 24)d \(h % 24)h" : h > 0 ? "\(h)h \(m)m" : "\(m)m"
     }
 }
 
 /// 메뉴바 라벨: 파트너가 해금되면 카드 아이콘 자리에 날개 크리보. 코인·배지 글자는 그대로.
 private struct MenuBarLabel: View {
     let title: String
+    /// 에이전트별 글자와 색 (비면 안 그림)
+    let usage: [(text: String, tint: Color)]
     let icon: FrameBox
     let unlocked: Bool
     /// 저장이 실패하면 아이콘 자리에 경고 (팝오버를 열지 않아도 보이게)
     let saveFailed: Bool
+    /// 메뉴바 글자색이 따르는 외관. 컬러 이미지 안 아이콘이 메뉴바 글자와 같은 색이 되게 넘긴다
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        if saveFailed {
-            Label(title, systemImage: "exclamationmark.triangle.fill")
-                .labelStyle(.titleAndIcon)
-        } else if unlocked, let image = icon.image {
-            Label { Text(title) } icon: { Image(nsImage: image) }
-                .labelStyle(.titleAndIcon)
+        if !usage.isEmpty, let image = usageImage {
+            Image(nsImage: image)
         } else {
-            Label(title, systemImage: "rectangle.portrait.on.rectangle.portrait.fill")
+            Label { Text(verbatim: title) } icon: { iconImage }
                 .labelStyle(.titleAndIcon)
         }
+    }
+
+    private var iconImage: Image {
+        if saveFailed { Image(systemName: "exclamationmark.triangle.fill") }
+        else if unlocked, let image = icon.image { Image(nsImage: image) }
+        else { Image(systemName: "rectangle.portrait.on.rectangle.portrait.fill") }
+    }
+
+    /// 메뉴바 라벨은 이미지 하나·글자 하나만 그리고 글자 색을 버린다 → 아이콘과 %를 한 컬러 이미지로 그린다
+    private var usageImage: NSImage? {
+        let renderer = ImageRenderer(content: HStack(spacing: 5) {
+            iconImage
+            HStack(spacing: 3) {
+                ForEach(Array(usage.enumerated()), id: \.offset) { i, u in
+                    if i > 0 { Text(verbatim: "·").foregroundStyle(.secondary) }
+                    Text(verbatim: u.text).foregroundStyle(u.tint)
+                }
+            }
+        }
+        .font(Font(NSFont.menuBarFont(ofSize: 0)))
+        .monospacedDigit()
+        .environment(\.colorScheme, colorScheme))
+        renderer.scale = NSScreen.main?.backingScaleFactor ?? 2
+        return renderer.nsImage
     }
 }
 #endif
