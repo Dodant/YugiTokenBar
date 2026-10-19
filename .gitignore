@@ -6,3 +6,6 @@ build/
 qa-state/
 tools/cache/
 superpowers/
+.swiftpm/
+__pycache__/
+.claude/settings.local.json
