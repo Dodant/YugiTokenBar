@@ -434,7 +434,7 @@
 /* SettingsView.swift:72 */
 "끌어서 옮기고, 우클릭으로 숨겨요" = "Drag to move. Right-click to hide.";
 /* SettingsView.swift:87 */
-"이미 모은 카드는 그대로예요. 융합 전용 모드에서는 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Fusion-only mode also keeps the materials you need.";
+"이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 3장까지 남기고, 융합 전용 모드에서는 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Cards with overframe artwork are kept until you have the 3 copies that unlock it, and Fusion-only mode also keeps the materials you need.";
 /* SettingsView.swift:91 */
 "대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요." = "These cards do not appear in packs or free draws. Collect Polymerization and the materials, then fuse in Collection.";
 /* SettingsView.swift:141 */
@@ -493,3 +493,9 @@
 "기본 위치 밖 로그만 넣어요. 콤마·줄바꿈으로 구분하고 * 와일드카드를 써요. Claude는 projects 폴더, Codex는 sessions 폴더를 넣어요." = "Only for logs outside the default location. Separate with commas or new lines; * wildcards work. Use the projects folder for Claude and the sessions folder for Codex.";
 /* SettingsView.swift:114 */
 "찾은 폴더: %lld" = "Folders found: %lld";
+/* CardDetailView.swift:36 */
+"오버프레임 그림 해금" = "Overframe artwork unlocked";
+/* CardDetailView.swift:36 */
+"같은 카드를 %lld장 모으면 오버프레임 그림이 해금돼요" = "Collect %lld copies of this card to unlock its overframe artwork";
+/* DexView.swift:351 */
+"오버프레임 그림 미해금" = "Overframe artwork locked";

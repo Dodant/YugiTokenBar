@@ -150,7 +150,7 @@ struct DexView: View {
         }
         .overlay {
             if let fusing {
-                FusionAnimationView(db: model.db, show: fusing) { self.fusing = nil }
+                FusionAnimationView(db: model.db, show: fusing, overframe: model.game.showsOverframe(fusing.cid)) { self.fusing = nil }
                     .transition(.opacity)
             }
         }
@@ -303,12 +303,15 @@ struct DexView: View {
                 .background(selected ? Color.accentColor.opacity(0.2) : .clear, in: .rect(cornerRadius: 6))
             } else {
                 VStack(spacing: 4) {
-                    CardImageView(db: model.db, cid: cid, owned: owned)
+                    CardImageView(db: model.db, cid: cid, owned: owned, overframe: model.game.showsOverframe(cid))
                         .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
                         .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Color.accentColor, lineWidth: selected ? 3 : 0))
                         .overlay(alignment: .topTrailing) { star(cid, hovered: hovered) }
                         .overlay(alignment: .topLeading) { if let deckID, hovered { minus(deckID, cid) } }
                         .overlay(alignment: .bottomLeading) { RarityPill(label: label, owned: owned).padding(4) }
+                        .overlay(alignment: .bottomTrailing) {
+                            if game.hasOverframe(cid) { OverframeBadge(unlocked: game.showsOverframe(cid), copies: game.copies(cid)).padding(4) }
+                        }
                     HStack(spacing: 4) {
                         MarqueeText(text: model.db.cards[cid]?.name ?? "", active: hovered)
                             .foregroundStyle(owned ? .primary : .secondary)
@@ -344,7 +347,9 @@ struct DexView: View {
     private func cellLabel(_ cid: Int, label: String, inDeck: Int?) -> String {
         let n = model.game.copies(cid)
         let status = inDeck.map { String(localized: "덱 \($0)장, 보유 \(n)장") } ?? (n > 0 ? String(localized: "보유 \(n)장") : String(localized: "미보유"))
-        return "\(model.db.cards[cid]?.name ?? ""), \(label), \(status)"
+        let overframe = !model.game.hasOverframe(cid) ? ""
+            : ", " + (model.game.showsOverframe(cid) ? String(localized: "오버프레임 그림 해금") : String(localized: "오버프레임 그림 미해금"))
+        return "\(model.db.cards[cid]?.name ?? ""), \(label), \(status)\(overframe)"
     }
 
     /// 클릭 = 그 카드만, ⌘클릭 = 토글, ⇧클릭 = 마지막 클릭부터 범위 추가. (Ctrl클릭은 macOS 우클릭이라 안 쓴다)

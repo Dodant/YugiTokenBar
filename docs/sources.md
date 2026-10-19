@@ -23,9 +23,10 @@
 | 팩 봉투 | Yugipedia(고른 언어판. 일본어는 없으면 영문판), 없으면 YGOPRODeck `images/sets/<setCode>.jpg` |
 | 오버프레임 25장 | 아래 표 |
 
-### 오버프레임 (`ImageCache.overframe`)
+### 오버프레임 (`ImageSource.overframe`)
 
 오버프레임(Over-Frame, TCG 이름 Extended art)은 일러스트가 카드 테두리 밖으로 뻗어 나오는 공식 카드 처리다.
+앱은 같은 카드를 3장 모아 해금한 뒤에만 이 그림을 쓴다(`Balance.overframeCopies`, 팔아도 유지).
 OCG에서는 LIMIT OVER COLLECTION(2026)에 처음 나왔다.
 대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(약 100종)을 passcode로 `cards_KO.json`과 맞춰 뽑았고, 101팩 안에 든 25종 전부를 넣었다(2026-10-19 기준).
 
@@ -60,7 +61,7 @@ Yugipedia 이미지를 먼저 쓰고(영문 RA05·BETB UR, 일본판 LOSP·BETB 
 | 언체인드쌍왕신 라이고우 | 29479265 | RV01-JP063 | 블루래빗 | https://www.rabbit-blue.com/data/nereid/product/RV01/063s.jpg |
 | 언체인드소울킹 야마 | 24269961 | RV01-JP064 | 블루래빗 | https://www.rabbit-blue.com/data/nereid/product/RV01/064s.jpg |
 
-새 오버프레임이 나오면 Yugipedia `Card Gallery:<영문 이름>`에서 `-EA` 파일(또는 그 상품의 스캔)을 확인해 `ImageCache.overframe`과 이 표에 한 줄씩 추가한다.
+새 오버프레임이 나오면 Yugipedia `Card Gallery:<영문 이름>`에서 `-EA` 파일(또는 그 상품의 스캔)을 확인해 `ImageSource.overframe`과 이 표에 한 줄씩 추가한다.
 
 조사에 참고한 글:
 - Yugipedia, Extended art: https://yugipedia.com/wiki/Extended_art

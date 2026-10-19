@@ -23,6 +23,8 @@ enum Balance {
     static let sellPrice: [Int: Int] = [1: 20, 2: 50, 3: 150, 4: 400, 5: 1_200]
     /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
     static let maxCopiesInDeck = 3
+    /// 같은 카드를 이만큼 모으면 공식 오버프레임 그림이 해금된다 (판이 있는 카드만, 팔아도 유지). 해금 전엔 이만큼 자동 판매·중복 판매에서 남긴다.
+    static let overframeCopies = 3
     /// 메인 덱 권장 장 수. 표시만 하고 강제하지 않는다.
     static let deckSize = 40...60
 }
@@ -131,6 +133,8 @@ struct Game: Sendable {
     // MARK: 조회
 
     func copies(_ cid: Int) -> Int { state.owned[cid] ?? 0 }
+    func hasOverframe(_ cid: Int) -> Bool { db.cards[cid]?.imageId.map { ImageSource.overframe[$0] != nil } ?? false }
+    func showsOverframe(_ cid: Int) -> Bool { state.overframes.contains(cid) }
 
     /// 시대 범위 안의 즐겨찾기 수 (사이드바 숫자 = 즐겨찾기 목록 장 수)
     var favoritesInRange: Int { state.favorites.filter { db.cidSet.contains($0) }.count }
@@ -188,6 +192,7 @@ struct Game: Sendable {
         guard state.coins >= refund else { return false }
         state.coins -= refund
         state.owned[cid, default: 0] += 1
+        unlockOverframe(cid)
         return true
     }
 
@@ -216,6 +221,17 @@ struct Game: Sendable {
         guard !state.partnerUnlocked, copies(CardDB.partnerCard) > 0 else { return false }
         state.partnerUnlocked = true
         return true
+    }
+
+    /// 오버프레임 판이 있는 카드를 `overframeCopies` 장 이상 가지면 그 그림을 해금한다. 해금은 팔아도 유지된다.
+    mutating func unlockOverframe(_ cid: Int) {
+        guard copies(cid) >= Balance.overframeCopies, hasOverframe(cid) else { return }
+        state.overframes.insert(cid)
+    }
+
+    /// 세이브를 열거나 가져올 때 이미 모아 둔 카드를 해금한다
+    mutating func unlockOwnedOverframes() {
+        for cid in state.owned.keys { unlockOverframe(cid) }
     }
 
     // MARK: 덱
@@ -267,10 +283,12 @@ struct Game: Sendable {
 
     /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통).
     /// 조건 소재는 그 융합을 아직 안 가졌을 때만 센다(같은 카드만 나와도 모아서 만들 수 있게).
+    /// 오버프레임 판이 있는 카드는 해금 전까지 `overframeCopies` 장 (설정과 상관없이).
     func keep(_ cid: Int) -> Int {
-        guard state.fusionOnly else { return 1 }
+        let base = hasOverframe(cid) && !showsOverframe(cid) ? Balance.overframeCopies : 1
+        guard state.fusionOnly else { return base }
         let open = db.conditionNeed[cid]?.filter { copies($0.key) == 0 }.values.max() ?? 1
-        return max(1, db.materialNeed[cid] ?? 1, open)
+        return max(base, db.materialNeed[cid] ?? 1, open)
     }
 
     /// 설정이 켜져 있으면 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
@@ -435,18 +453,20 @@ struct Game: Sendable {
     /// 카드 1장 지급: isNew는 지급 전에 계산하고, 지급 뒤 자동 판매까지 처리한다.
     private mutating func pull(_ cid: Int, source: String) -> Pull {
         let isNew = copies(cid) == 0
+        let keep = keep(cid)  // 지급 전 값: 오버프레임을 해금한 장(3장째)은 팔지 않는다
         give(cid, source: source)
-        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid))
+        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid, keep: keep))
     }
 
     /// 설정이 켜져 있고 `keep` 장을 넘으면 바로 1장 판다. 반환: 받은 코인.
-    private mutating func autoSell(_ cid: Int) -> Int? {
-        guard state.autoSellDuplicates, copies(cid) > keep(cid) else { return nil }
+    private mutating func autoSell(_ cid: Int, keep: Int) -> Int? {
+        guard state.autoSellDuplicates, copies(cid) > keep else { return nil }
         return sell(cid)
     }
 
     mutating func give(_ cid: Int, source: String, now: Date = Date()) {
         state.owned[cid, default: 0] += 1
+        unlockOverframe(cid)
         state.log.insert(LogEntry(cid: cid, source: source, date: now), at: 0)
         if state.log.count > Balance.logLimit {
             state.log.removeLast(state.log.count - Balance.logLimit)

@@ -11,6 +11,7 @@
 **⚖️ Balance**
 - Free cards now only give cards you don't have yet. Rarity odds still apply, split among the rarities you haven't completed.
 - On first launch, tokens used in the last 14 days are credited as coins.
+- Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] keep up to 3 copies. In the collection, cards with overframe artwork show a ✦ badge with how many copies you have.
 
 ## 0.6.1 — 2026-10-12
 **✨ New features**

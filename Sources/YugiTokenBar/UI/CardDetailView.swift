@@ -17,7 +17,7 @@ struct CardDetailView: View {
         let n = model.game.copies(cid)
         Form {
             // 미보유도 컬러로, 호버 기울기 없이, 업무 모드여도 실제 그림
-            CardImageView(db: model.db, cid: cid, size: .full, showInWorkMode: true)
+            CardImageView(db: model.db, cid: cid, size: .full, overframe: model.game.showsOverframe(cid), showInWorkMode: true)
                 .frame(maxWidth: .infinity)
                 .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
                 .listRowSeparator(.hidden)
@@ -28,6 +28,13 @@ struct CardDetailView: View {
                     Text(card.summary)
                     if let atk = card.atk {
                         Text(card.def.map { "ATK \(atk) / DEF \($0)" } ?? "ATK \(atk)").monospacedDigit()
+                    }
+                    if model.game.hasOverframe(cid) {
+                        let unlocked = model.game.showsOverframe(cid)
+                        HStack(spacing: 6) {
+                            OverframeBadge(unlocked: unlocked, copies: n, size: 10).accessibilityHidden(true)
+                            Text(unlocked ? "오버프레임 그림 해금" : "같은 카드를 \(Balance.overframeCopies)장 모으면 오버프레임 그림이 해금돼요")
+                        }
                     }
                 }
                 .font(.callout)

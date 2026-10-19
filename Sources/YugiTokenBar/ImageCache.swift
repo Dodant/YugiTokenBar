@@ -36,55 +36,24 @@ final class ImageCache {
     private var workMode: Bool { defaults.bool(forKey: AppModel.workModeKey) }
 
     /// force: 업무 모드여도 불러온다 (컬렉션 정보 패널의 고른 카드 한 장만)
-    func image(_ imageId: Int, size: Size, force: Bool = false) async -> NSImage? {
-        if let s = Self.overframe[imageId] {
+    /// overframe: 오버프레임 판이 있으면 그 그림 (`Game.showsOverframe`, 같은 카드를 여러 장 가졌을 때)
+    func image(_ imageId: Int, size: Size, overframe: Bool = false, force: Bool = false) async -> NSImage? {
+        if overframe, let s = ImageSource.overframe[imageId] {
             // 원본이 600~1,160px 이라 YGOPRODeck 큰 이미지(세로 614px)만큼 줄여 두 크기에 함께 쓴다
-            return await image(key: key(imageId, size: size), url: URL(string: s)!, maxPixels: 614, force: force)
+            return await image(key: key(imageId, size: size, overframe: true), url: URL(string: s)!, maxPixels: 614, force: force)
         }
-        return await image(key: key(imageId, size: size), url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"), force: force)
+        return await image(key: key(imageId, size: size, overframe: false), url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"), force: force)
     }
 
     /// 메모리 캐시에 이미 있으면 바로 (뷰가 첫 프레임부터 그리도록, 기다리는 동안 뒷면이 깜빡이지 않게)
-    func cached(_ imageId: Int, size: Size, force: Bool = false) -> NSImage? {
+    func cached(_ imageId: Int, size: Size, overframe: Bool = false, force: Bool = false) -> NSImage? {
         guard force || !workMode else { return nil }
-        return memory.object(forKey: key(imageId, size: size) as NSString)
+        return memory.object(forKey: key(imageId, size: size, overframe: overframe) as NSString)
     }
 
-    private func key(_ imageId: Int, size: Size) -> String {
-        Self.overframe[imageId] != nil ? "overframe-\(imageId)" : "\(size.rawValue)-\(imageId)"
+    private func key(_ imageId: Int, size: Size, overframe: Bool) -> String {
+        overframe && ImageSource.overframe[imageId] != nil ? "overframe-\(imageId)" : "\(size.rawValue)-\(imageId)"
     }
-
-    /// passcode → 공식 오버프레임(Yugipedia "Extended art") 이미지. 워터마크(SAMPLE) 없는 실물 스캔·공식 이미지만.
-    /// 101팩에 든 오버프레임 25종 전부. 카드별 출처는 docs/sources.md.
-    /// ponytail: 손으로 고른 표. 새 오버프레임이 나오면 Card Gallery 의 `-EA`·LOSP 등 파일을 확인해 한 줄 추가한다(docs/sources.md 표도).
-    static let overframe: [Int: String] = [
-        35952884: "https://ms.yugipedia.com//e/e7/ShootingQuasarDragon-RA05-EN-UR-1E-EA.png",
-        6218704: "https://ms.yugipedia.com//a/ae/OddEyesArcrayDragon-RA05-EN-UR-1E-EA.png",
-        21637210: "https://ms.yugipedia.com//7/7c/FirewallDragonSingularity-RA05-EN-UR-1E-EA.png",
-        35405755: "https://ms.yugipedia.com//c/c1/KurikaraDivincarnate-RA05-EN-UR-1E-EA.png",
-        48130397: "https://ms.yugipedia.com//f/f6/SuperPolymerization-RA05-EN-UR-1E-EA.png",
-        97045737: "https://ms.yugipedia.com//7/7e/DominusPurge-RA05-EN-UR-1E-EA.png",
-        31801517: "https://ms.yugipedia.com//7/77/Number62GalaxyEyesPrimePhotonDragon-LOSP-JP-PScR.png",
-        13331639: "https://ms.yugipedia.com//f/f7/SupremeKingZARC-LOSP-JP-PScR.png",
-        22850702: "https://ms.yugipedia.com//f/f2/ChaosAngel-LOSP-JP-PScR.png",
-        98127546: "https://ms.yugipedia.com//c/c1/UnderworldGoddessoftheClosedWorld-LOSP-JP-PScR.png",
-        25592142: "https://ms.yugipedia.com//5/56/AstellaroftheWhiteForest-CF02-JP-OP.png",
-        61980241: "https://ms.yugipedia.com//8/81/ElzetteoftheWhiteForest-CF02-JP-OP.png",
-        24203749: "https://ms.yugipedia.com//a/ac/TheGreatGallantBandit-BETB-JP-PScR.png",
-        50208444: "https://ms.yugipedia.com//8/80/ElementalSagaDoriado-BETB-JP-PScR.png",
-        17242022: "https://ms.yugipedia.com//8/82/RedEyesBlackDragonExceed-BETB-EN-UR-1E-EA.png",
-        79791695: "https://ms.yugipedia.com//b/b7/CXyzHopeChaosBarianDragon-BETB-EN-UR-1E-EA.png",
-        // Yugipedia 에 워터마크 판뿐인 카드는 일본 카드숍(카드러시·블루래빗) 상품 스캔
-        82344137: "https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_1.jpg",
-        44001993: "https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_2.jpg",
-        70405001: "https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_3.jpg",
-        7894706: "https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_4.jpg",
-        40366667: "https://www.cardrush.jp/data/cardrush/product/LOSP2_10.jpg",
-        70781052: "https://www.cardrush.jp/data/cardrush/product/S__10100739.jpg",
-        53183600: "https://www.rabbit-blue.com/data/nereid/product/RV01/008s.jpg",
-        29479265: "https://www.rabbit-blue.com/data/nereid/product/RV01/063s.jpg",
-        24269961: "https://www.rabbit-blue.com/data/nereid/product/RV01/064s.jpg",
-    ]
 
     /// 봉투 원본은 600px 이지만 가장 크게 그리는 상점 칸도 그 절반 남짓이라 줄여서 디코딩한다
     func packImage(_ pack: Pack) async -> NSImage? {

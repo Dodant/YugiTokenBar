@@ -19,21 +19,22 @@ import Testing
     @MainActor @Test func overframeKeysAreBundledCards() throws {
         let db = try CardDB.load(from: CardDB.repoURL("ko"))
         let ids = Set(db.cards.values.compactMap(\.imageId))
-        #expect(ImageCache.overframe.count == 25)
-        #expect(ImageCache.overframe.keys.filter { !ids.contains($0) }.isEmpty)
+        #expect(ImageSource.overframe.count == 25)
+        #expect(ImageSource.overframe.keys.filter { !ids.contains($0) }.isEmpty)
     }
 
-    /// 오버프레임 카드는 크기와 상관없이 overframe-<passcode> 한 파일을 쓴다
+    /// 오버프레임 그림은 크기와 상관없이 overframe-<passcode> 한 파일을 쓰고, 요청하지 않으면(3장 미만) 기본 그림이다
     @MainActor @Test func overframeCardsUseTheirOwnFile() async throws {
         let dir = tempDir()
         let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2, bitsPerSample: 8,
                                    samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
                                    colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
-        let id = try #require(ImageCache.overframe.keys.first)
+        let id = try #require(ImageSource.overframe.keys.first)
         try rep.representation(using: .png, properties: [:])!.write(to: dir.appendingPathComponent("overframe-\(id).jpg"))
         let cache = ImageCache(dir: dir)
-        #expect(await cache.image(id, size: .small) != nil)
-        #expect(await cache.image(id, size: .full) != nil)
+        #expect(await cache.image(id, size: .small, overframe: true) != nil)
+        #expect(await cache.image(id, size: .full, overframe: true) != nil)
+        #expect(cache.cached(id, size: .small) == nil)
     }
 
     /// cached 는 메모리에 올라온 것만 바로 준다 (비동기 image 와 같은 키: 크기별, 오버프레임은 크기 무관)
@@ -42,7 +43,7 @@ import Testing
         let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2, bitsPerSample: 8,
                                    samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
                                    colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
-        let over = try #require(ImageCache.overframe.keys.first)
+        let over = try #require(ImageSource.overframe.keys.first)
         for name in ["cards_small-7", "overframe-\(over)"] {
             try rep.representation(using: .png, properties: [:])!.write(to: dir.appendingPathComponent("\(name).jpg"))
         }
@@ -51,8 +52,8 @@ import Testing
         let small = try #require(await cache.image(7, size: .small))
         #expect(cache.cached(7, size: .small) === small)
         #expect(cache.cached(7, size: .full) == nil)
-        let o = try #require(await cache.image(over, size: .small))
-        #expect(cache.cached(over, size: .full) === o)
+        let o = try #require(await cache.image(over, size: .small, overframe: true))
+        #expect(cache.cached(over, size: .full, overframe: true) === o)
     }
 
     /// cachedPack 은 packImage 로 메모리에 올라온 팩 이미지만 바로 준다

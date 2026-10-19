@@ -219,6 +219,23 @@ import Testing
         #expect(game.state.owned == [1: 2, 2: 2])
     }
 
+    /// 오버프레임 판이 있는 카드는 3장째까지 자동 판매하지 않고, 3장 모으면 해금돼 팔아도 남는다
+    @Test func overframeCardKeepsThreeUntilUnlocked() throws {
+        let c = CardInfo(name: "카드1", attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "",
+                         imageId: try #require(ImageSource.overframe.keys.first), tier: 1, kindCode: nil)
+        var state = GameState()
+        state.autoSellDuplicates = true
+        var game = Game(db: oneBoxDB([1: c]), state: state)
+        var rng = SeededRNG(seed: 1)
+        game.state.pendingFree = 4
+        let pulls = game.openFree(using: &rng)
+        #expect(pulls.map(\.cid) == [1, 1, 1, 1])
+        #expect(pulls.map { $0.soldFor != nil } == [false, false, false, true])
+        #expect(game.state.owned[1] == 3 && game.showsOverframe(1))
+        _ = game.sell(1); _ = game.sell(1)
+        #expect(game.showsOverframe(1))  // 팔아도 유지
+    }
+
     @Test func everyTenPaidPacksGiveOneFreePack() {
         let db = makeDB([[(1, 1), (2, 1), (3, 1), (4, 1), (5, 2)], [(11, 1), (12, 1), (13, 1), (14, 1)]])
         var game = Game(db: db, state: GameState())

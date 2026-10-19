@@ -71,6 +71,8 @@ struct GameState: Codable, Sendable, Equatable {
     var eraLimit = "GX"
     /// 파트너 「날개 크리보」 해금. 한 번 가지면 팔아도 유지 (`Game.unlockPartnerIfOwned`)
     var partnerUnlocked = false
+    /// 오버프레임 그림을 해금한 카드. 한 번 모으면 팔아도 유지 (`Game.unlockOverframe`)
+    var overframes: Set<Int> = []
     /// 설정: 바탕화면 파트너 보이기
     var partnerEnabled = true
     /// 설정: 바탕화면 파트너 높이(pt), `PartnerTuning.sizes`
@@ -107,6 +109,7 @@ struct GameState: Codable, Sendable, Equatable {
         animationsOff = try c.decodeIfPresent(Bool.self, forKey: .animationsOff) ?? d.animationsOff
         eraLimit = try c.decodeIfPresent(String.self, forKey: .eraLimit) ?? d.eraLimit
         partnerUnlocked = try c.decodeIfPresent(Bool.self, forKey: .partnerUnlocked) ?? d.partnerUnlocked
+        overframes = try c.decodeIfPresent(Set<Int>.self, forKey: .overframes) ?? d.overframes
         partnerEnabled = try c.decodeIfPresent(Bool.self, forKey: .partnerEnabled) ?? d.partnerEnabled
         partnerSize = try c.decodeIfPresent(Double.self, forKey: .partnerSize) ?? d.partnerSize
         partnerOrigin = try c.decodeIfPresent(CGPoint.self, forKey: .partnerOrigin)

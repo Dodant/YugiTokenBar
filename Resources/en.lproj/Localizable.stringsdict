@@ -117,5 +117,21 @@ Your current save will be backed up to the save folder automatically.</string>
 			<string>%lld cards</string>
 		</dict>
 	</dict>
+	<key>같은 카드를 %lld장 모으면 오버프레임 그림이 해금돼요</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Collect %#@cards@ of this card to unlock its overframe artwork</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld copy</string>
+			<key>other</key>
+			<string>%lld copies</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
