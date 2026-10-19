@@ -47,20 +47,22 @@ run)
     # The binary's #filePath repository root and the host checkout must both be absent in the sandbox.
     flatpak run --command=sh $id -c '
         set -eu
-        repo=$(grep -a -o "/[^[:cntrl:]\"]*/Sources/YugiTokenBar/AppInfo.swift" /app/bin/YugiTokenBar | head -1)
+        repo=$(grep -a -o "/[^[:cntrl:]\"]*/Sources/YugiTokenBar/AppInfo.swift" /app/bin/YugiTokenBar | head -1 || true)
+        [ -n "$repo" ] || { echo "no compiled repository path in the binary"; exit 1; }
         echo "COMPILED_REPO_ROOT ${repo%/Sources/*}"
         test ! -e "${repo%/Sources/*}"
         test ! -e '"$PWD"'/Sources
         test -z "${YTB_RESOURCES:-}"
         ls /app/share/yugitokenbar /app/share/yugitokenbar/licenses
         echo "VERSION_TXT $(cat /app/share/yugitokenbar/version.txt)"
-        test ! -w "$HOME" && echo HOME_READ_ONLY
+        if [ -w "$HOME" ]; then echo "HOME is writable in the sandbox"; exit 1; fi
+        echo HOME_READ_ONLY
         echo "SANDBOX_XDG data=$XDG_DATA_HOME config=$XDG_CONFIG_HOME cache=$XDG_CACHE_HOME"
         echo SANDBOX_NO_REPO' | tee "$OUT/sandbox.log"
     grep -q SANDBOX_NO_REPO "$OUT/sandbox.log" || fail "sandbox check"
 
     YTB_SMOKE_SCREEN=open YTB_SMOKE_EXIT_MS=1500 timeout 180 dbus-run-session -- flatpak run $id >"$OUT/run.log" 2>&1 || {
-        cat "$OUT/run.log"; fail "app exit code $?"; }
+        code=$?; cat "$OUT/run.log"; fail "app exit code $code"; }
     cat "$OUT/run.log"
     grep -q 'SMOKE_READY screen=open' "$OUT/run.log" || fail "no SMOKE_READY"
     ! grep -q SMOKE_FAIL "$OUT/run.log" || fail SMOKE_FAIL

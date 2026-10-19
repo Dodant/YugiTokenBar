@@ -54,6 +54,10 @@ jobs:
         run: scripts/linux-scenarios.sh all
       - name: Exec restart
         run: scripts/test-linux-restart.sh
+      # The Docker steps run as root on the bind-mounted workspace; the cache save and uploads run as the runner user.
+      - name: Give the workspace back to the runner user
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" .build-linux qa-state 2>/dev/null || true
       - name: Upload screens and logs
         if: always()
         uses: actions/upload-artifact@v4

@@ -42,7 +42,7 @@ echo "LINUX_LOCK after sha256=$after"
 cmp -s "$lock" build/flatpak/Package.resolved || { echo 'Builder copy of the lock differs from the verified lock' >&2; exit 1; }
 
 bundle=YugiTokenBar-$version-$arch.flatpak
-flatpak build-bundle --arch="$arch" "build/flatpak/$arch/repo" "build/release/$bundle" $id
+flatpak build-bundle --arch="$arch" --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo "build/flatpak/$arch/repo" "build/release/$bundle" $id
 touch build/release/SHA256SUMS
 grep -v " $bundle\$" build/release/SHA256SUMS > build/release/SHA256SUMS.new || true
 (cd build/release && sha256sum "$bundle") >> build/release/SHA256SUMS.new

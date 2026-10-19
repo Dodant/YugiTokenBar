@@ -24,8 +24,9 @@ version=$(awk '/^## [0-9]/{print $2; exit}' CHANGELOG.md)
 date=$(awk '/^## [0-9]/{print $4; exit}' CHANGELOG.md)
 printf '%s\n' "$version" > "$share/version.txt"
 for dir in .build/checkouts/*; do
-    license=$(ls "$dir" | grep '^LICENSE' | sort | head -1 || true)
-    [ -n "$license" ] && cp "$dir/$license" "$share/licenses/$(basename "$dir").md"
+    license=$(ls "$dir" | grep -E '^(LICENSE|LICENCE|COPYING)' | sort | head -1 || true)
+    if [ -n "$license" ]; then cp "$dir/$license" "$share/licenses/$(basename "$dir").md"
+    else echo "WARNING: no licence file in checkout $(basename "$dir")"; fi
 done
 ls "$share/licenses"
 
