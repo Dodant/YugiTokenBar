@@ -227,7 +227,8 @@ private struct FreeRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: systemImage).font(.title2).foregroundStyle(.tint).symbolRenderingMode(.hierarchical).frame(width: 36)
+            // 강조색(파랑)은 유리 배경 위에서 잘 안 보여 글자색으로
+            Image(systemName: systemImage).font(.title2).foregroundStyle(.primary).symbolRenderingMode(.hierarchical).frame(width: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.callout.weight(.medium)).monospacedDigit()
                 Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)

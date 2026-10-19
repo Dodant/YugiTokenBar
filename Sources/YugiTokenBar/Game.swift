@@ -16,7 +16,7 @@ enum Balance {
     static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.70), (2, 0.23), (3, 0.05), (4, 0.015), (5, 0.005)]
     static let logLimit = 50
     /// 무료 카드를 한 번에 여는 최대 장 수 (팩 1봉투와 같은 5장)
-    static let freeOpenBatch = 5
+    static let freeOpenBatch = 6
     /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
     static let monstersPerPack = 2
     /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 215 < packPrice 라 사고팔기로 코인이 늘지 않는다.
