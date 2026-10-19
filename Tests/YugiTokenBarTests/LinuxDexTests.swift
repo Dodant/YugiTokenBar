@@ -10,15 +10,7 @@ import Testing
 @MainActor struct LinuxDexTests {
     typealias Widget = UnsafeMutablePointer<GtkWidget>
 
-    func find(_ name: String, in widget: Widget) -> Widget? {
-        if gtk_widget_get_mapped(widget) != 0, String(cString: gtk_widget_get_name(widget)) == name { return widget }
-        var child = gtk_widget_get_first_child(widget)
-        while let current = child {
-            if let result = find(name, in: current) { return result }
-            child = gtk_widget_get_next_sibling(current)
-        }
-        return nil
-    }
+    func find(_ name: String, in widget: Widget) -> Widget? { LinuxGTK.find(name, in: widget) }
     /// Mapped label texts and picture CSS state below a widget.
     func walk(_ widget: Widget, labels: inout [String], pictures: inout [Bool]) {
         guard gtk_widget_get_mapped(widget) != 0 else { return }
@@ -31,21 +23,8 @@ import Testing
         while let current = child { walk(current, labels: &labels, pictures: &pictures); child = gtk_widget_get_next_sibling(current) }
     }
     func labels(in widget: Widget) -> [String] { var l: [String] = []; var p: [Bool] = []; walk(widget, labels: &l, pictures: &p); return l }
-    func pump() async {
-        for _ in 0..<30 {
-            while g_main_context_iteration(nil, 0) != 0 {}
-            LinuxImageLoader.shared.drain()
-            try? await Task.sleep(for: .milliseconds(10))
-        }
-    }
-    func screenshot(_ name: String) async {
-        guard let path = ProcessInfo.processInfo.environment["YTB_GTK_UI_ARTIFACT_DIR"] else { return }
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/scrot")
-        process.arguments = ["-o", "\(path)/\(name).png"]
-        do { try process.run(); process.waitUntilExit(); #expect(process.terminationStatus == 0) }
-        catch { Issue.record("Screenshot failed: \(error)") }
-    }
+    func pump() async { await LinuxGTK.pump() }
+    func screenshot(_ name: String) async { await LinuxGTK.screenshot(name) }
 
     @Test func collectionNavigationDetailAndSales() async throws {
         adw_init()

@@ -31,6 +31,7 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                 List(LinuxSection.allCases, selection: $section) { item in
                     Button(item.title) {
                         if item == .shop { model.closeOpening() }
+                        if item == .usage { model.loadHistory() }
                         section = item.rawValue
                     }.linuxSmokeID("sidebar-\(item.rawValue)")
                     .style("flat").hexpand()
@@ -43,6 +44,8 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                     LinuxShopView(snapshot: snapshot, model: model)
                 } else if section == LinuxSection.dex.rawValue {
                     LinuxDexView(snapshot: snapshot, model: model)
+                } else if section == LinuxSection.usage.rawValue {
+                    LinuxUsageView(snapshot: snapshot, model: model)
                 } else {
                     Text((LinuxSection(rawValue: section) ?? .shop).title).padding(30)
                 }
@@ -61,7 +64,7 @@ enum LinuxSection: String, CaseIterable, Identifiable {
     }
 }
 
-private extension Provider {
+extension Provider {
     var linuxDisplayName: String {
         switch self {
         case .claude: "Claude Code"

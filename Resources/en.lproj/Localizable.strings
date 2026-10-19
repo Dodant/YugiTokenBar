@@ -561,3 +561,7 @@
 "전체 %lld / %lld" = "Total: %lld / %lld";
 /* LinuxDexView.swift:52 */
 "중복 판매 · %lld장 · +%@" = "Sell duplicates (%lld) · +%@";
+/* LinuxUsageView.swift:35 */
+"지난 31일을 읽고 있어요…" = "Reading the last 31 days…";
+/* LinuxUsageView.swift:41 */
+"지난 31일 기록이 없어요" = "No usage in the last 31 days";

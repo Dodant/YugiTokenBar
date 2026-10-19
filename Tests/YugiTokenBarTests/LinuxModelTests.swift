@@ -206,6 +206,35 @@ private actor ControlledLinuxReader {
         #expect(model.snapshot.todayDate == "later"); model.stop()
     }
 
+    @Test func historyRequestsDedupeRollOverMidnightAndDropStaleResults() async {
+        let reader = ControlledLinuxReader(), next = ControlledLinuxReader()
+        let (model, _) = makeLinuxModel(reader: reader)
+        let now = Date(timeIntervalSince1970: 1_792_396_800)
+        let tomorrow = now.addingTimeInterval(86_400)
+        model.start(); await until { await reader.readCount == 1 }
+        model.loadHistory(now: now); model.loadHistory(now: now); model.loadHistory(now: now)
+        await until { await reader.historyCount == 1 }
+        for _ in 0..<10 { await Task.yield() }
+        #expect(await reader.historyCount == 1); #expect(model.snapshot.loadingHistory)
+        await reader.finishHistory(["2026-10-01": ["codex": usageSum(5)]])
+        await receive(model) { !model.snapshot.loadingHistory }
+        model.loadHistory(now: now) // same day: kept
+        for _ in 0..<10 { await Task.yield() }
+        #expect(await reader.historyCount == 0); #expect(!model.snapshot.loadingHistory)
+        model.loadHistory(now: tomorrow) // midnight passed: request again
+        await until { await reader.historyCount == 1 }
+        #expect(model.snapshot.loadingHistory)
+        model.replaceUsageService(next.service, now: now) // root change / import while pending
+        #expect(model.snapshot.history == nil); #expect(!model.snapshot.loadingHistory)
+        model.loadHistory(now: now); await until { await next.historyCount == 1 }
+        await reader.finishHistory(["2026-10-02": ["codex": usageSum(9)]]) // late result of the old service
+        for _ in 0..<10 { await Task.yield(); model.drainEvents() }
+        #expect(model.snapshot.history == nil); #expect(model.snapshot.loadingHistory)
+        await next.finishHistory(["2026-10-03": ["codex": usageSum(7)]])
+        await receive(model) { !model.snapshot.loadingHistory }
+        #expect(model.snapshot.history?.keys.sorted() == ["2026-10-03"]); model.stop()
+    }
+
     @Test func inboxCloseDropsQueuedAndLateValues() {
         let inbox = LinuxInbox()
         inbox.send(.usage(1, 1, 1, .success(.init(date: "today"))))

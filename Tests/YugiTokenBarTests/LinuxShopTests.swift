@@ -8,22 +8,9 @@ import Testing
 /// Real GTK activation and redraw. Run scripts/test-linux-ui.sh under Xvfb.
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["YTB_GTK_UI_TESTS"] == "1"))
 @MainActor struct LinuxShopTests {
-    func find(_ name: String, in widget: UnsafeMutablePointer<GtkWidget>) -> UnsafeMutablePointer<GtkWidget>? {
-        if gtk_widget_get_mapped(widget) != 0, String(cString: gtk_widget_get_name(widget)) == name { return widget }
-        var child = gtk_widget_get_first_child(widget)
-        while let current = child {
-            if let result = find(name, in: current) { return result }
-            child = gtk_widget_get_next_sibling(current)
-        }
-        return nil
-    }
-    func pump() async {
-        for _ in 0..<30 {
-            while g_main_context_iteration(nil, 0) != 0 {}
-            LinuxImageLoader.shared.drain()
-            try? await Task.sleep(for: .milliseconds(10))
-        }
-    }
+    func find(_ name: String, in widget: UnsafeMutablePointer<GtkWidget>) -> UnsafeMutablePointer<GtkWidget>? { LinuxGTK.find(name, in: widget) }
+    func pump() async { await LinuxGTK.pump() }
+    func screenshot(_ name: String) async { await LinuxGTK.screenshot(name) }
     @Test func realShopSignalsAndReload() async throws {
         adw_init()
         let app = AdwaitaApp(id: "io.github.dodant.YugiTokenBar.ShopTest")
@@ -152,14 +139,6 @@ import Testing
         #expect(wantedModel.game.copies(2) == 0)
         #expect(fusionStore.load() == wantedModel.game.state)
         print("SHOP_NATIVE_OK paid=1 freeCards=\(Balance.freeOpenBatch) freePacks=1 stamp=1 savedReload=true")
-    }
-    func screenshot(_ name: String) async {
-        guard let path = ProcessInfo.processInfo.environment["YTB_GTK_UI_ARTIFACT_DIR"] else { return }
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/scrot")
-        process.arguments = ["-o", "\(path)/\(name).png"]
-        do { try process.run(); process.waitUntilExit(); #expect(process.terminationStatus == 0) }
-        catch { Issue.record("Screenshot failed: \(error)") }
     }
 }
 #endif
