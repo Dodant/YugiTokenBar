@@ -12,6 +12,7 @@
 - You can now collapse the progress at the bottom left of the Dex by clicking its [Progress] header.
 - You can now open up to 6 free cards at a time, shown in two rows of 2 for 4 cards and two rows of 3 for 6 cards.
 - The free card and free pack icons in the menu now use a color that stands out against the background.
+- Added an app icon.
 
 **🐛 Bug fixes**
 - Fixed the app quitting as soon as the Dex window opened at certain window widths.

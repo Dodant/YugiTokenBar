@@ -74,4 +74,5 @@ Yugipedia 이미지를 먼저 쓰고(영문 RA05·BETB UR, 일본판 LOSP·BETB 
 |---|---|
 | `Sources/YugiTokenBar/Usage/` 토큰 사용량 코드 | PokeTokenBar(MIT) https://github.com/chattymin/PokeTokenBar, 커밋 `de617e3`. 자세한 내용은 `Usage/NOTICE.md` |
 | `Resources/partner.png` 날개 크리보 스프라이트 | 사용자가 ChatGPT로 만든 팬 이미지(Konami 캐릭터라 MIT 대상 아님) |
+| `Resources/AppIcon.icon` 앱 아이콘 | 사용자가 그린 "Yu-Gi" 손글씨(ChatGPT 이미지)를 Icon Composer로 만듦 |
 | `Resources/card-back.jpg` 카드 뒷면 | Yugipedia [File:Back-KR.png](https://yugipedia.com/wiki/File:Back-KR.png)(한국판 실물 스캔 923×1351)에서 KONAMI·유희왕 로고를 지움(`tools/clean-card-back.py`) |
