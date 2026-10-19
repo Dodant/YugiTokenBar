@@ -60,7 +60,9 @@ lock() {
     local run=$root/lock; rm -rf "$run"
     python3 "$TOOL" prepare "$run" fixture
     local before; before=$(sha "$run/state/state.json")
-    ytb_launch "$run" "$out/lock-first.log" YTB_SMOKE_SCREEN=shop YTB_SMOKE_EXIT_MS=12000
+    mkdir -p "$run/control"
+    # The first instance keeps the lock until the script says so, however slow the runner is.
+    ytb_launch "$run" "$out/lock-first.log" YTB_SMOKE_SCREEN=shop YTB_SMOKE_EXIT_MS=300 YTB_SMOKE_QUIT_FILE="$run/control/quit"
     local first=$pid
     wait_for "$out/lock-first.log" SMOKE_READY 60 || { cat "$out/lock-first.log"; fail "lock: first instance not ready"; }
     local first_window; first_window=$(visible_window) || fail "lock: first instance showed no window"
@@ -74,6 +76,7 @@ lock() {
     wait_exit $second 30
     [[ $code == 0 ]] || { cat "$out/lock-second.log"; fail "lock: second instance exit code $code"; }
     kill -0 $first 2>/dev/null || fail "lock: first instance died"
+    touch "$run/control/quit"
     wait_exit $first 60
     [[ $code == 0 ]] || fail "lock: first instance exit code $code"
     [[ $(sha "$run/state/state.json") == "$before" ]] || fail "lock: state.json changed"

@@ -14,10 +14,10 @@ screens=${1:-all}
 out=/work/.build-linux/probes/smoke
 stamp=$(date +%Y%m%d-%H%M%S)-$$
 mkdir -p "$out"
-rm -f "$out"/*.png "$out"/*.log "$out"/*-state.json
 
 for screen in $screens; do
     run=/work/qa-state/smoke/$stamp/$screen
+    rm -f "$out/$screen".png "$out/$screen".log "$out/$screen"-state.json   # only this screen: other screens' evidence stays
     python3 "$TOOL" prepare "$run" fixture
     ytb_launch "$run" "$out/$screen.log" YTB_SMOKE_SCREEN=$screen YTB_SMOKE_EXIT_MS=2500
     wait_for "$out/$screen.log" SMOKE_READY 60 || { cat "$out/$screen.log"; kill -9 $pid 2>/dev/null || true; fail "$screen: no SMOKE_READY"; }

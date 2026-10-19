@@ -3,6 +3,8 @@
 import datetime, json, os, shutil, struct, sys, zlib
 
 FIXTURE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Tests", "Fixtures", "linux-smoke", "state.json")
+TOKENS_PER_COIN = 10_000       # Balance.tokensPerCoin in Sources/YugiTokenBar/Game.swift
+FIRST_RUN_ENTRIES = [(0, 250_000), (10, 500_000)]   # (days ago, tokens), inside Balance.firstRunCreditDays (14)
 TODAY_TOKENS = 1_200_000          # also the fixture's claimed ledger, so nothing is credited
 # The list is oldest first, so most of the sample sits in the oldest days to be visible without scrolling.
 HISTORY_DAYS = {30: 2_400_000, 29: 900_000, 28: 1_500_000, 26: 300_000, 25: 1_800_000, 24: 600_000, 12: 1_200_000, 5: 150_000, 2: 900_000}
@@ -57,12 +59,14 @@ def prepare(run, mode):
     if mode == "fixture":
         with open(FIXTURE) as handle:
             state = json.load(handle)
+        if state["claimedByProvider"] != {"claude_code": TODAY_TOKENS}:
+            fail("fixture ledger does not match the synthetic usage of today")
         state["claimedDate"] = today()   # a ledger exists, so no first-run credit fires
         dump(os.path.join(run, "state", "state.json"), state)
         write_log(run, [(0, TODAY_TOKENS)] + [(d, t) for d, t in HISTORY_DAYS.items()])
         dump(os.path.join(run, "initial-state.json"), normalise(state))
     elif mode == "first-run":
-        write_log(run, [(0, 250_000), (10, 500_000)])   # 750,000 tokens / 10,000 per coin
+        write_log(run, FIRST_RUN_ENTRIES)
     else:
         fail("unknown prepare mode " + mode)
 
@@ -141,7 +145,9 @@ def main(argv):
     elif cmd == "expect-first-run":
         state = load_state(argv[2])
         dump(argv[3], normalise(state))
-        if state["coins"] != 75 or state["coinRemainder"] != 0: fail(f"expected 75 coins, got {state['coins']} (+{state['coinRemainder']})")
+        total = sum(tokens for _, tokens in FIRST_RUN_ENTRIES)
+        if (state["coins"], state["coinRemainder"]) != divmod(total, TOKENS_PER_COIN):
+            fail(f"expected {divmod(total, TOKENS_PER_COIN)} coins and remainder, got {state['coins']} (+{state['coinRemainder']})")
         if not state.get("claimedDate"): fail("no usage ledger was written")
         print(f"FIRST_RUN_OK coins={state['coins']} claimedDate={state['claimedDate']} claimed={state['claimedByProvider']}")
     elif cmd == "expect":   # expect <run> <key> <value-json>

@@ -20,6 +20,8 @@ import Foundation
         started = true
         let exitDelay = Int(env["YTB_SMOKE_EXIT_MS"] ?? "") ?? 1500
         let control = env["YTB_SMOKE_CONTROL"]
+        let quitFile = env["YTB_SMOKE_QUIT_FILE"]   // when set, the final quit waits until this file exists
+        let epoch = model.lifecycleEpoch
         func say(_ line: String) { print(line); fflush(nil) }
         func settled() -> Bool {
             model.running && !model.readInFlight && !model.snapshot.refreshing && model.snapshot.revision >= 1
@@ -65,7 +67,7 @@ import Foundation
             until("dirty banner") { find("dirty-retry") != nil }
             steps.append(Step(name: "refused", run: {
                 say("SMOKE_DIRTY")
-                if lifecycle.requestQuit() { say("SMOKE_FAIL reason=quit was not refused while dirty"); return true }
+                if lifecycle.requestQuit() { say("SMOKE_FAIL reason=quit was not refused while dirty"); failed = true; return true }
                 say("SMOKE_QUIT_REFUSED"); return true
             }))
             until("state unblocked") { gate("unblocked") }
@@ -78,9 +80,13 @@ import Foundation
 
         var index = 0, stepTicks = 0
         Idle(delay: .milliseconds(50)) {
-            guard !lifecycle.finished else { return false }
+            guard !lifecycle.finished, model.lifecycleEpoch == epoch else { return false }
             if index >= steps.count {
-                Idle(delay: .milliseconds(exitDelay)) { _ = lifecycle.requestQuit(); return false }
+                if let quitFile, !FileManager.default.fileExists(atPath: quitFile) { return true }
+                Idle(delay: .milliseconds(exitDelay)) {
+                    guard model.lifecycleEpoch == epoch else { return false }
+                    _ = lifecycle.requestQuit(); return false
+                }
                 return false
             }
             if steps[index].run() { index += 1; stepTicks = 0; return true }
