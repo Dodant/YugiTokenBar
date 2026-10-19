@@ -5,6 +5,7 @@
 - Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked. Choose [✦ Overframe] in the rarity menu to see only overframe cards.
 - Drawing certain cards now makes something special happen.
 - In Setting > General, [Menu bar shows] lets the menu bar show today's tokens and cost, Claude and Codex session and weekly usage or time until the session resets (in each agent's color), or your Dex progress instead of coins, or hide the number.
+- In Setting > Cards, [Field background] lets you pick a Field Spell you own to show its artwork faintly behind the menu. It turns off if you sell every copy, and is hidden in Work mode.
 
 **🎨 Improvements**
 - Renamed the [Turn off animations] setting to [Reduce motion] and moved it to General.

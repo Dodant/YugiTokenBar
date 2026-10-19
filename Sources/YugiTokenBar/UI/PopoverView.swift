@@ -35,6 +35,7 @@ struct PopoverView: View {
             // 화면 전환은 바로 바꾼다: 페이드로 겹쳐 그리면 중간에 두 화면의 투명도 합이 1 아래로 처져 뒤 유리 패널이 하얗게 번쩍인다
             .padding(16)
             .frame(width: 340)
+            .background { FieldBackground(imageId: model.fieldBackground.flatMap { model.game.db.cards[$0]?.imageId }) }
             .onChange(of: [covered, model.game.state.freePacks > 0, model.game.state.pendingFree > 0], initial: true) {
                 let now = (pack: model.game.state.freePacks > 0, card: model.game.state.pendingFree > 0)
                 freeRows = covered ? (now.pack && freeRows?.pack ?? false, now.card && freeRows?.card ?? false) : now
@@ -276,6 +277,30 @@ private extension View {
     /// 팝오버 패널의 둥근 카드 배경.
     func panelCard() -> some View {
         padding(12).background(.fill.quinary, in: .rect(cornerRadius: 16))
+    }
+}
+
+/// 설정 [필드 배경]: 고른 필드 마법 일러스트를 팝오버 전체에 은은하게 깐다 (업무 모드면 없음)
+private struct FieldBackground: View {
+    let imageId: Int?
+    @Environment(\.workMode) private var workMode
+    @State private var art: NSImage?
+
+    var body: some View {
+        Color.clear
+            .overlay {
+                if let art {
+                    // opaque: 가장자리가 투명하게 번지지 않게
+                    Image(nsImage: art).resizable().scaledToFill().blur(radius: 12, opaque: true).opacity(0.28)
+                }
+            }
+            .clipped()
+            .accessibilityHidden(true)
+            .task(id: workMode ? nil : imageId) {
+                art = nil
+                guard !workMode, let imageId else { return }
+                art = await ImageCache.shared.fieldArt(imageId)
+            }
     }
 }
 #endif

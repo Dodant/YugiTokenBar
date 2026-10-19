@@ -79,6 +79,7 @@ import Testing
         state.partnerEnabled = false
         state.partnerSize = 200
         state.partnerOrigin = CGPoint(x: 10, y: 20)
+        state.fieldBackground = 4340
         state.decks = [Deck(name: "덱", cards: [4007: 1])]
         state.log = [LogEntry(cid: 4007, source: LogEntry.free, date: Date(timeIntervalSince1970: 1_000))]
         state.cardsByDay = ["2026-10-01": 7]

@@ -105,7 +105,7 @@ struct SettingsView: View {
                 }
                 .labelsHidden()
                 .controlSize(.small)
-                .fixedSize()
+                .frame(maxWidth: 160)  // fixedSize 면 가장 긴 항목 폭이 되어 영어 이름이 세 줄로 접힌다
             }
         }
     }
@@ -165,6 +165,20 @@ struct SettingsView: View {
             toggleRow("중복 카드 자동 판매", hint: "새로 나온 중복 카드를 코인으로 바꿔요",
                       detail: "이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 \(Balance.overframeCopies)장까지 남기고, 융합에 필요한 소재도 남겨요.",
                       isOn: Bindable(model).autoSellDuplicates)
+            row {
+                let db = model.game.db  // 시대 범위 안만
+                let fields = db.allCIDs.filter { db.cards[$0]?.field == true && model.game.copies($0) > 0 }
+                labeled("필드 배경", hint: fields.isEmpty ? "필드 마법 카드를 얻으면 고를 수 있어요" : "필드 마법 카드의 그림을 배경으로 써요")
+                Spacer()
+                Picker("필드 배경", selection: Bindable(model).fieldBackground) {
+                    Text("없음").tag(Int?.none)
+                    ForEach(fields, id: \.self) { Text(verbatim: db.cards[$0]?.name ?? "").tag(Int?.some($0)) }
+                }
+                .labelsHidden()
+                .frame(maxWidth: 150)  // 긴 카드 이름은 말줄임 (fixedSize 면 이름·설명이 폭 0으로 눌린다)
+                .controlSize(.small)
+                .disabled(fields.isEmpty)
+            }
             row {
                 let db = model.game.fullDB
                 VStack(alignment: .leading, spacing: 1) {

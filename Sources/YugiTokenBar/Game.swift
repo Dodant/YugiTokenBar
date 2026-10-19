@@ -218,6 +218,7 @@ struct Game: Sendable {
     private mutating func sell(_ cid: Int, price: Int) -> Int? {
         guard copies(cid) > 0 else { return nil }
         state.owned[cid] = copies(cid) == 1 ? nil : copies(cid) - 1
+        if copies(cid) == 0, state.fieldBackground == cid { state.fieldBackground = nil }  // 가진 카드만 배경으로
         state.coins += price
         return price
     }

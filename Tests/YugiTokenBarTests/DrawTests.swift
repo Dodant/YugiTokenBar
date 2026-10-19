@@ -176,6 +176,17 @@ import Testing
         #expect(game.state.coins == Balance.sellPrice[4]! * Balance.clearedSellMultiplier + Balance.sellPrice[2]!)
     }
 
+    @Test func sellingLastFieldBackgroundTurnsItOff() {
+        var state = GameState()
+        state.owned = [2: 2]
+        state.fieldBackground = 2
+        var game = Game(db: db, state: state)
+        _ = game.sell(2)
+        #expect(game.state.fieldBackground == 2)  // 1장 남았다
+        _ = game.sell(2)
+        #expect(game.state.fieldBackground == nil)
+    }
+
     @Test func sellDuplicatesKeepsOneOfEach() {
         var state = GameState()
         state.owned = [1: 2, 2: 2]

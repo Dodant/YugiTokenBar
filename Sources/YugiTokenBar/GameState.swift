@@ -77,6 +77,8 @@ struct GameState: Codable, Sendable, Equatable {
     var partnerSize = 128.0
     /// 바탕화면 파트너 창 위치 (nil = 주 화면 오른쪽 아래)
     var partnerOrigin: CGPoint?
+    /// 설정 [필드 배경]: 팝오버 뒤에 깔 필드 마법 cid (nil = 없음). 마지막 장을 팔면 지운다 (`Game.sell`)
+    var fieldBackground: Int?
     /// 컬렉션 창에서 만든 덱들
     var decks: [Deck] = []
     var log: [LogEntry] = []
@@ -110,6 +112,7 @@ struct GameState: Codable, Sendable, Equatable {
         partnerEnabled = try c.decodeIfPresent(Bool.self, forKey: .partnerEnabled) ?? d.partnerEnabled
         partnerSize = try c.decodeIfPresent(Double.self, forKey: .partnerSize) ?? d.partnerSize
         partnerOrigin = try c.decodeIfPresent(CGPoint.self, forKey: .partnerOrigin)
+        fieldBackground = try c.decodeIfPresent(Int.self, forKey: .fieldBackground)
         decks = try c.decodeIfPresent([Lossy<Deck>].self, forKey: .decks)?.compactMap(\.value) ?? d.decks
         log = try c.decodeIfPresent([Lossy<LogEntry>].self, forKey: .log)?.compactMap(\.value) ?? d.log
         cardsByDay = try c.decodeIfPresent([String: Int].self, forKey: .cardsByDay) ?? d.cardsByDay

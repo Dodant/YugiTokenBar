@@ -304,6 +304,13 @@ def test_add_codes_hero():
     assert cards["1"].get("hero") and "hero" not in cards["2"] and "hero" not in cards["3"]
 
 
+def test_add_codes_field():
+    cards = {"1": {"name": "바다", "attr": "마법", "type": "필드", "text": ""},
+             "2": {"name": "융합", "attr": "마법", "type": "일반", "text": ""}}
+    bc.add_codes(cards)
+    assert cards["1"].get("field") and "field" not in cards["2"]
+
+
 def test_make_picks():
     cards = {"1": {"name": "용", "attr": "빛", "level": 8, "type": "드래곤족/일반", "text": ""},
              "2": {"name": "엑시즈 용", "attr": "빛", "level": 8, "type": "드래곤족/엑시즈/효과", "text": ""},

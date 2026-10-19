@@ -25,7 +25,7 @@ PACK_COUNT = 101  # CUTOFF 까지의 정규 부스터 수 (검증)
 MINI = re.compile(r"어시스트 팩|익스팬션 팩|얼티미트 스페셜 팩")
 LANGS = {"ko": "KO", "ja": "JP", "en": "EN"}
 # 세 파일이 같은 카드 필드(KO 기준)와 언어마다 다른 카드 필드
-SHARED = ("tier", "imageId", "level", "atk", "def", "scale", "kind", "summons", "hero", "mask")
+SHARED = ("tier", "imageId", "level", "atk", "def", "scale", "kind", "field", "summons", "hero", "mask")
 TEXT_FIELDS = ("name", "attr", "type", "text", "pendulum")
 KINDS = {"마법": "spell", "함정": "trap"}
 MASK_CHANGE = "마스크 체인지"
@@ -791,13 +791,15 @@ def dump_picks(cards):
 
 
 def add_codes(cards):
-    """언어와 상관없는 코드 필드: 마법·함정은 kind, 몬스터는 type 칸의 소환법을 summons(시대 순)로,
+    """언어와 상관없는 코드 필드: 마법·함정은 kind(필드 마법은 field 도), 몬스터는 type 칸의 소환법을 summons(시대 순)로,
     "HERO" 몬스터는 hero, 마스크 체인지로만 소환하는 몬스터는 mask. 앱 로직은 이것만 본다(융합 소재는 따로 make_picks)."""
     for info in cards.values():
-        for f in ("kind", "summons", "hero", "mask"):
+        for f in ("kind", "field", "summons", "hero", "mask"):
             info.pop(f, None)
         if kind := KINDS.get(info.get("attr")):
             info["kind"] = kind
+            if kind == "spell" and info.get("type") == "필드":
+                info["field"] = True
             continue
         parts = (info.get("type") or "").split("/")
         if summons := [code for name, code in SUMMONS.items() if name in parts]:
