@@ -11,19 +11,21 @@ Available in Korean, English, and Japanese.</p>
   1,000 coins (= 10M tokens) buy one booster pack with 5 cards.
   Buy 10 packs and you get a random pack for free.
 - Every 10M tokens you earn a free card, drawn from the whole pool by rarity odds.
-- Rarities are N / R / SR / UR / SE. A reprinted card takes its highest rarity.
+- Rarities are N / R / SR / UR / SE.
+  A reprinted card takes its highest rarity.
 - In Settings, pick how far the pools reach (DM … Modern, default GX).
-- You can collect any number of copies. Extra cards sell for coins.
+- You can collect any number of copies.
+  Extra cards sell for coins.
 - 25 cards have official over-frame art, where the illustration breaks out of the card frame.
   Collect 3 copies of one to unlock its over-frame art; it stays unlocked even if you sell them.
   Until then, its copies are never sold as duplicates or used as Fusion Materials, and the Dex shows a ✦ badge with your progress.
-- Once you own every card in a pack, cards you still need (locked over-frame cards, and Fusion Materials you are short on with fusion-only collection) come up 10 times as often as other cards of the same rarity.
+- Once you own every card in a pack, cards you still need (locked over-frame cards, and Fusion Materials you are short on) come up 10 times as often as other cards of the same rarity.
   Cards from such a pack also sell for 3 times the price.
 - Using 50M tokens a day earns 5 free cards + enough coins for 5 packs.
 
 ## Screens
 
-- **Menu bar**: coins and a badge for unopened free cards
+- **Menu bar**: coins and a badge for unopened free cards, or pick in Settings to show today's usage, Claude/Codex limits, Dex progress, or nothing
 - **Popover**: coins, progress to the next free card, recent cards, quick buy, today's usage and cost, and Claude/Codex limits
 - **Shop**: packs grouped by era; hover to buy
 - **Pack**: flip cards one by one
@@ -83,7 +85,8 @@ Usage synced after midnight is not credited to the previous day.
 
 Requires macOS 26 or later.
 There is no public release yet; once one is published, download `YugiTokenBar-x.y.z.zip` from [Releases](https://github.com/Dodant/YugiTokenBar/releases), unzip it, and move the app to `/Applications`.
-To update, quit the app and replace it. Your collection is kept.
+To update, use [Check for updates] in Settings > About & support.
+Your collection is kept.
 
 ## Credits
 

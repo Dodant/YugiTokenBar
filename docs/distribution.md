@@ -2,6 +2,7 @@
 
 GitHub Releases에 공증된 universal 앱 ZIP을 올린다.
 앱은 Sparkle로 Release의 appcast.xml을 읽어 앱 안에서 업데이트한다.
+번들 ID는 `io.github.dodant.YugiTokenBar`이며 첫 공개 뒤에는 바꾸지 않는다(기기 설정과 업데이트가 이어지지 않는다).
 현재 Apple Developer Program 미가입 상태이며 공개 릴리스는 보류한다.
 
 ## 최초 설정

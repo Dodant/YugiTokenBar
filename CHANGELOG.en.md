@@ -1,6 +1,6 @@
 # Patch notes
 
-## 0.6.3 — 2026-10-19
+## 0.6.3 — 2026-10-20
 **✨ New features**
 - Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked. Choose [✦ Overframe] in the rarity menu to see only overframe cards.
 - Drawing certain cards now makes something special happen.
@@ -172,7 +172,7 @@ Now available in Korean, English, and Japanese.
 - If saving fails, the menu bar icon changes to a warning, and a notice with [Open folder] appears at the top of the popover.
 - Switching to the shop, Settings, or opening screen inside the popover now transitions smoothly.
 - Hovering over the usage section now shows that it's clickable, and a progress indicator appears while limits load.
-- Polished wording: limits "5h"/"wk" → "5h"/"Weekly", update [OK] → [Check for updates], the sell icon is now a coin (ⓒ), and fixed spacing in the menu bar free card badge.
+- Polished wording: limits "5h"/"wk" now read "5h"/"Weekly", update [OK] is now [Check for updates], the sell icon is now a coin (ⓒ), and the spacing in the menu bar free card badge is fixed.
 - In the collection's deck view, selected cards can be removed one copy at a time with the Delete key (toolbar [Remove from Deck]). While typing in the search field, ⌘A and Delete apply to the search text.
 - Changed the rarity pill (R, UR, SE) text to black so small text reads well.
 - VoiceOver can now read and operate collection cards (name, rarity, copies owned, favorite, remove from deck), opened cards (flip, undo sale), and the Back and New Deck buttons.
@@ -205,9 +205,9 @@ Expanded to 100 packs through the Modern era, and added SE rarity, card hologram
 - Coins of 10,000 or more are abbreviated with K/M (including in the menu bar).
 
 **⚖️ Balance**
-- 5th card in a pack: SE 2%, UR 10% (was 12%).
+- Changed the odds for the 5th card in a pack to SE 2%, UR 10% (was 12%).
 - The 4th card in a pack has a 30% chance to be R. The guarantee of monsters in the first 2 cards is unchanged.
-- Free card odds: N 70% / R 23% / SR 5% / UR 1.5% / SE 0.5%.
+- Set the free card odds to N 70% / R 23% / SR 5% / UR 1.5% / SE 0.5%.
 - Sell prices: N ⓒ 20 (was 30), R ⓒ 50 (was 60), SR ⓒ 150, UR ⓒ 400 (was 300), SE ⓒ 1,200. The expected sell value of one pack is about ⓒ 206.
 - 98 pack cover monsters now appear as SE (excluding LABYRINTH OF NIGHTMARE and LEGACY OF DARKNESS, whose covers are Spells/Traps). Every pack now has an SE, and in GLADIATOR'S ASSAULT and STARDUST OVERDRIVE, whose only UR was the cover card, the UR slot became SR.
 - Reprinted cards with different rarities across packs (such as Yubel) appear at their highest rarity from any pack.
@@ -245,8 +245,8 @@ Expanded to 75 packs through VRAINS, and added card selling, Fusion, deck buildi
 - Cards can be sold for coins based on rarity. You can turn on auto-selling duplicates in Settings.
 - Fusion: with [Fusion Monsters by Fusion Summon only] on in Settings, the 81 Fusion Monsters with known materials no longer appear in packs or free cards. Once you own the "Polymerization" Spell Card, use [Fusion] in the collection to consume material cards ("Polymerization" isn't consumed).
 - Collection deck building: add cards to decks in the sidebar's Decks section by drag and drop or right-click. Unowned cards can be added too, up to 3 copies per card. Like packs, decks show owned/deck counts and a progress bar.
-- Collection multi-select (⌘/⇧ click, rubber-band from empty space, [Select all] ⌘A) and adding all selected cards to a deck at once.
-- Collection favorites (☆ on cards, Favorites in the sidebar), card name search, type (Monster, Spell, Trap, Summon method) and rarity filters, sorting (rarity, name, most owned), and a "Show unowned" checkbox.
+- You can now select multiple cards in the collection (⌘/⇧ click, rubber-band from empty space, [Select all] ⌘A) and add them all to a deck at once.
+- Added collection favorites (☆ on cards, Favorites in the sidebar), card name search, type (Monster, Spell, Trap, Summon method) and rarity filters, sorting (rarity, name, most owned), and a "Show unowned" checkbox.
 - Collection details now show "Fusion Materials". Click a material's name to jump to that card.
 - You can rename your collection.
 - Added update checking, save export/import (with an automatic backup before importing), version, patch notes, and license info, and Launch at login to Settings.
