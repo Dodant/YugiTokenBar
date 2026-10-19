@@ -130,7 +130,7 @@ struct DexSidebar: View {
                     statRow(RarityPill(label: label), p, tint: Rarity.color(label: label))
                 }
                 if overframe.total > 0 {
-                    statRow(OverframeBadge(unlocked: true, copies: 0, hint: false).help("오버프레임 그림 해금"), overframe, tint: Rarity.overframe)
+                    statRow(OverframeBadge(unlocked: true, copies: 0), overframe, tint: Rarity.overframe)
                 }
             }
             .padding(.top, 8)

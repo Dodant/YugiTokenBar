@@ -65,7 +65,7 @@ struct OpeningView: View {
 
     private func cell(_ pull: Pull, _ i: Int) -> some View {
         Hovering { hovered in VStack(spacing: 4) {
-            flippable(FlipCard(pull: pull, db: model.db, overframe: model.game.showsOverframe(pull.cid), flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }, pull, i)
+            flippable(FlipCard(pull: pull, db: model.db, overframe: pull.overframe, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }, pull, i)
             // 상점 팩 칸처럼 아래 이름 한 줄(넘치면 마우스를 올린 동안 흘러간다). 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
             MarqueeText(text: model.db.cards[pull.cid]?.name ?? " ", active: hovered && flipped.contains(i))
                 .font(.caption2)

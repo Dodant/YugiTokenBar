@@ -163,22 +163,24 @@ import Testing
 
     @Test func sellGivesCoinsByHighestTierAndRemovesCopy() {
         var state = GameState()
-        state.owned = [1: 2, 2: 1]
+        state.owned = [1: 2]
         var game = Game(db: db, state: state)
-        #expect(game.sell(1) == Balance.sellPrice[4])
+        #expect(game.sell(1) == Balance.sellPrice[4]! * Balance.clearedSellMultiplier)  // 팩1(카드 1뿐)을 다 모았다
         #expect(game.copies(1) == 1)
+        game.state.owned[2] = 1
+        game.state.owned[1] = nil  // 이제 카드 2가 든 팩0은 덜 모았다
         #expect(game.sell(2) == Balance.sellPrice[2])
         #expect(game.copies(2) == 0)
         #expect(game.state.owned[2] == nil)
         #expect(game.sell(2) == nil)
-        #expect(game.state.coins == Balance.sellPrice[4]! + Balance.sellPrice[2]!)
+        #expect(game.state.coins == Balance.sellPrice[4]! * Balance.clearedSellMultiplier + Balance.sellPrice[2]!)
     }
 
     @Test func sellDuplicatesKeepsOneOfEach() {
         var state = GameState()
         state.owned = [1: 2, 2: 2]
         var game = Game(db: db, state: state)
-        let expected = Balance.sellPrice[4]! + Balance.sellPrice[2]!
+        let expected = (Balance.sellPrice[4]! + Balance.sellPrice[2]!) * Balance.clearedSellMultiplier  // 두 팩 다 모았다
         #expect(game.duplicatesValue == (2, expected))
         #expect(game.sellDuplicates() == expected)
         #expect(game.state.owned == [1: 1, 2: 1])
@@ -189,7 +191,8 @@ import Testing
     @Test func packResaleValueIsBelowPackPrice() {
         let w = Balance.slot5Weights.reduce(0.0) { $0 + $1.weight * Double(Balance.sellPrice[$1.tier]!) }
         let slot4 = (1 - Balance.slot4RareChance) * Double(Balance.sellPrice[1]!) + Balance.slot4RareChance * Double(Balance.sellPrice[2]!)
-        #expect(3.0 * Double(Balance.sellPrice[1]!) + slot4 + w < Double(Balance.packPrice))
+        let m = Double(Balance.clearedSellMultiplier)  // 다 모은 팩의 판매가 배수까지 넣어도
+        #expect(m * (3.0 * Double(Balance.sellPrice[1]!) + slot4 + w) < Double(Balance.packPrice))
     }
 
     @Test func autoSellDuplicatesSellsRepeatsOnly() {
@@ -203,14 +206,15 @@ import Testing
         let first = game.buy(pack: 0, using: &rng)
         #expect(first.allSatisfy { $0.isNew && $0.soldFor == nil })
         let second = game.buy(pack: 0, using: &rng)
-        #expect(second.compactMap(\.soldFor).sorted() == [Balance.sellPrice[1]!, Balance.sellPrice[4]!])
+        let m = Balance.clearedSellMultiplier  // 첫 봉투로 팩을 다 모아 판매가가 배수가 된다
+        #expect(second.compactMap(\.soldFor).sorted() == [Balance.sellPrice[1]! * m, Balance.sellPrice[4]! * m])
         #expect(game.state.owned == [1: 1, 2: 1])
-        #expect(game.state.coins == 10_000 - 2 * Balance.packPrice + Balance.sellPrice[1]! + Balance.sellPrice[4]!)
+        #expect(game.state.coins == 10_000 - 2 * Balance.packPrice + (Balance.sellPrice[1]! + Balance.sellPrice[4]!) * m)
         // 판매 취소: 코인을 돌려주고 카드가 돌아온다, 코인이 모자라면 거절
-        let kept = game.unsell(2, refund: Balance.sellPrice[4]!)
+        let kept = game.unsell(2, refund: Balance.sellPrice[4]! * m)
         #expect(kept)
         #expect(game.state.owned == [1: 1, 2: 2])
-        #expect(game.state.coins == 10_000 - 2 * Balance.packPrice + Balance.sellPrice[1]!)
+        #expect(game.state.coins == 10_000 - 2 * Balance.packPrice + Balance.sellPrice[1]! * m)
         let short = game.unsell(1, refund: game.state.coins + 1)
         #expect(!short)
         game.state.owned[2] = 1
@@ -220,9 +224,8 @@ import Testing
     }
 
     /// 오버프레임 판이 있는 카드는 3장째까지 자동 판매하지 않고, 3장 모으면 해금돼 팔아도 남는다
-    @Test func overframeCardKeepsThreeUntilUnlocked() throws {
-        let c = CardInfo(name: "카드1", attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "",
-                         imageId: try #require(ImageSource.overframe.keys.first), tier: 1, kindCode: nil)
+    @Test func overframeCardKeepsThreeUntilUnlocked() {
+        let c = overframeCard("카드1")
         var state = GameState()
         state.autoSellDuplicates = true
         var game = Game(db: oneBoxDB([1: c]), state: state)
@@ -231,6 +234,7 @@ import Testing
         let pulls = game.openFree(using: &rng)
         #expect(pulls.map(\.cid) == [1, 1, 1, 1])
         #expect(pulls.map { $0.soldFor != nil } == [false, false, false, true])
+        #expect(pulls.map(\.overframe) == [false, false, true, true])  // 개봉 칸마다 그 장을 받은 직후 그림
         #expect(game.state.owned[1] == 3 && game.showsOverframe(1))
         _ = game.sell(1); _ = game.sell(1)
         #expect(game.showsOverframe(1))  // 팔아도 유지

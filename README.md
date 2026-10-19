@@ -5,7 +5,8 @@ Available in Korean, English, and Japanese.</p>
 
 ## How it works
 
-- It reads today's tokens from your local Claude Code, Codex, Gemini, Grok, Pi, oh-my-pi, and Cursor logs. Usage from before installation is not counted.
+- It reads today's tokens from your local Claude Code, Codex, Gemini, Grok, Pi, oh-my-pi, and Cursor logs.
+  On first launch it also credits the last 14 days of usage; anything older is not counted.
 - 10,000 tokens = 1 coin.
   1,000 coins (= 10M tokens) buy one booster pack with 5 cards.
   Buy 10 packs and you get a random pack for free.
@@ -13,6 +14,11 @@ Available in Korean, English, and Japanese.</p>
 - Rarities are N / R / SR / UR / SE. A reprinted card takes its highest rarity.
 - In Settings, pick how far the pools reach (DM … Modern, default GX).
 - You can collect any number of copies. Extra cards sell for coins.
+- 25 cards have official over-frame art, where the illustration breaks out of the card frame.
+  Collect 3 copies of one to unlock its over-frame art; it stays unlocked even if you sell them.
+  Until then, its copies are never sold as duplicates or used as Fusion Materials, and the Dex shows a ✦ badge with your progress.
+- Once you own every card in a pack, cards you still need (locked over-frame cards, and Fusion Materials you are short on with fusion-only collection) come up 10 times as often as other cards of the same rarity.
+  Cards from such a pack also sell for 3 times the price.
 - Using 50M tokens a day earns 5 free cards + enough coins for 5 packs.
 
 ## Screens

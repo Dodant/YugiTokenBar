@@ -208,8 +208,6 @@ struct OverframeBadge: View {
     let unlocked: Bool
     let copies: Int
     var size: CGFloat = 9
-    /// 카드 한 장의 해금 도움말 (사이드바 진행도 줄처럼 카드가 아닌 곳은 끈다)
-    var hint = true
 
     var body: some View {
         // 기호를 글자 안에 넣고 0.85배로 줄여 높이를 등급 알약(글자만)과 같게 한다 (0.9배부터 1pt 높아진다)
@@ -221,7 +219,7 @@ struct OverframeBadge: View {
         .padding(.horizontal, size * 0.6)
         .padding(.vertical, size * 0.15)
         .background(unlocked ? Rarity.overframe : Rarity.locked, in: Capsule())
-        .help(!hint ? "" : unlocked ? String(localized: "오버프레임 그림 해금")
+        .help(unlocked ? String(localized: "오버프레임 그림 해금")
               : String(localized: "같은 카드를 \(Balance.overframeCopies)장 모으면 오버프레임 그림이 해금돼요"))
     }
 }

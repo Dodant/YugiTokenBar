@@ -131,7 +131,7 @@ private struct ShopRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(alignment: Alignment(horizontal: .trailing, vertical: .barBottom)) {
                 if hovered {
-                    BuyButton(index: index, cleared: p.cleared).controlSize(.small).transition(.opacity)
+                    BuyButton(index: index, cleared: p.done).controlSize(.small).transition(.opacity)
                 }
             }
             .animation(.easeOut(duration: 0.15), value: hovered)
@@ -170,7 +170,7 @@ struct PackTile: View {
                         Text("\(pack.date.prefix(4)) · \(p.owned)/\(p.total)")
                             .font(.caption2).monospacedDigit().opacity(0.85)
                         if p.fusionLeft > 0 { Text("융합 \(p.fusionLeft)장 남음").font(.caption2).opacity(0.85) }
-                        BuyButton(index: index, cleared: p.cleared)
+                        BuyButton(index: index, cleared: p.done)
                     }
                     .foregroundStyle(.white)
                     .padding(6)
@@ -213,7 +213,7 @@ struct PackRow: View {
             }
             Spacer(minLength: 4)
             // 바로 구매 줄은 계속 떠 있고 팩만 바뀌므로, 팩이 바뀌면 "그래도 사기" 상태를 버린다
-            BuyButton(index: index, cleared: p.cleared).id(index)
+            BuyButton(index: index, cleared: p.done).id(index)
         }
     }
 }
@@ -238,7 +238,7 @@ private struct PackStamp: View {
 }
 
 /// 1팩 구매 버튼. 가격(코인)을 그대로 보여준다.
-/// 더 받을 카드가 없는 팩(`PackProgress.cleared`)은 한 번 막는다: 처음 누르면 "그래도 사기"로 바뀌고, 한 번 더 눌러야 산다.
+/// 더 받을 카드가 없는 팩(`PackProgress.done`: 다 모았고 해금 전 오버프레임·모자란 소재도 없음)은 한 번 막는다: 처음 누르면 "그래도 사기"로 바뀌고, 한 번 더 눌러야 산다.
 // ponytail: 메뉴바 패널에선 확인창 대신 버튼을 두 번 누르게 한다(.help 툴팁처럼 시트·알림이 패널에서 불안정)
 struct BuyButton: View {
     @Environment(AppModel.self) private var model

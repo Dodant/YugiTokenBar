@@ -2,10 +2,17 @@
 
 ## 0.6.3 — 2026-10-19
 **✨ New features**
-- Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] keep up to 3 copies. In the collection, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked.
+- Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked.
 
 **🎨 Improvements**
-- You can now collapse the progress at the bottom left of the collection by clicking its [Progress] header.
+- You can now collapse the progress at the bottom left of the Dex by clicking its [Progress] header.
+
+**🐛 Bug fixes**
+- Fixed the app quitting as soon as the Dex window opened at certain window widths.
+
+**⚖️ Balance**
+- In packs where you have every card, cards with locked overframe artwork and, with [Fusion Monsters by Fusion Summon only] on, Fusion Materials you don't have enough copies of now appear 10 times as often as other cards of the same rarity. Packs with such cards left can be bought in the Shop without pressing [Buy anyway] again.
+- Cards from packs where you have every card now sell for 3 times the price.
 
 ## 0.6.2 — 2026-10-15
 **✨ New features**

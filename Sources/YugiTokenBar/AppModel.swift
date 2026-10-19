@@ -337,6 +337,7 @@ final class AppModel {
         let backup = try store.backupBeforeImport(game.state, appVersion: AppInfo.currentVersion)
         var imported = game
         imported.state = envelope.state.withLedger(of: game.state)
+        imported.state.overframes = imported.state.overframes.filter(imported.hasOverframe)  // 표에 없는 cid 는 버린다
         imported.unlockOwnedOverframes()
         imported.unlockPartnerIfOwned()  // 가져온 세이브에 날개 크리보가 있으면 해금 (한 번만 써서 .bak 은 가져오기 전 세이브로 남는다)
         try store.save(imported.state)

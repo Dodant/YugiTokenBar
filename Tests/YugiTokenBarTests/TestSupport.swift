@@ -19,6 +19,12 @@ func card(_ name: String = "", attr: String? = nil, type: String? = nil, tier: I
     CardInfo(name: name, attr: attr, level: nil, type: type, atk: nil, def: nil, text: "", imageId: nil, tier: tier, kindCode: kind)
 }
 
+/// 오버프레임 판이 있는 테스트용 카드 (n 번째 오버프레임 passcode 를 그림으로)
+func overframeCard(_ name: String, _ n: Int = 0, type: String? = nil) -> CardInfo {
+    CardInfo(name: name, attr: nil, level: nil, type: type, atk: nil, def: nil, text: "",
+             imageId: ImageSource.overframe.keys.sorted()[n], tier: 1, kindCode: nil)
+}
+
 /// 카드를 cid 순서로 모두 담은 팩 하나짜리 DB
 func oneBoxDB(_ cards: [Int: CardInfo]) -> CardDB {
     CardDB(packs: [Pack(pid: "p", name: "팩", date: "2004-01-01", cards: cards.keys.sorted())], cards: cards)

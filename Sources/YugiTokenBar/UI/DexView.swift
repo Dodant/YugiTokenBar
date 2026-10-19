@@ -167,6 +167,9 @@ struct DexView: View {
         .controlSize(.small)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+        // 막대 최소 폭이 가운데 칸 최소 폭이 되면, 창 폭이 그 경계(예: 1135)일 때 분할 뷰가 칸 폭을 끝없이 다시 맞추다 AppKit 이 앱을 죽인다
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+        .clipped()
         .background(.bar)
     }
 
@@ -558,13 +561,13 @@ private struct SellDuplicatesButton: View {
             Label("중복 모두 팔기", systemImage: "c.circle").labelStyle(.titleAndIcon)
         }
         .help(model.game.state.fusionOnly
-              ? "카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))"
-              : "카드마다 1장만 남기고 모두 팔아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
+              ? "카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (\(dup.count)장 · +\(coinText(dup.coins)))"
+              : "카드마다 1장만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
         .disabled(dup.count == 0)
         .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirm) {
             Button("+\(coinText(dup.coins))에 판매") { model.sellDuplicates() }
         } message: {
-            Text(model.game.state.fusionOnly ? "카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남아서 컬렉션은 그대로예요." : "카드마다 1장씩은 남아서 컬렉션은 그대로예요.")
+            Text(model.game.state.fusionOnly ? "카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." : "카드마다 1장씩은 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요.")
         }
     }
 }

@@ -351,18 +351,10 @@
 "%lld장 선택됨" = "Selected: %lld";
 /* DexView.swift:396 */
 "추가할 덱을 아래에서 고르세요" = "Choose a deck below";
-/* DexView.swift:454 */
-"카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card, keeping as many Fusion Materials as needed (Cards: %lld · +%@)";
-/* DexView.swift:455 */
-"카드마다 1장만 남기고 모두 팔아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card (Cards: %lld · +%@)";
 /* DexView.swift:457 */
 "중복 %lld장을 팔까요?" = "Sell duplicates (%lld)?";
 /* DexView.swift:451 */
 "중복 모두 팔기" = "Sell all duplicates";
-/* DexView.swift:460 */
-"카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남아서 컬렉션은 그대로예요." = "1 copy of each card and the Fusion Materials you need stay, so your collection is unchanged.";
-/* DexView.swift:460 */
-"카드마다 1장씩은 남아서 컬렉션은 그대로예요." = "1 copy of each card stays, so your collection is unchanged.";
 /* FusableSection.swift:15 */
 "융합 가능 · %lld" = "Fusion Summonable · %lld";
 /* FusionAnimationView.swift:305 */
@@ -434,7 +426,7 @@
 /* SettingsView.swift:72 */
 "끌어서 옮기고, 우클릭으로 숨겨요" = "Drag to move. Right-click to hide.";
 /* SettingsView.swift:87 */
-"이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 3장까지 남기고, 융합 전용 모드에서는 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Cards with overframe artwork are kept until you have the 3 copies that unlock it, and Fusion-only mode also keeps the materials you need.";
+"이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 %lld장까지 남기고, 융합 전용 모드에서는 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Cards with overframe artwork are kept until you have the %lld copies that unlock it, and Fusion-only mode also keeps the materials you need.";
 /* SettingsView.swift:91 */
 "대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요." = "These cards do not appear in packs or free draws. Collect Polymerization and the materials, then fuse in Collection.";
 /* SettingsView.swift:141 */
@@ -501,3 +493,11 @@
 "오버프레임 그림 미해금" = "Overframe artwork locked";
 /* DexSidebar.swift:116 */
 "진행도" = "Progress";
+/* DexView.swift:561 */
+"카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card, keeping as many Fusion Materials as needed. Cards with locked overframe artwork aren't sold (Cards: %lld · +%@)";
+/* DexView.swift:562 */
+"카드마다 1장만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card. Cards with locked overframe artwork aren't sold (Cards: %lld · +%@)";
+/* DexView.swift:567 */
+"카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." = "1 copy of each card and the Fusion Materials you need stay, and cards with locked overframe artwork aren't sold, so your collection is unchanged.";
+/* DexView.swift:567 */
+"카드마다 1장씩은 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." = "1 copy of each card stays and cards with locked overframe artwork aren't sold, so your collection is unchanged.";

@@ -21,6 +21,10 @@ enum Balance {
     static let monstersPerPack = 2
     /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 215 < packPrice 라 사고팔기로 코인이 늘지 않는다.
     static let sellPrice: [Int: Int] = [1: 20, 2: 50, 3: 150, 4: 400, 5: 1_200]
+    /// 종류를 다 모은 팩(`PackProgress.cleared`)에 든 카드의 판매가 배수. 그래도 팩 기대 판매가 ≈ 645 < packPrice
+    static let clearedSellMultiplier = 3
+    /// 다 모은 팩에서 아직 필요한 카드(`Game.wanted`)가 같은 등급의 다른 카드보다 이만큼 잘 나온다
+    static let wantedWeight = 10.0
     /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
     static let maxCopiesInDeck = 3
     /// 같은 카드를 이만큼 모으면 공식 오버프레임 그림이 해금된다 (판이 있는 카드만, 팔아도 유지). 해금 전엔 이만큼 자동 판매·중복 판매에서 남긴다.
@@ -34,10 +38,14 @@ struct PackProgress {
     let total: Int
     /// 남은 미보유 융합 전용 카드 수 (설정 [융합 몬스터는 융합으로만]일 때만. 융합으로만 채운다)
     var fusionLeft = 0
+    /// 다 모은 팩(`cleared`)에서 아직 필요한 카드 수 (`Game.wanted`: 해금 전 오버프레임·모자란 융합 소재)
+    var wanted = 0
     /// 모든 카드를 1장 이상 가졌다
     var complete: Bool { owned == total }
     /// 팩에서 더 받을 카드가 없다: 다 모았거나 남은 미보유가 융합 전용뿐. 상점 도장(COMPLETE·FUSION ONLY)·구매 막기
     var cleared: Bool { owned + fusionLeft == total }
+    /// 다 모았고 필요한 카드도 없다: 상점 구매를 한 번 막는다
+    var done: Bool { cleared && wanted == 0 }
 }
 
 struct Pull: Sendable, Equatable {
@@ -46,6 +54,8 @@ struct Pull: Sendable, Equatable {
     let isNew: Bool
     /// 중복 자동 판매로 바로 판 경우 받은 코인
     var soldFor: Int? = nil
+    /// 받은 직후 오버프레임 그림이 해금돼 있었는지 (한 팩에 2·3장째가 같이 나오면 3장째부터)
+    var overframe = false
     var label: String { CardInfo.rarities[tier - 1] }
 }
 
@@ -135,6 +145,8 @@ struct Game: Sendable {
     func copies(_ cid: Int) -> Int { state.owned[cid] ?? 0 }
     func hasOverframe(_ cid: Int) -> Bool { db.cards[cid]?.imageId.map { ImageSource.overframe[$0] != nil } ?? false }
     func showsOverframe(_ cid: Int) -> Bool { state.overframes.contains(cid) }
+    /// 오버프레임 판이 있는데 아직 해금하지 않았다: 판매·융합 소재로 쓰지 않고 모은다
+    func overframeLocked(_ cid: Int) -> Bool { hasOverframe(cid) && !showsOverframe(cid) }
 
     /// 시대 범위 안의 즐겨찾기 수 (사이드바 숫자 = 즐겨찾기 목록 장 수)
     var favoritesInRange: Int { state.favorites.filter { db.cidSet.contains($0) }.count }
@@ -164,6 +176,7 @@ struct Game: Sendable {
         for cid in db.packs[pack].cards {
             if copies(cid) > 0 { p.owned += 1 } else if isFusionOnly(cid) { p.fusionLeft += 1 }
         }
+        if p.cleared { p.wanted = db.packs[pack].cards.filter(wanted).count }  // 다 모은 팩만 센다 (keep 이 무거워서)
         return p
     }
 
@@ -179,15 +192,26 @@ struct Game: Sendable {
 
     // MARK: 판매
 
+    /// 1장 판매가. 카드가 든 팩 중 하나라도 종류를 다 모았으면 `clearedSellMultiplier` 배
     func sellPrice(_ cid: Int) -> Int {
-        Balance.sellPrice[db.tier(cid)] ?? 0
+        sellPrice(cid, cleared: db.packs.indices.contains { db.packs[$0].cards.contains(cid) && progress($0).cleared })
+    }
+
+    private func sellPrice(_ cid: Int, cleared: Bool) -> Int {
+        (Balance.sellPrice[db.tier(cid)] ?? 0) * (cleared ? Balance.clearedSellMultiplier : 1)
+    }
+
+    /// 종류를 다 모은 팩에 든 카드 (중복 판매처럼 여러 장을 셀 때 한 번만 센다)
+    private var clearedPackCards: Set<Int> {
+        Set(db.packs.indices.filter { progress($0).cleared }.flatMap { db.packs[$0].cards })
     }
 
     /// 1장 판매. 보유하지 않았으면 nil, 팔았으면 받은 코인.
-    mutating func sell(_ cid: Int) -> Int? {
+    mutating func sell(_ cid: Int) -> Int? { sell(cid, price: sellPrice(cid)) }
+
+    private mutating func sell(_ cid: Int, price: Int) -> Int? {
         guard copies(cid) > 0 else { return nil }
         state.owned[cid] = copies(cid) == 1 ? nil : copies(cid) - 1
-        let price = sellPrice(cid)
         state.coins += price
         return price
     }
@@ -203,17 +227,20 @@ struct Game: Sendable {
 
     /// 중복분(`keep` 장 넘는 것)을 팔면 받을 (장 수, 코인). 각 카드 `keep` 장은 남는다.
     var duplicatesValue: (count: Int, coins: Int) {
-        state.owned.filter { db.cidSet.contains($0.key) }.reduce((0, 0)) { acc, kv in
+        let cleared = clearedPackCards
+        return state.owned.filter { db.cidSet.contains($0.key) }.reduce((0, 0)) { acc, kv in
             let extra = kv.value - keep(kv.key)
-            return extra > 0 ? (acc.0 + extra, acc.1 + extra * sellPrice(kv.key)) : acc
+            return extra > 0 ? (acc.0 + extra, acc.1 + extra * sellPrice(kv.key, cleared: cleared.contains(kv.key))) : acc
         }
     }
 
     /// 시대 범위 안 카드의 중복분을 모두 판다(범위 밖은 숨겨져 있으니 건드리지 않는다). 반환: 받은 코인.
     mutating func sellDuplicates() -> Int {
         var total = 0
+        let cleared = clearedPackCards  // 중복만 팔아 1장씩은 남으니 도중에 바뀌지 않는다
         for (cid, n) in state.owned where n > keep(cid) && db.cidSet.contains(cid) {
-            for _ in keep(cid)..<n { total += sell(cid) ?? 0 }
+            let price = sellPrice(cid, cleared: cleared.contains(cid))
+            for _ in keep(cid)..<n { total += sell(cid, price: price) ?? 0 }
         }
         return total
     }
@@ -290,11 +317,15 @@ struct Game: Sendable {
     /// 조건 소재는 그 융합을 아직 안 가졌을 때만 센다(같은 카드만 나와도 모아서 만들 수 있게).
     /// 오버프레임 판이 있는 카드는 해금 전까지 `overframeCopies` 장 (설정과 상관없이).
     func keep(_ cid: Int) -> Int {
-        let base = hasOverframe(cid) && !showsOverframe(cid) ? Balance.overframeCopies : 1
+        let base = overframeLocked(cid) ? Balance.overframeCopies : 1
         guard state.fusionOnly else { return base }
         let open = db.conditionNeed[cid]?.filter { copies($0.key) == 0 }.values.max() ?? 1
         return max(base, db.materialNeed[cid] ?? 1, open)
     }
+
+    /// 아직 더 모아야 하는 카드: 가진 장 수가 `keep` 보다 적다 (해금 전 오버프레임 3장, 융합 전용 설정의 소재 장 수).
+    /// 다 모은 팩에서 `wantedWeight` 배 잘 나온다
+    func wanted(_ cid: Int) -> Bool { copies(cid) < keep(cid) }
 
     /// 설정이 켜져 있으면 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
     func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) }
@@ -304,10 +335,11 @@ struct Game: Sendable {
 
     /// 소재 줄 순서대로 고른 카드 (cid → 장 수, join 은 앞 줄에 합친다). 맞는 카드가 하나뿐인 줄(카드 소재)을 먼저 잡고,
     /// 나머지는 줄 순서대로 가진 카드 중 남는 장 수가 많은 것부터(같으면 cid 가 작은 것) 채운다. 하나라도 못 채우면 nil.
+    /// 해금 전 오버프레임 카드(`overframeLocked`)는 모으는 중이라 소재로 쓰지 않는다 (그 카드뿐인 융합은 해금 뒤에 만든다).
     func pickMaterials(_ cid: Int) -> [[Int: Int]]? {
         guard let picks = db.cards[cid]?.picks else { return nil }
         var used: [Int: Int] = [:], got = [[Int: Int]](repeating: [:], count: picks.count)
-        let left = { (c: Int) in copies(c) - (used[c] ?? 0) }
+        let left = { (c: Int) in overframeLocked(c) ? 0 : copies(c) - (used[c] ?? 0) }
         let order = picks.indices.sorted { (picks[$0].any.count == 1 ? 0 : 1, $0) < (picks[$1].any.count == 1 ? 0 : 1, $1) }
         for i in order {
             var need = picks[i].count ?? 1
@@ -381,12 +413,21 @@ struct Game: Sendable {
 
     /// 팩에서 tier → 아래 티어들 → 위 티어들 순으로, excluding(같은 팩에서 이미 나온 카드)에 없는 카드를 균등 선택.
     /// kind(몬스터·마법·함정)가 있으면 그 종류만. 보유 수 상한은 없다.
-    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], kind: CardKind? = nil, using rng: inout R) -> Int? {
+    /// boostWanted: 다 모은 팩이면 아직 필요한 카드(`wanted`)를 `wantedWeight` 배 뽑는다.
+    func draw<R: RandomNumberGenerator>(pack: Int, tier: Int, excluding: Set<Int> = [], kind: CardKind? = nil,
+                                        boostWanted: Bool = false, using rng: inout R) -> Int? {
         for t in Self.fallbackOrder(tier) {
             let candidates = db.packs[pack].cards.filter {
                 db.tier($0) == t && !excluding.contains($0) && !isFusionOnly($0) && (kind == nil || db.cards[$0]?.kind == kind)
             }
-            if let cid = candidates.randomElement(using: &rng) { return cid }
+            guard !candidates.isEmpty else { continue }
+            let weights = candidates.map { boostWanted && wanted($0) ? Balance.wantedWeight : 1 }
+            var r = Double.random(in: 0..<weights.reduce(0, +), using: &rng)
+            for (cid, w) in zip(candidates, weights) {
+                if r < w { return cid }
+                r -= w
+            }
+            return candidates.last
         }
         return nil
     }
@@ -425,12 +466,13 @@ struct Game: Sendable {
     /// 봉투 하나 열기: 노멀 3 + 슬롯4(노멀, `slot4RareChance`로 레어) + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
     /// 팩에 아직 없는 카드가 남아 있으면 1장 이상은 새 카드다(`ensureNew`).
     private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
+        let boost = progress(pack).cleared
         let slot4 = Double.random(in: 0..<1, using: &rng) < Balance.slot4RareChance ? 2 : 1
         let tiers = [1, 1, 1, slot4, pickTier(Balance.slot5Weights, using: &rng)]
         var slots: [(tier: Int, kind: CardKind?, cid: Int)] = []
         for (i, tier) in tiers.enumerated() {
             let kind: CardKind? = i < Balance.monstersPerPack ? .monster : nil
-            guard let cid = draw(pack: pack, tier: tier, excluding: Set(slots.map(\.cid)), kind: kind, using: &rng) else { continue }
+            guard let cid = draw(pack: pack, tier: tier, excluding: Set(slots.map(\.cid)), kind: kind, boostWanted: boost, using: &rng) else { continue }
             slots.append((tier, kind, cid))
         }
         ensureNew(pack: pack, slots: &slots, using: &rng)
@@ -460,7 +502,8 @@ struct Game: Sendable {
         let isNew = copies(cid) == 0
         let keep = keep(cid)  // 지급 전 값: 오버프레임을 해금한 장(3장째)은 팔지 않는다
         give(cid, source: source)
-        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid, keep: keep))
+        let overframe = showsOverframe(cid)
+        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid, keep: keep), overframe: overframe)
     }
 
     /// 설정이 켜져 있고 `keep` 장을 넘으면 바로 1장 판다. 반환: 받은 코인.
