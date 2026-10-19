@@ -21,6 +21,7 @@ import urllib.request
 TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽 등) = 5 = 앱의 SE
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
 CUTOFF = "2026/10/14"  # 『비욘드 더 브레이브』까지
+PACK_COUNT = 101  # CUTOFF 까지의 정규 부스터 수 (검증)
 MINI = re.compile(r"어시스트 팩|익스팬션 팩|얼티미트 스페셜 팩")
 LANGS = {"ko": "KO", "ja": "JP", "en": "EN"}
 # 세 파일이 같은 카드 필드(KO 기준)와 언어마다 다른 카드 필드
@@ -897,8 +898,8 @@ def build_ko():
     print(f"packs={len(packs)} distinct={len(out['cards'])} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
-    if len(packs) != 101 or any(not i["name"] for i in out["cards"].values()) or any(not p["imageURL"] for p in packs):
-        sys.exit("검증 실패: 팩 수가 101이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
+    if len(packs) != PACK_COUNT or any(not i["name"] for i in out["cards"].values()) or any(not p["imageURL"] for p in packs):
+        sys.exit(f"검증 실패: 팩 수가 {PACK_COUNT}이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 
 def build_lang(lang):
