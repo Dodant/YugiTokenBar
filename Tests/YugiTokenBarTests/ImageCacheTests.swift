@@ -15,6 +15,14 @@ import Testing
         #expect(image != nil)
     }
 
+    /// 손으로 고른 오버프레임 표의 passcode 는 모두 번들 카드에 있다 (오타면 조용히 기본 그림이 나온다)
+    @MainActor @Test func overframeKeysAreBundledCards() throws {
+        let db = try CardDB.load(from: CardDB.repoURL("ko"))
+        let ids = Set(db.cards.values.compactMap(\.imageId))
+        #expect(ImageCache.overframe.count == 25)
+        #expect(ImageCache.overframe.keys.filter { !ids.contains($0) }.isEmpty)
+    }
+
     /// 오버프레임 카드는 크기와 상관없이 overframe-<passcode> 한 파일을 쓴다
     @MainActor @Test func overframeCardsUseTheirOwnFile() async throws {
         let dir = tempDir()

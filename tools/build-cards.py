@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Konami 카드 DB + YGOPRODeck → Resources/cards_KO.json · cards_JP.json · cards_EN.json
 
-한국 정발 정규 부스터 팩 중 『카오스 오리진즈』(2026-07-14)까지 100팩을 수집한다(76번째부터 VRAINS 이후 Modern).
+한국 정발 정규 부스터 팩 중 『비욘드 더 브레이브』(2026-10-13)까지 101팩을 수집한다(76번째부터 VRAINS 이후 Modern).
 같은 분류의 미니 팩(＋1 어시스트·익스팬션 팩, 얼티미트 스페셜 팩: 20장 이하, 노멀 없음)은 뺀다.
 사용: python3 tools/build-cards.py [--lang ko|ja|en|all] [--reformat | --extras]
 """
@@ -20,7 +20,8 @@ import urllib.request
 
 TIER = {"N": 1, "R": 2, "SR": 3, "UR": 4}  # 그 외(SE 시크릿, UL 얼티미트, HR 홀로그래픽 등) = 5 = 앱의 SE
 BASE = "https://www.db.yugioh-card.com/yugiohdb/"
-CUTOFF = "2026/07/15"  # 『카오스 오리진즈』까지
+CUTOFF = "2026/10/14"  # 『비욘드 더 브레이브』까지
+PACK_COUNT = 101  # CUTOFF 까지의 정규 부스터 수 (검증)
 MINI = re.compile(r"어시스트 팩|익스팬션 팩|얼티미트 스페셜 팩")
 LANGS = {"ko": "KO", "ja": "JP", "en": "EN"}
 # 세 파일이 같은 카드 필드(KO 기준)와 언어마다 다른 카드 필드
@@ -467,7 +468,7 @@ def pack_image(set_code, lang):
 
 def split_materials(cards):
     """융합 몬스터의 효과 텍스트 첫 줄(소재 줄)을 materials 로 뗀다. 이미 뗀 파일(--reformat)은 그대로.
-    "이름" 은 100팩 카드면 {"cid"}, 아니면 {"name"}, 그 밖("전사족 몬스터")은 {"rule"}, 뒤의 "× N" 은 count.
+    "이름" 은 101팩 카드면 {"cid"}, 아니면 {"name"}, 그 밖("전사족 몬스터")은 {"rule"}, 뒤의 "× N" 은 count.
     NEX 로만 소환하는 2종·베어트론은 소재 줄이 없다(첫 줄이 '.' 로 끝나는 효과문)."""
     names = {v["name"]: int(k) for k, v in cards.items()}
     nospace = {n.replace(" ", ""): c for n, c in names.items()}
@@ -539,7 +540,7 @@ def sort_cards(out):
 
 
 def add_missing_materials(out, image_ids, rules=False):
-    """융합 몬스터의 100팩에 없는 소재({"name"})를 KO DB 에서 찾아 카드로 넣고, 그 소재를 쓰는 융합 몬스터가 든 팩마다 넣는다
+    """융합 몬스터의 101팩에 없는 소재({"name"})를 KO DB 에서 찾아 카드로 넣고, 그 소재를 쓰는 융합 몬스터가 든 팩마다 넣는다
     (이미 그 융합보다 먼저 나오는 카드면 이름만 cid 로 바꾼다: 환상마수 키메라의 유익환상수 키메라).
     등급은 그 카드의 한국 첫 수록판 레어도. 소재는 {"cid"} 로 바꾼다. 이미 넣은 파일은 할 일이 없다.
     rules 가 참일 때만 조건 소재 융합의 소재도 본다: add_outside_fusions 뒤에 돌려야 그 소재가 넣은 융합(유익환상수 키메라)이면
@@ -617,14 +618,14 @@ def add_mask_change(out, image_ids):
 
 
 def add_outside_fusions(out, image_ids):
-    """100팩 밖 융합 몬스터 중 소재에 조건이 없고 100팩 카드가 하나 이상인 것을 넣는다. 들어갈 팩은 100팩 소재마다
-    처음 나온 팩 중 가장 늦은 팩이라 어느 시대 범위에서도 소재가 같이 있다. 100팩 밖 소재는 {"name"} 으로 남겨 뒤이은
-    add_missing_materials 가 그 팩에 넣는다(한국 미발매 소재가 있으면 뺀다). 소재가 100팩 밖 융합이면 조건 융합(극화염의 검사의 투의염참룡)만 받아 같은 팩에
+    """101팩 밖 융합 몬스터 중 소재에 조건이 없고 101팩 카드가 하나 이상인 것을 넣는다. 들어갈 팩은 101팩 소재마다
+    처음 나온 팩 중 가장 늦은 팩이라 어느 시대 범위에서도 소재가 같이 있다. 101팩 밖 소재는 {"name"} 으로 남겨 뒤이은
+    add_missing_materials 가 그 팩에 넣는다(한국 미발매 소재가 있으면 뺀다). 소재가 101팩 밖 융합이면 조건 융합(극화염의 검사의 투의염참룡)만 받아 같은 팩에
     넣는다(조건 없는 것은 그 융합부터 이 기준에 맞아야 해서 뺀다: AtoZ 의 ABC). 등급은 그 카드의 한국 첫 수록판 레어도."""
     cards = out["cards"]
     cand = {cid: dict(info) for cid, info in ko_fusions().items() if cid not in cards}
     merged = cards | cand
-    split_materials(merged)  # 100팩 카드는 이미 뗐으니 후보만 뗀다
+    split_materials(merged)  # 101팩 카드는 이미 뗐으니 후보만 뗀다
     first_pack = first_packs(out)
     has_rule = lambda info: any("rule" in m for m in info.get("materials", []))
     outside = lambda m: "cid" in m and m["cid"] not in first_pack and has_rule(cand.get(str(m["cid"]), {}))
@@ -754,7 +755,7 @@ def make_picks(cards):
     """만들 수 있는 융합 몬스터마다 소재 줄 한 줄에 하나씩 {"any": 맞는 카드 cid 목록(자기 자신 빼고), "count"} → {cid: [...]}.
     카드 소재는 [그 cid], 조건 소재는 parse_rule 로 맞는 카드, 마스크드 히어로(mask, 소재 줄 없음)는 같은 속성 hero 몬스터 하나.
     "드래곤족의 융합 / 싱크로 / 엑시즈 / 펜듈럼 몬스터 1장씩 합계 4장" 은 종류마다 하나씩 나누고, 둘째부터 "join"(앞 것과
-    한 줄) 을 붙인다. 이름 소재(100팩 밖)·못 읽는 조건·맞는 카드가 없는 조건이 있으면 뺀다.
+    한 줄) 을 붙인다. 이름 소재(101팩 밖)·못 읽는 조건·맞는 카드가 없는 조건이 있으면 뺀다.
     KO 카드(add_codes 뒤)로 정하고 PICKS_PATH 하나에 둔다(세 언어 공용)."""
     def match(r, k, c):  # "of": 그 이름의 카드, 또는 그 카드가 소재인 융합
         if not r[0].get("of"):
@@ -841,12 +842,12 @@ def ygo_cards():
 
 
 def add_extras(out, by_konami):
-    """100팩 밖 카드(융합 소재·100팩 밖 융합·마스크 체인지)를 넣고 코드 필드를 다시 붙여 KO 파일과 picks.json 을 쓴다.
+    """101팩 밖 카드(융합 소재·101팩 밖 융합·마스크 체인지)를 넣고 코드 필드를 다시 붙여 KO 파일과 picks.json 을 쓴다.
     이미 넣은 카드는 건너뛰어서 있는 KO 파일에 다시 돌려도 된다(--extras)."""
     add_missing_materials(out, by_konami)
     split_materials(out["cards"])  # 새로 넣은 소재 중 융합 몬스터(궁극의 푸른 눈의 백룡)
     add_outside_fusions(out, by_konami)
-    add_missing_materials(out, by_konami, rules=True)  # 넣은 융합의 100팩 밖 소재, 조건 소재 융합의 소재
+    add_missing_materials(out, by_konami, rules=True)  # 넣은 융합의 101팩 밖 소재, 조건 소재 융합의 소재
     add_mask_change(out, by_konami)
     add_codes(out["cards"])
     dump(out, out_path("ko"))
@@ -897,8 +898,8 @@ def build_ko():
     print(f"packs={len(packs)} distinct={len(out['cards'])} missingImages={len(missing)}")
     for m in missing:
         print("  no image:", m)
-    if len(packs) != 100 or any(not i["name"] for i in out["cards"].values()) or any(not p["imageURL"] for p in packs):
-        sys.exit("검증 실패: 팩 수가 100이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
+    if len(packs) != PACK_COUNT or any(not i["name"] for i in out["cards"].values()) or any(not p["imageURL"] for p in packs):
+        sys.exit(f"검증 실패: 팩 수가 {PACK_COUNT}이 아니거나 이름이 빈 카드·이미지 없는 팩이 있음")
 
 
 def build_lang(lang):
@@ -956,7 +957,7 @@ if __name__ == "__main__":
     ap.add_argument("--lang", choices=["ko", "ja", "en", "all"], default="all")
     ap.add_argument("--reformat", action="store_true", help="받아 오지 않고 있는 파일을 지금 형식으로만 다시 쓴다")
     ap.add_argument("--extras", action="store_true",
-                    help="있는 KO 파일에 100팩 밖 카드 넣기만 다시 한다(팩 목록·팩 이미지는 다시 받지 않는다). 뒤이어 --lang ja, en")
+                    help="있는 KO 파일에 101팩 밖 카드 넣기만 다시 한다(팩 목록·팩 이미지는 다시 받지 않는다). 뒤이어 --lang ja, en")
     args = ap.parse_args()
     langs = ["ko", "ja", "en"] if args.lang == "all" else [args.lang]
     if args.extras:

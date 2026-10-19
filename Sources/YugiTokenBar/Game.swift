@@ -48,7 +48,7 @@ struct Pull: Sendable, Equatable {
 }
 
 struct Game: Sendable {
-    /// 100팩 전체
+    /// 101팩 전체
     let fullDB: CardDB
     var state: GameState
     /// 시대 이름 → 그 시대까지 자른 DB (미리 만들어 두고 고르기만 한다)
@@ -149,7 +149,7 @@ struct Game: Sendable {
         return out
     }
 
-    /// 팩 진행도를 한 번에 센다 (상점은 팩 100개를 그릴 때마다 부른다)
+    /// 팩 진행도를 한 번에 센다 (상점은 모든 팩을 그릴 때마다 부른다)
     func progress(_ pack: Int) -> PackProgress {
         var p = PackProgress(total: db.packs[pack].cards.count)
         for cid in db.packs[pack].cards {

@@ -21,16 +21,16 @@
 |---|---|
 | 카드 이미지(`cards_small`·`cards`) | YGOPRODeck https://images.ygoprodeck.com/images/ |
 | 팩 봉투 | Yugipedia(고른 언어판. 일본어는 없으면 영문판), 없으면 YGOPRODeck `images/sets/<setCode>.jpg` |
-| 오버프레임 21장 | 아래 표 |
+| 오버프레임 25장 | 아래 표 |
 
 ### 오버프레임 (`ImageCache.overframe`)
 
 오버프레임(Over-Frame, TCG 이름 Extended art)은 일러스트가 카드 테두리 밖으로 뻗어 나오는 공식 카드 처리다.
 OCG에서는 LIMIT OVER COLLECTION(2026)에 처음 나왔다.
-대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(약 100종)을 passcode로 `cards_KO.json`과 맞춰 뽑았고, 100팩 안에 든 21종 전부를 넣었다(2026-10-06 기준).
+대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(약 100종)을 passcode로 `cards_KO.json`과 맞춰 뽑았고, 101팩 안에 든 25종 전부를 넣었다(2026-10-19 기준).
 
 이미지는 SAMPLE 워터마크가 없는 것만 쓴다.
-Yugipedia 이미지를 먼저 쓰고(영문 RA05 UR, 일본판 LOSP PScR, CF02 공식 이미지), Yugipedia에 워터마크 판이나 이름 없는 마스터 듀얼 렌더만 있거나 이미지가 없는 9장은 일본 카드숍 상품 스캔을 쓴다(사용자 제공).
+Yugipedia 이미지를 먼저 쓰고(영문 RA05·BETB UR, 일본판 LOSP·BETB PScR, CF02 공식 이미지), Yugipedia에 워터마크 판이나 이름 없는 마스터 듀얼 렌더만 있거나 이미지가 없는 9장은 일본 카드숍 상품 스캔을 쓴다(사용자 제공).
 
 | 카드 | passcode | 수록 | 출처 | 이미지 |
 |---|---|---|---|---|
@@ -46,6 +46,10 @@ Yugipedia 이미지를 먼저 쓰고(영문 RA05 UR, 일본판 LOSP PScR, CF02 �
 | 사로스＝에레스 쿠르누기아스 | 98127546 | LOSP | Yugipedia | https://ms.yugipedia.com//c/c1/UnderworldGoddessoftheClosedWorld-LOSP-JP-PScR.png |
 | 하얀 숲의 아스테랴 | 25592142 | CF02 | Yugipedia | https://ms.yugipedia.com//5/56/AstellaroftheWhiteForest-CF02-JP-OP.png |
 | 하얀 숲의 리제트 | 61980241 | CF02 | Yugipedia | https://ms.yugipedia.com//8/81/ElzetteoftheWhiteForest-CF02-JP-OP.png |
+| 천하독보의 대의적 | 24203749 | BETB | Yugipedia | https://ms.yugipedia.com//a/ac/TheGreatGallantBandit-BETB-JP-PScR.png |
+| 엘리멘틀 사가 드리야드 | 50208444 | BETB | Yugipedia | https://ms.yugipedia.com//8/80/ElementalSagaDoriado-BETB-JP-PScR.png |
+| 붉은 눈의 초월흑룡 | 17242022 | BETB | Yugipedia | https://ms.yugipedia.com//8/82/RedEyesBlackDragonExceed-BETB-EN-UR-1E-EA.png |
+| CX 기망황룡 카오스 바리언 드래곤 | 79791695 | BETB | Yugipedia | https://ms.yugipedia.com//b/b7/CXyzHopeChaosBarianDragon-BETB-EN-UR-1E-EA.png |
 | 시작의 신 파라 | 82344137 | CORI-JP022 | 카드러시 | https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_1.jpg |
 | 검은 혼돈의 마술사 블랙 카오스 | 44001993 | CORI-JP027 | 카드러시 | https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_2.jpg |
 | 빛과 어둠의 전사 카오스 솔저 | 70405001 | CORI-JP028 | 카드러시 | https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_3.jpg |
