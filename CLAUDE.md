@@ -27,6 +27,10 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
   Linux의 `Package.resolved`는 `.build-linux/`에 두고 커밋하지 않는다.
   `scripts/linux-build.sh`는 소스·리소스·패치노트를 각각 읽기 전용으로 마운트하고 Linux 잠금 파일을 쓰기 가능한 컨테이너 패키지 루트로 복사한 뒤 명령 종료 시 되돌려 복사한다.
   `String(localized:)`는 Linux에서 `Platform/Localizer.swift`가 같은 `.strings`로 처리하므로 그대로 쓴다.
+  Linux UI는 `L("카드 %lld · %@", .int(count), .text(name))`처럼 단일 정적 키와 명시적 타입 인수를 쓴다.
+  `sync-strings.py`는 주석·문자열을 구분해 L 키를 추출하고 위치 지정자·반복 인수·`%%`와 인수 타입을 검사한다.
+  L 키의 Swift 보간·동적 식·raw/multiline 문자열은 지원하지 않는다.
+  Linux는 stringsdict를 처리하지 않으므로 영어 수량은 `Free cards: N` 같은 명사형 레이블로 번역한다.
   Linux 전용 코드의 출력·로그는 영어로 쓴다(`sync-strings.py`가 한글 리터럴을 키로 본다).
   Linux에서는 공식 한도·Cursor 대시보드 API를 읽지 않고 Cursor 로컬 DB만 센다.
 
@@ -93,6 +97,7 @@ scripts/linux-build.sh test                           # Docker(Swift 6.4.1·GTK 
 scripts/linux-build.sh run YugiTokenBar               # Linux CLI, 격리 qa-state 사용
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
+python3 tools/test_sync_strings.py                    # Linux L 키 scanner·형식 인수 검사(네트워크 없음)
 python3 tools/sync-strings.py --check                 # UI 문구 키·번역·en 문자 체계·en 복수형 검사 (컴파일러로 키 추출, ~20초)
 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (Claude 공식 한도·Cursor API는 안 읽음)
 PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도·Cursor API까지 실제로 읽기

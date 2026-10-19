@@ -41,6 +41,30 @@ import Testing
         #expect(Localizer.table(lang: "ko")["버그 신고"] == nil)
     }
 
+    @Test func explicitArgumentsSupportReorderingAndRepetition() {
+        let l = Localizer(table: ["카드 %lld · %@": "%2$@ / %1$lld / %1$lld"])
+        #expect(l.string("카드 %lld · %@", arguments: [.int(3), .text("Blue")]) == "Blue / 3 / 3")
+    }
+
+    @Test func escapedPercentDoesNotConsumeOrSubstituteArguments() {
+        let l = Localizer(table: [:])
+        #expect(l.string("진행 100%% · %%lld · %lld", arguments: [.int(3)]) == "진행 100% · %lld · 3")
+        #expect(l.string("%%%1$@", arguments: [.text("done")]) == "%done")
+    }
+
+    @Test func explicitMissingAndMismatchedArgumentsRemainReadable() {
+        let l = Localizer(table: [:])
+        #expect(l.string("%2$@ · %lld · %0$lld", arguments: [.int(3)]) == "%2$@ · 3 · %0$lld")
+        #expect(l.string("%lld · %@", arguments: [.text("three"), .int(3)]) == "%lld · %@")
+        #expect(l.string("%999999999999999999999999999999$@", arguments: []) == "%999999999999999999999999999999$@")
+    }
+
+    #if os(Linux)
+    @Test func linuxEntryPointTakesStaticKeyAndTypedArguments() {
+        #expect(L("test %lld / %@ / %%", .int(7), .text("ok")) == "test 7 / ok / %")
+    }
+    #endif
+
     @Test func repoResourceFallsBackWhenNothingIsInstalled() {
         #expect(PlatformPaths.installedResource("cards_KO.json") == nil)
         #expect(FileManager.default.fileExists(atPath: PlatformPaths.resource("cards_KO.json").path))

@@ -1,5 +1,24 @@
 import Foundation
 
+enum LocalizationArgument: Sendable {
+    case int(Int)
+    case text(String)
+
+    fileprivate var value: String {
+        switch self {
+        case .int(let value): String(value)
+        case .text(let value): value
+        }
+    }
+
+    fileprivate var specifier: String {
+        switch self {
+        case .int: "lld"
+        case .text: "@"
+        }
+    }
+}
+
 /// Matches the keys emitted for String(localized:) by the Swift compiler.
 struct LocalizationKey: ExpressibleByStringInterpolation, Equatable, Sendable {
     let pattern: String
@@ -77,17 +96,31 @@ struct Localizer: Sendable {
     }
 
     func string(_ key: LocalizationKey) -> String {
-        let value = translations[key.pattern] ?? key.pattern
+        render(key.pattern, arguments: key.arguments)
+    }
+
+    func string(_ pattern: String, arguments: [LocalizationArgument]) -> String {
+        render(pattern, arguments: arguments.map(\.value), specifiers: arguments.map(\.specifier))
+    }
+
+    private func render(_ pattern: String, arguments: [String], specifiers: [String]? = nil) -> String {
+        let value = translations[pattern] ?? pattern
         var next = 0
-        return value.replacing(#/%(?:(\d+)\$)?(?:lld|@)/#) { match in
+        return value.replacing(#/%%|%(?:(\d+)\$)?(lld|@)/#) { match in
+            if match.output.0 == "%%" { return "%" }
             let index: Int
-            if let position = match.output.1, let number = Int(position) {
+            if let position = match.output.1 {
+                guard let number = Int(position), number > 0 else { return String(match.output.0) }
                 index = number - 1
             } else {
                 index = next
                 next += 1
             }
-            return key.arguments.indices.contains(index) ? key.arguments[index] : String(match.output.0)
+            guard arguments.indices.contains(index),
+                  specifiers == nil || specifiers?[index] == String(match.output.2 ?? "") else {
+                return String(match.output.0)
+            }
+            return arguments[index]
         }
     }
 
@@ -99,5 +132,7 @@ extension String {
     init(localized key: LocalizationKey) { self = Localizer.shared.string(key) }
 }
 
-func L(_ key: LocalizationKey) -> String { Localizer.shared.string(key) }
+func L(_ key: StaticString, _ arguments: LocalizationArgument...) -> String {
+    Localizer.shared.string(key.description, arguments: arguments)
+}
 #endif
