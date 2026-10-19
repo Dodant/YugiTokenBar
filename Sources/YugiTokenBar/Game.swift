@@ -38,7 +38,7 @@ enum Balance {
 struct PackProgress {
     var owned = 0
     let total: Int
-    /// 남은 미보유 융합 전용 카드 수 (설정 [융합 몬스터는 융합으로만]일 때만. 융합으로만 채운다)
+    /// 남은 미보유 융합 전용 카드 수 (융합으로만 채운다)
     var fusionLeft = 0
     /// 다 모은 팩(`cleared`)에서 아직 필요한 카드 수 (`Game.wanted`: 해금 전 오버프레임·모자란 융합 소재)
     var wanted = 0
@@ -319,23 +319,22 @@ struct Game: Sendable {
 
     // MARK: 융합
 
-    /// 중복으로 치지 않고 남길 장 수: 1장. 융합 전용 설정이 켜져 있으면 소재로 필요한 최대 장 수 (중복 판매·자동 판매 공통).
+    /// 중복으로 치지 않고 남길 장 수: 융합 소재로 필요한 최대 장 수, 아니면 1장 (중복 판매·자동 판매 공통).
     /// 조건 소재는 그 융합을 아직 안 가졌을 때만 센다(같은 카드만 나와도 모아서 만들 수 있게).
     /// 오버프레임 판이 있는 카드는 해금 전까지 `overframeCopies` 장 (설정과 상관없이).
     func keep(_ cid: Int) -> Int {
         let base = overframeLocked(cid) ? Balance.overframeCopies : 1
-        guard state.fusionOnly else { return base }
         let open = db.conditionNeed[cid]?.filter { copies($0.key) == 0 }.values.max() ?? 1
         return max(base, db.materialNeed[cid] ?? 1, open)
     }
 
-    /// 아직 더 모아야 하는 카드: 가진 장 수가 `keep` 보다 적다 (해금 전 오버프레임 3장, 융합 전용 설정의 소재 장 수).
+    /// 아직 더 모아야 하는 카드: 가진 장 수가 `keep` 보다 적다 (해금 전 오버프레임 3장, 융합 소재 장 수).
     /// 다 모은 팩에서 `wantedWeight` 배 잘 나온다
     func wanted(_ cid: Int) -> Bool { copies(cid) < keep(cid) }
 
-    /// 설정이 켜져 있으면 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다.
+    /// 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다. 만들 수 없는 융합은 팩에서 나온다.
     /// 1장이라도 가지면(융합으로 만들었으면) 다시 팩·무료 카드에서 나온다.
-    func isFusionOnly(_ cid: Int) -> Bool { state.fusionOnly && db.fusionCIDs.contains(cid) && copies(cid) == 0 }
+    func isFusionOnly(_ cid: Int) -> Bool { db.fusionCIDs.contains(cid) && copies(cid) == 0 }
 
     /// 마스크드 히어로는 「마스크 체인지」, 나머지는 「융합」이 있어야 만든다 (소비하지 않는다)
     func craftSpell(_ cid: Int) -> Int { db.cards[cid]?.mask == true ? CardDB.maskChange : CardDB.fusionSpell }
@@ -372,10 +371,9 @@ struct Game: Sendable {
     /// 고른 소재는 가진 장 수 안에서만 잡으니 다 고르면 만들 수 있다
     func canFuse(_ cid: Int) -> Bool { copies(craftSpell(cid)) > 0 && pickMaterials(cid) != nil }
 
-    /// 지금 융합할 수 있는 범위 안 미보유 카드 (설정이 꺼져 있으면 없다)
+    /// 지금 융합할 수 있는 범위 안 미보유 카드
     var fusable: [Int] {
-        guard state.fusionOnly else { return [] }
-        return db.allCIDs.filter { db.fusionCIDs.contains($0) && copies($0) == 0 && canFuse($0) }
+        db.allCIDs.filter { db.fusionCIDs.contains($0) && copies($0) == 0 && canFuse($0) }
     }
 
     /// 소재를 소비해(1장은 남긴다) 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」(마스크드 히어로는 「마스크 체인지」)이 없거나 소재가 모자라면 false.

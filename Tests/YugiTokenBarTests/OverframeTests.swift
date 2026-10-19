@@ -9,7 +9,6 @@ import Testing
         var game = Game(db: oneBoxDB([1: overframeCard("카드1")]), state: GameState())
         game.state.owned[1] = 2
         #expect(game.keep(1) == 3 && game.duplicatesValue.count == 0 && game.sellDuplicates() == 0)
-        game.state.fusionOnly = true
         #expect(game.keep(1) == 3)
         game.state.overframes = [1]
         #expect(game.keep(1) == 1 && game.duplicatesValue.count == 1)

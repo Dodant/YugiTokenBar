@@ -133,10 +133,10 @@ Your current save will be backed up to the save folder automatically.</string>
 			<string>%lld copies</string>
 		</dict>
 	</dict>
-	<key>이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 %lld장까지 남기고, 융합 전용 모드에서는 필요한 소재도 남겨요.</key>
+	<key>이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 %lld장까지 남기고, 융합에 필요한 소재도 남겨요.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>Cards you already own stay in your collection. Cards with overframe artwork are kept until you have the %#@cards@ that unlock it, and Fusion-only mode also keeps the materials you need.</string>
+		<string>Cards you already own stay in your collection. Cards with overframe artwork are kept until you have the %#@cards@ that unlock it, and the materials you need for Fusion are kept too.</string>
 		<key>cards</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

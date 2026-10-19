@@ -139,12 +139,8 @@ struct SettingsView: View {
     private var cardSection: some View {
         section("카드") {
             toggleRow("중복 카드 자동 판매", hint: "새로 나온 중복 카드를 코인으로 바꿔요",
-                      detail: "이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 \(Balance.overframeCopies)장까지 남기고, 융합 전용 모드에서는 필요한 소재도 남겨요.",
+                      detail: "이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 \(Balance.overframeCopies)장까지 남기고, 융합에 필요한 소재도 남겨요.",
                       isOn: Bindable(model).autoSellDuplicates)
-            let n = model.db.fusionCount
-            toggleRow("융합 몬스터는 융합으로만", hint: "융합 몬스터 \(n)종을 팩 대신 융합으로 얻어요",
-                      detail: "대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요.",
-                      isOn: Bindable(model).fusionOnly)
             toggleRow("애니메이션 끄기", hint: "카드를 연출 없이 바로 보여줘요",
                       isOn: Bindable(model).animationsOff)
             row {

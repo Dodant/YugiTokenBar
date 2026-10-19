@@ -72,7 +72,6 @@ import Testing
         state.freePacks = 6
         state.favorites = [4007]
         state.autoSellDuplicates = true
-        state.fusionOnly = true
         state.animationsOff = true
         state.eraLimit = "DM"
         state.partnerUnlocked = true

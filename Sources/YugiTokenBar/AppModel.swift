@@ -231,11 +231,6 @@ final class AppModel {
         set { game.state.eraLimit = newValue; save() }
     }
 
-    var fusionOnly: Bool {
-        get { game.state.fusionOnly }
-        set { game.state.fusionOnly = newValue; save() }
-    }
-
     var animationsOff: Bool {
         get { game.state.animationsOff }
         set { game.state.animationsOff = newValue; save() }
