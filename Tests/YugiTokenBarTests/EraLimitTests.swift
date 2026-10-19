@@ -40,7 +40,7 @@ import Testing
         let p = game.deckProgress(game.state.decks[0])
         #expect(p.owned == 2 && p.total == 2)
         let dup = game.duplicatesValue  // 카드 1의 2장만 (카드 12의 3장은 숨겨져 있어 제외)
-        #expect(dup.count == 2 && dup.coins == 2 * Balance.sellPrice[1]!)
+        #expect(dup.count == 2 && dup.coins == 2 * Balance.sellPrice[1]! * Balance.clearedSellMultiplier)  // 범위 안 팩을 다 모았다
         #expect(game.sellDuplicates() == dup.coins)
         #expect(game.state.owned == [1: 1, 12: 4])
     }

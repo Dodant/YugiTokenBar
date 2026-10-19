@@ -10,6 +10,10 @@ struct DexSidebar: View {
     @State private var newName = ""
     @State private var deleting: Deck?
     @State private var memo = GameMemo(SidebarStats.init)
+    @AppStorage("dex.progressExpanded") private var progressExpanded = true
+    /// 펼친 등급 표 높이. 접고 펼 때 이 높이와 0 사이를 움직인다
+    @State private var progressHeight: CGFloat = 0
+    @Environment(\.lessMotion) private var lessMotion
 
     var body: some View {
         let game = model.game
@@ -42,7 +46,7 @@ struct DexSidebar: View {
             deckSection
         }
         .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom) { tierStats(stats.tiers) }
+        .safeAreaInset(edge: .bottom) { tierStats(stats.tiers, overframe: stats.overframe) }
         .alert("덱 이름", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("이름", text: $newName)
             Button("저장") { if let deck = renaming { model.renameDeck(deck.id, to: newName) } }
@@ -104,25 +108,54 @@ struct DexSidebar: View {
         }
     }
 
-    /// 사이드바 아래: 등급마다 보유/전체 종류 수와 모은 비율
-    private func tierStats(_ tiers: [(owned: Int, total: Int)]) -> some View {
-        Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
-            ForEach(Array(tiers.enumerated()), id: \.offset) { i, p in
-                let label = CardInfo.rarities[i]
-                let ratio = p.total > 0 ? Double(p.owned) / Double(p.total) : 0
-                GridRow {
-                    RarityPill(label: label).gridColumnAlignment(.center)
-                    TintBar(value: ratio, tint: Rarity.color(label: label), height: 5)
-                    Text("\(p.owned) / \(p.total)").foregroundStyle(.secondary).gridColumnAlignment(.trailing)
-                    Text(ratio, format: .percent.precision(.fractionLength(1))).gridColumnAlignment(.trailing)
+    /// 사이드바 아래: 등급마다 보유/전체 종류 수와 모은 비율, 맨 아래 ✦ 오버프레임 해금 수. 머리줄을 눌러 접고 펴며 기억한다.
+    private func tierStats(_ tiers: [(owned: Int, total: Int)], overframe: (owned: Int, total: Int)) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(lessMotion ? nil : .smooth(duration: 0.3)) { progressExpanded.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    DisclosureChevron(expanded: progressExpanded)
+                    Text("진행도")
+                    Spacer()
+                }
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            // 넣고 빼지 않고 늘 그려 둔 표의 높이를 줄여(위쪽 고정) 띠가 부드럽게 접히고 펴진다
+            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 5) {
+                ForEach(Array(tiers.enumerated()), id: \.offset) { i, p in
+                    let label = CardInfo.rarities[i]
+                    statRow(RarityPill(label: label), p, tint: Rarity.color(label: label))
+                }
+                if overframe.total > 0 {
+                    statRow(OverframeBadge(unlocked: true, copies: 0), overframe, tint: Rarity.overframe)
                 }
             }
+            .padding(.top, 8)
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { progressHeight = $0 }
+            .frame(height: progressExpanded ? progressHeight : 0, alignment: .top)
+            .clipped()
+            .opacity(progressExpanded ? 1 : 0)
+            .accessibilityHidden(!progressExpanded)
         }
         .font(.caption)
         .monospacedDigit()
         .padding(12)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
+    }
+
+    private func statRow(_ pill: some View, _ p: (owned: Int, total: Int), tint: Color) -> some View {
+        let ratio = p.total > 0 ? Double(p.owned) / Double(p.total) : 0
+        return GridRow {
+            pill.gridColumnAlignment(.center)
+            TintBar(value: ratio, tint: tint, height: 5)
+            Text("\(p.owned) / \(p.total)").foregroundStyle(.secondary).gridColumnAlignment(.trailing)
+            Text(ratio, format: .percent.precision(.fractionLength(1))).gridColumnAlignment(.trailing)
+        }
     }
 }
 
@@ -171,17 +204,19 @@ private struct DexEraSection<Item: View>: View {
     }
 }
 
-/// 사이드바가 game 에서 세는 값: 전체 보유 종류 수, 등급별 보유/전체, 시대별 보유/전체.
+/// 사이드바가 game 에서 세는 값: 전체 보유 종류 수, 등급별 보유/전체, 오버프레임 해금/전체, 시대별 보유/전체.
 /// 카드 선택·코인 적립으로 game 이 바뀌어도 보유·설정·시대가 같으면 8천 장을 다시 훑지 않는다 (`GameMemo`).
 /// 팩 줄의 진행은 List 가 보이는 줄만 만들어 그대로 `Game.progress(_:)` 를 쓴다.
 private struct SidebarStats {
     let ownedDistinct: Int
     let tiers: [(owned: Int, total: Int)]
+    let overframe: (owned: Int, total: Int)
     let eras: [String: (owned: Int, total: Int)]
 
     init(_ game: Game) {
         ownedDistinct = game.ownedDistinct
         tiers = game.tierProgress
+        overframe = game.overframeProgress
         eras = Dictionary(uniqueKeysWithValues: game.db.eras.map { ($0.name, game.progress(packs: $0.packs)) })
     }
 }

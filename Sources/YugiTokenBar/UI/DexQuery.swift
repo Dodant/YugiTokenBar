@@ -58,8 +58,9 @@ struct DexQuery: Equatable {
     /// 검색 비교용: 공백과 가운뎃점(・)은 무시한다 ("ブラックマジシャン" 으로 "ブラック・マジシャン" 을 찾는다)
     static func squash(_ s: String) -> String { s.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "・", with: "") }
     var scope: DexScope?
-    /// 0 = 모든 등급, 1~5 = CardInfo.tier
+    /// 0 = 모든 등급, 1~5 = CardInfo.tier, `overframeTier` = 오버프레임 판이 있는 카드만
     var tier = 0
+    static let overframeTier = -1
     /// "" = 모든 종류, 아니면 CardKind.rawValue 또는 소환법 코드 (CardInfo.matches)
     var kind = ""
     /// 띄어쓰기를 뺀 검색어 ("푸른눈" 으로도 "푸른 눈의 백룡" 이 찾아진다)
@@ -96,7 +97,7 @@ struct DexQuery: Equatable {
         }
         let needle = Self.squash(search)
         let tiered = cards.enumerated()
-            .filter { tier == 0 || db.tier($0.element) == tier }
+            .filter { tier == 0 || (tier == Self.overframeTier ? game.hasOverframe($0.element) : db.tier($0.element) == tier) }
             .filter { kind.isEmpty || db.cards[$0.element]?.matches(kind: kind) == true }
             .filter { search.isEmpty || Self.squash(db.cards[$0.element]?.name ?? "").localizedStandardContains(needle) }
             .map { DexEntry(number: $0.offset + 1, cid: $0.element, label: db.cards[$0.element]?.rarity ?? "N") }
@@ -123,16 +124,16 @@ struct DexQuery: Equatable {
 /// 클래스라 채워도 뷰를 다시 그리지 않는다 (DexListCache 와 같은 이유).
 @MainActor final class GameMemo<Value> {
     private let compute: (Game) -> Value
-    private var key: (owned: [Int: Int], fusionOnly: Bool, era: String)?
+    private var key: (owned: [Int: Int], overframes: Set<Int>, fusionOnly: Bool, era: String)?
     private var value: Value?
 
     init(_ compute: @escaping (Game) -> Value) { self.compute = compute }
 
     func callAsFunction(_ game: Game) -> Value {
         let s = game.state
-        if let key, let value, key.owned == s.owned, key.fusionOnly == s.fusionOnly, key.era == s.eraLimit { return value }
+        if let key, let value, key.owned == s.owned, key.overframes == s.overframes, key.fusionOnly == s.fusionOnly, key.era == s.eraLimit { return value }
         let next = compute(game)
-        key = (s.owned, s.fusionOnly, s.eraLimit)
+        key = (s.owned, s.overframes, s.fusionOnly, s.eraLimit)
         value = next
         return next
     }

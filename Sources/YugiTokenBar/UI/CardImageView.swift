@@ -7,18 +7,21 @@ struct CardImageView: View {
     let cid: Int
     var size: ImageCache.Size = .small
     var owned = true
+    /// 오버프레임 판이 있으면 그 그림 (`Game.showsOverframe`)
+    var overframe = false
     /// 업무 모드여도 실제 그림 (컬렉션 정보 패널)
     var showInWorkMode = false
     @Environment(\.workMode) private var workMode
     @State private var image: NSImage?
 
-    init(db: CardDB, cid: Int, size: ImageCache.Size = .small, owned: Bool = true, showInWorkMode: Bool = false) {
+    init(db: CardDB, cid: Int, size: ImageCache.Size = .small, owned: Bool = true, overframe: Bool = false, showInWorkMode: Bool = false) {
         self.db = db
         self.cid = cid
         self.size = size
         self.owned = owned
+        self.overframe = overframe
         self.showInWorkMode = showInWorkMode
-        _image = State(initialValue: db.cards[cid]?.imageId.flatMap { ImageCache.shared.cached($0, size: size, force: showInWorkMode) })
+        _image = State(initialValue: db.cards[cid]?.imageId.flatMap { ImageCache.shared.cached($0, size: size, overframe: overframe, force: showInWorkMode) })
     }
 
     private var hidden: Bool { workMode && !showInWorkMode }
@@ -39,13 +42,13 @@ struct CardImageView: View {
         .aspectRatio(CardShape.ratio, contentMode: .fit)
         .clipShape(.rect(cornerRadius: CardShape.corner))
         .overlay(RoundedRectangle(cornerRadius: CardShape.corner).strokeBorder(Palette.cardRim, lineWidth: 1))
-        .task(id: hidden ? nil : cid) {  // 숨길 때는 nil 이라 로딩하지 않는다
+        .task(id: hidden ? nil : [cid, overframe ? 1 : 0]) {  // 숨길 때는 nil 이라 로딩하지 않는다
             guard !hidden else { image = nil; return }
             guard let imageId = db.cards[cid]?.imageId else { image = nil; return }
             // 캐시에 있으면 뒷면을 거치지 않고 바로 바꾼다
-            if let hit = ImageCache.shared.cached(imageId, size: size, force: showInWorkMode) { image = hit; return }
+            if let hit = ImageCache.shared.cached(imageId, size: size, overframe: overframe, force: showInWorkMode) { image = hit; return }
             image = nil
-            let loaded = await ImageCache.shared.image(imageId, size: size, force: showInWorkMode)
+            let loaded = await ImageCache.shared.image(imageId, size: size, overframe: overframe, force: showInWorkMode)
             guard !Task.isCancelled else { return }  // cid 가 바뀌어 취소됐으면 새 카드의 이미지를 덮어쓰지 않는다
             image = loaded
         }
@@ -73,6 +76,9 @@ enum Rarity {
 
     /// 연출(팩 개봉·융합)용 금빛. SR 등급색과는 다른 값이다.
     static let gold = Color(red: 1, green: 0.8, blue: 0.25)
+
+    /// 해금한 오버프레임 ✦ 배지·진행 막대 (하늘색, 검정 글자)
+    static let overframe = Color(red: 0x6C / 255, green: 0xC8 / 255, blue: 0xF5 / 255)
 
     /// 아직 획득하지 못한 카드 (밝은 회색, N 회청색과 구분)
     static let locked = Color(red: 0xA0 / 255, green: 0xA0 / 255, blue: 0xA0 / 255)
@@ -194,6 +200,27 @@ struct RarityPill: View {
             .padding(.horizontal, size * 0.6)
             .padding(.vertical, size * 0.15)
             .background(color, in: Capsule())
+    }
+}
+
+/// 오버프레임 판이 있는 카드 표시 (컬렉션 칸 오른쪽 아래). 해금했으면 하늘색 ✦, 아니면 회색 ✦ + 모은 장 수/3
+struct OverframeBadge: View {
+    let unlocked: Bool
+    let copies: Int
+    var size: CGFloat = 9
+
+    var body: some View {
+        // 기호를 글자 안에 넣고 0.85배로 줄여 높이를 등급 알약(글자만)과 같게 한다 (0.9배부터 1pt 높아진다)
+        let count = unlocked ? "" : " \(min(copies, Balance.overframeCopies))/\(Balance.overframeCopies)"
+        Text("\(Text(Image(systemName: "sparkles")).font(.system(size: size * 0.85, weight: .bold)))\(Text(verbatim: count))")
+            .monospacedDigit()
+            .font(.system(size: size, weight: .bold))
+        .foregroundStyle(.black)
+        .padding(.horizontal, size * 0.6)
+        .padding(.vertical, size * 0.15)
+        .background(unlocked ? Rarity.overframe : Rarity.locked, in: Capsule())
+        .help(unlocked ? String(localized: "오버프레임 그림 해금")
+              : String(localized: "같은 카드를 \(Balance.overframeCopies)장 모으면 오버프레임 그림이 해금돼요"))
     }
 }
 

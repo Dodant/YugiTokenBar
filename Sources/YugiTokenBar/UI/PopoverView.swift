@@ -69,7 +69,7 @@ struct PopoverView: View {
                 caption("최근 획득")
                 HStack(spacing: 9) {
                     ForEach(Array(state.log.prefix(5).enumerated()), id: \.offset) { _, entry in
-                        CardImageView(db: game.db, cid: entry.cid)
+                        CardImageView(db: game.db, cid: entry.cid, overframe: game.showsOverframe(entry.cid))
                             .frame(width: 54)
                             .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
                             .cardTilt(tier: game.db.tier(entry.cid), angleScale: 0.5)

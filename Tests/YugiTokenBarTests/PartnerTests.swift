@@ -197,7 +197,7 @@ import Testing
 
     @Test func oldSaveDecodesPartnerDefaults() throws {
         let state = try JSONDecoder().decode(GameState.self, from: Data(#"{"coins":5,"owned":{"6314":1}}"#.utf8))
-        #expect(state.coins == 5 && !state.partnerUnlocked && state.partnerEnabled)
+        #expect(state.coins == 5 && !state.partnerUnlocked && state.partnerEnabled && state.overframes.isEmpty)
         #expect(state.partnerSize == 128 && state.partnerOrigin == nil)
     }
 

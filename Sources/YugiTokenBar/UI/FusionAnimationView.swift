@@ -17,6 +17,8 @@ struct FusionShow: Identifiable, Equatable {
 struct FusionAnimationView: View {
     let db: CardDB
     let show: FusionShow
+    /// 융합 카드를 오버프레임 그림으로 (`Game.showsOverframe`)
+    var overframe = false
     let onDone: () -> Void
     @Environment(\.lessMotion) private var reduceMotion
     @Environment(\.workMode) private var workMode
@@ -56,7 +58,7 @@ struct FusionAnimationView: View {
         .task {
             for cid in Set(show.materials + [show.cid]) {
                 guard let id = db.cards[cid]?.imageId else { continue }
-                images[cid] = await ImageCache.shared.image(id, size: cid == show.cid ? .full : .small)
+                images[cid] = await ImageCache.shared.image(id, size: cid == show.cid ? .full : .small, overframe: overframe && cid == show.cid)
             }
         }
     }
