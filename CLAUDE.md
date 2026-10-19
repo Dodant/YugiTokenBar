@@ -22,7 +22,7 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 ## 규칙
 
 - 플랫폼: SwiftUI·AppKit·Sparkle을 쓰는 파일은 첫 줄 `#if os(macOS)`, Linux 전용 진입점은 `#if os(Linux)`로 감싼다.
-  Linux 전용 의존성은 `Package.swift`의 `#if os(Linux)` 블록 안에만 두고 CSQLite·swift-crypto(현재 `exact: "3.15.1"`, 3단계에서 adwaita-swift) 외에는 더하지 않는다.
+  Linux 전용 의존성은 `Package.swift`의 `#if os(Linux)` 블록 안에만 두고 CSQLite·swift-crypto(`exact: "3.15.1"`)·adwaita-swift(`revision: "af5598fbd6f2425841f426ad388d7a7edd6c90e6"`, `Adwaita`·`CAdw`) 외에는 더하지 않는다.
   macOS 그래프는 Sparkle 2.9.6 하나이며 `swift package show-dependencies`·`Package.resolved`를 CI에서 검사한다.
   Linux의 `Package.resolved`는 `.build-linux/`에 두고 커밋하지 않는다.
   `scripts/linux-build.sh`는 소스·리소스·패치노트를 각각 읽기 전용으로 마운트하고 Linux 잠금 파일을 쓰기 가능한 컨테이너 패키지 루트로 복사한 뒤 명령 종료 시 되돌려 복사한다.
@@ -89,7 +89,7 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 
 ```bash
 swift test                                            # 전체 테스트
-scripts/linux-build.sh test                           # Docker(swift:6.4.1) Linux 코어 테스트, 산출물·핀 .build-linux/
+scripts/linux-build.sh test                           # Docker(Swift 6.4.1·GTK 4·libadwaita) Linux 테스트, 이미지 캐시 갱신·산출물·핀 .build-linux/
 scripts/linux-build.sh run YugiTokenBar               # Linux CLI, 격리 qa-state 사용
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)

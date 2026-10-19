@@ -5,9 +5,12 @@ import PackageDescription
 #if os(Linux)
 let platformPackages: [Package.Dependency] = [
     .package(url: "https://github.com/apple/swift-crypto.git", exact: "3.15.1"),
+    .package(url: "https://git.aparoksha.dev/aparoksha/adwaita-swift", revision: "af5598fbd6f2425841f426ad388d7a7edd6c90e6"),
 ]
 let platformProducts: [Target.Dependency] = [
     .product(name: "Crypto", package: "swift-crypto"),
+    .product(name: "Adwaita", package: "adwaita-swift"),
+    .product(name: "CAdw", package: "adwaita-swift"),
     "CSQLite",
 ]
 let testProducts = platformProducts

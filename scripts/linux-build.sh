@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 image=ytb-linux-dev
-docker image inspect "$image" >/dev/null 2>&1 || docker build -t "$image" -f docker/linux-dev.Dockerfile docker
+docker build -t "$image" -f docker/linux-dev.Dockerfile docker
 mkdir -p .build-linux qa-state
 
 subcommand=${1:-build}
