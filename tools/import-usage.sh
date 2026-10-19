@@ -1,8 +1,8 @@
 #!/bin/bash
 # PokeTokenBar(MIT) 토큰 읽기 코드를 고정 커밋에서 복사하고, 이 앱에 없는 의존성을 패치한다.
-# 저장소 루트에서 실행: bash tools/import-usage.sh
+# 저장소 루트에서 실행: PTB_REPO=<PokeTokenBar 체크아웃> bash tools/import-usage.sh
 set -euo pipefail
-SRC=${PTB_REPO:-$HOME/remote-claude-projects/code/PokeTokenBar-carryover}
+SRC=${PTB_REPO:?PTB_REPO 에 커밋 de617e3 이 있는 PokeTokenBar 체크아웃 경로를 지정}
 REV=de617e3
 DST=Sources/YugiTokenBar/Usage
 mkdir -p "$DST"

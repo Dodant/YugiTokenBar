@@ -41,7 +41,7 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 - 밸런스 수치는 `Game.swift`의 `Balance`에만 둔다.
   바꿀 때는 스펙 5절도 같이 고친다.
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 복사본이다.
-  직접 고치지 말고 `tools/import-usage.sh`(원본 `~/remote-claude-projects/code/PokeTokenBar-carryover`, 커밋 `de617e3`)로 다시 만든다.
+  직접 고치지 말고 `PTB_REPO=<PokeTokenBar 체크아웃> tools/import-usage.sh`(커밋 `de617e3`)로 다시 만든다.
   바꾼 점은 `Usage/NOTICE.md`에 적는다.
   파일별 캐시는 원본의 `LocalUsageCache`를 그대로 가져와 쓰고, 그 밖의 읽는 쪽 조정(provider 묶기·쓰는 중인 Claude 파일의 붙은 줄만 읽기·Cursor 증분·백오프)은 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
   `Usage/` 안은 그 조정에 필요한 접근만 `import-usage.sh` 패치로 연다.
