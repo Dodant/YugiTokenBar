@@ -80,6 +80,12 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
   기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다.
   새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
 - 이미지 URL·캐시 키는 `ImageSource.swift`, 디스크·HTTP 바이트 전송은 `ImageTransport.swift`에서 공유하며, macOS 디코딩·메모리 캐시·waiter 취소는 `ImageCache.swift`에 둔다.
+- Linux 상태 변경·저장은 `@MainActor LinuxModel`에서 직렬화하고 백그라운드 사용량 결과는 Sendable 값으로 `LinuxInbox`에만 넣는다.
+  GTK 루프가 `drainEvents()`를 호출하며 request ID·state generation·lifecycle epoch로 오래된 결과를 버린다.
+  읽는 동안 들어온 갱신 요청은 겹치지 않는 후속 읽기 한 번으로 모으고 결과를 현재 게임에 적립한다.
+  주기 갱신은 조용히 수행하며 실제 스냅샷 내용이 바뀔 때만 발행하고 게임 상태가 그대로면 다시 저장하지 않는다.
+  저장 실패는 메모리에 보존하고 다음 동일 읽기나 명시적 재시도에서 다시 저장한다.
+  추가 스캔 폴더 변경은 `resetUsageReader()`로 기록 캐시를 지우고 reader와 generation을 새로 만든다.
 - 색은 시스템 색(`.primary`·`.secondary`·`.fill`·`accentColor`)을 먼저 쓰고, 고유한 색은 `CardImageView.swift`의 `Rarity`·`Palette`에만 라이트·다크 값을 같이 둔다(스펙 6절 외관).
   화면에서 `colorScheme`으로 분기하지 않는다.
 - **문서는 항상 코드와 동기화한다.**
