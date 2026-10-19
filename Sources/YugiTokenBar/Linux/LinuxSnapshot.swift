@@ -31,6 +31,16 @@ struct LinuxSnapshot: Sendable, Equatable {
     var dirty = false
     var revision: UInt64 = 0
 
+    /// Keep the sample's calendar day attached to its provider totals across midnight.
+    func usageHeading(now: Date = Date()) -> String {
+        let count = shortTokens(todayDetail.values.reduce(0) { $0 + $1.total })
+        let today = LocalUsageReader.localDayFormatter().string(from: now)
+        if let sampled = todayDate, sampled != today {
+            return L("%@ 사용량 %@", .text(sampled), .text(count))
+        }
+        return L("오늘 %@", .text(count))
+    }
+
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.game.state == rhs.game.state && lhs.opening == rhs.opening &&
         lhs.todayDate == rhs.todayDate && lhs.todayDetail == rhs.todayDetail &&

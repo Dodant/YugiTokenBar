@@ -1,7 +1,8 @@
 # YugiTokenBar
 
 Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션을 채우는 macOS 메뉴바 앱.
-코어(게임·세이브·사용량)는 Linux에서도 빌드·테스트된다(`scripts/linux-build.sh`, Linux 창은 설계 문서 2026-10-16의 3단계).
+코어(게임·세이브·사용량)는 Linux에서도 빌드·테스트되며 GTK 일반 창·사이드바·저장 오류 종료 가드를 제공한다(`scripts/linux-build.sh`).
+Linux의 Shop·Dex·Usage·Setting 본문은 3단계 후속 작업에서 연결한다.
 - 컬렉션: 정규 부스터 101팩, 8,306종.
   - 어시스트 팩 같은 미니 팩 제외.
   - 101팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에 넣음.
@@ -86,6 +87,13 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
   주기 갱신은 조용히 수행하며 실제 스냅샷 내용이 바뀔 때만 발행하고 게임 상태가 그대로면 다시 저장하지 않는다.
   저장 실패는 메모리에 보존하고 다음 동일 읽기나 명시적 재시도에서 다시 저장한다.
   추가 스캔 폴더 변경은 `resetUsageReader()`로 기록 캐시를 지우고 reader와 generation을 새로 만든다.
+- Linux GTK 진입점은 `Linux/LinuxApp.swift`이며 `LinuxShellView`의 값 스냅샷을 model callback으로 갱신한다.
+  Meta의 optional `@State`는 초기 nil cast를 피하도록 `rawValue`를 명시적으로 초기화한다.
+  시작 때 DB·세이브 잠금·상위 schema를 검사하고 복구 알림을 보여 준다.
+  GLib 100ms inbox·60초 갱신 source는 weak model과 등록 시 불변 lifecycle epoch를 캡처하며 활성화가 반복돼도 중복 등록하지 않는다.
+  창 닫기와 Ctrl+Q는 같은 저장 재시도·취소·변경 폐기 종료 가드를 거치고 종료 전에 모델을 멈추고 로그를 flush한다.
+  저장 재시도 실패 알림은 GTK 응답의 자동 닫기 이후 Idle에서 다시 표시한다.
+  사이드바의 provider 합계는 sampled day를 함께 표시해 자정 뒤 이전 사용량을 오늘 값으로 바꾸지 않는다.
 - 색은 시스템 색(`.primary`·`.secondary`·`.fill`·`accentColor`)을 먼저 쓰고, 고유한 색은 `CardImageView.swift`의 `Rarity`·`Palette`에만 라이트·다크 값을 같이 둔다(스펙 6절 외관).
   화면에서 `colorScheme`으로 분기하지 않는다.
 - **문서는 항상 코드와 동기화한다.**
@@ -101,7 +109,7 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 ```bash
 swift test                                            # 전체 테스트
 scripts/linux-build.sh test                           # Docker(Swift 6.4.1·GTK 4·libadwaita) Linux 테스트, 이미지 캐시 갱신·산출물·핀 .build-linux/
-scripts/linux-build.sh run YugiTokenBar               # Linux CLI, 격리 qa-state 사용
+scripts/linux-build.sh build                          # GTK 실행 파일 빌드 (실행은 GTK 디스플레이·DBus 세션 필요)
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/test_sync_strings.py                    # Linux L 키 scanner·형식 인수 검사(네트워크 없음)
