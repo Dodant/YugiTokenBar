@@ -126,7 +126,7 @@ swift test                                            # 전체 테스트
 scripts/linux-build.sh test                           # Docker(Swift 6.4.1·GTK 4·libadwaita) Linux 테스트, 이미지 캐시 갱신·산출물·핀 .build-linux/
 scripts/linux-build.sh build                          # GTK 실행 파일 빌드 (실행은 GTK 디스플레이·DBus 세션 필요)
 scripts/test-linux-images.sh                         # Xvfb 실제 GTK 이미지·소유권·취소 검사(선택: YTB_GTK_IMAGE_ONLINE=1)
-scripts/test-linux-shop.sh                           # Xvfb 실제 Shop 버튼·개봉·무료 보상·저장 검사
+scripts/test-linux-ui.sh                             # Xvfb 실제 Shop·Dex 버튼·개봉·상세·판매·저장 검사
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/test_sync_strings.py                    # Linux L 키 scanner·형식 인수 검사(네트워크 없음)

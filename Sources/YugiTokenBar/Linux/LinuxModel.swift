@@ -177,7 +177,20 @@ import Foundation
     }
     func setEraLimit(_ value: String) {
         guard value.isEmpty || game.fullDB.eras.contains(where: { $0.name == value }), game.state.eraLimit != value else { return }
-        snapshot.game.state.eraLimit = value; snapshot.opening = nil; persist(); publish()
+        snapshot.game.state.eraLimit = value; snapshot.opening = nil; pruneDexSelection(); persist(); publish()
+    }
+    func selectDexPack(_ index: Int?) {
+        guard snapshot.dexPack != index else { return }
+        snapshot.dexPack = index; snapshot.dexCard = nil; pruneDexSelection(); publish()
+    }
+    func selectDexCard(_ cid: Int?) {
+        snapshot.dexCard = cid; pruneDexSelection(); publish()
+    }
+    /// Drop selections that no longer exist in the current era-limited database.
+    private func pruneDexSelection() {
+        if let pack = snapshot.dexPack, !game.db.packs.indices.contains(pack) { snapshot.dexPack = nil }
+        guard let pack = snapshot.dexPack, let cid = snapshot.dexCard,
+              game.db.packs[pack].cards.contains(cid), game.db.cards[cid] != nil else { snapshot.dexCard = nil; return }
     }
     @discardableResult func retrySave() -> Bool {
         guard snapshot.dirty else { return true }; persist(); publish(); return !snapshot.dirty

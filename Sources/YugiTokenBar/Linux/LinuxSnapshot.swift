@@ -19,6 +19,8 @@ struct LinuxOpening: Identifiable, Sendable, Equatable {
 struct LinuxSnapshot: Sendable, Equatable {
     var game: Game
     var opening: LinuxOpening?
+    var dexPack: Int?
+    var dexCard: Int?
     var todayDate: String?
     var todayDetail: [String: TokenSum] = [:]
     var history: UsageByDay?
@@ -43,6 +45,7 @@ struct LinuxSnapshot: Sendable, Equatable {
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.game.state == rhs.game.state && lhs.opening == rhs.opening &&
+        lhs.dexPack == rhs.dexPack && lhs.dexCard == rhs.dexCard &&
         lhs.todayDate == rhs.todayDate && lhs.todayDetail == rhs.todayDetail &&
         lhs.history == rhs.history && lhs.historyDate == rhs.historyDate &&
         lhs.refreshing == rhs.refreshing && lhs.loadingHistory == rhs.loadingHistory &&

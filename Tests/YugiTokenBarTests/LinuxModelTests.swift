@@ -155,6 +155,25 @@ private actor ControlledLinuxReader {
         #expect(!model.buy(pack: 0)); #expect(model.sell(1)); #expect(model.game.showsOverframe(1))
     }
 
+    @Test func dexSelectionValidatesAndFollowsEraLimit() {
+        let reader = ControlledLinuxReader()
+        // 12 packs: DM 0..<11, GX 11..<12; each pack holds cid = index + 1.
+        let (model, _) = makeLinuxModel(db: makeDB((0..<12).map { [($0 + 1, 1)] }), reader: reader)
+        model.selectDexPack(99); #expect(model.snapshot.dexPack == nil)
+        model.selectDexPack(0); model.selectDexCard(2)
+        #expect(model.snapshot.dexPack == 0); #expect(model.snapshot.dexCard == nil) // cid 2 is not in pack 0
+        model.selectDexCard(1); #expect(model.snapshot.dexCard == 1)
+        model.selectDexPack(5); #expect(model.snapshot.dexCard == nil) // changing pack drops the card
+        model.setEraLimit("DM"); #expect(model.snapshot.dexPack == 5) // still valid
+        model.selectDexCard(6); model.setEraLimit("GX")
+        #expect(model.snapshot.dexPack == 5 && model.snapshot.dexCard == 6)
+        model.selectDexPack(11); model.selectDexCard(12)
+        #expect(model.snapshot.dexCard == 12)
+        model.setEraLimit("DM")
+        #expect(model.snapshot.dexPack == nil); #expect(model.snapshot.dexCard == nil)
+        model.selectDexPack(nil); #expect(model.snapshot.dexPack == nil)
+    }
+
     @Test func startupUnlockPreservesHiddenPreferences() async {
         let reader = ControlledLinuxReader(); let db = oneBoxDB([1: overframeCard("test")])
         var state = GameState(); state.owned[1] = 3; state.partnerEnabled = false

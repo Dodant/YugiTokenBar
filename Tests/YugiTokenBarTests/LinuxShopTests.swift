@@ -5,8 +5,8 @@ import Foundation
 import Testing
 @testable import YugiTokenBar
 
-/// Real GTK activation and redraw. Run scripts/test-linux-shop.sh under Xvfb.
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["YTB_GTK_SHOP_TESTS"] == "1"))
+/// Real GTK activation and redraw. Run scripts/test-linux-ui.sh under Xvfb.
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["YTB_GTK_UI_TESTS"] == "1"))
 @MainActor struct LinuxShopTests {
     func find(_ name: String, in widget: UnsafeMutablePointer<GtkWidget>) -> UnsafeMutablePointer<GtkWidget>? {
         if gtk_widget_get_mapped(widget) != 0, String(cString: gtk_widget_get_name(widget)) == name { return widget }
@@ -154,7 +154,7 @@ import Testing
         print("SHOP_NATIVE_OK paid=1 freeCards=\(Balance.freeOpenBatch) freePacks=1 stamp=1 savedReload=true")
     }
     func screenshot(_ name: String) async {
-        guard let path = ProcessInfo.processInfo.environment["YTB_GTK_SHOP_ARTIFACT_DIR"] else { return }
+        guard let path = ProcessInfo.processInfo.environment["YTB_GTK_UI_ARTIFACT_DIR"] else { return }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/scrot")
         process.arguments = ["-o", "\(path)/\(name).png"]

@@ -41,6 +41,8 @@ enum LinuxSection: String, CaseIterable, Identifiable {
             VStack {
                 if section == LinuxSection.shop.rawValue {
                     LinuxShopView(snapshot: snapshot, model: model)
+                } else if section == LinuxSection.dex.rawValue {
+                    LinuxDexView(snapshot: snapshot, model: model)
                 } else {
                     Text((LinuxSection(rawValue: section) ?? .shop).title).padding(30)
                 }

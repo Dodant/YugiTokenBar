@@ -551,3 +551,13 @@
 "오버프레임" = "オーバーフレーム";
 /* LinuxShopView.swift:89 */
 "팩 완성 보상 %lld" = "パック完成報酬：%lld";
+/* LinuxDexView.swift:29 */
+"중복 판매" = "重複を売却";
+/* LinuxDexView.swift:31 */
+"중복 카드 %lld장을 +%@에 팔까요?" = "重複カード%lld枚を+%@で売りますか？";
+/* LinuxDexView.swift:34 */
+"판매" = "売却";
+/* LinuxDexView.swift:51 */
+"전체 %lld / %lld" = "全体 %lld / %lld";
+/* LinuxDexView.swift:52 */
+"중복 판매 · %lld장 · +%@" = "重複売却・%lld枚・+%@";

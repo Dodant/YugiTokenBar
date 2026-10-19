@@ -551,3 +551,13 @@
 "오버프레임" = "Overframe";
 /* LinuxShopView.swift:89 */
 "팩 완성 보상 %lld" = "Pack completion reward: %lld";
+/* LinuxDexView.swift:29 */
+"중복 판매" = "Sell duplicates";
+/* LinuxDexView.swift:31 */
+"중복 카드 %lld장을 +%@에 팔까요?" = "Sell duplicates (%lld) for +%@?";
+/* LinuxDexView.swift:34 */
+"판매" = "Sell";
+/* LinuxDexView.swift:51 */
+"전체 %lld / %lld" = "Total: %lld / %lld";
+/* LinuxDexView.swift:52 */
+"중복 판매 · %lld장 · +%@" = "Sell duplicates (%lld) · +%@";
