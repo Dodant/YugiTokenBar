@@ -63,8 +63,8 @@ struct CardDetailView: View {
                             }
                         }
                     }
-                    // 설정이 켜져 있고 소재를 다 아는 융합(또는 마스크드 히어로)이면 여기서 만든다
-                    if model.game.state.fusionOnly, card.craftable {
+                    // 소재를 다 아는 융합(또는 마스크드 히어로)이면 여기서 만든다
+                    if card.craftable {
                         let can = model.game.canFuse(cid)
                         let spell = model.game.craftSpell(cid)
                         let hasSpell = model.game.copies(spell) > 0

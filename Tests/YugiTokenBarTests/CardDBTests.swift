@@ -79,14 +79,10 @@ import Testing
         #expect(db.packs[0].cards.contains(CardDB.fusionSpell))
         #expect(db.materialNeed[6390] == 3 && db.materialNeed[4007] == 3)  // 사이버 드래곤(사이버 엔드 드래곤), 푸른 눈의 백룡(궁극의 푸른 눈의 백룡)
         #expect(db.prefix(packs: 11).materialNeed[6390] == nil)  // DM 범위엔 사이버 드래곤을 쓰는 융합이 없다
-        // fusionCount 는 만들 수 있는 카드(소재를 아는 융합·마스크드 히어로) 수를 미리 센 값이라 전체·시대 범위 DB 모두 필터 식과 같아야 한다
         // 언어 무관 코드: 마법·함정만 kind 가 있고, summons 는 몬스터에만, 시대 순 코드만
         #expect(db.cards.values.allSatisfy { [nil, "spell", "trap"].contains($0.kindCode) })
         #expect(db.cards.values.allSatisfy { $0.summons == nil || ($0.kind == .monster && $0.summons!.allSatisfy(CardInfo.summonCodes.contains)) })
         #expect(db.cards[11835]?.summons == ["xyz", "pendulum"])
-        for d in [db, db.prefix(packs: 30)] {
-            #expect(d.fusionCount == d.allCIDs.filter { d.cards[$0]?.craftable == true }.count && d.fusionCount > 0)
-        }
         // 만들 수 있는 융합(융합 전용 후보)은 어느 시대 범위에서도 소재 줄마다 맞는 카드가 같은 범위 안에 있고(한 카드를 여러 장 모으면
         // 장 수는 채운다), 마스크드 히어로는 「마스크 체인지」도 있다 → Game.isFusionOnly 가 범위 검사를 안 한다
         for era in db.eras {

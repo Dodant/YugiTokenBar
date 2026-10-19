@@ -124,8 +124,6 @@ struct CardDB: Sendable {
     /// 조건 소재(맞는 카드가 여럿인 줄)로 2장 이상 필요한 카드: 소재 → [융합 → 장 수] (썬더 드래곤 → [뇌신룡－썬더 드래곤: 3]).
     /// 그 융합을 아직 안 가졌을 때만 중복 판매에서 그만큼 남긴다(`Game.keep`).
     private(set) var conditionNeed: [Int: [Int: Int]]
-    /// 범위 안 융합 몬스터(소재를 알거나 조건이 단순한 카드·마스크드 히어로) 수. 설정 화면이 그릴 때마다 세지 않게 미리 센다.
-    private(set) var fusionCount: Int
     /// 만들 수 있는 카드 전체: 소재를 다 알거나 조건이 단순한 융합 몬스터·마스크드 히어로 (`fusionMaterials` 는 부를 때마다 사전을 만들어서, 상점이 그릴 때 쓰지 않게)
     let fusionCIDs: Set<Int>
 
@@ -141,7 +139,6 @@ struct CardDB: Sendable {
         self.allCIDs = cards.keys.sorted()
         self.cidSet = Set(cards.keys)
         (self.materialNeed, self.conditionNeed) = Self.materialNeeds(allCIDs, cards)
-        self.fusionCount = Self.fusionCount(allCIDs, cards)
         self.fusionCIDs = Set(cards.keys.filter { cards[$0]?.craftable == true })
     }
 
@@ -174,10 +171,6 @@ struct CardDB: Sendable {
         return (need, cond)
     }
 
-    private static func fusionCount(_ cids: [Int], _ cards: [Int: CardInfo]) -> Int {
-        cids.filter { cards[$0]?.craftable == true }.count
-    }
-
     /// 앞 n 팩만 쓰는 DB (설정의 "시대 범위"). cards 는 그대로 두어 범위 밖 보유·기록 카드도 이름·이미지를 찾는다.
     func prefix(packs n: Int) -> CardDB {
         var db = self
@@ -185,7 +178,6 @@ struct CardDB: Sendable {
         db.cidSet = Set(db.packs.flatMap(\.cards))
         db.allCIDs = db.cidSet.sorted()
         (db.materialNeed, db.conditionNeed) = Self.materialNeeds(db.allCIDs, cards)
-        db.fusionCount = Self.fusionCount(db.allCIDs, cards)
         return db
     }
 

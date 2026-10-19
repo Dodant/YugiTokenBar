@@ -57,7 +57,6 @@ import Testing
         let db = oneBoxDB(cards)
         var game = Game(db: db, state: GameState())
         game.state.owned = [3: 5, 4: 5]
-        game.state.fusionOnly = true
         #expect(game.craftMaterials(20) == nil && !game.canFuse(20))  // 빛 HERO 가 없다 (어둠 HERO·HERO 아닌 빛 몬스터는 안 된다)
         game.state.owned[1] = 2
         game.state.owned[2] = 3
@@ -82,7 +81,6 @@ import Testing
         let db = oneBoxDB(cards)
         var game = Game(db: db, state: GameState())
         game.state.owned = [1: 1, 4: 9, CardDB.fusionSpell: 1]
-        game.state.fusionOnly = true
         #expect(game.pickMaterials(20) == nil && !game.canFuse(20))  // 용 1 은 소재 줄 몫이라 조건에 못 쓴다
         game.state.owned[1] = 2
         game.state.owned[2] = 1
@@ -94,12 +92,10 @@ import Testing
         #expect(game.pickMaterials(21) == [[3: 1, 4: 1]])  // "1장씩 합계" 를 나눈 조건은 한 줄로 합친다
     }
 
-    /// 오른쪽 "융합 가능" 목록: 설정·「융합」·소재가 다 있어야 나온다
+    /// 오른쪽 "융합 가능" 목록: 「융합」·소재가 다 있어야 나온다
     @Test func fusableListsOnlyReadyFusions() {
         var game = Game(db: db, state: GameState())
         game.state.owned = [1: 1, 2: 2, CardDB.fusionSpell: 1]
-        #expect(game.fusable.isEmpty)  // 설정이 꺼져 있으면 없다
-        game.state.fusionOnly = true
         #expect(game.fusable == [10])  // 11 은 소재를 몰라서 빠진다
         game.state.owned[10] = 1
         #expect(game.fusable.isEmpty)  // 이미 가진 융합 몬스터는 안 띄운다
@@ -122,21 +118,18 @@ import Testing
         let db = oneBoxDB(cards)
         var game = Game(db: db, state: GameState())
         game.state.owned = [1: 3, CardDB.fusionSpell: 1]
-        game.state.fusionOnly = true
         #expect(Set(game.fusable) == [20, 22])
         #expect(game.fuseAll() == [20, 21])  // A 가 소재1을 써서 C(3장)는 모자라고, A 가 생겨 B 를 이어서 만든다
         #expect(game.state.owned[1] == 2 && game.state.owned[20] == 1 && game.state.owned[21] == 1 && game.state.owned[22] == nil)
         #expect(game.fuseAll().isEmpty)
     }
 
-    /// 융합 전용 설정이 켜져 있으면 소재는 필요한 최대 장 수(소재2 → 2장)까지 중복으로 치지 않는다
+    /// 융합 소재는 필요한 최대 장 수(소재2 → 2장)까지 중복으로 치지 않는다
     @Test func fusionOnlyKeepsMaterialCopiesFromDuplicateSales() {
         var state = GameState()
         state.owned = [2: 5, 3: 4]
         var game = Game(db: db, state: state)
         #expect(game.db.materialNeed == [1: 1, 2: 2])
-        #expect(game.duplicatesValue.count == 7)  // 설정이 꺼져 있으면 1장만 남긴다
-        game.state.fusionOnly = true
         #expect(game.keep(2) == 2 && game.keep(3) == 1 && game.keep(10) == 1)
         #expect(game.duplicatesValue.count == 6)
         _ = game.sellDuplicates()
@@ -147,9 +140,6 @@ import Testing
         var rng = SeededRNG(seed: 9)
         for _ in 0..<20 { _ = game.buy(pack: 0, using: &rng) }
         #expect(game.copies(2) == 2 && game.copies(3) == 1)
-        game.state.fusionOnly = false
-        for _ in 0..<20 { _ = game.buy(pack: 0, using: &rng) }
-        #expect(game.copies(2) == 2)  // 끄면 더 쌓이지 않고, 이미 쌓인 건 그대로
     }
 
     /// 조건 소재("전사족 3장")는 그 융합을 만들기 전까지 3장 남기고, 만들고 나면 1장만 남긴다
@@ -160,7 +150,6 @@ import Testing
         let plain = card("전사", type: "전사족/일반")
         let db = oneBoxDB([1: plain, 2: plain, 20: c])
         var game = Game(db: db, state: GameState())
-        game.state.fusionOnly = true
         #expect(game.keep(1) == 3 && game.keep(2) == 3)
         game.state.owned[20] = 1
         #expect(game.keep(1) == 1)
@@ -169,8 +158,6 @@ import Testing
     @Test func fusionOnlyKeepsKnownFusionsOutOfPacksAndFreeCards() {
         var state = GameState()
         state.coins = 1_000_000
-        #expect(!state.fusionOnly)  // 기본값
-        state.fusionOnly = true
         var game = Game(db: db, state: state)
         var rng = SeededRNG(seed: 5)
         #expect(game.isFusionOnly(10) && !game.isFusionOnly(11))
@@ -181,19 +168,12 @@ import Testing
         #expect(game.draw(pack: 0, tier: 4, excluding: [11], using: &rng) == CardDB.fusionSpell)
         game.state.owned[10] = 1  // 융합으로 만들었으면 팩에서도 나온다
         #expect(!game.isFusionOnly(10) && game.draw(pack: 0, tier: 4, excluding: [11], using: &rng) == 10)
-        game.state.owned[10] = nil
-        game.state.fusionOnly = false
-        var free: Set<Int> = []
-        for _ in 0..<300 { if let cid = game.drawFree(using: &rng) { free.insert(cid) } }
-        #expect(free.contains(10))
     }
 
-    /// 남은 미보유가 융합 전용뿐이면 상점에선 다 모은 팩(CLEAR)이고, 융합 남은 장 수를 센다. 설정을 끄면 아니다.
+    /// 남은 미보유가 융합 전용뿐이면 상점에선 다 모은 팩(CLEAR)이고, 융합 남은 장 수를 센다.
     @Test func packClearedWhenOnlyFusionOnlyLeft() {
         var game = Game(db: db, state: GameState())
         game.state.owned = [1: 1, 2: 1, 3: 1, CardDB.fusionSpell: 1, 11: 1]
-        #expect(!game.progress(0).cleared && game.progress(0).fusionLeft == 0)
-        game.state.fusionOnly = true
         #expect(game.progress(0).cleared && !game.progress(0).complete && game.progress(0).fusionLeft == 1)
         game.state.owned[10] = 1
         #expect(game.progress(0).complete && game.progress(0).fusionLeft == 0)

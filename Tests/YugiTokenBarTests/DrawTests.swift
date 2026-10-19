@@ -280,14 +280,17 @@ import Testing
 
     @Test func exodiaFillsItsPack() {
         let pieces = CardDB.exodia.sorted()
-        let db = makeDB([pieces.map { ($0, 4) } + [(1, 1), (2, 5)], [(11, 1)]])
+        let base = makeDB([pieces.map { ($0, 4) } + [(1, 1), (2, 5), (3, 4)], [(11, 1)]])
+        var cards = base.cards
+        cards[3]?.picks = [Pick(any: [1])]  // 융합으로 만들 수 있는 카드는 채우지 않는다
+        let db = CardDB(packs: base.packs, cards: cards)
         var game = Game(db: db, state: GameState())
         for c in pieces.dropLast() + [1, 11] { game.state.owned[c] = 1 }
         game.state.pendingFree = 1
         var rng = SeededRNG(seed: 1)
-        let pull = game.openFree(using: &rng)[0]  // 남은 건 마지막 조각(UR)과 2(SE). 이 시드는 조각
+        let pull = game.openFree(using: &rng)[0]  // 남은 건 마지막 조각(UR)·2(SE)·융합 3(UR). 이 시드는 조각
         #expect(pull.cid == pieces.last!)
         #expect(pull.filledCards == 1)
-        #expect(game.copies(2) == 1 && game.copies(1) == 1)
+        #expect(game.copies(2) == 1 && game.copies(1) == 1 && game.copies(3) == 0)
     }
 }

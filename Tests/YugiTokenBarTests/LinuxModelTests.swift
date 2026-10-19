@@ -356,7 +356,7 @@ private actor ControlledLinuxReader {
         var mac = GameState()
         mac.coins = 123; mac.coinRemainder = 4; mac.owned = [1: 1, 3: 2]; mac.favorites = [2]
         mac.partnerUnlocked = true; mac.partnerEnabled = false; mac.partnerSize = 192
-        mac.partnerOrigin = CGPoint(x: 10, y: 20); mac.fusionOnly = true; mac.eraLimit = "GX"
+        mac.partnerOrigin = CGPoint(x: 10, y: 20); mac.eraLimit = "GX"
         mac.decks = [Deck(name: "덱", cards: [1: 1, 3: 2])]
         mac.claimedDate = "2026-09-01"; mac.claimedByProvider = ["grok": 7]; mac.lastBoughtPid = "p0"
         var local = GameState(); local.claimedDate = "2026-10-19"; local.claimedByProvider = ["codex": 1]

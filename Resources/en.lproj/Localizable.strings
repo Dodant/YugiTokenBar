@@ -122,14 +122,10 @@
 "중복 카드 자동 판매" = "Auto-sell duplicates";
 /* SettingsView.swift:83 */
 "새로 나온 중복 카드를 코인으로 바꿔요" = "Sell newly drawn duplicates for coins";
-/* SettingsView.swift:86 */
-"융합 몬스터는 융합으로만" = "Fusion Monsters by Fusion Summon only";
-/* SettingsView.swift:86 */
-"융합 몬스터 %lld종을 팩 대신 융합으로 얻어요" = "Get %lld Fusion Monsters through Fusion";
 /* SettingsView.swift:88 */
-"애니메이션 끄기" = "Turn off animations";
+"동작 줄이기" = "Reduce motion";
 /* SettingsView.swift:88 */
-"카드를 연출 없이 바로 보여줘요" = "Show cards without animations";
+"카드 연출과 화면 전환 애니메이션을 줄여요" = "Tones down card effects and screen transitions";
 /* SettingsView.swift:102 */
 "시대 범위" = "Era range";
 /* SettingsView.swift:99 */
@@ -425,10 +421,6 @@
 "메일 쓰기" = "Write email";
 /* SettingsView.swift:72 */
 "끌어서 옮기고, 우클릭으로 숨겨요" = "Drag to move. Right-click to hide.";
-/* SettingsView.swift:87 */
-"이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 %lld장까지 남기고, 융합 전용 모드에서는 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Cards with overframe artwork are kept until you have the %lld copies that unlock it, and Fusion-only mode also keeps the materials you need.";
-/* SettingsView.swift:91 */
-"대상 카드는 팩·무료 카드에서 나오지 않아요. 「융합」 카드와 소재를 모아 컬렉션에서 만드세요." = "These cards do not appear in packs or free draws. Collect Polymerization and the materials, then fuse in Collection.";
 /* SettingsView.swift:141 */
 "버전" = "Version";
 /* UsageDetailView.swift:19 */
@@ -495,12 +487,8 @@
 "진행도" = "Progress";
 /* DexView.swift:561 */
 "카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card, keeping as many Fusion Materials as needed. Cards with locked overframe artwork aren't sold (Cards: %lld · +%@)";
-/* DexView.swift:562 */
-"카드마다 1장만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (%lld장 · +%@)" = "Sells all but 1 copy of each card. Cards with locked overframe artwork aren't sold (Cards: %lld · +%@)";
 /* DexView.swift:567 */
 "카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." = "1 copy of each card and the Fusion Materials you need stay, and cards with locked overframe artwork aren't sold, so your collection is unchanged.";
-/* DexView.swift:567 */
-"카드마다 1장씩은 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." = "1 copy of each card stays and cards with locked overframe artwork aren't sold, so your collection is unchanged.";
 /* DexView.swift:205 */
 "✦ 오버프레임" = "✦ Overframe";
 /* PackOpenView.swift:138 */
@@ -577,3 +565,21 @@
 "다시 열지 못했어요: %@" = "Couldn't reopen the app: %@";
 /* LinuxSettingsView.swift:90 */
 "셸 설정 파일에서만 내보낸 경로는 Flatpak 앱이 찾지 못할 수 있어요. Flatpak 앱은 홈 폴더 안만 볼 수 있어요." = "Paths exported only in shell startup files may not be found by the Flatpak app, which can only see your home folder.";
+/* SettingsView.swift:142 */
+"이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 %lld장까지 남기고, 융합에 필요한 소재도 남겨요." = "Cards you already own stay in your collection. Cards with overframe artwork are kept until you have the %lld copies that unlock it, and the materials you need for Fusion are kept too.";
+/* SettingsView.swift:87 */
+"메뉴바 표시" = "Menu bar shows";
+/* SettingsView.swift:91 */
+"주간 사용량" = "Weekly usage";
+/* SettingsView.swift:93 */
+"없음" = "None";
+/* SettingsView.swift:91 */
+"세션 사용량" = "Session usage";
+/* SettingsView.swift:93 */
+"오늘 사용량" = "Today's usage";
+/* SettingsView.swift:96 */
+"세션·주간 사용량" = "Session & weekly usage";
+/* SettingsView.swift:97 */
+"세션 초기화까지" = "Until session resets";
+/* SettingsView.swift:94 */
+"코인 · 무료" = "Coins · Free";

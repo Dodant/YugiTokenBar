@@ -106,7 +106,7 @@ import Testing
         var fusion = card("Fusion result")
         fusion.picks = [Pick(any: [1], count: 2)]
         let fusionDB = oneBoxDB([1: card("Fusion material"), 2: fusion])
-        var fusionState = GameState(); fusionState.coins = 5000; fusionState.fusionOnly = true
+        var fusionState = GameState(); fusionState.coins = 5000
         fusionState.owned[1] = 2
         let fusionStore = StateStore(url: root.appendingPathComponent("fusion.json"))
         let fusionModel = LinuxModel(game: Game(db: fusionDB, state: fusionState), store: fusionStore)

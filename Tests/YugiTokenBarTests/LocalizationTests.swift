@@ -143,7 +143,6 @@ import Testing
     @Test func collectionIsTheSameInEveryLanguage() {
         var state = GameState()
         state.eraLimit = "Modern"
-        state.fusionOnly = true
         let ko = Self.dbs["ko"]!
         for (i, cid) in ko.allCIDs.enumerated() where i % 3 == 0 { state.owned[cid] = 1 + i % 4 }
         state.owned[CardDB.fusionSpell] = 1

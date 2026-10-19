@@ -562,14 +562,12 @@ private struct SellDuplicatesButton: View {
         Button { confirm = true } label: {
             Label("중복 모두 팔기", systemImage: "c.circle").labelStyle(.titleAndIcon)
         }
-        .help(model.game.state.fusionOnly
-              ? "카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (\(dup.count)장 · +\(coinText(dup.coins)))"
-              : "카드마다 1장만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
+        .help("카드마다 1장, 융합 소재는 필요한 장 수만 남기고 모두 팔아요. 해금 전 오버프레임 카드는 팔지 않아요 (\(dup.count)장 · +\(coinText(dup.coins)))")
         .disabled(dup.count == 0)
         .confirmationDialog("중복 \(dup.count)장을 팔까요?", isPresented: $confirm) {
             Button("+\(coinText(dup.coins))에 판매") { model.sellDuplicates() }
         } message: {
-            Text(model.game.state.fusionOnly ? "카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요." : "카드마다 1장씩은 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요.")
+            Text("카드마다 1장씩, 융합 소재는 필요한 장 수만큼 남고 해금 전 오버프레임 카드는 팔지 않아서 컬렉션은 그대로예요.")
         }
     }
 }

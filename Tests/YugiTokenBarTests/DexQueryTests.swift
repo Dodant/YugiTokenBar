@@ -68,8 +68,8 @@ import Testing
         }
     }
 
-    /// game 에서 센 값은 보유·융합 설정·시대가 같은 동안 다시 세지 않는다 (사이드바 통계·융합 가능 목록)
-    @MainActor @Test func gameMemoRecomputesOnlyWhenOwnedSettingsOrEraChange() {
+    /// game 에서 센 값은 보유·시대가 같은 동안 다시 세지 않는다 (사이드바 통계·융합 가능 목록)
+    @MainActor @Test func gameMemoRecomputesOnlyWhenOwnedOrEraChange() {
         var game = Game(db: makeDB([[(1, 1)], [(2, 2)]]), state: GameState())
         var computed = 0
         let memo = GameMemo<Int> { computed += 1; return $0.ownedDistinct }
@@ -78,9 +78,7 @@ import Testing
         #expect(memo(game) == 0 && computed == 1)
         game.state.owned = [1: 1]
         #expect(memo(game) == 1 && computed == 2)
-        game.state.fusionOnly = true
-        #expect(memo(game) == 1 && computed == 3)
         game.state.eraLimit = "DM"
-        #expect(memo(game) == 1 && computed == 4)
+        #expect(memo(game) == 1 && computed == 3)
     }
 }
