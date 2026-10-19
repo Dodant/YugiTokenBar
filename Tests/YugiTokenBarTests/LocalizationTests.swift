@@ -83,8 +83,6 @@ import Testing
         #expect(String(format: format("%lld장을 융합했어요"), locale: locale, 2) == "Fused 2 cards")
         #expect(String(format: format("%lld장을 모두 융합할까요?"), locale: locale, 1) == "Fuse 1 card?")
         #expect(String(format: format("%lld / %lld장 보유 · 메인 덱 %lld~%lld장"), locale: locale, 3, 42, 40, 60) == "3 / 42 owned · Main Deck 40–60 cards")
-        let save = "가져올 세이브: 카드 %lld종 · %@\n(%@, v%@)\n지금 세이브: 카드 %lld종 · %@\n\n지금 세이브는 세이브 폴더에 자동 백업돼요."
-        #expect(String(format: format(save), locale: locale, 1, "a", "b", "c", 2, "d").hasPrefix("Save to import: 1 card · a\n(b, vc)\nCurrent save: 2 cards · d"))
     }
 
     #endif

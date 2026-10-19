@@ -159,7 +159,7 @@
 /* SettingsView.swift:255 */
 "세이브를 바꿀까요?" = "Replace your save?";
 /* SettingsView.swift:256 */
-"가져올 세이브: 카드 %lld종 · %@\n(%@, v%@)\n지금 세이브: 카드 %lld종 · %@\n\n지금 세이브는 세이브 폴더에 자동 백업돼요." = "Save to import: %lld cards · %@\n(%@, v%@)\nCurrent save: %lld cards · %@\n\nYour current save will be backed up to the save folder automatically.";
+"가져올 세이브: 카드 %lld종 · %@\n(%@, v%@)\n지금 세이브: 카드 %lld종 · %@\n\n지금 세이브는 세이브 폴더에 자동 백업돼요." = "Save to import · Cards: %lld · %@\n(%@, v%@)\nCurrent save · Cards: %lld · %@\n\nYour current save will be backed up to the save folder automatically.";
 /* SettingsView.swift:263 */
 "바꾸기" = "Replace";
 /* SettingsView.swift:272 */
@@ -498,7 +498,6 @@
 /* PackOpenView.swift:208 */
 "엑조디아!" = "Exodia!";
 /* LinuxShellView.swift:11 */
-"도감" = "Dex";
 /* LinuxShellView.swift:26 */
 "코인 %@" = "Coins %@";
 /* LinuxShellView.swift:27 */

@@ -183,7 +183,15 @@ import Testing
         gtk_adjustment_set_value(adjustment, gtk_adjustment_get_upper(adjustment)); await settle()
         await LinuxGTK.screenshot("settings-info")
         try await activate("settings-changelog")
-        #expect(labels().contains(AppInfo.changelog))
+        // Rendered, not raw Markdown: the first `## ` heading and one `- ` item appear as their own labels.
+        func expectRendered(_ text: String) {
+            let lines = text.split(separator: "\n").map { String($0).replacingOccurrences(of: "**", with: "") }
+            let heading = lines.first { $0.hasPrefix("## ") }.map { String($0.dropFirst(3)) } ?? lines.first ?? ""
+            #expect(labels().contains(heading), "missing heading \(heading)")
+            #expect(!labels().contains { $0.hasPrefix("#") || $0.contains("**") })
+            if let item = lines.first(where: { $0.hasPrefix("- ") }) { #expect(labels().contains { $0.hasSuffix(String(item.dropFirst(2))) }) }
+        }
+        expectRendered(AppInfo.changelog)
         await LinuxGTK.screenshot("settings-changelog")
 
         // A failing handler is shown, not fatal.

@@ -10,7 +10,7 @@ Linux 창에는 메뉴바·팝오버·파트너·업무 모드가 없고 Shop은
   - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음.
 
 GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.xml을 읽어 업데이트한다.
-첫 공개 릴리스는 Developer ID 서명·Apple 공증 설정 후 게시한다.
+macOS 자산은 Developer ID 서명·Apple 공증 설정 뒤에 게시하고, 그 전에는 Linux Flatpak만 prerelease로 게시한다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준, 로컬 전용)
 - 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 25장·복사한 코드).

@@ -34,41 +34,6 @@
 			<string>all %lld cards</string>
 		</dict>
 	</dict>
-	<key>가져올 세이브: 카드 %lld종 · %@
-(%@, v%@)
-지금 세이브: 카드 %lld종 · %@
-
-지금 세이브는 세이브 폴더에 자동 백업돼요.</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>Save to import: %1$#@new@ · %2$@
-(%3$@, v%4$@)
-Current save: %5$#@old@ · %6$@
-
-Your current save will be backed up to the save folder automatically.</string>
-		<key>new</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>lld</string>
-			<key>one</key>
-			<string>%lld card</string>
-			<key>other</key>
-			<string>%lld cards</string>
-		</dict>
-		<key>old</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>lld</string>
-			<key>one</key>
-			<string>%lld card</string>
-			<key>other</key>
-			<string>%lld cards</string>
-		</dict>
-	</dict>
 	<key>%lld팩마다 랜덤 부스터 1팩</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

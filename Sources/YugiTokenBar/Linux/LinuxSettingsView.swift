@@ -131,13 +131,28 @@ private struct EraChoice { let name: String; let label: String }
         .fileImporter(open: $importer, filters: [.mimeType("application/json")], title: L("세이브 가져오기"),
                       onOpen: { model.prepareImport(at: $0) })
         .dialog(visible: $showChangelog, title: L("패치노트"), id: "changelog", width: 640, height: 520) {
-            if showChangelog { ScrollView { Text(dialogText).wrap().halign(.start).padding() }.vexpand() }
+            if showChangelog { ScrollView { markdown(dialogText) }.vexpand() }
         }
         .dialog(visible: $showLicense, title: "License", id: "license", width: 640, height: 520) {
-            if showLicense { ScrollView { Text(dialogText).wrap().halign(.start).padding() }.vexpand() }
+            if showLicense { ScrollView { markdown(dialogText) }.vexpand() }
         }
         .dialog(visible: Binding(get: { snapshot.pendingImport != nil }, set: { if !$0 { model.cancelImport() } }),
                 title: L("세이브를 바꿀까요?"), id: "import", width: 420) { importDialog }
+    }
+
+    /// Patch notes and the license are Markdown-ish: `#` headings, `**…**` category lines, `- ` items.
+    @ViewBuilder private func markdown(_ text: String) -> Body {
+        VStack(spacing: 6) {
+            ForEach(Array(text.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, raw in
+                let line = String(raw).replacingOccurrences(of: "**", with: "")
+                if line.hasPrefix("## ") { Text(String(line.dropFirst(3))).wrap().style("title-4").halign(.start) }
+                else if line.hasPrefix("# ") { Text(String(line.dropFirst(2))).wrap().style("title-3").halign(.start) }
+                else if line.hasPrefix("- ") { Text("    • " + line.dropFirst(2)).wrap().halign(.start) }
+                else if line.isEmpty { Text("").padding(2) }
+                else if raw.hasPrefix("**") { Text(line).wrap().style("heading").halign(.start) }
+                else { Text(line).wrap().halign(.start) }
+            }
+        }.padding(16).valign(.start)
     }
 
     @ViewBuilder private var transferGroup: Body {

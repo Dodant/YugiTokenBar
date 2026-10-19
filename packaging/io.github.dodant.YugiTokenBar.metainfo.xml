@@ -17,7 +17,7 @@
   <url type="homepage">https://github.com/Dodant/YugiTokenBar</url>
   <url type="bugtracker">https://github.com/Dodant/YugiTokenBar/issues</url>
   <releases>
-    <release version="0.6.3" date="2026-10-19"/>
+    <release version="0.7.0" date="2026-10-19"/>
   </releases>
   <content_rating type="oars-1.1"/>
 </component>

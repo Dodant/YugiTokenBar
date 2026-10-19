@@ -106,6 +106,7 @@ flatpak run io.github.dodant.YugiTokenBar   # or start it from the app menu
 - Korean and Japanese card names need a CJK font on the host, such as Noto Sans CJK, because the GNOME runtime does not include one.
 - There is no automatic update on Linux.
   Setting > About & support shows when a newer GitHub release exists.
+  Beta releases are prereleases and are not announced in the app, so check the Releases page for a newer beta.
   Download the new bundle and reinstall it with `flatpak install --user --reinstall YugiTokenBar-<version>-x86_64.flatpak`; your collection is kept.
 
 ## Install (macOS)

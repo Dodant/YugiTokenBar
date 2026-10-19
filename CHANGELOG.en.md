@@ -3,7 +3,9 @@
 ## 0.7.0 — 2026-10-19
 The first beta that also runs on Linux.
 **✨ New features**
-- Added a Linux window with Shop, Dex, Usage and Setting in a single window. It installs as a Flatpak bundle (beta), you can export and import your save to move your collection between Mac and Linux, and the language follows the system or the one you pick in Setting after a restart. Linux has no menu bar, popover, partner or work mode, and it does not read the official Claude and Codex limits or Cursor dashboard usage.
+- Added a Linux window with Shop, Dex, Usage and Setting in a single window. It installs as a Flatpak bundle (beta). Linux has no menu bar, popover, partner or work mode, and it does not read the official Claude and Codex limits or Cursor dashboard usage.
+- You can now export and import your save in Setting > Backup & transfer to move your collection between Mac and Linux. Your current save is backed up first.
+- On Linux the language follows the system or the one you pick in Setting, and applies after you reopen the app.
 
 ## 0.6.3 — 2026-10-19
 **✨ New features**

@@ -33,6 +33,3 @@
 "%lld분 후 초기화" = "Resets in %lldm";
 "한도 불러오는 중…" = "Loading limits…";
 "한도를 보려면 누르세요" = "Click to load limits";
-
-/* LinuxShellView.swift */
-"도감" = "Dex";

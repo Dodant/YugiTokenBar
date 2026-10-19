@@ -3,7 +3,7 @@
 GitHub Releases에 공증된 universal 앱 ZIP을 올린다.
 Linux는 Flatpak 번들(베타)을 같은 Release에 올린다(아래 Linux Flatpak 베타).
 앱은 Sparkle로 Release의 appcast.xml을 읽어 앱 안에서 업데이트한다.
-현재 Apple Developer Program 미가입 상태이며 공개 릴리스는 보류한다.
+현재 Apple Developer Program 미가입 상태이므로 macOS 자산은 보류하고, 태그를 올리면 Linux Flatpak만 prerelease로 게시한다.
 
 ## 최초 설정
 

@@ -8,7 +8,7 @@ enum LinuxSection: String, CaseIterable, Identifiable {
     @MainActor var title: String {
         switch self {
         case .shop: L("상점")
-        case .dex: L("도감")
+        case .dex: L("컬렉션")
         case .usage: L("사용량")
         case .settings: L("설정")
         }
