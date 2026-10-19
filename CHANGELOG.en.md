@@ -1,5 +1,10 @@
 # Patch notes
 
+## 0.7.0 — 2026-10-19
+The first beta that also runs on Linux.
+**✨ New features**
+- Added a Linux window with Shop, Dex, Usage and Setting in a single window. It installs as a Flatpak bundle (beta), you can export and import your save to move your collection between Mac and Linux, and the language follows the system or the one you pick in Setting after a restart. Linux has no menu bar, popover, partner or work mode, and it does not read the official Claude and Codex limits or Cursor dashboard usage.
+
 ## 0.6.3 — 2026-10-19
 **✨ New features**
 - Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked. Choose [✦ Overframe] in the rarity menu to see only overframe cards.

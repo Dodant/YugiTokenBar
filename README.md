@@ -1,6 +1,6 @@
 <h1 align="center">YugiTokenBar</h1>
 
-<p align="center">A macOS menu bar app that fills a <strong>Yu-Gi-Oh! card collection</strong> with the tokens your coding agents (Claude Code, Codex, etc.) use.<br>
+<p align="center">A macOS menu bar app (and a Linux desktop window, beta) that fills a <strong>Yu-Gi-Oh! card collection</strong> with the tokens your coding agents (Claude Code, Codex, etc.) use.<br>
 Available in Korean, English, and Japanese.</p>
 
 ## How it works
@@ -78,7 +78,37 @@ Keep the folder outside Documents, Desktop, and Downloads so macOS does not ask 
 The same request is counted once even if it shows up in several folders.
 Usage synced after midnight is not credited to the previous day.
 
-## Install
+## Linux (beta)
+
+The Linux version is a single desktop window with Shop, Dex, Usage, and Setting.
+It uses the same save, card data, and rules as the Mac app.
+It is not a menu bar app, so there is no menu bar item, popover, partner character, or work mode.
+Official Claude and Codex limits and the Cursor dashboard API are not read; Cursor usage is counted from its local database only.
+The language follows your system language, or the one you pick in Setting; a change applies after the app restarts.
+You can move your collection between Mac and Linux with Setting > Backup & transfer (Export, Import).
+
+Install from the Flatpak bundle on [Releases](https://github.com/Dodant/YugiTokenBar/releases).
+The first beta is published as a GitHub prerelease.
+You need Flatpak with the Flathub remote, because the GNOME Platform 50 runtime is downloaded from Flathub on install.
+
+```bash
+flatpak install --user YugiTokenBar-<version>-x86_64.flatpak
+flatpak run io.github.dodant.YugiTokenBar   # or start it from the app menu
+```
+
+- The x86_64 bundle is the supported one; the aarch64 bundle is best-effort and may be missing from a release.
+- Your save lives in `~/.var/app/io.github.dodant.YugiTokenBar/data/YugiTokenBar/`.
+  It stays when you uninstall unless you use `flatpak uninstall --delete-data`.
+- The app can read your home folder read-only, so the default log folders (`~/.claude`, `~/.codex`, and so on) are found.
+  Logs you moved with an environment variable set only in your shell startup files are not visible inside the sandbox.
+  Add them in Setting > Extra scan folders; folders under your home work as is.
+  For a path outside your home, grant it first, for example `flatpak override --user --filesystem=/data/logs:ro io.github.dodant.YugiTokenBar`.
+- Korean and Japanese card names need a CJK font on the host, such as Noto Sans CJK, because the GNOME runtime does not include one.
+- There is no automatic update on Linux.
+  Setting > About & support shows when a newer GitHub release exists.
+  Download the new bundle and reinstall it with `flatpak install --user --reinstall YugiTokenBar-<version>-x86_64.flatpak`; your collection is kept.
+
+## Install (macOS)
 
 Requires macOS 26 or later.
 There is no public release yet; once one is published, download `YugiTokenBar-x.y.z.zip` from [Releases](https://github.com/Dodant/YugiTokenBar/releases), unzip it, and move the app to `/Applications`.

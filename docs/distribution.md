@@ -69,13 +69,24 @@ Sparkle 서명은 키체인의 개인 키를 쓴다(`YTB_SPARKLE_PRIVATE_KEY`가
 ## Linux Flatpak 베타
 
 앱 ID는 `io.github.dodant.YugiTokenBar`이고 manifest는 `packaging/io.github.dodant.YugiTokenBar.json`이다.
-GNOME Platform·SDK 50과 `org.freedesktop.Sdk.Extension.swift6`(25.08, 확인한 컴파일러 Swift 6.3.3)으로 빌드한다.
+GNOME Platform·SDK 50과 `org.freedesktop.Sdk.Extension.swift6//25.08`(확인한 컴파일러 Swift 6.3.3)으로 빌드한다.
+개발·CI 테스트용 Docker 이미지(`docker/linux-dev.Dockerfile`)는 Swift 6.4.1이라 Flatpak 컴파일러와 버전이 다르다.
 manifest의 source는 저장소 루트(`..`)이며 `.git`·`.build*`·`build`·`qa-state`·`docs`는 넣지 않는다.
 검증된 Linux 잠금 파일(`.build-linux/Package.resolved` 또는 `YTB_LINUX_LOCK`)을 builder 안에서 `Package.resolved`로 바꿔 넣고 `--force-resolved-versions`·release·`--static-swift-stdlib`로 빌드한다.
 `packaging/flatpak-build.sh`가 빌드 전후 잠금 파일 SHA-256을 찍고, 바뀌면 실패한다.
 설치 위치는 `/app/bin/YugiTokenBar`와 `/app/share/yugitokenbar/`(카드 JSON·picks·뒷면·파트너·lproj·세 CHANGELOG·NOTICE·`version.txt`·`licenses/<패키지>.md`)이다.
 `version.txt`와 metainfo의 release 항목은 `CHANGELOG.md` 맨 위 `## x.y.z — 날짜`에서 만든다.
 desktop 파일·metainfo·SVG 아이콘(직접 그린 카드 모티프)은 같은 앱 ID로 설치한다.
+
+로컬에서 번들을 user 설치까지 해 보려면 만든 번들을 호스트의 flatpak으로 설치한다(`--arch` 기본값은 호스트 arch).
+
+```bash
+scripts/build-flatpak.sh
+flatpak install --user --reinstall build/release/YugiTokenBar-<version>-<arch>.flatpak
+flatpak run io.github.dodant.YugiTokenBar
+```
+
+빌드·설치 검사는 아래 스크립트가 컨테이너 안에서 한다.
 
 ```bash
 scripts/build-flatpak.sh --arch aarch64     # build/release/YugiTokenBar-<version>-<arch>.flatpak, SHA256SUMS에 덧붙임
@@ -96,9 +107,27 @@ scripts/test-flatpak.sh portal              # 포털 내보내기 취소·내보
 Flatpak을 지워도 `flatpak uninstall --delete-data`를 쓰지 않으면 이 폴더는 남는다.
 
 Linux Release 자산은 `YugiTokenBar-<version>-<arch>.flatpak`과 Mac ZIP까지 합친 `SHA256SUMS`이다.
-x86_64는 필수이고 aarch64는 첫 베타 동안 실패해도 Release를 막지 않지만 job 요약과 `linux-status-aarch64`에 `aarch64: failed`로 남는다.
+x86_64는 필수이고 aarch64(`ubuntu-24.04-arm`)는 첫 베타 동안 `continue-on-error`라 실패해도 Release를 막지 않는다.
+실패는 job 요약과 `linux-status-aarch64`에 `aarch64: failed`로 남기고, PR 본문에도 실패한 arch를 적는다.
+aarch64 번들은 지금까지 로컬 Docker에서만 만들어 확인했고 CI arm 러너의 결과는 첫 실행 뒤에 기록한다.
+Linux에는 Sparkle이 없어 자동 업데이트가 없다.
+설정 > 정보 & 지원이 Setting을 열 때(실행당 성공 한 번) GitHub 최신 정식 Release를 확인해 새 버전이 있으면 알려 주고, 사용자는 새 번들을 받아 `flatpak install --user --reinstall`로 다시 설치한다.
 Mac ZIP 없이 Linux만 게시하면 prerelease이고 appcast가 없으므로, Mac 앱이 읽는 최신 정식 Release를 가로채지 않는다.
 사용자는 `flatpak install --user YugiTokenBar-<version>-x86_64.flatpak`으로 설치한다(GNOME Platform 50은 Flathub에서 받는다).
+
+## 비밀값 정책과 게시 절차
+
+Mac 비밀값 7개는 전부 있거나 전부 없어야 한다(일부만 있으면 `prepare-release`가 실패).
+전부 있으면 Mac ZIP·appcast와 Linux 번들을 함께 올리고 `--latest` Release가 된다.
+하나도 없으면 Linux 번들만 `--prerelease`로 올리며 Mac 자산·appcast는 없다.
+Linux 빌드에는 비밀값이 필요 없다.
+게시는 두 방법이다.
+
+- 태그 push: `git tag vX.Y.Z && git push origin vX.Y.Z`(태그 버전이 `CHANGELOG.md` 맨 위와 같아야 한다).
+- Actions → Release → Run workflow: `ref`에 태그를 넣고 `publish=true`.
+  `publish=false`(기본)는 빌드·테스트·번들 artifact만 만들고 Release는 만들지 않는다.
+
+prerelease는 Mac 앱이 읽는 최신 정식 Release가 아니므로 Mac 사용자의 업데이트 확인에 영향이 없다.
 
 ## 릴리스 workflow
 

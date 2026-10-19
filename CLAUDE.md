@@ -1,9 +1,8 @@
 # YugiTokenBar
 
 Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션을 채우는 macOS 메뉴바 앱.
-코어(게임·세이브·사용량)는 Linux에서도 빌드·테스트되며 GTK 일반 창·사이드바·저장 오류 종료 가드를 제공한다(`scripts/linux-build.sh`).
-Linux의 Shop은 시대별 팩·무료 카드·무료 팩과 연출 없는 개봉 그리드를 제공한다.
-Dex·Usage·Setting 본문은 3단계 후속 작업에서 연결한다.
+코어(게임·세이브·사용량)는 Linux에서도 빌드·테스트되고, Linux에는 Shop·Dex·Usage·Setting을 한 창에 담은 GTK/libadwaita 창을 Flatpak 베타로 배포한다(`scripts/linux-build.sh`, `docs/distribution.md`).
+Linux 창에는 메뉴바·팝오버·파트너·업무 모드가 없고 Shop은 연출 없는 개봉 그리드를 쓴다.
 - 컬렉션: 정규 부스터 101팩, 8,306종.
   - 어시스트 팩 같은 미니 팩 제외.
   - 101팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에 넣음.
