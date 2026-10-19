@@ -81,6 +81,13 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
   기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다.
   새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
 - 이미지 URL·캐시 키는 `ImageSource.swift`, 디스크·HTTP 바이트 전송은 `ImageTransport.swift`에서 공유하며, macOS 디코딩·메모리 캐시·waiter 취소는 `ImageCache.swift`에 둔다.
+- Linux 이미지는 `LinuxImageLoader`가 source key별 전송을 공유하며 마지막 widget 구독이 사라지면 취소한다.
+  worker는 Data만 inbox에 넣고 기존 100ms GTK drain이 tick당 결과 2개(크기별 최대 4회 디코딩)를 처리한다.
+  `LinuxTextureCache`는 비율을 유지해 grid 300px·detail 614px로 축소하며 96개/추정 RGBA 32MiB를 LRU로 유지한다.
+  cache와 GTK picture는 각자 ref를 소유하므로 화면의 widget ref까지 포함한 전체 프로세스 메모리 상한은 아니다.
+  `LinuxPicture`는 GObject weak notification에서 구독을 해제하고 lifecycle stop/resume은 살아 있는 구독자를 새 flight로 재개한다.
+  `YTB_SMOKE_NO_IMAGES=1`은 디스크 캐시·네트워크 전송을 모두 생략하고 bundled card-back만 표시한다.
+  호출자는 오버프레임 URL 존재 여부가 아니라 `game.showsOverframe(cid)`를 `ImageSource.card`에 전달한다.
 - Linux 상태 변경·저장은 `@MainActor LinuxModel`에서 직렬화하고 백그라운드 사용량 결과는 Sendable 값으로 `LinuxInbox`에만 넣는다.
   GTK 루프가 `drainEvents()`를 호출하며 request ID·state generation·lifecycle epoch로 오래된 결과를 버린다.
   읽는 동안 들어온 갱신 요청은 겹치지 않는 후속 읽기 한 번으로 모으고 결과를 현재 게임에 적립한다.
@@ -110,6 +117,7 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 swift test                                            # 전체 테스트
 scripts/linux-build.sh test                           # Docker(Swift 6.4.1·GTK 4·libadwaita) Linux 테스트, 이미지 캐시 갱신·산출물·핀 .build-linux/
 scripts/linux-build.sh build                          # GTK 실행 파일 빌드 (실행은 GTK 디스플레이·DBus 세션 필요)
+scripts/test-linux-images.sh                         # Xvfb 실제 GTK 이미지·소유권·취소 검사(선택: YTB_GTK_IMAGE_ONLINE=1)
 python3 tools/test_build_cards.py                     # build-cards.py 자체 검사(네트워크 없음)
 python3 tools/test_make_appcast.py                    # make-appcast.py 자체 검사(네트워크 없음)
 python3 tools/test_sync_strings.py                    # Linux L 키 scanner·형식 인수 검사(네트워크 없음)

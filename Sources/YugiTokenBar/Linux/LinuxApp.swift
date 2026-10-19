@@ -114,12 +114,14 @@ import Foundation
     func activate() {
         guard !finished, let model else { return }
         model.start()
+        LinuxImageLoader.shared.resume()
         let epoch = model.lifecycleEpoch
         guard registeredEpoch != epoch else { return }
         registeredEpoch = epoch
         Idle(delay: .milliseconds(100)) { [weak model] in
             guard let model, model.running, model.lifecycleEpoch == epoch else { return false }
             model.drainEvents()
+            LinuxImageLoader.shared.drain()
             return true
         }
         Idle(delay: .seconds(60)) { [weak model] in
@@ -136,7 +138,7 @@ import Foundation
         return true
     }
 
-    func stop() { model?.stop(); registeredEpoch = nil }
+    func stop() { model?.stop(); registeredEpoch = nil; LinuxImageLoader.shared.stop() }
 
     func finishQuit() {
         guard !finished else { return }
