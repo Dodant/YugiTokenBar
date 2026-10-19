@@ -38,7 +38,8 @@ Work mode hides card images and the partner character; enable it in Settings.
 <tr><th>Popover</th><td valign="top" align="center"><img src="docs/image/mainpage.png" width="300"></td><td valign="top" align="center"><img src="docs/image/mainpage_workmode.png" width="300"></td></tr>
 <tr><th>Shop</th><td valign="top" align="center"><img src="docs/image/shop.png" width="300"></td><td valign="top" align="center"><img src="docs/image/shop_workmode.png" width="300"></td></tr>
 <tr><th>Pack</th><td valign="top" align="center"><img src="docs/image/packopen.png" width="300"></td><td valign="top" align="center"><img src="docs/image/packopen_workmode.png" width="300"></td></tr>
-<tr><th>Usage</th><td valign="top" align="center"><img src="docs/image/usage.png" width="300"><br>Today's token usage</td><td valign="top" align="center">Same</td></tr>
+<tr><th>Usage</th><td valign="top" align="center"><img src="docs/image/usage.png" width="300"><br>Today's token usage</td><td valign="middle" align="center">Same</td></tr>
+<tr><th>Field background</th><td valign="top" align="center"><img src="docs/image/field_background.png" width="300"></td><td valign="middle" align="center">None</td></tr>
 </tbody>
 </table>
 
