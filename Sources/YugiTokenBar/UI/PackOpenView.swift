@@ -135,6 +135,7 @@ struct OpeningView: View {
         guard flipped.contains(i) else { return String(localized: "카드 \(i + 1), 뒤집기 전") }
         var parts = [model.db.cards[pull.cid]?.name ?? "", pull.label]
         if pull.isNew { parts.append(String(localized: "새 카드")) }
+        if pull.filledCards > 0 { parts.append(String(localized: "엑조디아! 팩을 모두 채웠어요")) }
         if pull.bonusPacks > 0 { parts.append(String(localized: "무료 팩 +\(pull.bonusPacks)")) }
         if let coins = pull.soldFor { parts.append(String(localized: "+\(coinText(coins)) 자동 판매")) }
         return parts.joined(separator: ", ")
@@ -196,7 +197,7 @@ struct FlipCard: View {
     }
 }
 
-/// 개봉 카드의 무료 팩(욕망의 항아리)·NEW·자동 판매(+ⓒ) 배지. 판매 배지에 마우스를 올리면 ✕ 로 바뀌고, 누르면 판매를 취소한다
+/// 개봉 카드의 엑조디아·무료 팩(욕망의 항아리)·NEW·자동 판매(+ⓒ) 배지. 판매 배지에 마우스를 올리면 ✕ 로 바뀌고, 누르면 판매를 취소한다
 struct PullBadge: View {
     let pull: Pull
     var canUnsell = false
@@ -204,7 +205,8 @@ struct PullBadge: View {
     @State private var hoverSold = false
 
     var body: some View {
-        if pull.bonusPacks > 0 { tag("무료 팩 +\(pull.bonusPacks)", Palette.badgeGain) }
+        if pull.filledCards > 0 { tag("엑조디아!", Palette.badgeGain) }
+        else if pull.bonusPacks > 0 { tag("무료 팩 +\(pull.bonusPacks)", Palette.badgeGain) }
         else if pull.isNew { tag("NEW", Palette.badgeNew) }
         else if let coins = pull.soldFor {
             Button { onUnsell?() } label: {

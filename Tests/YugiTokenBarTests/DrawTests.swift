@@ -277,4 +277,17 @@ import Testing
         #expect(game.openFree(using: &rng).first?.bonusPacks == 2)  // 무료 카드에서도
         #expect(game.state.freePacks == 4)
     }
+
+    @Test func exodiaFillsItsPack() {
+        let pieces = CardDB.exodia.sorted()
+        let db = makeDB([pieces.map { ($0, 4) } + [(1, 1), (2, 5)], [(11, 1)]])
+        var game = Game(db: db, state: GameState())
+        for c in pieces.dropLast() + [1, 11] { game.state.owned[c] = 1 }
+        game.state.pendingFree = 1
+        var rng = SeededRNG(seed: 1)
+        let pull = game.openFree(using: &rng)[0]  // 남은 건 마지막 조각(UR)과 2(SE). 이 시드는 조각
+        #expect(pull.cid == pieces.last!)
+        #expect(pull.filledCards == 1)
+        #expect(game.copies(2) == 1 && game.copies(1) == 1)
+    }
 }

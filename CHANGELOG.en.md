@@ -4,6 +4,7 @@
 **✨ New features**
 - Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked. Choose [✦ Overframe] in the rarity menu to see only overframe cards.
 - Drawing "Pot of Greed" now gives you 2 free packs.
+- Collecting "Exodia the Forbidden One" and all 4 of its limbs now fills in every missing card from LEGEND OF BLUE EYES WHITE DRAGON.
 
 **🎨 Improvements**
 - You can now collapse the progress at the bottom left of the Dex by clicking its [Progress] header.

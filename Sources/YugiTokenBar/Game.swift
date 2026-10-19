@@ -60,6 +60,8 @@ struct Pull: Sendable, Equatable {
     var overframe = false
     /// 「욕망의 항아리」로 받은 무료 팩 수
     var bonusPacks = 0
+    /// 엑조디아 5장째로 채운 그 팩의 카드 수
+    var filledCards = 0
     var label: String { CardInfo.rarities[tier - 1] }
 }
 
@@ -510,7 +512,19 @@ struct Game: Sendable {
         let overframe = showsOverframe(cid)
         let bonusPacks = cid == CardDB.potOfGreed ? Balance.potOfGreedFreePacks : 0
         state.freePacks += bonusPacks
-        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid, keep: keep), overframe: overframe, bonusPacks: bonusPacks)
+        let filledCards = completeExodia(cid, source: source)
+        return Pull(cid: cid, tier: db.tier(cid), isNew: isNew, soldFor: autoSell(cid, keep: keep), overframe: overframe,
+                    bonusPacks: bonusPacks, filledCards: filledCards)
+    }
+
+    /// 이스터에그: 방금 받은 장으로 엑조디아 5장이 모이면 그 팩(푸른 눈의 백룡의 전설)의 없는 카드를 1장씩 채운다(융합 전용 제외). 반환: 채운 장 수
+    // ponytail: 완성 여부를 저장하지 않아 조각의 마지막 장을 팔고 다시 뽑으면 또 채운다. 악용되면 세이브에 플래그를 둔다.
+    private mutating func completeExodia(_ cid: Int, source: String) -> Int {
+        guard CardDB.exodia.contains(cid), copies(cid) == 1, CardDB.exodia.allSatisfy({ copies($0) > 0 }),
+              let pack = db.packs.first(where: { $0.cards.contains(cid) }) else { return 0 }
+        let missing = pack.cards.filter { copies($0) == 0 && !isFusionOnly($0) }
+        for c in missing { give(c, source: source) }
+        return missing.count
     }
 
     /// 설정이 켜져 있고 `keep` 장을 넘으면 바로 1장 판다. 반환: 받은 코인.

@@ -200,6 +200,8 @@ struct CardDB: Sendable {
     static let maskChange = 9066
     /// 「욕망의 항아리」. 나오면 무료 팩 `Balance.potOfGreedFreePacks`개 (이스터에그)
     static let potOfGreed = 4844
+    /// 「봉인된 엑조디아」와 팔다리 4장(푸른 눈의 백룡의 전설 UR). 다 모으면 그 팩을 채운다 (이스터에그)
+    static let exodia: Set<Int> = [4023, 4024, 4025, 4026, 4027]
     /// 「날개 크리보」(잃어버린 천년 SR). 가지면 파트너가 해금된다.
     static let partnerCard = 6314
     /// 시대를 대표하는 소환법 코드 (설정의 시대 범위 메뉴 표시용, 이름은 CardInfo.summonTitle)

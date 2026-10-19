@@ -505,3 +505,7 @@
 "✦ 오버프레임" = "✦ Overframe";
 /* PackOpenView.swift:138 */
 "무료 팩 +%lld" = "Free pack +%lld";
+/* PackOpenView.swift:138 */
+"엑조디아! 팩을 모두 채웠어요" = "Exodia! Filled the whole pack";
+/* PackOpenView.swift:208 */
+"엑조디아!" = "Exodia!";
