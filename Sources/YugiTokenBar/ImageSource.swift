@@ -1,6 +1,39 @@
 import Foundation
 
+/// Image IDs are passcodes from CardInfo.imageId, never Konami card IDs (cid).
+enum ImageSize: String, Sendable {
+    case small = "cards_small"
+    case full = "cards"
+}
+
+struct ImageRequest: Sendable, Equatable {
+    let key: String
+    let url: URL
+    let maxPixels: Int?
+    var fileName: String { "\(key).jpg" }
+}
+
 enum ImageSource {
+    static var cacheDirectory: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("YugiTokenBar")
+    }
+
+    /// Callers supply the game's persistent unlock state; having a source alone does not unlock it.
+    static func card(imageID: Int, size: ImageSize, overframe: Bool = false) -> ImageRequest {
+        if overframe, let source = self.overframe[imageID] {
+            return ImageRequest(key: "overframe-\(imageID)", url: URL(string: source)!, maxPixels: 614)
+        }
+        return ImageRequest(key: "\(size.rawValue)-\(imageID)",
+                            url: URL(string: "https://images.ygoprodeck.com/images/\(size.rawValue)/\(imageID).jpg")!,
+                            maxPixels: nil)
+    }
+
+    static func pack(_ pack: Pack) -> ImageRequest? {
+        guard let source = pack.imageURL, let url = URL(string: source) else { return nil }
+        return ImageRequest(key: "pack-\(url.lastPathComponent)", url: url, maxPixels: 480)
+    }
+
     /// passcode → 공식 오버프레임(Yugipedia "Extended art") 이미지. 워터마크(SAMPLE) 없는 실물 스캔·공식 이미지만.
     /// 101팩에 든 오버프레임 25종 전부. 카드별 출처는 docs/sources.md. 같은 카드를 `Balance.overframeCopies` 장 모으면 해금(`Game.unlockOverframe`).
     /// ponytail: 손으로 고른 표. 새 오버프레임이 나오면 Card Gallery 의 `-EA`·LOSP 등 파일을 확인해 한 줄 추가한다(docs/sources.md 표도).
@@ -32,4 +65,5 @@ enum ImageSource {
         29479265: "https://www.rabbit-blue.com/data/nereid/product/RV01/063s.jpg",
         24269961: "https://www.rabbit-blue.com/data/nereid/product/RV01/064s.jpg",
     ]
+
 }

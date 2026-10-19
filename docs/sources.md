@@ -15,7 +15,7 @@
 | 이미지 ID(passcode)·영문 세트 코드 | YGOPRODeck API https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes · https://db.ygoprodeck.com/api/v7/cardsets.php |
 | 팩 표지 몬스터(`cover_card`)·언어별 봉투 이미지(`<setCode>-Booster{KR,JP,EN,NA}.*`) | Yugipedia API https://yugipedia.com/api.php |
 
-## 런타임 이미지 (`ImageCache.swift`)
+## 런타임 이미지 (`ImageSource.swift`·`ImageTransport.swift`·macOS `ImageCache.swift`)
 
 | 무엇 | 출처 |
 |---|---|

@@ -7,10 +7,8 @@ import ImageIO
 final class ImageCache {
     static let shared = ImageCache()
 
-    enum Size: String, Sendable {
-        case small = "cards_small"
-        case full = "cards"
-    }
+    typealias Size = ImageSize
+    typealias Throttle = ImageTransport.Throttle
 
     let dir: URL
     /// 업무 모드 설정을 읽는다 (테스트가 따로 넣는다)
@@ -23,8 +21,7 @@ final class ImageCache {
 
     /// memoryLimit: 메모리 캐시 상한(디코딩된 픽셀 바이트). 작은 카드 한 장이 약 400KB 라 150MB 면 수백 장,
     /// 도감 한 화면(수십 장)과 그 앞뒤 스크롤은 넉넉히 남고, 6천 장을 다 훑어도 그 이상 쌓이지 않는다.
-    init(dir: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("YugiTokenBar"), memoryLimit: Int = 150 << 20,
+    init(dir: URL = ImageSource.cacheDirectory, memoryLimit: Int = 150 << 20,
          loader: @escaping @Sendable (URL, URL, Int?) async -> CGImage? = ImageCache.load,
          defaults: UserDefaults = .standard) {
         self.dir = dir
@@ -38,11 +35,8 @@ final class ImageCache {
     /// force: 업무 모드여도 불러온다 (컬렉션 정보 패널의 고른 카드 한 장만)
     /// overframe: 오버프레임 판이 있으면 그 그림 (`Game.showsOverframe`, 같은 카드를 여러 장 가졌을 때)
     func image(_ imageId: Int, size: Size, overframe: Bool = false, force: Bool = false) async -> NSImage? {
-        if overframe, let s = ImageSource.overframe[imageId] {
-            // 원본이 600~1,160px 이라 YGOPRODeck 큰 이미지(세로 614px)만큼 줄여 두 크기에 함께 쓴다
-            return await image(key: key(imageId, size: size, overframe: true), url: URL(string: s)!, maxPixels: 614, force: force)
-        }
-        return await image(key: key(imageId, size: size, overframe: false), url: Self.ygoprodeck("\(size.rawValue)/\(imageId)"), force: force)
+        let request = ImageSource.card(imageID: imageId, size: size, overframe: overframe)
+        return await image(key: request.key, url: request.url, maxPixels: request.maxPixels, force: force)
     }
 
     /// 메모리 캐시에 이미 있으면 바로 (뷰가 첫 프레임부터 그리도록, 기다리는 동안 뒷면이 깜빡이지 않게)
@@ -52,29 +46,27 @@ final class ImageCache {
     }
 
     private func key(_ imageId: Int, size: Size, overframe: Bool) -> String {
-        overframe && ImageSource.overframe[imageId] != nil ? "overframe-\(imageId)" : "\(size.rawValue)-\(imageId)"
+        ImageSource.card(imageID: imageId, size: size, overframe: overframe).key
     }
+
+    static let overframe = ImageSource.overframe
 
     /// 봉투 원본은 600px 이지만 가장 크게 그리는 상점 칸도 그 절반 남짓이라 줄여서 디코딩한다
     func packImage(_ pack: Pack) async -> NSImage? {
-        guard let s = pack.imageURL, let url = URL(string: s) else { return nil }
-        return await image(key: "pack-\(url.lastPathComponent)", url: url, maxPixels: 480)
+        guard let request = ImageSource.pack(pack) else { return nil }
+        return await image(key: request.key, url: request.url, maxPixels: request.maxPixels)
     }
 
     /// packImage 의 메모리 캐시 조회 (cached 와 같은 목적)
     func cachedPack(_ pack: Pack) -> NSImage? {
         guard !workMode else { return nil }
-        guard let s = pack.imageURL, let url = URL(string: s) else { return nil }
-        return memory.object(forKey: "pack-\(url.lastPathComponent)" as NSString)
+        guard let request = ImageSource.pack(pack) else { return nil }
+        return memory.object(forKey: request.key as NSString)
     }
 
     /// 카드 뒷면(tools/clean-card-back.py 산출물). .app 안에서는 Contents/Resources/card-back.jpg, `swift run`·테스트에서는 저장소의 Resources/card-back.jpg.
     static let cardBack = NSImage(contentsOf: Bundle.main.url(forResource: "card-back", withExtension: "jpg")
         ?? AppInfo.repoRoot.appendingPathComponent("Resources/card-back.jpg"))
-
-    private static func ygoprodeck(_ path: String) -> URL {
-        URL(string: "https://images.ygoprodeck.com/images/\(path).jpg")!
-    }
 
     /// key = 캐시 파일 이름(확장자 제외). 디코딩까지 백그라운드에서 끝내 스크롤 중 메인 스레드가 JPEG 를 풀지 않게 한다.
     private func image(key: String, url: URL, maxPixels: Int? = nil, force: Bool = false) async -> NSImage? {
@@ -124,54 +116,13 @@ final class ImageCache {
         return CGImageSourceCreateImageAtIndex(source, 0, options as CFDictionary)
     }
 
-    /// 호스트당 동시 연결을 줄인다(기본 6). 빠르게 스크롤해도 YGOPRODeck 에 한꺼번에 몰리지 않게.
-    private nonisolated static let session: URLSession = {
-        let config = URLSessionConfiguration.default
-        config.httpMaximumConnectionsPerHost = 3
-        return URLSession(configuration: config)
-    }()
-    private nonisolated static let throttle = Throttle(interval: 0.08)
-
-    /// 호스트별로 요청 시작 시각을 `interval` 간격으로 줄 세운다. 429·503 이면 그 호스트 전체를 한동안 쉰다.
-    actor Throttle {
-        private let interval: TimeInterval
-        private var next: [String: Date] = [:]
-        init(interval: TimeInterval) { self.interval = interval }
-
-        func wait(_ host: String) async {
-            let now = Date()
-            let at = max(next[host] ?? now, now)
-            next[host] = at.addingTimeInterval(interval)
-            try? await Task.sleep(for: .seconds(at.timeIntervalSince(now)))
-        }
-
-        func backoff(_ host: String, seconds: TimeInterval) {
-            next[host] = max(next[host] ?? .distantPast, Date().addingTimeInterval(seconds))
-        }
-    }
-
     private nonisolated static func fetch(_ url: URL, file: URL) async -> Data? {
-        await fetch(url, file: file, session: session, throttle: throttle)
+        await ImageTransport.fetch(url, file: file)
     }
 
-    /// 디스크에 있으면 그대로, 없으면 받는다. 429·503 은 Retry-After(없으면 30초, 최대 120초)만큼 쉬고 한 번 더 시도한다.
+    /// 공용 전송의 테스트용 호환 API.
     nonisolated static func fetch(_ url: URL, file: URL, session: URLSession, throttle: Throttle) async -> Data? {
-        if let data = try? Data(contentsOf: file) { return data }
-        let host = url.host ?? ""
-        for attempt in 0..<2 {
-            await throttle.wait(host)
-            guard !Task.isCancelled, let (data, response) = try? await session.data(from: url),
-                  let http = response as? HTTPURLResponse else { return nil }
-            if http.statusCode == 200 {
-                try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try? data.write(to: file, options: .atomic)
-                return data
-            }
-            guard attempt == 0, http.statusCode == 429 || http.statusCode == 503 else { return nil }
-            let seconds = Double(http.value(forHTTPHeaderField: "Retry-After") ?? "") ?? 30
-            await throttle.backoff(host, seconds: min(max(seconds, 0), 120))
-        }
-        return nil
+        await ImageTransport.fetch(url, file: file, session: session, throttle: throttle)
     }
 }
 #endif

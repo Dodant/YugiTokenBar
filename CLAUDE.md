@@ -79,6 +79,7 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 - 설정은 저장 위치를 나눈다.
   기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다.
   새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
+- 이미지 URL·캐시 키는 `ImageSource.swift`, 디스크·HTTP 바이트 전송은 `ImageTransport.swift`에서 공유하며, macOS 디코딩·메모리 캐시·waiter 취소는 `ImageCache.swift`에 둔다.
 - 색은 시스템 색(`.primary`·`.secondary`·`.fill`·`accentColor`)을 먼저 쓰고, 고유한 색은 `CardImageView.swift`의 `Rarity`·`Palette`에만 라이트·다크 값을 같이 둔다(스펙 6절 외관).
   화면에서 `colorScheme`으로 분기하지 않는다.
 - **문서는 항상 코드와 동기화한다.**
