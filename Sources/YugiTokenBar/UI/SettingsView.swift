@@ -436,14 +436,15 @@ struct SettingsView: View {
     }
 }
 
-/// 패치노트·라이선스 창. `#`/`##` 제목만 크게, `- ` 줄은 • 항목(둘째 줄부터 들여쓰기), 나머지 줄은 인라인 마크다운.
+/// 패치노트·라이선스 창. `#`/`##` 제목만 크게, `- ` 줄은 • 항목(두 칸 들여 쓴 다음 줄은 같은 항목의 다음 문장), 나머지 줄은 인라인 마크다운.
 struct DocView: View {
     let text: String
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(Array(text.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
+                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                    let line = block[0]
                     if line.hasPrefix("## ") {
                         Text(line.dropFirst(3)).font(.headline).padding(.top, 10)
                     } else if line.hasPrefix("# ") {
@@ -451,7 +452,10 @@ struct DocView: View {
                     } else if line.hasPrefix("- ") {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text("•")
-                            inline(String(line.dropFirst(2)))
+                            VStack(alignment: .leading, spacing: 2) {
+                                inline(String(line.dropFirst(2)))
+                                ForEach(Array(block.dropFirst().enumerated()), id: \.offset) { _, more in inline(more) }
+                            }
                         }
                         .padding(.leading, 4)
                     } else if !line.isEmpty {
@@ -465,8 +469,21 @@ struct DocView: View {
         }
     }
 
-    private func inline(_ line: String) -> Text {
+    /// 줄 묶음: `- ` 항목 밑에 두 칸 들여 쓴 줄은 그 항목에 붙인다
+    private var blocks: [[String]] {
+        text.components(separatedBy: "\n").reduce(into: []) { acc, line in
+            if line.hasPrefix("  "), acc.last?.first?.hasPrefix("- ") == true {
+                acc[acc.count - 1].append(line.trimmingCharacters(in: .whitespaces))
+            } else {
+                acc.append([line])
+            }
+        }
+    }
+
+    /// 긴 항목도 잘리지 않고 창 너비에서 줄을 바꾼다 (선택 가능한 Text 는 한 줄로 줄이기 쉽다)
+    private func inline(_ line: String) -> some View {
         Text((try? AttributedString(markdown: line)) ?? AttributedString(line))
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 #endif
