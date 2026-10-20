@@ -5,6 +5,8 @@
 <p align="center">A macOS menu bar app that fills a <strong>Yu-Gi-Oh! card collection</strong> with the tokens your coding agents (Claude Code, Codex, etc.) use.<br>
 Available in Korean, English, and Japanese.</p>
 
+<p align="center"><strong>English</strong> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a></p>
+
 ## How it works
 
 - It reads today's tokens from your local Claude Code, Codex, Gemini, Grok, Pi, oh-my-pi, and Cursor logs.
@@ -63,7 +65,7 @@ Work mode hides card images and the partner character; enable it in Settings.
 </tbody>
 </table>
 
-Enable fusion-only collection in Settings to obtain eligible Fusion Monsters by combining material cards instead of drawing them.
+Fusion Monsters you can make from material cards are obtained by fusing those materials instead of drawing them.
 
 <p align="center"><a href="docs/video/fusion-demo.mp4"><img src="docs/video/fusion-demo.gif" width="720" alt="Fusion demo"></a></p>
 

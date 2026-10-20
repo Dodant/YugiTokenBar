@@ -15,6 +15,8 @@ Developer ID·공증 없이 ad-hoc 서명으로(스크립트에 `YTB_SIGN_IDENTI
 - 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 25장·복사한 코드).
   이미지 출처를 바꾸면 같이 고친다.
 - 배포: `docs/distribution.md` (Sparkle 키·로컬 릴리스·Gatekeeper)
+- README: `README.md`(영어)·`README.ko.md`·`README.ja.md`.
+  하나를 고치면 셋을 같이 고친다(UI 이름은 `Localizable.strings` 번역).
 - 구현 계획: `docs/superpowers/plans/` (로컬 전용, 현재 기준은 스펙).
 - superpowers 파일(`docs/superpowers/`·`.superpowers/` 등 어느 위치의 `superpowers` 폴더든)은 git에 넣지 않는다.
 - 실행 방식: **Subagent-driven** (superpowers:subagent-driven-development) — 사용자가 선택함
