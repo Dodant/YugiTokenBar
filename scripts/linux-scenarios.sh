@@ -57,7 +57,8 @@ save_failure() {
 }
 
 lock() {
-    local run=$root/lock; rm -rf "$run"
+    # Container-local: on a Docker Desktop bind mount two processes can see state.lock as different devices, so flock never conflicts.
+    local run=/tmp/scenarios/lock; rm -rf "$run"
     python3 "$TOOL" prepare "$run" fixture
     local before; before=$(sha "$run/state/state.json")
     mkdir -p "$run/control"
