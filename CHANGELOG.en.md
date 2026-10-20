@@ -1,66 +1,86 @@
 # Patch notes
 
-## 0.7.0 — 2026-10-19
+## 0.7.0 — 2026-10-20
 The first beta that also runs on Linux.
 **✨ New features**
-- Added a Linux window with Shop, Dex, Usage and Setting in a single window. It installs as a Flatpak bundle (beta). Linux has no menu bar, popover, partner or work mode, and it does not read the official Claude and Codex limits or Cursor dashboard usage.
-- You can now export and import your save in Setting > Backup & transfer to move your collection between Mac and Linux. Your current save is backed up first.
+- Added a Linux window with Shop, Dex, Usage and Setting in a single window.
+  It installs as a Flatpak bundle (beta).
+  Linux has no menu bar, popover, partner or work mode, and it does not read the official Claude and Codex limits or Cursor dashboard usage.
+- You can now export and import your save in Setting > Backup & transfer to move your collection between Mac and Linux.
+  Your current save is backed up first.
 - On Linux the language follows the system or the one you pick in Setting, and applies after you reopen the app.
 
-## 0.6.3 — 2026-10-19
+## 0.6.3 — 2026-10-20
 **✨ New features**
-- Official overframe artwork is now unlocked by collecting 3 copies of the same card. Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials. In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked. Choose [✦ Overframe] in the rarity menu to see only overframe cards.
+- Added the new booster pack BEYOND THE BRAVE, bringing the collection to 101 packs and 8,306 cards, with 307 cards that can be made by Fusion.
+  Its 4 cards with official overframe artwork (The Great Gallant Bandit, Red-Eyes Black Dragon Exceed, and more) can be unlocked too.
+- Official overframe artwork is now unlocked by collecting 3 copies of the same card.
+  Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] keep up to 3 copies and Fusion doesn't use them as materials.
+- In the Dex, cards with overframe artwork now show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked.
+  Choose [✦ Overframe] in the rarity menu to see only overframe cards.
 - Drawing certain cards now makes something special happen.
 - In Setting > General, [Menu bar shows] lets the menu bar show today's tokens and cost, Claude and Codex session and weekly usage or time until the session resets (in each agent's color), or your Dex progress instead of coins, or hide the number.
+- In Setting > Cards, [Field background] lets you pick a Field Spell you own to show its artwork faintly behind the menu.
+  It turns off if you sell every copy, and is hidden in Work mode.
 
 **🎨 Improvements**
 - Renamed the [Turn off animations] setting to [Reduce motion] and moved it to General.
 - You can now collapse the progress at the bottom left of the Dex by clicking its [Progress] header.
 - You can now open up to 6 free cards at a time, shown in two rows of 2 for 4 cards and two rows of 3 for 6 cards.
 - The free card and free pack icons in the menu now use a color that stands out against the background.
+- Added an app icon.
+- The owned column for Fusion Materials in card details now shows just the count.
 
 **🐛 Bug fixes**
 - Fixed the app quitting as soon as the Dex window opened at certain window widths.
+- Fixed long Fusion Material names in card details being centered when they wrap.
 
 **⚖️ Balance**
-- Removed the [Fusion Monsters by Fusion Summon only] setting and made it always apply. Fusion Monsters you can make by Fusion no longer come from packs or free cards and are made in the Dex instead, while ones you've already made and ones that can't be made still come from packs and free cards.
-- In packs where you have every card, cards with locked overframe artwork and Fusion Materials you don't have enough copies of now appear 10 times as often as other cards of the same rarity. Packs with such cards left can be bought in the Shop without pressing [Buy anyway] again.
+- Removed the [Fusion Monsters by Fusion Summon only] setting and made it always apply.
+  Fusion Monsters you can make by Fusion no longer come from packs or free cards and are made once in the Dex instead, while ones you've already made (even if you sell them all) and ones that can't be made still come from packs and free cards.
+  Fusion Materials defined by a condition, such as a Type, count as duplicates for selling once you've made that Fusion.
+- In packs where you have every card, cards with locked overframe artwork and Fusion Materials you don't have enough copies of now appear 10 times as often as other cards of the same rarity.
+  The 5th card in such packs is also one of these cards 30% of the time, whatever its rarity, so high-rarity materials are easier to collect.
+- Packs where you have every card can now be bought in the Shop without pressing [Buy anyway] again if such cards are left.
 - Cards from packs where you have every card now sell for 3 times the price.
 
 ## 0.6.2 — 2026-10-15
 **✨ New features**
-- Added the new booster pack BEYOND THE BRAVE, bringing the collection to 101 packs and 8,306 cards, with 307 cards that can be made by Fusion. Its 4 cards with official overframe versions (The Great Gallant Bandit, Red-Eyes Black Dragon Exceed, and more) are also shown with artwork extending past the card frame.
-- Added [Extra scan folders] to Settings. Add Claude, Codex, Gemini, Grok, Pi, or oh-my-pi log folders outside the default location, such as logs copied from a remote machine, and their usage is credited too.
+- Added [Extra scan folders] to Setting.
+  Add Claude, Codex, Gemini, Grok, Pi, or oh-my-pi log folders outside the default location, such as logs copied from a remote machine, and their usage is credited too.
 
 **🎨 Improvements**
-- After changing the language in Settings > General, you can press [Reopen to apply] to reopen the app right away in the new language.
+- After changing the language in Setting > General, you can press [Reopen to apply] to reopen the app right away in the new language.
 
 **⚖️ Balance**
-- Free cards now only give cards you don't have yet. Rarity odds still apply, split among the rarities you haven't completed.
+- Free cards now only give cards you don't have yet.
+  Rarity odds still apply, split among the rarities you haven't completed.
 - On first launch, tokens used in the last 14 days are credited as coins.
 
 ## 0.6.1 — 2026-10-12
 **✨ New features**
-- Added [Report a bug] to Settings > About & support. It opens an email with your app version and system details already filled in.
-- The version row in Settings > About & support now checks the latest published release and opens its download page.
+- Added [Report a bug] to Setting > About & support.
+  It opens an email with your app version and system details already filled in.
+- The version row in Setting > About & support now checks the latest published release and opens its download page.
 - Added a Usage screen, opened from the usage section of the menu, that shows tokens and cost for today, this week and this month, a 14-day bar chart with the cards you earned each day, and each agent's input, output and cache tokens.
 - In Work mode, the usage section of the menu now also shows totals for today, this week and this month, and a 14-day bar chart.
 
 **🎨 Improvements**
 - Standardized the main menus as Shop, Dex and Setting, with Cards, Decks, Partner, OK and Open shared across all languages.
 - The usage section and Usage screen now appear in English in every language (Usage, 5h, Weekly, Resets in and so on).
-- Shortened guidance in Settings, Collection and usage, and moved detailed conditions and controls to ? tooltips.
+- Shortened guidance in Setting, Dex and usage, and moved detailed conditions and controls to ? tooltips.
 - Long pack names in the Shop now scroll sideways to show the full name while you hover over them.
 - The quick-buy row in the menu now has a soft two-color gradient that differs for each pack, and packs are spaced apart as you swipe so they slide past one by one (Work mode keeps the plain single color).
-- In work mode, the opening list and the collection list now show each card's monster type, level, and ATK/DEF (card type for Spells and Traps) with its name.
-- The fade at the bottom of the Shop, Settings and Usage screens now uses the system scroll edge effect.
+- In work mode, the opening list and the Dex list now show each card's monster type, level, and ATK/DEF (card type for Spells and Traps) with its name.
+- The fade at the bottom of the Shop, Setting and Usage screens now uses the system scroll edge effect.
 - Menu and usage icons now use hierarchical and gradient rendering, and the refresh icon on the usage screen spins while limits are loading.
-- Settings > About & support now shows the unofficial fan project notice and the sources of card data and images.
+- Setting > About & support now shows the unofficial fan project notice and the sources of card data and images.
 
 **🐛 Bug fixes**
 - Fixed English text using plural forms for a single card.
 - Decks you haven't renamed now use the current app language.
-- Fixed two copies of the app running at once overwriting each other's progress. If the app is already running, the new copy now tells you and closes.
+- Fixed two copies of the app running at once overwriting each other's progress.
+  If the app is already running, the new copy now tells you and closes.
 - Fixed the app sometimes quitting unexpectedly while reading Codex limits.
 - If your save is damaged, the app now also tries daily backups from the last 7 days after the latest backup, and tells you in the menu when it restored one.
 - A single damaged deck or acquisition record no longer resets the whole save; only that item is skipped.
@@ -79,27 +99,41 @@ The first beta that also runs on Linux.
 Work mode gives your card collection a simpler look.
 
 **✨ New features**
-- Added [Work mode] to Settings > General. It hides card and pack images and your partner, and shows the Shop, openings and Collection as lists. Game progress stays the same, and you can still view the selected card's image in Collection details.
+- Added [Work mode] to Settings > General.
+  It hides card and pack images and your partner, and shows the Shop, openings and Collection as lists.
+  Game progress stays the same, and you can still view the selected card's image in Collection details.
 
 **🐛 Bug fixes**
 - In Fusion-only mode, selling duplicates now keeps enough materials for Fusion, including materials defined by conditions.
 
 ## 0.5.1 — 2026-10-12
 **✨ New features**
-- You can now swipe left or right on the trackpad over the popover's quick-buy row to move to the previous or next pack in release order. The incoming pack shrinks slightly before settling into place, with a light trackpad tap for each pack.
-- Added "Recently obtained" to the collection sidebar. It shows the 50 cards you got most recently (Fusions included) in the order you got them.
-- Added 8 materials (Elemental HERO Bubbleman, Black Luster Soldier, Blue-Eyes Ultimate Dragon, and more) for 9 Fusion Monsters that couldn't be made because their materials weren't in any booster (Elemental HERO Tempest, Elemental HERO Mariner, Dragon Master Knight, and more). They're in the same pack as their Fusion Monster.
+- You can now swipe left or right on the trackpad over the popover's quick-buy row to move to the previous or next pack in release order.
+  The incoming pack shrinks slightly before settling into place, with a light trackpad tap for each pack.
+- Added "Recently obtained" to the collection sidebar.
+  It shows the 50 cards you got most recently (Fusions included) in the order you got them.
+- Added 8 materials (Elemental HERO Bubbleman, Black Luster Soldier, Blue-Eyes Ultimate Dragon, and more) for 9 Fusion Monsters that couldn't be made because their materials weren't in any booster (Elemental HERO Tempest, Elemental HERO Mariner, Dragon Master Knight, and more).
+  They're in the same pack as their Fusion Monster.
 - Added 25 Fusion Monsters that weren't in any booster but have booster cards among their materials (Gate Guardians Combined, Elemental HERO Neos Kluger, Meteor Black Dragon, and more) to the pack where their latest material was released, along with their remaining materials that weren't in any booster (7 cards, including Meteor Dragon and Fighting Flame Dragon).
-- Added "Mask Change" and 10 Masked HEROes to the packs from when they were first released in Korea (EXTREME VICTORY and more). With "Mask Change", you can make a Masked HERO from [Fusion] in the collection, using 1 "HERO" monster of the same Attribute that you have the most copies of.
-- Fusion Monsters whose materials have conditions like Type, Attribute, Level, ATK, monster card type, or an archetype (177 cards, including Fighting Flame Dragon, Elder Entity Norden, Ultimate Ancient Gear Golem, and El Shaddoll Construct) can now be made from [Fusion] in the collection. For each condition, the matching card you have the most copies of is used (conditions about the field or hand count any card you own), and the card details show which cards were picked. The 3 materials among them that weren't in any booster (Gaia Knight, the Force of Earth, and more) are in the same pack as their Fusion Monster. The collection now has 8,226 cards, and 305 cards can be made by Fusion.
-- Added a [Fuse All] button under the "Fusion Summonable" list in the collection. After you confirm, it makes every card in the list at once, and also makes Fusions that use the cards it just made. When it finishes, it tells you how many cards it made.
+- Added "Mask Change" and 10 Masked HEROes to the packs from when they were first released in Korea (EXTREME VICTORY and more).
+  With "Mask Change", you can make a Masked HERO from [Fusion] in the collection, using 1 "HERO" monster of the same Attribute that you have the most copies of.
+- Fusion Monsters whose materials have conditions like Type, Attribute, Level, ATK, monster card type, or an archetype (177 cards, including Fighting Flame Dragon, Elder Entity Norden, Ultimate Ancient Gear Golem, and El Shaddoll Construct) can now be made from [Fusion] in the collection.
+  For each condition, the matching card you have the most copies of is used (conditions about the field or hand count any card you own), and the card details show which cards were picked.
+  The 3 materials among them that weren't in any booster (Gaia Knight, the Force of Earth, and more) are in the same pack as their Fusion Monster.
+  The collection now has 8,226 cards, and 305 cards can be made by Fusion.
+- Added a [Fuse All] button under the "Fusion Summonable" list in the collection.
+  After you confirm, it makes every card in the list at once, and also makes Fusions that use the cards it just made.
+  When it finishes, it tells you how many cards it made.
 
 **🎨 Improvements**
 - Patch notes now appear in the app language (Korean, English, or Japanese).
-- Pack wrappers in the Shop and the collection now match the chosen language (Japanese packs in Japanese, English packs in English). The first 11 packs, which never came out in Japan, show the English wrapper in Japanese too.
+- Pack wrappers in the Shop and the collection now match the chosen language (Japanese packs in Japanese, English packs in English).
+  The first 11 packs, which never came out in Japan, show the English wrapper in Japanese too.
 - Refined SR, UR and SE reveals with a softer sheen and subtle holographic effects.
-- Split the shop pack stamps. Packs you've completed get a green COMPLETE; packs with nothing left to pull but cards still to fill by Fusion get a purple FUSION ONLY.
-- After opening a free pack, if you have more free packs you can keep going with [Open next free pack]. Before, only [One more pack] (buying the same pack with coins) was available.
+- Split the shop pack stamps.
+  Packs you've completed get a green COMPLETE; packs with nothing left to pull but cards still to fill by Fusion get a purple FUSION ONLY.
+- After opening a free pack, if you have more free packs you can keep going with [Open next free pack].
+  Before, only [One more pack] (buying the same pack with coins) was available.
 - On the opening screen, hovering over a card whose name is cut off with … now scrolls the full name sideways, like in the collection.
 - When you have no cards yet, the popover now explains how to earn coins (using tokens earns coins, and ⓒ 1,000 buys 1 pack).
 - Pack progress bars in the Collection sidebar now match the deck bars, and fully collected packs turn green.
@@ -110,7 +144,8 @@ Work mode gives your card collection a simpler look.
 
 **⚡ Performance**
 - Card tilt on hover is smoother.
-- Winged Kuriboh no longer blinks in the menu bar every 4 seconds, and the partner animation stops while the desktop partner is hidden. CPU use and wake-ups while the app sits idle drop to almost zero.
+- Winged Kuriboh no longer blinks in the menu bar every 4 seconds, and the partner animation stops while the desktop partner is hidden.
+  CPU use and wake-ups while the app sits idle drop to almost zero.
 - When the Cursor dashboard API cannot be read, the app now waits 30 minutes before trying again and reads the local records in the meantime.
 
 **🐛 Bug fixes**
@@ -121,24 +156,34 @@ Work mode gives your card collection a simpler look.
 Now available in Korean, English, and Japanese.
 
 **✨ New features**
-- Added a Language menu (Follow System, 한국어, English, 日本語) in Settings › General. It takes effect after a restart, and unsupported system languages fall back to English. Changing the language keeps your collection and save.
-- Card names, effects, attributes, types, and pack names are shown in the chosen language. Pack names switch to the original Japanese or TCG pack names.
+- Added a Language menu (Follow System, 한국어, English, 日本語) in Settings › General.
+  It takes effect after a restart, and unsupported system languages fall back to English.
+  Changing the language keeps your collection and save.
+- Card names, effects, attributes, types, and pack names are shown in the chosen language.
+  Pack names switch to the original Japanese or TCG pack names.
 - Collection search and name sorting use card names in the chosen language.
 
 **🎨 Improvements**
-- Numbers and dates follow the chosen language. Coin and token K/M abbreviations stay the same.
+- Numbers and dates follow the chosen language.
+  Coin and token K/M abbreviations stay the same.
 - In the collection, hovering over a card whose name is cut off with … now scrolls the full name sideways.
-- Packs in the shop where you've collected every card you can pull now get a slanted CLEAR stamp. Pressing their buy button once changes it to "Buy anyway", and you press again to buy.
+- Packs in the shop where you've collected every card you can pull now get a slanted CLEAR stamp.
+  Pressing their buy button once changes it to "Buy anyway", and you press again to buy.
 - With [Fusion Monsters by Fusion Summon only] on, shop pack progress shows how many cards are left that can only be filled by Fusion ("N left to fuse").
-- The Fusion Summonable list on the right of the collection can now be collapsed and expanded by clicking its title. The collapsed state is remembered.
-- Clicking during the Fusion animation now skips to the scene where the Fusion card has appeared instead of closing right away. Click again to close.
+- The Fusion Summonable list on the right of the collection can now be collapsed and expanded by clicking its title.
+  The collapsed state is remembered.
+- Clicking during the Fusion animation now skips to the scene where the Fusion card has appeared instead of closing right away.
+  Click again to close.
 - The large image in the collection's card info panel is now shown without tilt or reflection, and cards you don't own yet appear in color.
 
 **⚖️ Balance**
-- Every pack now contains at least one card you don't have from that pack yet. Once you've completed the pack, there's no guarantee. Free cards are unchanged.
+- Every pack now contains at least one card you don't have from that pack yet.
+  Once you've completed the pack, there's no guarantee.
+  Free cards are unchanged.
 
 **🐛 Bug fixes**
-- Fixed the app crashing when dragging the divider between the card grid and the card info panel in the collection. The card info panel now has a fixed width.
+- Fixed the app crashing when dragging the divider between the card grid and the card info panel in the collection.
+  The card info panel now has a fixed width.
 
 ## 0.4.4 — 2026-10-07
 **🎨 Improvements**
@@ -173,36 +218,44 @@ Now available in Korean, English, and Japanese.
 - Fixed the next free card countdown showing "0K" when fewer than 1,000 tokens remained; it now shows the actual number of tokens left.
 
 **🎨 Improvements**
-- Replaced the card back with a high-resolution image without a logo. It's bundled with the app, so it shows from the start without downloading.
+- Replaced the card back with a high-resolution image without a logo.
+  It's bundled with the app, so it shows from the start without downloading.
 - Coin amounts now roll when they change.
 - If saving fails, the menu bar icon changes to a warning, and a notice with [Open folder] appears at the top of the popover.
 - Switching to the shop, Settings, or opening screen inside the popover now transitions smoothly.
 - Hovering over the usage section now shows that it's clickable, and a progress indicator appears while limits load.
-- Polished wording: limits "5h"/"wk" → "5h"/"Weekly", update [OK] → [Check for updates], the sell icon is now a coin (ⓒ), and fixed spacing in the menu bar free card badge.
-- In the collection's deck view, selected cards can be removed one copy at a time with the Delete key (toolbar [Remove from Deck]). While typing in the search field, ⌘A and Delete apply to the search text.
+- Polished wording: limits "5h"/"wk" now read "5h"/"Weekly", update [OK] is now [Check for updates], the sell icon is now a coin (ⓒ), and the spacing in the menu bar free card badge is fixed.
+- In the collection's deck view, selected cards can be removed one copy at a time with the Delete key (toolbar [Remove from Deck]).
+  While typing in the search field, ⌘A and Delete apply to the search text.
 - Changed the rarity pill (R, UR, SE) text to black so small text reads well.
 - VoiceOver can now read and operate collection cards (name, rarity, copies owned, favorite, remove from deck), opened cards (flip, undo sale), and the Back and New Deck buttons.
 
 **⚡ Performance**
 - Reduced unnecessary work in the collection window when usage limits refresh or when switching to the shop or Settings.
-- Clicking a card in the collection no longer recalculates the card list and sidebar stats, so it responds faster. Sorting and searching only rerun when their criteria change, and the "Fusion Summonable" list is no longer rebuilt on each card click.
+- Clicking a card in the collection no longer recalculates the card list and sidebar stats, so it responds faster.
+  Sorting and searching only rerun when their criteria change, and the "Fusion Summonable" list is no longer rebuilt on each card click.
 
 ## 0.4.0 — 2026-10-06
 Expanded to 100 packs through the Modern era, and added SE rarity, card holograms, and a Fusion animation.
 
 **✨ New features**
-- Expanded the card pool through the Modern era (25 packs from RISE OF THE DUELIST to CHAOS ORIGINS), for 100 packs and 8,172 cards. The shop and collection gained a Modern section, and the Settings era range gained "Up to Modern (Support)".
-- Added SE (Secret) rarity above UR. Secret, Ultimate, and Holographic Rares appear as SE.
+- Expanded the card pool through the Modern era (25 packs from RISE OF THE DUELIST to CHAOS ORIGINS), for 100 packs and 8,172 cards.
+  The shop and collection gained a Modern section, and the Settings era range gained "Up to Modern (Support)".
+- Added SE (Secret) rarity above UR.
+  Secret, Ultimate, and Holographic Rares appear as SE.
 - The 21 cards with official overframe versions are shown with artwork extending past the card frame (Shooting Quasar Dragon, Supreme King Z-ARC, Summoned Skull, and more).
 - Added a Fusion animation: material cards are drawn into a galactic whirlpool in space, then burst like a supernova to reveal the Fusion card (click to close).
 - If any Fusion Monster you don't own yet can be Fusion Summoned right now, a "Fusion Summonable" list appears at the top of the right panel in the collection.
 - Hover over the +ⓒ mark on an auto-sold card and click ✕ to undo the sale.
-- Added [Turn off animations] to Settings. Cards are shown right away without tilt, flip, rare, or Fusion effects.
+- Added [Turn off animations] to Settings.
+  Cards are shown right away without tilt, flip, rare, or Fusion effects.
 
 **🎨 Improvements**
-- Hovering over a card tilts it toward the cursor like a real card, with a moving light reflection. UR and SE cards get a rainbow hologram (collection details, pack opening, recently obtained).
+- Hovering over a card tilts it toward the cursor like a real card, with a moving light reflection.
+  UR and SE cards get a rainbow hologram (collection details, pack opening, recently obtained).
 - SE cards open with two golden light beams and a golden halo for extra flair.
-- Rearranged the pack opening screen into 4 cards on top and a large rare slot at the bottom center. [Flip all] flips the rare 0.6 seconds later.
+- Rearranged the pack opening screen into 4 cards on top and a large rare slot at the bottom center.
+  [Flip all] flips the rare 0.6 seconds later.
 - Getting a free pack or free card while opening no longer makes the panel taller, and it returns to its original height after you open the last free pack.
 - Collection: moved the rarity label to the bottom left of the card image and removed the number.
 - Collection: the bottom left now shows owned/total cards per rarity and the completion rate.
@@ -211,11 +264,14 @@ Expanded to 100 packs through the Modern era, and added SE rarity, card hologram
 - Coins of 10,000 or more are abbreviated with K/M (including in the menu bar).
 
 **⚖️ Balance**
-- 5th card in a pack: SE 2%, UR 10% (was 12%).
-- The 4th card in a pack has a 30% chance to be R. The guarantee of monsters in the first 2 cards is unchanged.
-- Free card odds: N 70% / R 23% / SR 5% / UR 1.5% / SE 0.5%.
-- Sell prices: N ⓒ 20 (was 30), R ⓒ 50 (was 60), SR ⓒ 150, UR ⓒ 400 (was 300), SE ⓒ 1,200. The expected sell value of one pack is about ⓒ 206.
-- 98 pack cover monsters now appear as SE (excluding LABYRINTH OF NIGHTMARE and LEGACY OF DARKNESS, whose covers are Spells/Traps). Every pack now has an SE, and in GLADIATOR'S ASSAULT and STARDUST OVERDRIVE, whose only UR was the cover card, the UR slot became SR.
+- Changed the odds for the 5th card in a pack to SE 2%, UR 10% (was 12%).
+- The 4th card in a pack has a 30% chance to be R.
+  The guarantee of monsters in the first 2 cards is unchanged.
+- Set the free card odds to N 70% / R 23% / SR 5% / UR 1.5% / SE 0.5%.
+- Sell prices: N ⓒ 20 (was 30), R ⓒ 50 (was 60), SR ⓒ 150, UR ⓒ 400 (was 300), SE ⓒ 1,200.
+  The expected sell value of one pack is about ⓒ 206.
+- 98 pack cover monsters now appear as SE (excluding LABYRINTH OF NIGHTMARE and LEGACY OF DARKNESS, whose covers are Spells/Traps).
+  Every pack now has an SE, and in GLADIATOR'S ASSAULT and STARDUST OVERDRIVE, whose only UR was the cover card, the UR slot became SR.
 - Reprinted cards with different rarities across packs (such as Yubel) appear at their highest rarity from any pack.
 - Fusion consumes materials but leaves your last copy, so they don't disappear from the collection.
 
@@ -224,48 +280,67 @@ Expanded to 100 packs through the Modern era, and added SE rarity, card hologram
 
 ## 0.3.1 — 2026-10-06
 **🎨 Improvements**
-- The collection reopens to the last item you chose (All, Favorites, a pack, or a deck). The first open of the day starts at "All".
+- The collection reopens to the last item you chose (All, Favorites, a pack, or a deck).
+  The first open of the day starts at "All".
 
 **⚡ Performance**
-- Reduced stutter when clicking, favoriting, or selling cards in the collection (with many cards owned and sorted by name, about 1 s → 0.06 s). The first display is faster too.
+- Reduced stutter when clicking, favoriting, or selling cards in the collection (with many cards owned and sorted by name, about 1 s → 0.06 s).
+  The first display is faster too.
 - Reduced stutter when scrolling the collection.
 - Unchanged Claude logs are no longer reread, greatly cutting the CPU and memory used to tally usage.
 - Capped the memory used by card images.
 
 ## 0.3.0 — 2026-10-06
 **✨ New features**
-- Added the partner "Winged Kuriboh" (Beta). It unlocks when you get the card and moves on the menu bar icon and desktop according to your token usage (idle, flapping, flying, and sulking at 80% of a limit). It gets excited when you pull an SR/UR or get a free card, and waves when you have enough coins for a pack.
-- Drag the desktop partner to move it, click it to make it tilt its head, and right-click [Hide] to hide it. Turn it on or off and change its size in Settings under "Partner (Beta)".
+- Added the partner "Winged Kuriboh" (Beta).
+  It unlocks when you get the card and moves on the menu bar icon and desktop according to your token usage (idle, flapping, flying, and sulking at 80% of a limit).
+  It gets excited when you pull an SR/UR or get a free card, and waves when you have enough coins for a pack.
+- Drag the desktop partner to move it, click it to make it tilt its head, and right-click [Hide] to hide it.
+  Turn it on or off and change its size in Settings under "Partner (Beta)".
 
 ## 0.2.1 — 2026-10-06
 **✨ New features**
-- Added Gemini, Grok, Pi, oh-my-pi, and Cursor to token tallying. The usage section shows only today's usage.
+- Added Gemini, Grok, Pi, oh-my-pi, and Cursor to token tallying.
+  The usage section shows only today's usage.
 
 ## 0.2.0 — 2026-10-02
 Expanded to 75 packs through VRAINS, and added card selling, Fusion, deck building, and favorites.
 
 **✨ New features**
-- Expanded the card pool through 5D's, ZEXAL, ARC-V, and VRAINS, for 75 packs and 6,160 cards. The shop and collection gained era sections, and Rank, Link, and Pendulum info is shown.
-- Added an era range to Settings (from "Up to DM (Ritual)" to "Up to VRAINS (Link)", default "Up to GX (Fusion)"). Shop packs, the total card count, and the free card pool shrink to match the range.
+- Expanded the card pool through 5D's, ZEXAL, ARC-V, and VRAINS, for 75 packs and 6,160 cards.
+  The shop and collection gained era sections, and Rank, Link, and Pendulum info is shown.
+- Added an era range to Settings (from "Up to DM (Ritual)" to "Up to VRAINS (Link)", default "Up to GX (Fusion)").
+  Shop packs, the total card count, and the free card pool shrink to match the range.
 - Added 4 rarities (N/R/SR/UR) with rarity colors.
-- Cards can be sold for coins based on rarity. You can turn on auto-selling duplicates in Settings.
-- Fusion: with [Fusion Monsters by Fusion Summon only] on in Settings, the 81 Fusion Monsters with known materials no longer appear in packs or free cards. Once you own the "Polymerization" Spell Card, use [Fusion] in the collection to consume material cards ("Polymerization" isn't consumed).
-- Collection deck building: add cards to decks in the sidebar's Decks section by drag and drop or right-click. Unowned cards can be added too, up to 3 copies per card. Like packs, decks show owned/deck counts and a progress bar.
-- Collection multi-select (⌘/⇧ click, rubber-band from empty space, [Select all] ⌘A) and adding all selected cards to a deck at once.
-- Collection favorites (☆ on cards, Favorites in the sidebar), card name search, type (Monster, Spell, Trap, Summon method) and rarity filters, sorting (rarity, name, most owned), and a "Show unowned" checkbox.
-- Collection details now show "Fusion Materials". Click a material's name to jump to that card.
+- Cards can be sold for coins based on rarity.
+  You can turn on auto-selling duplicates in Settings.
+- Fusion: with [Fusion Monsters by Fusion Summon only] on in Settings, the 81 Fusion Monsters with known materials no longer appear in packs or free cards.
+  Once you own the "Polymerization" Spell Card, use [Fusion] in the collection to consume material cards ("Polymerization" isn't consumed).
+- Collection deck building: add cards to decks in the sidebar's Decks section by drag and drop or right-click.
+  Unowned cards can be added too, up to 3 copies per card.
+  Like packs, decks show owned/deck counts and a progress bar.
+- You can now select multiple cards in the collection (⌘/⇧ click, rubber-band from empty space, [Select all] ⌘A) and add them all to a deck at once.
+- Added collection favorites (☆ on cards, Favorites in the sidebar), card name search, type (Monster, Spell, Trap, Summon method) and rarity filters, sorting (rarity, name, most owned), and a "Show unowned" checkbox.
+- Collection details now show "Fusion Materials".
+  Click a material's name to jump to that card.
 - You can rename your collection.
 - Added update checking, save export/import (with an automatic backup before importing), version, patch notes, and license info, and Launch at login to Settings.
 
 **🎨 Improvements**
-- Packs and free cards are now opened inside the menu bar panel instead of a separate window. You can press [One more pack] or [Open next N] right on the opening screen, and card names appear below the cards.
+- Packs and free cards are now opened inside the menu bar panel instead of a separate window.
+  You can press [One more pack] or [Open next N] right on the opening screen, and card names appear below the cards.
 - SR and UR cards show a special effect when flipped.
-- The shop and collection sidebar can be collapsed and expanded by era. The shop remembers its scroll position, and pack tiles show names and a scroll indicator.
-- The collection grid shows card names, and owned counts are shown from ×2. Softened the silhouettes of unowned cards.
-- The collection always opens with unowned cards shown. If a search finds nothing, [Search all] appears.
+- The shop and collection sidebar can be collapsed and expanded by era.
+  The shop remembers its scroll position, and pack tiles show names and a scroll indicator.
+- The collection grid shows card names, and owned counts are shown from ×2.
+  Softened the silhouettes of unowned cards.
+- The collection always opens with unowned cards shown.
+  If a search finds nothing, [Search all] appears.
 - Tidied up collection details into a compact layout: attribute/level/type, ATK/DEF, and owned/sell each on one line, with Fusion material lines separated from the effect text.
 - Changed buttons to the Liquid Glass style.
-- Esc goes back from the shop, Settings, and opening screens. Added a tooltip to the coin count (10,000 tokens = ⓒ 1) and a new-window icon on the popover's collection row. Increased text contrast on rarity pills you haven't obtained.
+- Esc goes back from the shop, Settings, and opening screens.
+  Added a tooltip to the coin count (10,000 tokens = ⓒ 1) and a new-window icon on the popover's collection row.
+  Increased text contrast on rarity pills you haven't obtained.
 
 **⚖️ Balance**
 - Each pack guarantees at least 2 monsters (the first 2 normal slots).
@@ -278,4 +353,5 @@ Expanded to 75 packs through VRAINS, and added card selling, Fusion, deck buildi
 - Fixed the collection window closing when narrowing the era range.
 
 ## 0.1.0 — 2026-10-01
-- First release: earn coins and free cards from token usage, and buy and open 27 booster packs (2,270 cards). Shows today's usage and official limits.
+- First release: earn coins and free cards from token usage, and buy and open 27 booster packs (2,270 cards).
+  Shows today's usage and official limits.

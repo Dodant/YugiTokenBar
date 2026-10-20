@@ -39,6 +39,14 @@ final class ImageCache {
         return await image(key: request.key, url: request.url, maxPixels: request.maxPixels, force: force)
     }
 
+    /// 필드 마법의 일러스트 칸만 (설정 [필드 배경]). 따로 받지 않고 큰 카드 이미지에서 자른다.
+    /// 마법 카드는 틀이 같아 비율로 자르고, 흐리게 깔아서 칸 가장자리가 섞이지 않게 조금 안쪽만 쓴다
+    func fieldArt(_ imageId: Int) async -> NSImage? {
+        guard let card = await image(imageId, size: .full)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let w = Double(card.width), h = Double(card.height)
+        return card.cropping(to: CGRect(x: w * 0.13, y: h * 0.19, width: w * 0.74, height: w * 0.74)).map { NSImage(cgImage: $0, size: .zero) }
+    }
+
     /// 메모리 캐시에 이미 있으면 바로 (뷰가 첫 프레임부터 그리도록, 기다리는 동안 뒷면이 깜빡이지 않게)
     func cached(_ imageId: Int, size: Size, overframe: Bool = false, force: Bool = false) -> NSImage? {
         guard force || !workMode else { return nil }

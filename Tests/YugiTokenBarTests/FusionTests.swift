@@ -42,6 +42,39 @@ import Testing
         #expect(game.craftMaterials(11) == nil && !unknown)  // 소재를 모르는 융합은 못 만든다
     }
 
+    /// 소재를 1장씩만 가지면 소비가 없으니, 한 번 만든 융합은 팔아도 다시 만들 수 없다 (융합 → 판매 반복으로 코인을 찍지 못하게)
+    @Test func madeFusionCannotBeFusedAgainEvenAfterSelling() {
+        var game = Game(db: db, state: GameState())
+        game.state.owned = [1: 1, 2: 2, CardDB.fusionSpell: 1]
+        let first = game.fuse(10)
+        game.state.owned[2] = 2  // 소재가 다시 충분해도
+        let again = game.fuse(10)
+        #expect(first && !again && !game.canFuse(10))  // 가지고 있으면 다시 못 만든다
+        let sold = game.sell(10)
+        #expect(sold != nil && game.copies(10) == 0)
+        let afterSale = game.fuse(10)
+        #expect(!afterSale && !game.canFuse(10) && !game.fusable.contains(10))  // 다 팔아도 못 만든다
+        #expect(!game.isFusionOnly(10))  // 대신 팩·무료 카드에서 나온다
+        #expect(game.state.owned == [1: 1, 2: 2, CardDB.fusionSpell: 1])
+    }
+
+    /// 팩에서 받은 융합(예전 세이브·만들 수 없게 된 뒤 받은 장)도 만든 것으로 센다
+    @Test func receivedFusionCountsAsMade() {
+        var game = Game(db: db, state: GameState())
+        game.state.owned = [1: 1, 2: 2, CardDB.fusionSpell: 1]
+        game.give(10, source: LogEntry.fusion)
+        _ = game.sell(10)
+        #expect(!game.canFuse(10) && !game.isFusionOnly(10))
+    }
+
+    /// 다른 Mac 세이브를 가져와도 이 Mac에서 만든 기록은 남는다 (기록이 지워지면 다시 만들어 팔 수 있다)
+    @Test func importKeepsMadeFusions() {
+        var local = GameState(), imported = GameState()
+        local.crafted = [10]
+        imported.crafted = [11]
+        #expect(imported.withLedger(of: local).crafted == [10, 11])
+    }
+
     /// 마스크드 히어로: 「마스크 체인지」가 있으면 같은 속성 HERO 중 가장 많이 가진 1장을 소비해(마지막 장은 남김) 만든다
     @Test func maskChangeUsesSameAttributeHero() {
         func hero(_ attr: String, mask: Bool? = nil) -> CardInfo {

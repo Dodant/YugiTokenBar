@@ -37,7 +37,7 @@ def all_notes(version):
 
 
 def appcast(version, build, length, signature, notes):
-    url = f"https://github.com/Dodant/YugiTokenBar/releases/download/v{version}/YugiTokenBar-{version}.zip"
+    url = f"https://github.com/Dodant/YugiTokenBar/releases/download/v{version}/YugiTokenBar-{version}-macOS.zip"
     rss = ET.Element("rss", {"version": "2.0"})
     channel = ET.SubElement(rss, "channel")
     ET.SubElement(channel, "title").text = "YugiTokenBar"

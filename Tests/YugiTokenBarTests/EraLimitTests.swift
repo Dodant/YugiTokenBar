@@ -5,6 +5,18 @@ import Testing
     // 팩 12개 → DM 0..<11, GX 11..<12. 팩마다 고유 카드 1장 (cid = 팩 번호 + 1)
     let db = makeDB((0..<12).map { [($0 + 1, 1)] })
 
+    #if os(macOS)
+    /// 필드 배경 카드가 시대 범위 밖이면 없음처럼, 넓히면 돌아온다
+    @MainActor @Test func fieldBackgroundFollowsEraLimit() throws {
+        let (model, _) = try makeModel(db) { $0.owned = [12: 1]; $0.fieldBackground = 12 }
+        #expect(model.fieldBackground == 12)
+        model.eraLimit = "DM"
+        #expect(model.fieldBackground == nil && model.game.state.fieldBackground == 12)
+        model.eraLimit = "GX"
+        #expect(model.fieldBackground == 12)
+    }
+    #endif
+
     @Test func eraLimitNarrowsPacksCardsAndDraws() {
         var state = GameState()
         #expect(state.eraLimit == "GX")  // 기본값

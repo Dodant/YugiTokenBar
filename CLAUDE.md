@@ -10,12 +10,16 @@ Linux 창에는 메뉴바·팝오버·파트너·업무 모드가 없고 Shop은
   - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음.
 
 GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.xml을 읽어 업데이트한다.
-macOS 자산은 Developer ID 서명·Apple 공증 설정 뒤에 게시하고, 그 전에는 Linux Flatpak만 prerelease로 게시한다.
+Developer ID·공증 없이 ad-hoc 서명으로(스크립트에 `YTB_SIGN_IDENTITY`·`YTB_NOTARY_PROFILE` 선택 경로는 남아 있다), CI가 아니라 로컬에서 `scripts/package-release.sh --publish`로 게시한다(게시는 사용자 확인 후).
+Linux Flatpak(x86_64·aarch64)도 같은 스크립트가 Docker로 만들어 같은 Release에 올린다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준, 로컬 전용)
 - 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 25장·복사한 코드).
   이미지 출처를 바꾸면 같이 고친다.
-- 배포: `docs/distribution.md` (서명·공증·릴리스 태그)
+- 배포: `docs/distribution.md` (Sparkle 키·로컬 릴리스·Gatekeeper)
+- README: `README.md`(영어)·`README.ko.md`·`README.ja.md`.
+  하나를 고치면 셋을 같이 고친다(UI 이름은 `Localizable.strings` 번역).
+  목록 항목이 여러 문장이면 마지막 줄을 뺀 줄 끝에 `\`를 붙여 렌더링에서도 줄을 바꾼다.
 - 구현 계획: `docs/superpowers/plans/` (로컬 전용, 현재 기준은 스펙).
 - superpowers 파일(`docs/superpowers/`·`.superpowers/` 등 어느 위치의 `superpowers` 폴더든)은 git에 넣지 않는다.
 - 실행 방식: **Subagent-driven** (superpowers:subagent-driven-development) — 사용자가 선택함
@@ -51,7 +55,7 @@ macOS 자산은 Developer ID 서명·Apple 공증 설정 뒤에 게시하고, �
 - 밸런스 수치는 `Game.swift`의 `Balance`에만 둔다.
   바꿀 때는 스펙 5절도 같이 고친다.
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 복사본이다.
-  직접 고치지 말고 `tools/import-usage.sh`(원본 `~/remote-claude-projects/code/PokeTokenBar-carryover`, 커밋 `de617e3`)로 다시 만든다.
+  직접 고치지 말고 `PTB_REPO=<PokeTokenBar 체크아웃> bash tools/import-usage.sh`(커밋 `de617e3`)로 다시 만든다.
   바꾼 점은 `Usage/NOTICE.md`에 적는다.
   파일별 캐시는 원본의 `LocalUsageCache`를 그대로 가져와 쓰고, 그 밖의 읽는 쪽 조정(provider 묶기·쓰는 중인 Claude 파일의 붙은 줄만 읽기·Cursor 증분·백오프)은 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
   `Usage/` 안은 그 조정에 필요한 접근만 `import-usage.sh` 패치로 연다.
@@ -120,7 +124,7 @@ macOS 자산은 Developer ID 서명·Apple 공증 설정 뒤에 게시하고, �
 - 문서(.md)는 한 줄에 한 문장으로 쓴다.
   문장이 끝나면 줄을 바꾸고, 목록 항목이면 내용 칸만큼 들여 쓴다(렌더링은 같다).
   표·코드 블록은 예외.
-  `CHANGELOG*.md`는 앱이 줄 단위로 그리므로 항목 하나를 한 줄로 둔다.
+  `CHANGELOG*.md`도 항목이 여러 문장이면 둘째 문장부터 두 칸 들여 다음 줄에 쓴다(앱은 그 줄을 같은 항목으로 그린다).
 - 커밋 메시지 끝: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`
 
 ## 명령
@@ -143,6 +147,7 @@ python3 tools/sync-strings.py --check                 # UI 문구 키·번역·e
 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (Claude 공식 한도·Cursor API는 안 읽음)
 PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도·Cursor API까지 실제로 읽기
 scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명, 버전은 CHANGELOG.md)
-YTB_SIGN_IDENTITY=… YTB_NOTARY_PROFILE=… scripts/package-release.sh  # 공개용 서명·공증 ZIP (docs/distribution.md)
+scripts/package-release.sh                            # 릴리스 ZIP·appcast.xml만 build/release/에 (ad-hoc, Sparkle 서명은 키체인 키 또는 YTB_SPARKLE_PRIVATE_KEY)
+scripts/package-release.sh --publish                  # 검사 후 vX.Y.Z 태그와 GitHub Release 게시 (main = origin/main 일 때만, 사용자 확인 후)
 scripts/build-app.sh && YTB_STATE_DIR=$PWD/qa-state build/YugiTokenBar.app/Contents/MacOS/YugiTokenBar -AppleLanguages '(en)'  # 언어별 QA (번역은 .app 에서만 보임, 실행 인자라 설정에 저장 안 됨)
 ```

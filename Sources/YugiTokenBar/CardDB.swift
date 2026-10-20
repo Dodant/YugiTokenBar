@@ -19,6 +19,8 @@ struct CardInfo: Codable, Sendable, Equatable {
 
     /// 언어와 상관없는 종류 코드(JSON "kind"): 마법 "spell"·함정 "trap", 몬스터는 nil. build-cards.py 가 KO attr 로 정한다
     var kindCode: String? = nil
+    /// 필드 마법 (설정 [필드 배경]에 고를 수 있다). build-cards.py 가 KO type 으로 정한다
+    var field: Bool? = nil
     /// 몬스터의 소환법 코드(시대 순, CardInfo.summonCodes 중). build-cards.py 가 KO type 으로 정한다
     var summons: [String]? = nil
     /// "HERO" 몬스터 (마스크 체인지의 소재). build-cards.py 가 KO 이름으로 정한다
@@ -31,7 +33,7 @@ struct CardInfo: Codable, Sendable, Equatable {
     var picks: [Pick]? = nil
 
     enum CodingKeys: String, CodingKey {
-        case name, attr, level, type, atk, def, text, imageId, tier, scale, pendulum, materials, summons, hero, mask
+        case name, attr, level, type, atk, def, text, imageId, tier, scale, pendulum, materials, field, summons, hero, mask
         case kindCode = "kind"
     }
 

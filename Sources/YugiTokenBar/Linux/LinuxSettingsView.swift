@@ -140,7 +140,7 @@ private struct EraChoice { let name: String; let label: String }
                 title: L("세이브를 바꿀까요?"), id: "import", width: 420) { importDialog }
     }
 
-    /// Patch notes and the license are Markdown-ish: `#` headings, `**…**` category lines, `- ` items.
+    /// Patch notes and the license are Markdown-ish: `#` headings, `**…**` category lines, `- ` items and their two-space continuation lines.
     @ViewBuilder private func markdown(_ text: String) -> Body {
         VStack(spacing: 6) {
             ForEach(Array(text.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, raw in
@@ -148,6 +148,7 @@ private struct EraChoice { let name: String; let label: String }
                 if line.hasPrefix("## ") { Text(String(line.dropFirst(3))).wrap().style("title-4").halign(.start) }
                 else if line.hasPrefix("# ") { Text(String(line.dropFirst(2))).wrap().style("title-3").halign(.start) }
                 else if line.hasPrefix("- ") { Text("    • " + line.dropFirst(2)).wrap().halign(.start) }
+                else if line.hasPrefix("  ") { Text("       " + line.drop { $0 == " " }).wrap().halign(.start) }
                 else if line.isEmpty { Text("").padding(2) }
                 else if raw.hasPrefix("**") { Text(line).wrap().style("heading").halign(.start) }
                 else { Text(line).wrap().halign(.start) }

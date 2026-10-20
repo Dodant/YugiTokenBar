@@ -22,6 +22,7 @@
 | 카드 이미지(`cards_small`·`cards`) | YGOPRODeck https://images.ygoprodeck.com/images/ |
 | 팩 봉투 | Yugipedia(고른 언어판. 일본어는 없으면 영문판), 없으면 YGOPRODeck `images/sets/<setCode>.jpg` |
 | 오버프레임 25장 | 아래 표 |
+| 필드 배경 | 카드 이미지(`cards`)의 일러스트 칸을 잘라 씀(`ImageCache.fieldArt`) |
 
 ### 오버프레임 (`ImageSource.overframe`)
 
@@ -74,6 +75,7 @@ Yugipedia 이미지를 먼저 쓰고(영문 RA05·BETB UR, 일본판 LOSP·BETB 
 |---|---|
 | `Sources/YugiTokenBar/Usage/` 토큰 사용량 코드 | PokeTokenBar(MIT) https://github.com/chattymin/PokeTokenBar, 커밋 `de617e3`. 자세한 내용은 `Usage/NOTICE.md` |
 | `Resources/partner.png` 날개 크리보 스프라이트 | 사용자가 ChatGPT로 만든 팬 이미지(Konami 캐릭터라 MIT 대상 아님) |
+| `Resources/AppIcon.icon` 앱 아이콘 | 사용자가 그린 "Yu-Gi" 손글씨(ChatGPT 이미지)를 Icon Composer로 만듦 |
 | `Resources/card-back.jpg` 카드 뒷면 | Yugipedia [File:Back-KR.png](https://yugipedia.com/wiki/File:Back-KR.png)(한국판 실물 스캔 923×1351)에서 KONAMI·유희왕 로고를 지움(`tools/clean-card-back.py`) |
 | `packaging/io.github.dodant.YugiTokenBar.svg` Linux 앱 아이콘 | 직접 그린 카드 모티프 SVG(외부 그림 없음) |
 | Flatpak의 `/app/share/yugitokenbar/licenses/` (설정 > License에 Linux에서 표시) | 빌드가 푼 의존성 checkout의 라이선스 파일을 `<패키지>.md`로 복사: adwaita-swift, meta, meta-sqlite, levenshtein-transformations, SQLite.swift, CSQLite, swift-crypto, swift-asn1, XMLCoder |

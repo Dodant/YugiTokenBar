@@ -210,7 +210,6 @@
 "소재 카드가 모자라요" = "Not enough materials";
 /* CardDetailView.swift:50 */
 /* CardDetailView.swift:47 */
-"보유 %lld" = "Owned %lld";
 /* CardDetailView.swift:73 */
 "%@ 융합" = "Fusion Summon \"%@\"";
 /* CardDetailView.swift:80 */
@@ -582,3 +581,11 @@
 "세션 초기화까지" = "Until session resets";
 /* SettingsView.swift:94 */
 "코인 · 무료" = "Coins · Free";
+/* SettingsView.swift:171 */
+"필드 배경" = "Field background";
+/* SettingsView.swift:171 */
+"필드 마법 카드를 얻으면 고를 수 있어요" = "Unlock by collecting a Field Spell";
+/* SettingsView.swift:171 */
+"필드 마법 카드의 그림을 배경으로 써요" = "Use a Field Spell Card's artwork as the background";
+/* CardDetailView.swift:72 */
+"이미 만든 카드예요. 더 모으려면 팩에서 뽑으세요" = "Already made. Pull it from packs to get more";

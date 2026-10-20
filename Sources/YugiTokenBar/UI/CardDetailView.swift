@@ -69,7 +69,8 @@ struct CardDetailView: View {
                         let spell = model.game.craftSpell(cid)
                         let hasSpell = model.game.copies(spell) > 0
                         let spellName = model.db.cards[spell]?.name ?? ""
-                        let why: LocalizedStringKey = !hasSpell ? "「\(spellName)」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
+                        let why: LocalizedStringKey = model.game.made(cid) ? "이미 만든 카드예요. 더 모으려면 팩에서 뽑으세요"
+                            : !hasSpell ? "「\(spellName)」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
                         HStack(spacing: 4) {
                             Spacer()
                             if !hasSpell {  // 누르면 「융합」(「마스크 체인지」) 카드로 이동
@@ -144,9 +145,14 @@ struct CardDetailView: View {
 
     private func materialRow(_ mcid: Int, _ suffix: String) -> some View {
         HStack {
-            Button((model.db.cards[mcid]?.name ?? "") + suffix) { jump(mcid) }.buttonStyle(.link).multilineTextAlignment(.leading)  // 긴 이름(EN)이 줄 바뀌어도 왼쪽 정렬
+            // 긴 이름(EN)이 줄 바뀌어도 왼쪽 정렬 (링크 버튼은 정렬을 라벨에 넘기지 않아 Text 에 붙인다)
+            Button { jump(mcid) } label: {
+                Text(verbatim: (model.db.cards[mcid]?.name ?? "") + suffix).multilineTextAlignment(.leading)
+            }.buttonStyle(.link)
             Spacer()
-            Text("보유 \(model.game.copies(mcid))").foregroundStyle(.secondary).monospacedDigit()
+            let n = model.game.copies(mcid)
+            Text(verbatim: "\(n)").foregroundStyle(.secondary).monospacedDigit()
+                .accessibilityLabel("보유 \(n)장")
         }
     }
 

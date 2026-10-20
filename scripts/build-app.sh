@@ -27,6 +27,9 @@ ditto "$BIN_DIR/Sparkle.framework" "$SPARKLE"
 rm -rf "$SPARKLE/XPCServices" "$SPARKLE/Versions/B/XPCServices"
 cp Resources/cards_*.json Resources/picks.json "$APP/Contents/Resources/"
 cp -R Resources/ko.lproj Resources/en.lproj Resources/ja.lproj "$APP/Contents/Resources/"
+# 앱 아이콘: Icon Composer 파일(Resources/AppIcon.icon)을 Assets.car(Liquid Glass)·AppIcon.icns 로 컴파일
+xcrun actool --compile "$APP/Contents/Resources" --app-icon AppIcon --platform macosx \
+    --minimum-deployment-target 26.0 --output-partial-info-plist /dev/null Resources/AppIcon.icon >/dev/null
 cp Resources/partner.png "$APP/Contents/Resources/partner.png"
 cp Resources/card-back.jpg "$APP/Contents/Resources/card-back.jpg"
 cp CHANGELOG.md CHANGELOG.en.md CHANGELOG.ja.md "$APP/Contents/Resources/"
@@ -43,12 +46,14 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleIdentifier</key><string>local.yugitokenbar</string>
+    <key>CFBundleIdentifier</key><string>io.github.dodant.YugiTokenBar</string>
     <key>CFBundleName</key><string>$APP_NAME</string>
     <key>CFBundleExecutable</key><string>$APP_NAME</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundleVersion</key><string>$BUILD</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>CFBundleIconName</key><string>AppIcon</string>
     <key>LSMinimumSystemVersion</key><string>26.0</string>
     <key>LSUIElement</key><true/>
     <key>CFBundleDevelopmentRegion</key><string>en</string>

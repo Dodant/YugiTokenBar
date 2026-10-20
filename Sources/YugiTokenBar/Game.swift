@@ -17,7 +17,7 @@ enum Balance {
     /// 무료 카드의 티어 확률 (N / R / SR / UR / SE). 티어 안에서는 균등.
     static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.70), (2, 0.23), (3, 0.05), (4, 0.015), (5, 0.005)]
     static let logLimit = 50
-    /// 무료 카드를 한 번에 여는 최대 장 수 (팩 1봉투와 같은 5장)
+    /// 무료 카드를 한 번에 여는 최대 장 수 (4장은 2장씩·6장은 3장씩 두 줄)
     static let freeOpenBatch = 6
     /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
     static let monstersPerPack = 2
@@ -27,6 +27,8 @@ enum Balance {
     static let clearedSellMultiplier = 3
     /// 다 모은 팩에서 아직 필요한 카드(`Game.wanted`)가 같은 등급의 다른 카드보다 이만큼 잘 나온다
     static let wantedWeight = 10.0
+    /// 다 모은 팩에 아직 필요한 카드가 남았으면 5번째 장이 이 확률로 등급과 상관없이 그중 하나가 된다 (높은 등급 소재도 구할 수 있게)
+    static let wantedSlotChance = 0.30
     /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
     static let maxCopiesInDeck = 3
     /// 같은 카드를 이만큼 모으면 공식 오버프레임 그림이 해금된다 (판이 있는 카드만, 팔아도 유지). 해금 전엔 이만큼 자동 판매·중복 판매에서 남긴다.
@@ -218,6 +220,7 @@ struct Game: Sendable {
     private mutating func sell(_ cid: Int, price: Int) -> Int? {
         guard copies(cid) > 0 else { return nil }
         state.owned[cid] = copies(cid) == 1 ? nil : copies(cid) - 1
+        if copies(cid) == 0, state.fieldBackground == cid { state.fieldBackground = nil }  // 가진 카드만 배경으로
         state.coins += price
         return price
     }
@@ -320,11 +323,11 @@ struct Game: Sendable {
     // MARK: 융합
 
     /// 중복으로 치지 않고 남길 장 수: 융합 소재로 필요한 최대 장 수, 아니면 1장 (중복 판매·자동 판매 공통).
-    /// 조건 소재는 그 융합을 아직 안 가졌을 때만 센다(같은 카드만 나와도 모아서 만들 수 있게).
+    /// 조건 소재는 그 융합을 아직 만들지 않았을 때만 센다(같은 카드만 나와도 모아서 만들 수 있게, `made`).
     /// 오버프레임 판이 있는 카드는 해금 전까지 `overframeCopies` 장 (설정과 상관없이).
     func keep(_ cid: Int) -> Int {
         let base = overframeLocked(cid) ? Balance.overframeCopies : 1
-        let open = db.conditionNeed[cid]?.filter { copies($0.key) == 0 }.values.max() ?? 1
+        let open = db.conditionNeed[cid]?.filter { !made($0.key) }.values.max() ?? 1
         return max(base, db.materialNeed[cid] ?? 1, open)
     }
 
@@ -333,8 +336,12 @@ struct Game: Sendable {
     func wanted(_ cid: Int) -> Bool { copies(cid) < keep(cid) }
 
     /// 만들 수 있는 융합 몬스터(CardInfo.craftable)·마스크드 히어로는 팩·무료 카드에서 안 나오고 융합으로만 얻는다. 만들 수 없는 융합은 팩에서 나온다.
-    /// 1장이라도 가지면(융합으로 만들었으면) 다시 팩·무료 카드에서 나온다.
-    func isFusionOnly(_ cid: Int) -> Bool { db.fusionCIDs.contains(cid) && copies(cid) == 0 }
+    /// 한 번 가지면(`made`) 다 팔아도 팩·무료 카드에서 나온다.
+    func isFusionOnly(_ cid: Int) -> Bool { db.fusionCIDs.contains(cid) && !made(cid) }
+
+    /// 이 융합 몬스터를 가진 적이 있다. 마지막 소재 1장은 남기므로 다시 만들면 소재 없이 찍어 팔 수 있어 다시 만들지 못한다.
+    /// `crafted` 이전 세이브의 보유분도 센다
+    func made(_ cid: Int) -> Bool { state.crafted.contains(cid) || copies(cid) > 0 }
 
     /// 마스크드 히어로는 「마스크 체인지」, 나머지는 「융합」이 있어야 만든다 (소비하지 않는다)
     func craftSpell(_ cid: Int) -> Int { db.cards[cid]?.mask == true ? CardDB.maskChange : CardDB.fusionSpell }
@@ -368,12 +375,12 @@ struct Game: Sendable {
         pickMaterials(cid)?.reduce(into: [:]) { $0.merge($1, uniquingKeysWith: +) }
     }
 
-    /// 고른 소재는 가진 장 수 안에서만 잡으니 다 고르면 만들 수 있다
-    func canFuse(_ cid: Int) -> Bool { copies(craftSpell(cid)) > 0 && pickMaterials(cid) != nil }
+    /// 고른 소재는 가진 장 수 안에서만 잡으니 다 고르면 만들 수 있다. 가진 적 있는 융합(`made`)은 다시 못 만든다
+    func canFuse(_ cid: Int) -> Bool { !made(cid) && copies(craftSpell(cid)) > 0 && pickMaterials(cid) != nil }
 
     /// 지금 융합할 수 있는 범위 안 미보유 카드
     var fusable: [Int] {
-        db.allCIDs.filter { db.fusionCIDs.contains($0) && copies($0) == 0 && canFuse($0) }
+        db.allCIDs.filter { db.fusionCIDs.contains($0) && canFuse($0) }
     }
 
     /// 소재를 소비해(1장은 남긴다) 1장 만든다 (중복 자동 판매는 적용하지 않는다). 「융합」(마스크드 히어로는 「마스크 체인지」)이 없거나 소재가 모자라면 false.
@@ -470,6 +477,7 @@ struct Game: Sendable {
 
     /// 봉투 하나 열기: 노멀 3 + 슬롯4(노멀, `slot4RareChance`로 레어) + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
     /// 팩에 아직 없는 카드가 남아 있으면 1장 이상은 새 카드다(`ensureNew`).
+    /// 다 모은 팩은 5번째 장이 `wantedSlotChance`로 아직 필요한 카드(`wanted`) 중 하나다.
     private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         let boost = progress(pack).cleared
         let slot4 = Double.random(in: 0..<1, using: &rng) < Balance.slot4RareChance ? 2 : 1
@@ -477,6 +485,11 @@ struct Game: Sendable {
         var slots: [(tier: Int, kind: CardKind?, cid: Int)] = []
         for (i, tier) in tiers.enumerated() {
             let kind: CardKind? = i < Balance.monstersPerPack ? .monster : nil
+            if boost, i == tiers.count - 1, Double.random(in: 0..<1, using: &rng) < Balance.wantedSlotChance,
+               let cid = db.packs[pack].cards.filter({ wanted($0) && !isFusionOnly($0) && !slots.map(\.cid).contains($0) }).randomElement(using: &rng) {
+                slots.append((db.tier(cid), kind, cid))
+                continue
+            }
             guard let cid = draw(pack: pack, tier: tier, excluding: Set(slots.map(\.cid)), kind: kind, boostWanted: boost, using: &rng) else { continue }
             slots.append((tier, kind, cid))
         }
@@ -533,6 +546,7 @@ struct Game: Sendable {
 
     mutating func give(_ cid: Int, source: String, now: Date = Date()) {
         state.owned[cid, default: 0] += 1
+        if db.fusionCIDs.contains(cid) { state.crafted.insert(cid) }
         unlockOverframe(cid)
         state.log.insert(LogEntry(cid: cid, source: source, date: now), at: 0)
         if state.log.count > Balance.logLimit {

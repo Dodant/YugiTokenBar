@@ -15,6 +15,7 @@ import Testing
         #expect(db.eras.map(\.name) == ["DM", "GX", "5D's", "ZEXAL", "ARC-V", "VRAINS", "Modern"])
         let kinds = Dictionary(grouping: db.cards.values, by: \.kind).mapValues(\.count)
         #expect(kinds == [.monster: 5137, .spell: 1738, .trap: 1431])
+        #expect(db.cards.values.filter { $0.field == true }.count == 193 && db.cards.values.allSatisfy { $0.field != true || $0.kind == .spell })
         // 팩마다 노멀 몬스터가 보장 장 수 이상이라 몬스터 슬롯이 다른 티어로 올라가지 않는다
         #expect(db.packs.allSatisfy { p in p.cards.filter { db.tier($0) == 1 && db.cards[$0]?.kind == .monster }.count >= Balance.monstersPerPack })
         #expect(db.eras.map(\.packs) == [0..<11, 11..<27, 27..<43, 43..<51, 51..<63, 63..<75, 75..<101])

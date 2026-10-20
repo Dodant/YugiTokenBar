@@ -210,7 +210,6 @@
 "소재 카드가 모자라요" = "素材が足りません";
 /* CardDetailView.swift:50 */
 /* CardDetailView.swift:47 */
-"보유 %lld" = "所持 %lld";
 /* CardDetailView.swift:73 */
 "%@ 융합" = "%@を融合召喚";
 /* CardDetailView.swift:80 */
@@ -582,3 +581,11 @@
 "세션 초기화까지" = "セッションリセットまで";
 /* SettingsView.swift:94 */
 "코인 · 무료" = "コイン · 無料";
+/* SettingsView.swift:171 */
+"필드 배경" = "フィールド背景";
+/* SettingsView.swift:171 */
+"필드 마법 카드를 얻으면 고를 수 있어요" = "フィールド魔法カードを入手すると選べます";
+/* SettingsView.swift:171 */
+"필드 마법 카드의 그림을 배경으로 써요" = "フィールド魔法カードのイラストを背景に使います";
+/* CardDetailView.swift:72 */
+"이미 만든 카드예요. 더 모으려면 팩에서 뽑으세요" = "作成済みです。さらに集めるにはパックから引いてください";

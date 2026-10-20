@@ -105,7 +105,7 @@ struct SettingsView: View {
                 }
                 .labelsHidden()
                 .controlSize(.small)
-                .fixedSize()
+                .frame(maxWidth: 160)  // fixedSize 면 가장 긴 항목 폭이 되어 영어 이름이 세 줄로 접힌다
             }
         }
     }
@@ -165,6 +165,20 @@ struct SettingsView: View {
             toggleRow("중복 카드 자동 판매", hint: "새로 나온 중복 카드를 코인으로 바꿔요",
                       detail: "이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 \(Balance.overframeCopies)장까지 남기고, 융합에 필요한 소재도 남겨요.",
                       isOn: Bindable(model).autoSellDuplicates)
+            row {
+                let db = model.game.db  // 시대 범위 안만
+                let fields = db.allCIDs.filter { db.cards[$0]?.field == true && model.game.copies($0) > 0 }
+                labeled("필드 배경", hint: fields.isEmpty ? "필드 마법 카드를 얻으면 고를 수 있어요" : "필드 마법 카드의 그림을 배경으로 써요")
+                Spacer()
+                Picker("필드 배경", selection: Bindable(model).fieldBackground) {
+                    Text("없음").tag(Int?.none)
+                    ForEach(fields, id: \.self) { Text(verbatim: db.cards[$0]?.name ?? "").tag(Int?.some($0)) }
+                }
+                .labelsHidden()
+                .frame(maxWidth: 150)  // 긴 카드 이름은 말줄임 (fixedSize 면 이름·설명이 폭 0으로 눌린다)
+                .controlSize(.small)
+                .disabled(fields.isEmpty)
+            }
             row {
                 let db = model.game.fullDB
                 VStack(alignment: .leading, spacing: 1) {
@@ -422,14 +436,15 @@ struct SettingsView: View {
     }
 }
 
-/// 패치노트·라이선스 창. `#`/`##` 제목만 크게, `- ` 줄은 • 항목(둘째 줄부터 들여쓰기), 나머지 줄은 인라인 마크다운.
+/// 패치노트·라이선스 창. `#`/`##` 제목만 크게, `- ` 줄은 • 항목(두 칸 들여 쓴 다음 줄은 같은 항목의 다음 문장), 나머지 줄은 인라인 마크다운.
 struct DocView: View {
     let text: String
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(Array(text.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
+                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                    let line = block[0]
                     if line.hasPrefix("## ") {
                         Text(line.dropFirst(3)).font(.headline).padding(.top, 10)
                     } else if line.hasPrefix("# ") {
@@ -437,7 +452,10 @@ struct DocView: View {
                     } else if line.hasPrefix("- ") {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text("•")
-                            inline(String(line.dropFirst(2)))
+                            VStack(alignment: .leading, spacing: 2) {
+                                inline(String(line.dropFirst(2)))
+                                ForEach(Array(block.dropFirst().enumerated()), id: \.offset) { _, more in inline(more) }
+                            }
                         }
                         .padding(.leading, 4)
                     } else if !line.isEmpty {
@@ -451,8 +469,21 @@ struct DocView: View {
         }
     }
 
-    private func inline(_ line: String) -> Text {
+    /// 줄 묶음: `- ` 항목 밑에 두 칸 들여 쓴 줄은 그 항목에 붙인다
+    private var blocks: [[String]] {
+        text.components(separatedBy: "\n").reduce(into: []) { acc, line in
+            if line.hasPrefix("  "), acc.last?.first?.hasPrefix("- ") == true {
+                acc[acc.count - 1].append(line.trimmingCharacters(in: .whitespaces))
+            } else {
+                acc.append([line])
+            }
+        }
+    }
+
+    /// 긴 항목도 잘리지 않고 창 너비에서 줄을 바꾼다 (선택 가능한 Text 는 한 줄로 줄이기 쉽다)
+    private func inline(_ line: String) -> some View {
         Text((try? AttributedString(markdown: line)) ?? AttributedString(line))
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 #endif

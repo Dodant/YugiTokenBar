@@ -255,6 +255,12 @@ final class AppModel {
         set { game.state.eraLimit = newValue; save() }
     }
 
+    /// 시대 범위 밖이면 없음처럼 (세이브엔 남아 범위를 넓히면 돌아온다)
+    var fieldBackground: Int? {
+        get { game.state.fieldBackground.flatMap { game.db.cidSet.contains($0) ? $0 : nil } }
+        set { game.state.fieldBackground = newValue; save() }
+    }
+
     var animationsOff: Bool {
         get { game.state.animationsOff }
         set { game.state.animationsOff = newValue; save() }
