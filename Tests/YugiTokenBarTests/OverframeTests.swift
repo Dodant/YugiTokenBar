@@ -61,6 +61,21 @@ import Testing
         #expect(game.progress(0).done)
     }
 
+    /// 다 모은 팩의 5번째 장은 `wantedSlotChance`로 등급과 상관없이 필요한 카드가 된다 (UR 소재도 구할 수 있게)
+    @Test func clearedPackSlotFiveFavorsWantedCard() {
+        var cards: [Int: CardInfo] = [1: CardInfo(name: "UR", attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "",
+                                                  imageId: ImageSource.overframe.keys.sorted()[0], tier: 4, kindCode: nil)]
+        for cid in 2...11 { cards[cid] = card("카드\(cid)") }
+        var game = Game(db: oneBoxDB(cards), state: GameState())
+        var rng = SeededRNG(seed: 3)
+        let hits = (0..<1_000).filter { _ in
+            game.state.owned = Dictionary(uniqueKeysWithValues: (1...11).map { ($0, 1) })
+            game.state.coins = Balance.packPrice
+            return game.buy(pack: 0, using: &rng).contains { $0.cid == 1 }
+        }.count
+        #expect(hits > 320)  // 기대값 0.30 + 0.70 × 0.12(UR·SE 칸) ≈ 384, 보장이 없으면 120
+    }
+
     @MainActor @Test func unlocksOwnedCardsOnLaunch() throws {
         let (model, store) = try makeModel(oneBoxDB([1: overframeCard("카드1")])) { $0.owned[1] = 3 }
         #expect(model.game.state.overframes.isEmpty)

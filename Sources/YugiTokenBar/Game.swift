@@ -27,6 +27,8 @@ enum Balance {
     static let clearedSellMultiplier = 3
     /// 다 모은 팩에서 아직 필요한 카드(`Game.wanted`)가 같은 등급의 다른 카드보다 이만큼 잘 나온다
     static let wantedWeight = 10.0
+    /// 다 모은 팩에 아직 필요한 카드가 남았으면 5번째 장이 이 확률로 등급과 상관없이 그중 하나가 된다 (높은 등급 소재도 구할 수 있게)
+    static let wantedSlotChance = 0.30
     /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
     static let maxCopiesInDeck = 3
     /// 같은 카드를 이만큼 모으면 공식 오버프레임 그림이 해금된다 (판이 있는 카드만, 팔아도 유지). 해금 전엔 이만큼 자동 판매·중복 판매에서 남긴다.
@@ -475,6 +477,7 @@ struct Game: Sendable {
 
     /// 봉투 하나 열기: 노멀 3 + 슬롯4(노멀, `slot4RareChance`로 레어) + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
     /// 팩에 아직 없는 카드가 남아 있으면 1장 이상은 새 카드다(`ensureNew`).
+    /// 다 모은 팩은 5번째 장이 `wantedSlotChance`로 아직 필요한 카드(`wanted`) 중 하나다.
     private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         let boost = progress(pack).cleared
         let slot4 = Double.random(in: 0..<1, using: &rng) < Balance.slot4RareChance ? 2 : 1
@@ -482,6 +485,11 @@ struct Game: Sendable {
         var slots: [(tier: Int, kind: CardKind?, cid: Int)] = []
         for (i, tier) in tiers.enumerated() {
             let kind: CardKind? = i < Balance.monstersPerPack ? .monster : nil
+            if boost, i == tiers.count - 1, Double.random(in: 0..<1, using: &rng) < Balance.wantedSlotChance,
+               let cid = db.packs[pack].cards.filter({ wanted($0) && !isFusionOnly($0) && !slots.map(\.cid).contains($0) }).randomElement(using: &rng) {
+                slots.append((db.tier(cid), kind, cid))
+                continue
+            }
             guard let cid = draw(pack: pack, tier: tier, excluding: Set(slots.map(\.cid)), kind: kind, boostWanted: boost, using: &rng) else { continue }
             slots.append((tier, kind, cid))
         }
