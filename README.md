@@ -87,6 +87,13 @@ Usage synced after midnight is not credited to the previous day.
 
 Requires macOS 26 or later.
 There is no public release yet; once one is published, download `YugiTokenBar-x.y.z.zip` from [Releases](https://github.com/Dodant/YugiTokenBar/releases), unzip it, and move the app to `/Applications`.
+The app is not notarized by Apple, so macOS blocks it the first time you open it.
+Allow it once in either way:
+
+- **System Settings:** open the app, then go to **Privacy & Security** and click **Open Anyway** next to YugiTokenBar.
+- **Terminal:** `xattr -dr com.apple.quarantine /Applications/YugiTokenBar.app`
+
+After an update, macOS may ask again for Keychain access to read Claude limits.
 To update, use [Check for updates] in Settings > About & support.
 Your collection is kept.
 

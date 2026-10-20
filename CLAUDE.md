@@ -9,12 +9,12 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
   - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음.
 
 GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.xml을 읽어 업데이트한다.
-첫 공개 릴리스는 Developer ID 서명·Apple 공증 설정 후 게시한다.
+Developer ID·공증 없이 ad-hoc 서명으로, CI가 아니라 로컬에서 `scripts/package-release.sh --publish`로 게시한다(게시는 사용자 확인 후).
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준, 로컬 전용)
 - 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 25장·복사한 코드).
   이미지 출처를 바꾸면 같이 고친다.
-- 배포: `docs/distribution.md` (서명·공증·릴리스 태그)
+- 배포: `docs/distribution.md` (Sparkle 키·로컬 릴리스·Gatekeeper)
 - 구현 계획: `docs/superpowers/plans/` (로컬 전용, 현재 기준은 스펙).
 - superpowers 파일(`docs/superpowers/`·`.superpowers/` 등 어느 위치의 `superpowers` 폴더든)은 git에 넣지 않는다.
 - 실행 방식: **Subagent-driven** (superpowers:subagent-driven-development) — 사용자가 선택함
@@ -98,6 +98,7 @@ python3 tools/sync-strings.py --check                 # UI 문구 키·번역·e
 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (Claude 공식 한도·Cursor API는 안 읽음)
 PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도·Cursor API까지 실제로 읽기
 scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명, 버전은 CHANGELOG.md)
-YTB_SIGN_IDENTITY=… YTB_NOTARY_PROFILE=… scripts/package-release.sh  # 공개용 서명·공증 ZIP (docs/distribution.md)
+scripts/package-release.sh                            # 릴리스 ZIP·appcast.xml만 build/release/에 (ad-hoc, Sparkle 서명은 키체인 키)
+scripts/package-release.sh --publish                  # 검사 후 vX.Y.Z 태그와 GitHub Release 게시 (main = origin/main 일 때만, 사용자 확인 후)
 scripts/build-app.sh && YTB_STATE_DIR=$PWD/qa-state build/YugiTokenBar.app/Contents/MacOS/YugiTokenBar -AppleLanguages '(en)'  # 언어별 QA (번역은 .app 에서만 보임, 실행 인자라 설정에 저장 안 됨)
 ```
