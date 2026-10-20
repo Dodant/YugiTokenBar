@@ -69,7 +69,8 @@ struct CardDetailView: View {
                         let spell = model.game.craftSpell(cid)
                         let hasSpell = model.game.copies(spell) > 0
                         let spellName = model.db.cards[spell]?.name ?? ""
-                        let why: LocalizedStringKey = !hasSpell ? "「\(spellName)」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
+                        let why: LocalizedStringKey = model.game.made(cid) ? "이미 만든 카드예요. 더 모으려면 팩에서 뽑으세요"
+                            : !hasSpell ? "「\(spellName)」 마법 카드가 있어야 해요" : can ? "소재 카드를 소비해 1장 만들어요" : "소재 카드가 모자라요"
                         HStack(spacing: 4) {
                             Spacer()
                             if !hasSpell {  // 누르면 「융합」(「마스크 체인지」) 카드로 이동

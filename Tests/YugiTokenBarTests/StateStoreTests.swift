@@ -76,6 +76,7 @@ import Testing
         state.eraLimit = "DM"
         state.partnerUnlocked = true
         state.overframes = [4007]
+        state.crafted = [4342]
         state.partnerEnabled = false
         state.partnerSize = 200
         state.partnerOrigin = CGPoint(x: 10, y: 20)

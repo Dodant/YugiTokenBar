@@ -18,7 +18,7 @@
 - Fixed the app quitting as soon as the Dex window opened at certain window widths.
 
 **⚖️ Balance**
-- Removed the [Fusion Monsters by Fusion Summon only] setting and made it always apply. Fusion Monsters you can make by Fusion no longer come from packs or free cards and are made in the Dex instead, while ones you've already made and ones that can't be made still come from packs and free cards.
+- Removed the [Fusion Monsters by Fusion Summon only] setting and made it always apply. Fusion Monsters you can make by Fusion no longer come from packs or free cards and are made once in the Dex instead, while ones you've already made (even if you sell them all) and ones that can't be made still come from packs and free cards.
 - In packs where you have every card, cards with locked overframe artwork and Fusion Materials you don't have enough copies of now appear 10 times as often as other cards of the same rarity. Packs with such cards left can be bought in the Shop without pressing [Buy anyway] again.
 - Cards from packs where you have every card now sell for 3 times the price.
 

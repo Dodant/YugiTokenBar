@@ -71,6 +71,8 @@ struct GameState: Codable, Sendable, Equatable {
     var partnerUnlocked = false
     /// 오버프레임 그림을 해금한 카드. 한 번 모으면 팔아도 유지 (`Game.unlockOverframe`)
     var overframes: Set<Int> = []
+    /// 한 번이라도 가진(만들었거나 받은) 융합 몬스터. 다시 융합할 수 없고 팩·무료 카드에서 나온다 (`Game.made`)
+    var crafted: Set<Int> = []
     /// 설정: 바탕화면 파트너 보이기
     var partnerEnabled = true
     /// 설정: 바탕화면 파트너 높이(pt), `PartnerTuning.sizes`
@@ -109,6 +111,7 @@ struct GameState: Codable, Sendable, Equatable {
         eraLimit = try c.decodeIfPresent(String.self, forKey: .eraLimit) ?? d.eraLimit
         partnerUnlocked = try c.decodeIfPresent(Bool.self, forKey: .partnerUnlocked) ?? d.partnerUnlocked
         overframes = try c.decodeIfPresent(Set<Int>.self, forKey: .overframes) ?? d.overframes
+        crafted = try c.decodeIfPresent(Set<Int>.self, forKey: .crafted) ?? d.crafted
         partnerEnabled = try c.decodeIfPresent(Bool.self, forKey: .partnerEnabled) ?? d.partnerEnabled
         partnerSize = try c.decodeIfPresent(Double.self, forKey: .partnerSize) ?? d.partnerSize
         partnerOrigin = try c.decodeIfPresent(CGPoint.self, forKey: .partnerOrigin)
