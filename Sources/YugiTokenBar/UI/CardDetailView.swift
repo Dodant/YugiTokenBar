@@ -144,9 +144,14 @@ struct CardDetailView: View {
 
     private func materialRow(_ mcid: Int, _ suffix: String) -> some View {
         HStack {
-            Button((model.db.cards[mcid]?.name ?? "") + suffix) { jump(mcid) }.buttonStyle(.link).multilineTextAlignment(.leading)  // 긴 이름(EN)이 줄 바뀌어도 왼쪽 정렬
+            // 긴 이름(EN)이 줄 바뀌어도 왼쪽 정렬 (링크 버튼은 정렬을 라벨에 넘기지 않아 Text 에 붙인다)
+            Button { jump(mcid) } label: {
+                Text(verbatim: (model.db.cards[mcid]?.name ?? "") + suffix).multilineTextAlignment(.leading)
+            }.buttonStyle(.link)
             Spacer()
-            Text("보유 \(model.game.copies(mcid))").foregroundStyle(.secondary).monospacedDigit()
+            let n = model.game.copies(mcid)
+            Text(verbatim: "\(n)").foregroundStyle(.secondary).monospacedDigit()
+                .accessibilityLabel("보유 \(n)장")
         }
     }
 

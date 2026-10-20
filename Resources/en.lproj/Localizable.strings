@@ -210,7 +210,6 @@
 "소재 카드가 모자라요" = "Not enough materials";
 /* CardDetailView.swift:50 */
 /* CardDetailView.swift:47 */
-"보유 %lld" = "Owned %lld";
 /* CardDetailView.swift:73 */
 "%@ 융합" = "Fusion Summon \"%@\"";
 /* CardDetailView.swift:80 */

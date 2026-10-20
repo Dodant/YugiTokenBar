@@ -210,7 +210,6 @@
 "소재 카드가 모자라요" = "素材が足りません";
 /* CardDetailView.swift:50 */
 /* CardDetailView.swift:47 */
-"보유 %lld" = "所持 %lld";
 /* CardDetailView.swift:73 */
 "%@ 융합" = "%@を融合召喚";
 /* CardDetailView.swift:80 */
