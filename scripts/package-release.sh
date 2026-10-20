@@ -33,7 +33,7 @@ scripts/build-app.sh
 APP=build/YugiTokenBar.app
 rm -rf build/release
 mkdir -p build/release
-ZIP="build/release/YugiTokenBar-$VERSION.zip"
+ZIP="build/release/YugiTokenBar-$VERSION-macOS.zip"
 if [[ $NOTARIZE == 1 ]]; then
     ditto -c -k --keepParent "$APP" "$ZIP"
     xcrun notarytool submit "$ZIP" --keychain-profile "$YTB_NOTARY_PROFILE" --wait

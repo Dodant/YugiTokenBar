@@ -86,7 +86,9 @@ Usage synced after midnight is not credited to the previous day.
 ## Install
 
 Requires macOS 26 or later.
-Download `YugiTokenBar-x.y.z.zip` from the [latest release](https://github.com/Dodant/YugiTokenBar/releases/latest), unzip it, and move the app to `/Applications`.
+Download `YugiTokenBar-x.y.z-macOS.zip` under **Assets** in the [latest release](https://github.com/Dodant/YugiTokenBar/releases/latest), unzip it, and move the app to `/Applications`.
+The **Source code** archives that GitHub adds to every release contain the source, not the app.
+For 0.6.3, the app ZIP is `YugiTokenBar-0.6.3.zip` (about 11 MB).
 The app is not notarized by Apple, so macOS blocks it the first time you open it.
 Allow it once in either way:
 

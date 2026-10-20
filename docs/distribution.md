@@ -34,6 +34,7 @@ scripts/package-release.sh --publish
 `swift test`·`sync-strings.py --check`·`test_make_appcast.py`를 돌린 뒤 arm64·x86_64로 빌드하고 ad-hoc 서명한다.
 ZIP의 SHA-256과 키체인 개인 키로 Sparkle EdDSA 서명을 만들고, `CHANGELOG.md` 맨 위 버전의 항목을 세 언어 파일에서 찾아 `appcast.xml`을 만든다(한 파일이라도 없으면 멈춘다).
 `gh release create`가 HEAD에 `vX.Y.Z` 태그를 만들고 ZIP·SHA256SUMS·appcast.xml을 최신 Release로 올린다.
+앱 ZIP 이름은 `YugiTokenBar-X.Y.Z-macOS.zip`이다(GitHub이 붙이는 소스 압축 `YugiTokenBar-X.Y.Z.zip`과 겹치지 않게, 0.6.3만 접미사 없이 게시했다).
 Release 본문은 한국어 `CHANGELOG.md`의 맨 위 버전 항목이다.
 게시는 바로 공개되며, 이미 있는 태그·Release는 덮어쓰지 않는다.
 

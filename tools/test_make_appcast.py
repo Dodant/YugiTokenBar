@@ -25,7 +25,7 @@ def test_appcast():
     assert item.find(S + "shortVersionString").text == "0.7.0"
     assert item.find(S + "minimumSystemVersion").text == "26.0"
     enc = item.find("enclosure")
-    assert enc.get("url") == "https://github.com/Dodant/YugiTokenBar/releases/download/v0.7.0/YugiTokenBar-0.7.0.zip"
+    assert enc.get("url") == "https://github.com/Dodant/YugiTokenBar/releases/download/v0.7.0/YugiTokenBar-0.7.0-macOS.zip"
     assert enc.get("length") == "12345"
     assert enc.get(S + "edSignature") == "SIG=="
     descs = {d.get(ma.XML_LANG): d for d in item.findall("description")}
