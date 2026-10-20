@@ -111,8 +111,9 @@ import Foundation
                                 .frame(minWidth: 130, minHeight: 190).style("dim-label")
                         }
                         Text(game.db.cards[cid]?.name ?? "\(cid)").ellipsize()
-                        if copies > 1 { Text(L("보유 %lld장", .int(copies))) }
-                    }.padding(4)
+                        // Every cell keeps the same lines so the homogeneous grid gives every picture the same size.
+                        Text(copies > 1 ? L("보유 %lld장", .int(copies)) : " ")
+                    }.padding(4).frame(maxWidth: 150)  // long names ellipsize instead of widening every column
                 }.linuxSmokeID("dex-card-\(cid)").style("flat")
             }.homogeneous(true).maxChildrenPerLine(4).padding()
         }.vexpand()
