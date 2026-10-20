@@ -46,12 +46,21 @@ struct LinuxSnapshot: Sendable, Equatable {
 
     /// Keep the sample's calendar day attached to its provider totals across midnight.
     func usageHeading(now: Date = Date()) -> String {
-        let count = shortTokens(todayDetail.values.reduce(0) { $0 + $1.total })
-        let today = LocalUsageReader.localDayFormatter().string(from: now)
-        if let sampled = todayDate, sampled != today {
-            return L("%@ 사용량 %@", .text(sampled), .text(count))
-        }
+        let count = shortTokens(usageTotal)
+        if let sampled = staleDay(now) { return L("%@ 사용량 %@", .text(sampled), .text(count)) }
         return L("오늘 %@", .text(count))
+    }
+
+    /// The sidebar's label for usageTotal, with the same midnight rule as usageHeading.
+    func usageTitle(now: Date = Date()) -> String {
+        staleDay(now).map { L("%@ 사용량", .text($0)) } ?? L("오늘")
+    }
+
+    var usageTotal: Int { todayDetail.values.reduce(0) { $0 + $1.total } }
+
+    private func staleDay(_ now: Date) -> String? {
+        let today = LocalUsageReader.localDayFormatter().string(from: now)
+        return todayDate.flatMap { $0 == today ? nil : $0 }
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {

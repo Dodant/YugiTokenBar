@@ -15,6 +15,9 @@ import Testing
         snapshot.todayDetail = [Provider.claude.rawValue: detail]
         #expect(snapshot.usageHeading(now: sameDay) == L("오늘 %@", .text("250K")))
         #expect(snapshot.usageHeading(now: nextDay) == L("%@ 사용량 %@", .text(sampleDay), .text("250K")))
+        #expect(snapshot.usageTitle(now: sameDay) == L("오늘"))
+        #expect(snapshot.usageTitle(now: nextDay) == L("%@ 사용량", .text(sampleDay)))
+        #expect(snapshot.usageTotal == 250_000)
         snapshot.todayDate = "2026-10-20"
         #expect(snapshot.usageHeading(now: nextDay) == L("오늘 %@", .text("250K")))
     }

@@ -22,14 +22,16 @@ enum LinuxSection: String, CaseIterable, Identifiable {
     @State private var section: String = LinuxSection.shop.rawValue
     @State private var rescueExporter: Signal = .init()
 
+    private func sidebarRow(_ title: String, _ value: String) -> AnyView {
+        HStack(spacing: 10) {
+            Text(title).ellipsize().hexpand().halign(.start)
+            Text(value)
+        }
+    }
+
     var view: Body {
         NavigationSplitView {
             VStack {
-                Text(L("코인 %@", .text(coinText(snapshot.game.state.coins)))).padding()
-                Text(snapshot.usageHeading()).padding()
-                ForEach(Provider.allCases, id: \.rawValue) { provider in
-                    Text("\(provider.linuxDisplayName)  \(shortTokens(snapshot.todayDetail[provider.rawValue]?.total ?? 0))")
-                }
                 List(LinuxSection.allCases, selection: $section) { item in
                     Button(item.title) {
                         if item == .shop { model.closeOpening() }
@@ -38,7 +40,16 @@ enum LinuxSection: String, CaseIterable, Identifiable {
                         section = item.rawValue
                     }.linuxSmokeID("sidebar-\(item.rawValue)")
                     .style("flat").hexpand()
-                }.sidebarStyle()
+                }.sidebarStyle().vexpand()
+                // Coins and usage sit under the menu; only providers used today get a row (Usage lists them all).
+                VStack(spacing: 6) {
+                    sidebarRow(L("코인"), coinText(snapshot.game.state.coins))
+                    sidebarRow(snapshot.usageTitle(), shortTokens(snapshot.usageTotal))
+                    ForEach(Provider.allCases.filter { (snapshot.todayDetail[$0.rawValue]?.total ?? 0) > 0 }, id: \.rawValue) { provider in
+                        sidebarRow(provider.linuxDisplayName, shortTokens(snapshot.todayDetail[provider.rawValue]?.total ?? 0))
+                            .style("dim-label").padding(10, [.leading])
+                    }
+                }.padding()
             }
             .navigationTitle("YugiTokenBar")
         } content: {

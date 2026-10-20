@@ -497,8 +497,6 @@
 /* PackOpenView.swift:208 */
 "엑조디아!" = "エクゾディア！";
 /* LinuxShellView.swift:11 */
-/* LinuxShellView.swift:26 */
-"코인 %@" = "コイン %@";
 /* LinuxShellView.swift:27 */
 "오늘 %@" = "今日 %@";
 /* LinuxShellView.swift:39 */
@@ -589,3 +587,7 @@
 "필드 마법 카드의 그림을 배경으로 써요" = "フィールド魔法カードのイラストを背景に使います";
 /* CardDetailView.swift:72 */
 "이미 만든 카드예요. 더 모으려면 팩에서 뽑으세요" = "作成済みです。さらに集めるにはパックから引いてください";
+/* LinuxShellView.swift:46 */
+"코인" = "コイン";
+/* LinuxSnapshot.swift:56 */
+"%@ 사용량" = "%@ 使用量";
