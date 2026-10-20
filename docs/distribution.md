@@ -13,6 +13,7 @@ Sparkle 업데이트 키를 한 번 만든다.
 `swift build` 뒤 `.build/artifacts/sparkle/Sparkle/bin/generate_keys`를 실행하면 개인 키는 로그인 키체인에 저장되고 공개 키가 출력된다.
 공개 키를 `Resources/sparkle-public-key.txt`에 넣어 커밋한다.
 공개 키가 없으면 `package-release.sh`는 시작하지 않는다.
+Developer ID 없이 ad-hoc 서명한 앱끼리도 EdDSA 서명이 맞으면 Sparkle이 업데이트를 설치하고, 틀리면 받기만 하고 설치하지 않는다(2026-10-20 로컬 appcast 리허설).
 `generate_keys -x sparkle-private-key.txt`로 개인 키를 내보내 아래 비밀값에 넣고 그 파일은 지운다.
 앱은 `https://github.com/Dodant/YugiTokenBar/releases/latest/download/appcast.xml`(최신 Release의 첨부 파일)을 읽으므로 Release를 게시하면 업데이트가 배포된다.
 `YTB_SPARKLE_FEED_URL`은 빌드할 때 피드 주소를 바꾸며, 로컬 업데이트 확인에만 쓴다.
