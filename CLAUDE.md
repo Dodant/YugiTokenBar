@@ -9,7 +9,7 @@ Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 �
   - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음.
 
 GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.xml을 읽어 업데이트한다.
-Developer ID·공증 없이 ad-hoc 서명으로, CI가 아니라 로컬에서 `scripts/package-release.sh --publish`로 게시한다(게시는 사용자 확인 후).
+Developer ID·공증 없이 ad-hoc 서명으로(스크립트에 `YTB_SIGN_IDENTITY`·`YTB_NOTARY_PROFILE` 선택 경로는 남아 있다), CI가 아니라 로컬에서 `scripts/package-release.sh --publish`로 게시한다(게시는 사용자 확인 후).
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준, 로컬 전용)
 - 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 25장·복사한 코드).
@@ -41,7 +41,7 @@ Developer ID·공증 없이 ad-hoc 서명으로, CI가 아니라 로컬에서 `s
 - 밸런스 수치는 `Game.swift`의 `Balance`에만 둔다.
   바꿀 때는 스펙 5절도 같이 고친다.
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 복사본이다.
-  직접 고치지 말고 `PTB_REPO=<PokeTokenBar 체크아웃> tools/import-usage.sh`(커밋 `de617e3`)로 다시 만든다.
+  직접 고치지 말고 `PTB_REPO=<PokeTokenBar 체크아웃> bash tools/import-usage.sh`(커밋 `de617e3`)로 다시 만든다.
   바꾼 점은 `Usage/NOTICE.md`에 적는다.
   파일별 캐시는 원본의 `LocalUsageCache`를 그대로 가져와 쓰고, 그 밖의 읽는 쪽 조정(provider 묶기·쓰는 중인 Claude 파일의 붙은 줄만 읽기·Cursor 증분·백오프)은 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
   `Usage/` 안은 그 조정에 필요한 접근만 `import-usage.sh` 패치로 연다.
@@ -98,7 +98,7 @@ python3 tools/sync-strings.py --check                 # UI 문구 키·번역·e
 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar    # 격리된 세이브로 실행 (Claude 공식 한도·Cursor API는 안 읽음)
 PTB_PARITY=1 YTB_STATE_DIR=$PWD/qa-state swift run YugiTokenBar  # 공식 한도·Cursor API까지 실제로 읽기
 scripts/build-app.sh                                  # build/YugiTokenBar.app (ad-hoc 서명, 버전은 CHANGELOG.md)
-scripts/package-release.sh                            # 릴리스 ZIP·appcast.xml만 build/release/에 (ad-hoc, Sparkle 서명은 키체인 키)
+scripts/package-release.sh                            # 릴리스 ZIP·appcast.xml만 build/release/에 (ad-hoc, Sparkle 서명은 키체인 키 또는 YTB_SPARKLE_PRIVATE_KEY)
 scripts/package-release.sh --publish                  # 검사 후 vX.Y.Z 태그와 GitHub Release 게시 (main = origin/main 일 때만, 사용자 확인 후)
 scripts/build-app.sh && YTB_STATE_DIR=$PWD/qa-state build/YugiTokenBar.app/Contents/MacOS/YugiTokenBar -AppleLanguages '(en)'  # 언어별 QA (번역은 .app 에서만 보임, 실행 인자라 설정에 저장 안 됨)
 ```

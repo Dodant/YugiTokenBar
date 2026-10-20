@@ -4,7 +4,7 @@ GitHub Releases에 universal 앱 ZIP을 올린다.
 앱은 Sparkle로 Release의 appcast.xml을 읽어 앱 안에서 업데이트한다.
 번들 ID는 `io.github.dodant.YugiTokenBar`이며 첫 공개 뒤에는 바꾸지 않는다(기기 설정과 업데이트가 이어지지 않는다).
 Apple Developer Program에 가입하지 않아 Developer ID 서명·공증 없이 ad-hoc 서명으로 게시한다.
-그래서 처음 실행할 때 Gatekeeper가 막으며, 사용자는 README 설치 절대로 한 번 허용한다.
+그래서 처음 실행할 때 Gatekeeper가 막으며, 사용자는 README 설치 절차대로 한 번 허용한다.
 ad-hoc 서명은 빌드마다 달라 업데이트 뒤 키체인 접근(Claude 한도) 허용을 다시 물을 수 있다.
 릴리스는 CI가 아니라 로컬에서 `scripts/package-release.sh --publish`로 만든다.
 
@@ -32,7 +32,7 @@ scripts/package-release.sh --publish
 
 스크립트는 main·깨끗한 작업 트리·HEAD = origin/main·태그와 Release가 아직 없음을 확인한다.
 `swift test`·`sync-strings.py --check`·`test_make_appcast.py`를 돌린 뒤 arm64·x86_64로 빌드하고 ad-hoc 서명한다.
-ZIP의 SHA-256과 키체인 개인 키로 Sparkle EdDSA 서명을 만들고, 세 언어 CHANGELOG 맨 위 항목으로 `appcast.xml`을 만든다.
+ZIP의 SHA-256과 키체인 개인 키로 Sparkle EdDSA 서명을 만들고, `CHANGELOG.md` 맨 위 버전의 항목을 세 언어 파일에서 찾아 `appcast.xml`을 만든다(한 파일이라도 없으면 멈춘다).
 `gh release create`가 HEAD에 `vX.Y.Z` 태그를 만들고 ZIP·SHA256SUMS·appcast.xml을 최신 Release로 올린다.
 Release 본문은 한국어 `CHANGELOG.md`의 맨 위 버전 항목이다.
 게시는 바로 공개되며, 이미 있는 태그·Release는 덮어쓰지 않는다.

@@ -17,7 +17,7 @@ enum Balance {
     /// 무료 카드의 티어 확률 (N / R / SR / UR / SE). 티어 안에서는 균등.
     static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.70), (2, 0.23), (3, 0.05), (4, 0.015), (5, 0.005)]
     static let logLimit = 50
-    /// 무료 카드를 한 번에 여는 최대 장 수 (팩 1봉투와 같은 5장)
+    /// 무료 카드를 한 번에 여는 최대 장 수 (4장은 2장씩·6장은 3장씩 두 줄)
     static let freeOpenBatch = 6
     /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
     static let monstersPerPack = 2

@@ -2,9 +2,11 @@
 
 ## 0.6.3 — 2026-10-20
 **✨ New features**
+- Added the new booster pack BEYOND THE BRAVE, bringing the collection to 101 packs and 8,306 cards, with 307 cards that can be made by Fusion.
+  Its 4 cards with official overframe artwork (The Great Gallant Bandit, Red-Eyes Black Dragon Exceed, and more) can be unlocked too.
 - Official overframe artwork is now unlocked by collecting 3 copies of the same card.
-  Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] don't sell them and Fusion doesn't use them as materials.
-  In the Dex, cards with overframe artwork show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked.
+  Once unlocked it stays even if you sell them, and until then auto-selling duplicates and [Sell all duplicates] keep up to 3 copies and Fusion doesn't use them as materials.
+- In the Dex, cards with overframe artwork now show a ✦ badge with how many copies you have, and the progress at the bottom left shows how many you've unlocked.
   Choose [✦ Overframe] in the rarity menu to see only overframe cards.
 - Drawing certain cards now makes something special happen.
 - In Setting > General, [Menu bar shows] lets the menu bar show today's tokens and cost, Claude and Codex session and weekly usage or time until the session resets (in each agent's color), or your Dex progress instead of coins, or hide the number.
@@ -17,27 +19,28 @@
 - You can now open up to 6 free cards at a time, shown in two rows of 2 for 4 cards and two rows of 3 for 6 cards.
 - The free card and free pack icons in the menu now use a color that stands out against the background.
 - Added an app icon.
+- The owned column for Fusion Materials in card details now shows just the count.
 
 **🐛 Bug fixes**
 - Fixed the app quitting as soon as the Dex window opened at certain window widths.
+- Fixed long Fusion Material names in card details being centered when they wrap.
 
 **⚖️ Balance**
 - Removed the [Fusion Monsters by Fusion Summon only] setting and made it always apply.
   Fusion Monsters you can make by Fusion no longer come from packs or free cards and are made once in the Dex instead, while ones you've already made (even if you sell them all) and ones that can't be made still come from packs and free cards.
+  Fusion Materials defined by a condition, such as a Type, count as duplicates for selling once you've made that Fusion.
 - In packs where you have every card, cards with locked overframe artwork and Fusion Materials you don't have enough copies of now appear 10 times as often as other cards of the same rarity.
   The 5th card in such packs is also one of these cards 30% of the time, whatever its rarity, so high-rarity materials are easier to collect.
-  Packs with such cards left can be bought in the Shop without pressing [Buy anyway] again.
+- Packs where you have every card can now be bought in the Shop without pressing [Buy anyway] again if such cards are left.
 - Cards from packs where you have every card now sell for 3 times the price.
 
 ## 0.6.2 — 2026-10-15
 **✨ New features**
-- Added the new booster pack BEYOND THE BRAVE, bringing the collection to 101 packs and 8,306 cards, with 307 cards that can be made by Fusion.
-  Its 4 cards with official overframe versions (The Great Gallant Bandit, Red-Eyes Black Dragon Exceed, and more) are also shown with artwork extending past the card frame.
-- Added [Extra scan folders] to Settings.
+- Added [Extra scan folders] to Setting.
   Add Claude, Codex, Gemini, Grok, Pi, or oh-my-pi log folders outside the default location, such as logs copied from a remote machine, and their usage is credited too.
 
 **🎨 Improvements**
-- After changing the language in Settings > General, you can press [Reopen to apply] to reopen the app right away in the new language.
+- After changing the language in Setting > General, you can press [Reopen to apply] to reopen the app right away in the new language.
 
 **⚖️ Balance**
 - Free cards now only give cards you don't have yet.
@@ -46,22 +49,22 @@
 
 ## 0.6.1 — 2026-10-12
 **✨ New features**
-- Added [Report a bug] to Settings > About & support.
+- Added [Report a bug] to Setting > About & support.
   It opens an email with your app version and system details already filled in.
-- The version row in Settings > About & support now checks the latest published release and opens its download page.
+- The version row in Setting > About & support now checks the latest published release and opens its download page.
 - Added a Usage screen, opened from the usage section of the menu, that shows tokens and cost for today, this week and this month, a 14-day bar chart with the cards you earned each day, and each agent's input, output and cache tokens.
 - In Work mode, the usage section of the menu now also shows totals for today, this week and this month, and a 14-day bar chart.
 
 **🎨 Improvements**
 - Standardized the main menus as Shop, Dex and Setting, with Cards, Decks, Partner, OK and Open shared across all languages.
 - The usage section and Usage screen now appear in English in every language (Usage, 5h, Weekly, Resets in and so on).
-- Shortened guidance in Settings, Collection and usage, and moved detailed conditions and controls to ? tooltips.
+- Shortened guidance in Setting, Dex and usage, and moved detailed conditions and controls to ? tooltips.
 - Long pack names in the Shop now scroll sideways to show the full name while you hover over them.
 - The quick-buy row in the menu now has a soft two-color gradient that differs for each pack, and packs are spaced apart as you swipe so they slide past one by one (Work mode keeps the plain single color).
-- In work mode, the opening list and the collection list now show each card's monster type, level, and ATK/DEF (card type for Spells and Traps) with its name.
-- The fade at the bottom of the Shop, Settings and Usage screens now uses the system scroll edge effect.
+- In work mode, the opening list and the Dex list now show each card's monster type, level, and ATK/DEF (card type for Spells and Traps) with its name.
+- The fade at the bottom of the Shop, Setting and Usage screens now uses the system scroll edge effect.
 - Menu and usage icons now use hierarchical and gradient rendering, and the refresh icon on the usage screen spins while limits are loading.
-- Settings > About & support now shows the unofficial fan project notice and the sources of card data and images.
+- Setting > About & support now shows the unofficial fan project notice and the sources of card data and images.
 
 **🐛 Bug fixes**
 - Fixed English text using plural forms for a single card.
@@ -228,7 +231,8 @@ Expanded to 100 packs through the Modern era, and added SE rarity, card hologram
 **✨ New features**
 - Expanded the card pool through the Modern era (25 packs from RISE OF THE DUELIST to CHAOS ORIGINS), for 100 packs and 8,172 cards.
   The shop and collection gained a Modern section, and the Settings era range gained "Up to Modern (Support)".
-- Added SE (Secret) rarity above UR. Secret, Ultimate, and Holographic Rares appear as SE.
+- Added SE (Secret) rarity above UR.
+  Secret, Ultimate, and Holographic Rares appear as SE.
 - The 21 cards with official overframe versions are shown with artwork extending past the card frame (Shooting Quasar Dragon, Supreme King Z-ARC, Summoned Skull, and more).
 - Added a Fusion animation: material cards are drawn into a galactic whirlpool in space, then burst like a supernova to reveal the Fusion card (click to close).
 - If any Fusion Monster you don't own yet can be Fusion Summoned right now, a "Fusion Summonable" list appears at the top of the right panel in the collection.
@@ -251,7 +255,8 @@ Expanded to 100 packs through the Modern era, and added SE rarity, card hologram
 
 **⚖️ Balance**
 - Changed the odds for the 5th card in a pack to SE 2%, UR 10% (was 12%).
-- The 4th card in a pack has a 30% chance to be R. The guarantee of monsters in the first 2 cards is unchanged.
+- The 4th card in a pack has a 30% chance to be R.
+  The guarantee of monsters in the first 2 cards is unchanged.
 - Set the free card odds to N 70% / R 23% / SR 5% / UR 1.5% / SE 0.5%.
 - Sell prices: N ⓒ 20 (was 30), R ⓒ 50 (was 60), SR ⓒ 150, UR ⓒ 400 (was 300), SE ⓒ 1,200.
   The expected sell value of one pack is about ⓒ 206.
@@ -306,7 +311,8 @@ Expanded to 75 packs through VRAINS, and added card selling, Fusion, deck buildi
   Like packs, decks show owned/deck counts and a progress bar.
 - You can now select multiple cards in the collection (⌘/⇧ click, rubber-band from empty space, [Select all] ⌘A) and add them all to a deck at once.
 - Added collection favorites (☆ on cards, Favorites in the sidebar), card name search, type (Monster, Spell, Trap, Summon method) and rarity filters, sorting (rarity, name, most owned), and a "Show unowned" checkbox.
-- Collection details now show "Fusion Materials". Click a material's name to jump to that card.
+- Collection details now show "Fusion Materials".
+  Click a material's name to jump to that card.
 - You can rename your collection.
 - Added update checking, save export/import (with an automatic backup before importing), version, patch notes, and license info, and Launch at login to Settings.
 
