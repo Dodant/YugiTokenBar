@@ -46,9 +46,8 @@ import Foundation
     let sell: () -> Void
 
     var view: Body {
-        let total = game.progress(packs: 0..<game.db.packs.count)
         HStack(spacing: 10) {
-            Text(L("전체 %lld / %lld", .int(total.owned), .int(total.total))).style("title-3").hexpand().halign(.start)
+            Text(L("전체 %lld / %lld", .int(game.ownedDistinct), .int(game.db.allCIDs.count))).style("title-3").hexpand().halign(.start)
             Button(L("중복 판매 · %lld장 · +%@", .int(duplicates.count), .text(coinText(duplicates.coins))), handler: sell)
                 .linuxSmokeID("dex-sell-duplicates")
                 .insensitive(duplicates.count == 0)
