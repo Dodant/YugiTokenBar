@@ -231,6 +231,16 @@ final class AppModel {
         return true
     }
 
+    /// 남은 무료 팩을 모두 연다(그 사이 「욕망의 항아리」로 생긴 팩까지). 여러 팩이라 개봉 화면은 스크롤 그리드
+    @discardableResult
+    func openAllFreePacks() -> Bool {
+        var pulls: [Pull] = [], opened = 0
+        while let (_, p) = game.openFreePack(using: &rng) { pulls += p; opened += 1 }
+        guard opened > 0 else { return false }
+        show(pulls, title: String(localized: "무료 팩 \(opened)개"), freePack: true)
+        return true
+    }
+
     /// 팝오버 안 개봉 화면으로 보여준다.
     private func show(_ pulls: [Pull], title: String, pack: Int? = nil, freePack: Bool = false) {
         opening = PackOpening(pulls: pulls, title: title, pack: pack, freePack: freePack)
@@ -342,9 +352,10 @@ final class AppModel {
         save()
     }
 
+    /// `all`이면 쌓인 무료 카드를 모두 연다.
     @discardableResult
-    func openFree() -> Bool {
-        let opened = game.openFree(using: &rng)
+    func openFree(all: Bool = false) -> Bool {
+        let opened = game.openFree(limit: all ? .max : Balance.freeOpenBatch, using: &rng)
         guard !opened.isEmpty else { return false }
         show(opened, title: String(localized: "무료 카드"))
         return true

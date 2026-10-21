@@ -1,5 +1,19 @@
 # Patch notes
 
+## 0.6.4 — 2026-10-21
+**✨ New features**
+- When more than 30 free cards pile up, you can now open them all at once with [All].
+  The cards are revealed right away in a scrollable grid.
+- When you have 2 or more free packs, you can now open them all at once with [All].
+
+**🎨 Improvements**
+- When you have both free cards and free packs, the menu now shows them stacked in one box.
+- Opening 4 free cards now shows them larger, filling the panel width.
+
+**⚖️ Balance**
+- Free packs now come a little more often from packs you've collected less of.
+  A pack you have no cards from is twice as likely as a completed one.
+
 ## 0.6.3 — 2026-10-20
 **✨ New features**
 - Added the new booster pack BEYOND THE BRAVE, bringing the collection to 101 packs and 8,306 cards, with 307 cards that can be made by Fusion.

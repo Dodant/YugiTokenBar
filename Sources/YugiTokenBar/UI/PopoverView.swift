@@ -87,16 +87,25 @@ struct PopoverView: View {
                 .frame(height: 79)
             } }
 
-            if freeRows?.pack ?? (state.freePacks > 0) {
-                FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",
-                        hint: String(localized: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩"), button: "열기") { model.openFreePack() }
-                    .panelCard()
-            }
-
-            if freeRows?.card ?? (state.pendingFree > 0) {
-                FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: String(localized: "토큰으로 모은 카드예요"),
-                        button: state.pendingFree > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기") { model.openFree() }
-                    .panelCard()
+            // 무료 카드(위)·무료 팩(아래)은 둘 다 있으면 한 칸에 구분선으로 나눠 설명 없이 한 줄씩 둔다
+            let showPack = freeRows?.pack ?? (state.freePacks > 0)
+            let showCard = freeRows?.card ?? (state.pendingFree > 0)
+            if showPack || showCard {
+                let compact = showPack && showCard
+                VStack(spacing: 8) {
+                    if showCard {
+                        FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: String(localized: "토큰으로 모은 카드예요"),
+                                button: state.pendingFree > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기",
+                                openAll: state.pendingFree > Balance.freeOpenAllMin ? { model.openFree(all: true) } : nil, compact: compact) { model.openFree() }
+                    }
+                    if showPack && showCard { Divider() }
+                    if showPack {
+                        FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",
+                                hint: String(localized: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩"), button: "열기",
+                                openAll: state.freePacks > 1 ? { model.openAllFreePacks() } : nil, compact: compact) { model.openFreePack() }
+                    }
+                }
+                .panelCard()
             }
 
             // 트랙패드 좌우 스와이프로 발매순 앞뒤 팩을 넘긴다. 사면 그 팩이 lastBoughtPack 이 되어 그대로 남는다
@@ -224,21 +233,55 @@ private struct FreeRow: View {
     /// 저장 오류 메시지(데이터)도 받으므로 String
     let hint: String
     let button: LocalizedStringKey
+    /// 있으면 [All]를 뒤에 둔다
+    var openAll: (() -> Void)?
+    /// 무료 카드·팩이 한 칸에 같이 있을 때: 설명을 빼고 아이콘을 줄인다
+    var compact = false
     let action: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: compact ? 8 : 12) {
             // 강조색(파랑)은 유리 배경 위에서 잘 안 보여 글자색으로
-            Image(systemName: systemImage).font(.title2).foregroundStyle(.primary).symbolRenderingMode(.hierarchical).frame(width: 36)
+            Image(systemName: systemImage).font(compact ? .title3 : .title2).foregroundStyle(.primary).symbolRenderingMode(.hierarchical).frame(width: compact ? 24 : 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.callout.weight(.medium)).monospacedDigit()
-                Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                if !compact { Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
             }
             Spacer(minLength: 4)
-            Button(button, action: action)
-                .buttonStyle(.glassProminent)
-                .buttonBorderShape(.capsule)
+            if let openAll {
+                // 컨테이너 간격 0: 기본 간격이면 유리끼리 붙어 사이가 안 보인다. 줄이 좁아도 글자가 잘리지 않게 fixedSize
+                GlassEffectContainer(spacing: 0) { HStack(spacing: 3) {
+                    Button(button, action: action).buttonStyle(JoinedButtonStyle(side: .leading, prominent: true))
+                    Button("All") { openAll() }.buttonStyle(JoinedButtonStyle(side: .trailing))
+                } }
+                .fixedSize()
+            } else {
+                Button(button, action: action)
+                    .buttonStyle(.glassProminent)
+                    .buttonBorderShape(.capsule)
+            }
         }
+    }
+}
+
+/// 붙여 놓은 두 유리 버튼의 한쪽 (한 캡슐을 둘로 나눈 모양): 바깥쪽만 둥글고 맞닿는 쪽은 직선
+struct JoinedButtonStyle: ButtonStyle {
+    let side: HorizontalEdge
+    var prominent = false
+    @Environment(\.controlSize) private var controlSize
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let height: CGFloat = controlSize == .large ? 28 : 24  // 시스템 유리 버튼 높이 (스크린샷으로 맞춤)
+        let r = side == .leading ? (height / 2, 0.0) : (0.0, height / 2)
+        let shape = UnevenRoundedRectangle(topLeadingRadius: r.0, bottomLeadingRadius: r.0, bottomTrailingRadius: r.1, topTrailingRadius: r.1)
+        configuration.label
+            .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .padding(.horizontal, height / 2)
+            .frame(height: height)
+            .contentShape(shape)
+            .glassEffect(prominent ? .regular.tint(.accentColor).interactive() : .regular.interactive(), in: shape)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.5)
     }
 }
 

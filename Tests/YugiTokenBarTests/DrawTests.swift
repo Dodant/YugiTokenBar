@@ -275,6 +275,15 @@ import Testing
         #expect(packs.count == 2)
     }
 
+    @Test func freePackFavorsLessCollectedPacks() {
+        var game = Game(db: makeDB([(1...5).map { ($0, 1) }, (6...10).map { ($0, 1) }]), state: GameState())
+        for cid in 1...5 { game.state.owned[cid] = 1 }  // 0번 팩은 다 모음, 1번 팩은 하나도 없음
+        var rng = SeededRNG(seed: 1)
+        let picks = (0..<3000).map { _ in game.pickFreePack(using: &rng) }
+        let empty = Double(picks.filter { $0 == 1 }.count) / 3000
+        #expect(abs(empty - 2.0 / 3) < 0.03)  // 가중치 2 : 1
+    }
+
     @Test func potOfGreedGivesTwoFreePacks() {
         let pot = CardDB.potOfGreed
         let db = makeDB([[(pot, 1)]])
