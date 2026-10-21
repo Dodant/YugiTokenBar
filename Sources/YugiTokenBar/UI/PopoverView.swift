@@ -186,17 +186,7 @@ struct PopoverView: View {
         Text(text).font(.caption.weight(.medium)).foregroundStyle(.secondary)
     }
 
-    private func show(_ id: String) {
-        openWindow(id: id)
-        // activate 는 다른 앱 뒤에 창을 둘 수 있어서 창을 직접 앞으로 꺼낸다
-        NSApp.activate()
-        // 컬렉션은 navigationTitle 로 제목이 팩 이름으로 바뀌므로 제목 대신 Scene id(NSWindow.identifier)로 찾는다
-        DispatchQueue.main.async {
-            guard let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix(id) == true }) else { return }
-            window.orderFrontRegardless()
-            window.makeKey()
-        }
-    }
+    private func show(_ id: String) { StatusMenu.show(id, openWindow) }
 }
 
 /// 패널 안 화면(상점·설정·개봉) 머리말: 뒤로(esc) · 제목 · 오른쪽 내용.

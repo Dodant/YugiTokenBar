@@ -5,6 +5,7 @@
 - When more than 30 free cards pile up, you can now open them all at once with [All].
   The cards are revealed right away in a scrollable grid.
 - When you have 2 or more free packs, you can now open them all at once with [All].
+- Right-clicking the menu bar icon now opens a menu with Dex, Usage, Menu bar shows, Work mode, Patch notes, Check for updates and Quit.
 
 **🎨 Improvements**
 - When you have both free cards and free packs, the menu now shows them stacked in one box.

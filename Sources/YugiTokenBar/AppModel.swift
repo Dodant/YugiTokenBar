@@ -27,6 +27,20 @@ final class AppModel {
     enum MenuBarInfo: String, CaseIterable, Identifiable {
         case coins, todayUsage, sessionUsage, weeklyUsage, sessionWeeklyUsage, sessionReset, collection, none
         var id: Self { self }
+        /// 설정과 오른쪽 클릭 메뉴의 이름 (메뉴 항목은 글자 하나로 그려져 이름 옆에 예시를 " - "로 붙인다, 짧게 에이전트 하나 값만)
+        var title: String {
+            let (name, example) = switch self {
+            case .coins: (String(localized: "코인 · 무료"), "3,420 · 1")
+            case .todayUsage: (String(localized: "오늘 사용량"), "273M · $92")
+            case .sessionUsage: (String(localized: "세션 사용량"), "74%")
+            case .weeklyUsage: (String(localized: "주간 사용량"), "17%")
+            case .sessionWeeklyUsage: (String(localized: "세션·주간 사용량"), "74/17%")
+            case .sessionReset: (String(localized: "세션 초기화까지"), "2h 53m")
+            case .collection: (String(localized: "컬렉션"), "2311/8306")
+            case .none: (String(localized: "없음"), "")
+            }
+            return example.isEmpty ? name : "\(name) - \(example)"
+        }
     }
     static let menuBarInfoKey = "menuBarInfo"
     var menuBarInfo = MenuBarInfo(rawValue: UserDefaults.standard.string(forKey: AppModel.menuBarInfoKey) ?? "") ?? .coins {

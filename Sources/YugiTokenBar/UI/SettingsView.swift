@@ -92,19 +92,7 @@ struct SettingsView: View {
                 Text("메뉴바 표시")
                 Spacer()
                 Picker("메뉴바 표시", selection: Bindable(model).menuBarInfo) {
-                    // 메뉴 항목은 글자 하나로 그려져 이름 옆에 예시를 " - "로 붙인다 (짧게 에이전트 하나 값만)
-                    ForEach([
-                        (AppModel.MenuBarInfo.coins, String(localized: "코인 · 무료"), "3,420 · 1"),
-                        (.todayUsage, String(localized: "오늘 사용량"), "273M · $92"),
-                        (.sessionUsage, String(localized: "세션 사용량"), "74%"),
-                        (.weeklyUsage, String(localized: "주간 사용량"), "17%"),
-                        (.sessionWeeklyUsage, String(localized: "세션·주간 사용량"), "74/17%"),
-                        (.sessionReset, String(localized: "세션 초기화까지"), "2h 53m"),
-                        (.collection, String(localized: "컬렉션"), "2311/8306"),
-                        (.none, String(localized: "없음"), ""),
-                    ], id: \.0) { info, name, example in
-                        Text(verbatim: example.isEmpty ? name : "\(name) - \(example)").tag(info)
-                    }
+                    ForEach(AppModel.MenuBarInfo.allCases) { Text(verbatim: $0.title).tag($0) }
                 }
                 .labelsHidden()
                 .controlSize(.small)
