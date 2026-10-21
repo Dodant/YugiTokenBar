@@ -57,6 +57,9 @@ struct SettingsView: View {
 
     // MARK: 섹션
 
+    /// 설정의 선택 메뉴 폭. 다 같게 맞추고(항목이 짧아도 `buttonSizing(.flexible)`로 폭을 채워 오른쪽 끝을 맞춘다), 넘치는 항목은 말줄임
+    private static let pickerWidth: CGFloat = 150
+
     private var generalSection: some View {
         // swift run 바이너리는 .app 이 아니라 로그인 항목으로 등록할 수 없다
         let installed = AppInfo.bundleVersion != nil
@@ -79,7 +82,7 @@ struct SettingsView: View {
                 }
                 .labelsHidden()
                 .controlSize(.small)
-                .fixedSize()
+                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)
                 .onChange(of: language) { AppLanguage.store(language) }
             }
             toggleRow("업무 모드", hint: "카드 이미지와 파트너를 숨겨요", isOn: Bindable(model).workMode)
@@ -105,7 +108,7 @@ struct SettingsView: View {
                 }
                 .labelsHidden()
                 .controlSize(.small)
-                .frame(maxWidth: 160)  // fixedSize 면 가장 긴 항목 폭이 되어 영어 이름이 세 줄로 접힌다
+                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)  // fixedSize 면 가장 긴 항목 폭이 되어 영어 이름이 세 줄로 접힌다
             }
         }
     }
@@ -124,7 +127,7 @@ struct SettingsView: View {
                 }
                 .labelsHidden()
                 .controlSize(.small)
-                .fixedSize()
+                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)
                 .onChange(of: scanProvider) { scanRoots = CustomScanRoots.storedValue(for: scanProvider.rawValue) ?? "" }
             }
             VStack(alignment: .leading, spacing: 4) {
@@ -175,7 +178,7 @@ struct SettingsView: View {
                     ForEach(fields, id: \.self) { Text(verbatim: db.cards[$0]?.name ?? "").tag(Int?.some($0)) }
                 }
                 .labelsHidden()
-                .frame(maxWidth: 150)  // 긴 카드 이름은 말줄임 (fixedSize 면 이름·설명이 폭 0으로 눌린다)
+                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)  // 긴 카드 이름은 말줄임 (fixedSize 면 이름·설명이 폭 0으로 눌린다)
                 .controlSize(.small)
                 .disabled(fields.isEmpty)
             }
@@ -195,7 +198,7 @@ struct SettingsView: View {
                     ForEach(db.eras, id: \.name) { era in Text("\(era.name)(\(CardInfo.summonTitle(CardDB.eraSummons[era.name] ?? "")))까지").tag(era.name) }
                 }
                 .labelsHidden()
-                .fixedSize()
+                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)
                 .controlSize(.small)
             }
         }

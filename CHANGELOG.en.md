@@ -9,6 +9,7 @@
 **🎨 Improvements**
 - When you have both free cards and free packs, the menu now shows them stacked in one box.
 - Opening 4 free cards now shows them larger, filling the panel width.
+- The pop-up menus in Setting now share the same width.
 
 **⚖️ Balance**
 - Free packs now come a little more often from packs you've collected less of.
