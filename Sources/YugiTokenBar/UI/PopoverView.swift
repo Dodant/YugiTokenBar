@@ -13,6 +13,7 @@ struct PopoverView: View {
     @Environment(\.workMode) private var workMode
     /// 최근 획득 줄이 보이는지 (업무 모드면 없음). freeRows 처럼 덮인 동안(설정에서 업무 모드를 끔) 다시 생기는 건 돌아왔을 때로 미룬다
     @State private var showRecent: Bool?
+    @AppStorage("popover.recentExpanded") private var recentExpanded = true
 
     var body: some View {
         // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점·개봉·설정은 요약 크기 안에 겹쳐 그려 높이를 고정
@@ -66,9 +67,22 @@ struct PopoverView: View {
                     .tint(Palette.warning)
             }
 
+            // 최근 획득 머리줄을 접으면 썸네일·무료 카드·무료 팩·바로 구매 줄을 같이 숨긴다 (업무 모드는 머리줄이 없어 늘 보임)
+            let recentCollapsed = (showRecent ?? !workMode) && !recentExpanded
             if showRecent ?? !workMode { VStack(alignment: .leading, spacing: 8) {
-                caption("최근 획득")
-                HStack(spacing: 9) {
+                Button {
+                    withAnimation(lessMotion ? nil : .easeInOut(duration: 0.2)) { recentExpanded.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        caption("최근 획득 & 빠른 구매")
+                        Spacer()
+                        DisclosureChevron(expanded: recentExpanded)
+                    }
+                    .foregroundStyle(.secondary)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                if recentExpanded { HStack(spacing: 9) {
                     ForEach(Array(state.log.prefix(5).enumerated()), id: \.offset) { _, entry in
                         CardImageView(db: game.db, cid: entry.cid, overframe: game.showsOverframe(entry.cid))
                             .frame(width: 54)
@@ -84,13 +98,13 @@ struct PopoverView: View {
                         Text("토큰을 쓰면 코인이 쌓여요 · \(coinText(Balance.packPrice)) = 1팩").font(.callout).foregroundStyle(.secondary)
                     }
                 }
-                .frame(height: 79)
+                .frame(height: 79) }
             } }
 
             // 무료 카드(위)·무료 팩(아래)은 둘 다 있으면 한 칸에 구분선으로 나눠 설명 없이 한 줄씩 둔다
             let showPack = freeRows?.pack ?? (state.freePacks > 0)
             let showCard = freeRows?.card ?? (state.pendingFree > 0)
-            if showPack || showCard {
+            if (showPack || showCard) && !recentCollapsed {
                 let compact = showPack && showCard
                 VStack(spacing: 8) {
                     if showCard {
@@ -141,6 +155,12 @@ struct PopoverView: View {
                 }
                 .onChange(of: game.lastBoughtPack, initial: true) { shownPack = game.lastBoughtPack }
             .clipShape(.rect(cornerRadius: 16))
+            // 접을 때 빼지 않고 높이만 0으로: 다시 만들면 가로 스크롤이 0번 팩에서 시작해 shownPack 앞뒤만 채운 칸이 비어 보인다
+            .frame(height: recentCollapsed ? 0 : nil, alignment: .top)
+            .clipped()
+            .opacity(recentCollapsed ? 0 : 1)
+            .allowsHitTesting(!recentCollapsed)
+            .accessibilityHidden(recentCollapsed)
 
             VStack(spacing: 2) {
                 MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.screen = .shop }
@@ -149,11 +169,15 @@ struct PopoverView: View {
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
                 UsageView()
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
-                MenuRow(title: "설정", systemImage: "gearshape", trailing: nil, chevron: true) { model.screen = .settings }
-                MenuRow(title: "종료", systemImage: "power", trailing: "⌘Q", chevron: false) { NSApp.terminate(nil) }
-                    .keyboardShortcut("q")
+                HStack(spacing: 2) {
+                    MenuRow(title: "설정", systemImage: "gearshape", trailing: nil, chevron: true) { model.screen = .settings }
+                    MenuRow(title: "종료", systemImage: "power", trailing: "⌘Q", chevron: false) { NSApp.terminate(nil) }
+                        .keyboardShortcut("q")
+                }
             }
             .padding(.horizontal, -8)
+            // ponytail: 높이 0인 바로 구매 줄 앞뒤 VStack 간격(16×2)을 메뉴 쪽 음수 여백으로 줄인다(높이 0 뷰엔 음수 여백이 안 먹는다). 간격을 바꾸면 같이 바꾼다
+            .padding(.top, recentCollapsed ? -20 : 0)
         }
     }
 

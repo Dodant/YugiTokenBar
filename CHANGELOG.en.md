@@ -1,5 +1,15 @@
 # Patch notes
 
+## 0.6.5 — 2026-10-22
+**✨ New features**
+- Clicking the "Recently obtained & Quick buy" header in the menu now collapses and expands the recent cards, free cards, free packs and quick buy rows together.
+  The menu remembers whether it's collapsed.
+
+**🎨 Improvements**
+- The Usage box in the menu now shows today's, this week's and this month's totals and a 14-day bar chart even outside Work mode.
+- Setting and Quit now sit side by side on one line in the menu.
+- Token counts and costs are now shortened like coins (52M, 2B, $18.9, $1K).
+
 ## 0.6.4 — 2026-10-21
 **✨ New features**
 - When more than 30 free cards pile up, you can now open them all at once with [All].

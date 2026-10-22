@@ -49,5 +49,17 @@ import Testing
         #expect(shortCoins(2_400_000) == "2.4M")
         #expect(shortCoins(1_000_000) == "1M")
         #expect(shortCoins(12_345_678) == "12M")
+        #expect(shortTokens(999) == "999")
+        #expect(shortTokens(3_500_000) == "3.5M")
+        #expect(shortTokens(2_032_500_000) == "2B")
     }
+
+    #if os(macOS)
+    @Test func costTextShortensFromAThousand() {
+        #expect(UsageDetailView.costText(18.96) == "$18.9")
+        #expect(UsageDetailView.costText(185.37) == "$185.3")
+        #expect(UsageDetailView.costText(1_026.39) == "$1K")
+        #expect(UsageDetailView.costText(12_345) == "$12K")
+    }
+    #endif
 }

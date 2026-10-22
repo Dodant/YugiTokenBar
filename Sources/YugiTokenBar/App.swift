@@ -76,7 +76,7 @@ struct YugiTokenBarApp: App {
             // 메뉴바 칸을 아끼려고 소수점 없이
             let today = model.todayDetail.values, tokens = Double(today.map(\.total).reduce(0, +))
             let short = tokens >= 1e6 ? String(format: "%.0fM", tokens / 1e6) : tokens >= 1e3 ? String(format: "%.0fK", tokens / 1e3) : String(Int(tokens))
-            return "\(short) · \(String(format: "$%.0f", today.map(\.cost).reduce(0, +)))"
+            return "\(short) · \("$" + shortCoins(Int(today.map(\.cost).reduce(0, +).rounded()), from: 1_000))"
         case .collection: return "\(model.game.ownedDistinct)/\(model.game.db.allCIDs.count)"
         case .sessionUsage, .weeklyUsage, .sessionWeeklyUsage, .sessionReset, .none: return ""
         }

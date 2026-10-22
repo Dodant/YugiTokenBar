@@ -291,6 +291,9 @@ struct UsageDetailView: View {
         .monospacedDigit()
     }
 
-    static func costText(_ cost: Double) -> String { String(format: "$%.2f", cost) }
+    /// $1,000 미만은 소수 한 자리까지 버림 ($18.96 → $18.9), 넘으면 토큰처럼 줄인다 ($1,026.39 → $1K)
+    static func costText(_ cost: Double) -> String {
+        cost < 1_000 ? String(format: "$%.1f", (cost * 10).rounded(.down) / 10) : "$" + shortCoins(Int(cost.rounded()), from: 1_000)
+    }
 }
 #endif

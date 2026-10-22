@@ -11,7 +11,5 @@ func shortCoins(_ n: Int, from: Int = 10_000) -> String {
 
 func coinText(_ n: Int) -> String { "ⓒ \(shortCoins(n))" }
 
-/// 1,000 미만은 그대로 (0.5K 를 "0K" 로 보이지 않게)
-func shortTokens(_ n: Int) -> String {
-    n < 1_000 ? "\(n)" : n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1e6) : String(format: "%.0fK", Double(n) / 1e3)
-}
+/// 토큰 표기: 코인과 같은 줄임을 천 단위부터 (52.1M → 52M, 2,032.5M → 2B). 1,000 미만은 그대로
+func shortTokens(_ n: Int) -> String { shortCoins(n, from: 1_000) }

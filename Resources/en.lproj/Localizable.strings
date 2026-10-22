@@ -522,3 +522,5 @@
 "필드 마법 카드의 그림을 배경으로 써요" = "Use a Field Spell Card's artwork as the background";
 /* CardDetailView.swift:72 */
 "이미 만든 카드예요. 더 모으려면 팩에서 뽑으세요" = "Already made. Pull it from packs to get more";
+/* PopoverView.swift:77 */
+"최근 획득 & 빠른 구매" = "Recently obtained & Quick buy";
