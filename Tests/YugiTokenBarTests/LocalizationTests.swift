@@ -104,7 +104,7 @@ import Testing
         for (lang, db) in Self.dbs {
             #expect(db.packs.map(\.pid) == ko.packs.map(\.pid), "\(lang) 팩 순서")
             #expect(db.packs.map(\.cards) == ko.packs.map(\.cards), "\(lang) 팩 카드")
-            #expect(db.packs.map(\.setCode) == ko.packs.map(\.setCode) && db.packs.map(\.date) == ko.packs.map(\.date))
+            #expect(db.packs.map(\.setCode) == ko.packs.map(\.setCode) && db.packs.map(\.date) == ko.packs.map(\.date) && db.packs.map(\.kind) == ko.packs.map(\.kind) && db.packs.map(\.era) == ko.packs.map(\.era))
             #expect(db.packs.allSatisfy { $0.imageURL != nil }, "\(lang) 봉투 이미지")  // 봉투는 언어마다 다르다
             #expect(Set(db.cards.keys) == Set(ko.cards.keys), "\(lang) cid 집합")
             for (cid, k) in ko.cards {
@@ -114,6 +114,20 @@ import Testing
                 #expect(c.materials?.map(\.cid) == k.materials?.map(\.cid), "\(lang) \(cid) 소재")
             }
         }
+    }
+
+    /// 듀얼리스트 팩 표지: ko 한국판(없는 만죠메 편은 일본판), ja 일본판(없는 유희 편은 한국판), en TCG 판(없는 6팩은 일본판)
+    @Test func duelistCoversFollowLanguageFallback() {
+        let fallback = ["ko": Set(["78802001"]), "ja": Set(["78804003"]),
+                        "en": Set(["78807000", "78807008", "78808006", "78809000", "1010001204000", "1010001406000"])]
+        let own = ["ko": "BoosterKR", "ja": "BoosterJP", "en": "BoosterEN"]
+        for (lang, db) in Self.dbs {
+            for p in db.packs where p.kind == .duelist {
+                let expected = fallback[lang]!.contains(p.pid) ? (lang == "ja" ? "BoosterKR" : "BoosterJP") : own[lang]!
+                #expect(p.imageURL?.contains(expected) == true, "\(lang) \(p.name): \(p.imageURL ?? "")")
+            }
+        }
+        #expect(Self.dbs["en"]!.packs.first { $0.pid == "1010001204000" }?.name == "Duelist Pack: Duelists of Pyroxene")
     }
 
     /// 대체 규칙 결과: 어느 언어든 모든 카드·팩에 이름이 있고, EN·JP 는 대부분 그 언어다

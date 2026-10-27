@@ -378,9 +378,11 @@ EARLY_TCG = {
     "71103001": "INVASION OF CHAOS", "71103002": "ANCIENT SANCTUARY",
 }
 PACK_NAME_OVERRIDES = {
-    "ja": {**EARLY_TCG, "71105000": "サイバネティック・レボリューション"},
+    "ja": {**EARLY_TCG, "71105000": "サイバネティック・レボリューション",
+           "78804003": "DUELIST PACK - YUGI -"},  # OCG 에 없는 듀얼리스트 팩(한국·TCG 만): 재록 상품 15周年記念商品 으로 가던 것
     "en": {
         "71105000": "CYBERNETIC REVOLUTION",
+        "78804003": "DUELIST PACK - YUGI -",  # 재록 모음집 LEGENDARY COLLECTION 3 (29/33) 이 원판 DPYG (19/33) 를 이김
         # TCG 에 없는 듀얼리스트 팩(Yugipedia 영문명)
         "78807000": "Duelist Pack: Yuma",
         "78807008": "Duelist Pack: Kite",
