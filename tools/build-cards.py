@@ -534,7 +534,7 @@ def cover_candidates(pack, lang):
 
 
 def pack_image(candidates):
-    """Yugipedia 의 첫 후보 봉투 이미지를 폭 600px 썸네일로(원본이 더 작으면 원본). 없으면 None.
+    """Yugipedia 의 첫 후보 봉투 이미지의 원본 URL(Yugipedia 가 외부 호출의 API 썸네일을 막는다, 2026-10-27). 없으면 None.
     allimages 는 코드마다 처음 필요할 때 한 번만 받는다."""
     api = "https://yugipedia.com/api.php?format=json&action=query&"
     names_of = {}
@@ -545,10 +545,10 @@ def pack_image(candidates):
             names_of[code] = [i["name"] for i in found]
         name = pick_booster(names_of[code], code, (region,))
         if name:
-            pages = json.loads(get(api + f"prop=imageinfo&iiprop=url&iiurlwidth=600&titles=File:{urllib.parse.quote(name)}"))["query"]["pages"]
+            pages = json.loads(get(api + f"prop=imageinfo&iiprop=url&titles=File:{urllib.parse.quote(name)}"))["query"]["pages"]
             time.sleep(0.5)
             info = next(iter(pages.values()))["imageinfo"][0]
-            return info.get("thumburl") or info["url"]
+            return info["url"]
     return None
 
 

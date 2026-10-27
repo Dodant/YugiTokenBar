@@ -425,14 +425,15 @@ def test_pack_image_falls_through_candidates():
             code = urllib.parse.unquote(url.split("aiprefix=")[1].split("-Booster")[0])
             return json.dumps({"query": {"allimages": [{"name": n} for n in files.get(code, [])]}})
         name = urllib.parse.unquote(url.split("titles=File:")[1])
-        return json.dumps({"query": {"pages": {"1": {"imageinfo": [{"url": f"https://x/{name}", "thumburl": f"https://x/t/{name}"}]}}}})
+        return json.dumps({"query": {"pages": {"1": {"imageinfo": [{"url": f"https://x/{name}"}]}}}})
     with fake_net(fake_get):
-        assert bc.pack_image([("DP2", "KR"), ("DP2", "JP")]) == "https://x/t/DP2-BoosterJP.jpg"       # ko 만죠메: KR 없음 → JP
-        assert bc.pack_image([("DPYG", "EN"), ("DPYG", "NA"), ("DP00", "JP"), ("DP00", "KR")]) == "https://x/t/DPYG-BoosterEN-UE.png"
-        assert bc.pack_image([("DP00", "JP"), ("DP00", "KR")]) == "https://x/t/DP00-BoosterKR.jpg"  # ja 유희: JP 없음 → KR
+        assert bc.pack_image([("DP2", "KR"), ("DP2", "JP")]) == "https://x/DP2-BoosterJP.jpg"       # ko 만죠메: KR 없음 → JP
+        assert bc.pack_image([("DPYG", "EN"), ("DPYG", "NA"), ("DP00", "JP"), ("DP00", "KR")]) == "https://x/DPYG-BoosterEN-UE.png"
+        assert bc.pack_image([("DP00", "JP"), ("DP00", "KR")]) == "https://x/DP00-BoosterKR.jpg"  # ja 유희: JP 없음 → KR
         assert bc.pack_image([("ZZZ", "KR")]) is None
     # allimages 는 호출마다 코드당 한 번: DP2 1 + DPYG 1(첫 후보에서 찾아 DP00 은 안 받는다) + DP00 1 + ZZZ 1
     assert sum("list=allimages" in u for u in calls) == 4
+    assert not any("iiurlwidth" in u for u in calls)  # 썸네일 요청 없음
 
 
 def test_verify_checks_kind_and_era():
