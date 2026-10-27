@@ -75,9 +75,9 @@ import Testing
 }
 
 @Test func dexScopeKeyRoundTrips() {
-    for scope in [DexScope.all, .favorites, .recent, .pack(12), .deck(UUID())] {
+    for scope in [DexScope.all, .favorites, .recent, .pack("78804003"), .deck(UUID())] {
         #expect(DexScope(key: scope.key) == scope)
     }
-    #expect(DexScope(key: "") == nil)
-    #expect(DexScope(key: "pack:x") == nil)
+    #expect(DexScope(key: "") == nil && DexScope(key: "pack:") == nil)
+    #expect(DexScope(key: "pack:3") == .pack("3"))  // 옛 인덱스 키도 읽히고, 그 pid 가 없으면 화면은 "전체"
 }

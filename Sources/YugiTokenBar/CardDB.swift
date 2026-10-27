@@ -179,6 +179,9 @@ struct CardDB: Sendable {
         return (need, cond)
     }
 
+    /// pid 로 찾은 팩 인덱스 (없으면 nil)
+    func packIndex(_ pid: String) -> Int? { packs.firstIndex { $0.pid == pid } }
+
     /// 앞 n 팩만 쓰는 DB (설정의 "시대 범위"). cards 는 그대로 두어 범위 밖 보유·기록 카드도 이름·이미지를 찾는다.
     func prefix(packs n: Int) -> CardDB {
         var db = self

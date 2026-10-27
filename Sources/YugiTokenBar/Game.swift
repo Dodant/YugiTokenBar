@@ -580,9 +580,9 @@ struct Game: Sendable {
 
     /// 마지막으로 코인으로 산 팩 (팝오버 바로 구매용). 산 적이 없거나 시대 범위 밖이면 첫 팩. 필드가 없는 옛 세이브는 로그에서 찾는다.
     var lastBoughtPack: Int {
-        if let pid = state.lastBoughtPid { return db.packs.firstIndex { $0.pid == pid } ?? 0 }
+        if let pid = state.lastBoughtPid { return db.packIndex(pid) ?? 0 }
         for entry in state.log {
-            if let i = db.packs.firstIndex(where: { $0.pid == entry.source }) { return i }
+            if let i = db.packIndex(entry.source) { return i }
         }
         return 0
     }

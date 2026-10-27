@@ -41,4 +41,14 @@ import Testing
         #expect(game.progress(0).cleared && !game.progress(1).cleared)
         #expect(game.sellPrice(6) == Balance.sellPrice[1]! * Balance.clearedSellMultiplier)
     }
+
+    /// 팩 인덱스가 밀려도 pid 로 찾는다: 바로 구매 줄의 마지막 산 팩, 시대 범위 밖이면 못 찾는다
+    @Test func packIndexByPid() {
+        let db = makeDB([[(1, 1)], [(2, 1)], [(3, 1)]], era: { $0 < 2 ? "DM" : "GX" })
+        #expect(db.packIndex("p2") == 2 && db.packIndex("zz") == nil && db.prefix(packs: 2).packIndex("p2") == nil)
+        var state = GameState(); state.lastBoughtPid = "p2"
+        #expect(Game(db: db, state: state).lastBoughtPack == 2)
+        state.eraLimit = "DM"
+        #expect(Game(db: db, state: state).lastBoughtPack == 0)
+    }
 }
