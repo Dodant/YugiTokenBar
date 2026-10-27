@@ -232,7 +232,7 @@ struct CardDB: Sendable {
         let db = CardDB(packs: file.packs, cards: cards)
         // 시대 구간이 0 부터 끊김 없이 이어져야 한다 (시대 순이 아니면 거부)
         guard db.eras.reduce(0, { $0 == $1.packs.lowerBound ? $1.packs.upperBound : -1 }) == db.packs.count else {
-            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "packs 가 시대 순이 아니거나 kind·era 가 없음"))
+            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "packs are not in era order, or kind/era is missing"))
         }
         return db
     }
