@@ -286,12 +286,14 @@ def test_add_mask_change():
     with fake_net(lambda url: (printed("2005-01-01" if "cid=50" in url else "2004-06-01") if "ope=2" in url
                                else fusions if "page=1&" in url else spell if url.endswith(urllib.parse.quote("마스크 체인지")) else "")):
         out = json.loads(json.dumps(KO))
-        out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "cards": [10]},
-                        {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "cards": [11]}]
+        out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "kind": "booster", "cards": [10]},
+                        {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "kind": "booster", "cards": [11]},
+                        {"pid": "3", "name": "듀얼 팩", "date": "2004-12-01", "kind": "duelist", "cards": [12]}]
         bc.add_mask_change(out, {40: 7})
         bc.add_codes(out["cards"])
     # 첫 수록일 직전(같은 날 포함) 팩에: 마스크드 히어로(2004-06) → 첫 팩, 마스크 체인지(2005-01-01) → 둘째 팩
     assert out["packs"][0]["cards"] == [10, 40] and out["packs"][1]["cards"] == [11, 50]
+    assert out["packs"][2]["cards"] == [12]  # 듀얼리스트 팩은 마스크 체인지 대상에서 뺀다
     assert out["cards"]["40"]["mask"] and out["cards"]["40"]["hero"] and out["cards"]["40"]["tier"] == 3 and out["cards"]["40"]["imageId"] == 7
     assert out["cards"]["50"]["kind"] == "spell" and "hero" not in out["cards"]["50"] and "41" not in out["cards"]
 
@@ -360,6 +362,42 @@ def test_pick_booster():
     assert bc.pick_booster(names, "LODT", ("EN", "NA")) == "LODT-Booster-EN-1E.png"
     assert bc.pick_booster(names, "MFC", bc.PACK_REGIONS["ja"]) == "MFC-BoosterNA.png"
     assert bc.pick_booster(names, "MFC", ("KR",)) is None
+
+
+def product_row(date, cat, name, pid):
+    """상품 목록 한 줄 (parse_products 의 정규식이 보는 부분만)"""
+    return (f'<div class="time"> {date} </div><span class="ws_nowrap">{cat}</span>'
+            f'<p>{name}</p>\n<input type="hidden" class="link_value" value="card_search.action?pid={pid}">')
+
+
+def test_parse_products_duelist_selection_and_order():
+    page = (product_row("2005/11/04", "【정규 부스터 팩】", "듀얼리스트의 투혼", "71105001")
+            + product_row("2003/12/09", "【정규 부스터 팩】", "푸른 눈의 백룡의 전설", "71101000")
+            + product_row("2007/05/02", "【기타 부스터 팩】", "듀얼리스트 팩 － 주다이 편 －", "78802000")
+            + product_row("2009/09/29", "【기타 부스터 팩】", "듀얼리스트 팩 － 유희 편 －", "78804003")
+            + product_row("2017/06/01", "【기타 부스터 팩】", "컬렉터즈 팩 2017 듀얼리스트 편", "90000000")
+            + product_row("2026/12/01", "【기타 부스터 팩】", "듀얼리스트 팩 -미래 편-", "90000001")
+            + product_row("2007/06/01", "【정규 부스터 팩】", "＋1 어시스트 팩", "90000002"))
+    out = bc.parse_products(page)
+    # DM: 정규 → 듀얼리스트(유희 편, 2009 라도 DM 끝), GX: 정규 → 듀얼리스트. 컬렉터즈 팩·CUTOFF 뒤·미니 팩은 뺀다
+    assert [(p[2], p[3]) for p in out] == [("71101000", "booster"), ("78804003", "duelist"), ("71105001", "booster"), ("78802000", "duelist")], out
+    assert out[1] == ("2009/09/29", "듀얼리스트 팩 － 유희 편 －", "78804003", "duelist")
+
+
+def test_parse_products_unknown_duelist_exits():
+    page = product_row("2025/01/01", "【기타 부스터 팩】", "듀얼리스트 팩 -모르는 편-", "90000009")
+    try:
+        bc.parse_products(page)
+        assert False
+    except SystemExit as e:
+        assert "90000009" in str(e)
+
+
+def test_booster_era_and_pack_era():
+    assert [bc.booster_era(d) for d in ("2003/12/09", "2005/11/03", "2005/11/04", "2008-10-07", "2026/10/13")] == ["DM", "DM", "GX", "5D's", "Modern"]
+    assert bc.pack_era("2009/09/29", "78804003", "duelist") == "DM" and bc.pack_era("2009/09/29", "x", "booster") == "5D's"
+    assert len(bc.DUELIST_PACKS) == bc.DUELIST_COUNT == 30 and bc.BOOSTER_COUNT == 101
+    assert all(era in bc.ERA_NAMES for _, _, era in bc.DUELIST_PACKS.values())
 
 
 if __name__ == "__main__":
