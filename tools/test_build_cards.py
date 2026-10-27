@@ -400,6 +400,48 @@ def test_booster_era_and_pack_era():
     assert all(era in bc.ERA_NAMES for _, _, era in bc.DUELIST_PACKS.values())
 
 
+def test_pick_booster_unlimited_edition():
+    assert bc.pick_booster(["DPYG-BoosterEN-UE.png", "DPYG-BoosterFR.png"], "DPYG", ("EN", "NA")) == "DPYG-BoosterEN-UE.png"
+    assert bc.pick_booster(["SOVR-BoosterEN-UE.png", "SOVR-BoosterEN.jpg"], "SOVR", ("EN",)) == "SOVR-BoosterEN.jpg"  # 정식판이 있으면 그것
+
+
+def test_cover_candidates():
+    booster = {"pid": "71101000", "kind": "booster", "setCode": "LOB"}
+    assert bc.cover_candidates(booster, "ja") == [("LOB", "JP"), ("LOB", "EN"), ("LOB", "NA")]
+    yugi = {"pid": "78804003", "kind": "duelist", "setCode": "DP00"}   # TCG DPYG
+    yuma = {"pid": "78807000", "kind": "duelist", "setCode": "DP12"}   # TCG 없음
+    assert bc.cover_candidates(yugi, "ko") == [("DP00", "KR"), ("DP00", "JP")]
+    assert bc.cover_candidates(yugi, "ja") == [("DP00", "JP"), ("DP00", "KR")]
+    assert bc.cover_candidates(yugi, "en") == [("DPYG", "EN"), ("DPYG", "NA"), ("DP00", "JP"), ("DP00", "KR")]
+    assert bc.cover_candidates(yuma, "en") == [("DP12", "JP"), ("DP12", "KR")]
+
+
+def test_pack_image_falls_through_candidates():
+    files = {"DP2": ["DP2-BoosterEN.jpg", "DP2-BoosterJP.jpg"], "DPYG": ["DPYG-BoosterEN-UE.png"], "DP00": ["DP00-BoosterKR.jpg"]}
+    calls = []
+    def fake_get(url):
+        calls.append(url)
+        if "list=allimages" in url:
+            code = urllib.parse.unquote(url.split("aiprefix=")[1].split("-Booster")[0])
+            return json.dumps({"query": {"allimages": [{"name": n} for n in files.get(code, [])]}})
+        name = urllib.parse.unquote(url.split("titles=File:")[1])
+        return json.dumps({"query": {"pages": {"1": {"imageinfo": [{"url": f"https://x/{name}", "thumburl": f"https://x/t/{name}"}]}}}})
+    with fake_net(fake_get):
+        assert bc.pack_image([("DP2", "KR"), ("DP2", "JP")]) == "https://x/t/DP2-BoosterJP.jpg"       # ko 만죠메: KR 없음 → JP
+        assert bc.pack_image([("DPYG", "EN"), ("DPYG", "NA"), ("DP00", "JP"), ("DP00", "KR")]) == "https://x/t/DPYG-BoosterEN-UE.png"
+        assert bc.pack_image([("DP00", "JP"), ("DP00", "KR")]) == "https://x/t/DP00-BoosterKR.jpg"  # ja 유희: JP 없음 → KR
+        assert bc.pack_image([("ZZZ", "KR")]) is None
+    # allimages 는 호출마다 코드당 한 번: DP2 1 + DPYG 1(첫 후보에서 찾아 DP00 은 안 받는다) + DP00 1 + ZZZ 1
+    assert sum("list=allimages" in u for u in calls) == 4
+
+
+def test_verify_checks_kind_and_era():
+    ko = {"packs": [{"pid": "1", "kind": "booster", "era": "DM", "cards": [10]}], "cards": {"10": KO["cards"]["10"]}}
+    assert bc.verify({"ko": ko, "ja": json.loads(json.dumps(ko))}) == []
+    ja = json.loads(json.dumps(ko)); ja["packs"][0]["era"] = "GX"
+    assert bc.verify({"ko": ko, "ja": ja}) != []
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

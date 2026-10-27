@@ -379,7 +379,16 @@ EARLY_TCG = {
 }
 PACK_NAME_OVERRIDES = {
     "ja": {**EARLY_TCG, "71105000": "サイバネティック・レボリューション"},
-    "en": {"71105000": "CYBERNETIC REVOLUTION"},
+    "en": {
+        "71105000": "CYBERNETIC REVOLUTION",
+        # TCG 에 없는 듀얼리스트 팩(Yugipedia 영문명)
+        "78807000": "Duelist Pack: Yuma",
+        "78807008": "Duelist Pack: Kite",
+        "78808006": "Duelist Pack: Yuma 2: Gogogo & Dododo",
+        "78809000": "Duelist Pack: Kastle Siblings",
+        "1010001204000": "Duelist Pack: Duelists of Pyroxene",
+        "1010001406000": "Duelist Pack: Duelists of Brilliance",
+    },
 }
 # 소재 줄 조각 수가 KO 와 달라 자동으로 못 맞추는 카드의 그 언어 소재. {lang: {cid: [소재...]}}
 MATERIALS_OVERRIDES = {
@@ -480,8 +489,8 @@ def verify(files):
     ko, problems = files["ko"], []
     mat_ids = lambda c: [(m.get("cid"), m.get("count")) if "cid" in m else None for m in c.get("materials", [])]
     for lang, f in files.items():
-        if [(p["pid"], p["cards"]) for p in f["packs"]] != [(p["pid"], p["cards"]) for p in ko["packs"]]:
-            problems.append(f"{lang}: 팩 pid·카드 목록이 KO 와 다름")
+        if [(p["pid"], p["cards"], p.get("kind"), p.get("era")) for p in f["packs"]] != [(p["pid"], p["cards"], p.get("kind"), p.get("era")) for p in ko["packs"]]:
+            problems.append(f"{lang}: 팩 pid·카드 목록·kind·era 가 KO 와 다름")
         if list(f["cards"]) != list(ko["cards"]):
             problems.append(f"{lang}: 카드 cid 목록·순서가 KO 와 다름")
         for cid, c in f["cards"].items():
@@ -499,30 +508,48 @@ def verify(files):
 # 언어별 봉투 이미지 지역(앞에서부터). NA 는 북미 영문판(매지션의 힘·왕가의 수호자는 EN 이 없다).
 # 초기 11팩은 일본에 같은 팩이 없어(팩 이름도 TCG 이름) JP 도 영문판을 쓴다.
 YGOPRODECK_SET = "https://images.ygoprodeck.com/images/sets/{}.jpg"
+# 듀얼리스트 팩은 cover_candidates 가 언어별로 정한다: ko KR→JP, ja JP→KR, en TCG 코드 EN·NA→OCG 코드 JP→KR.
 PACK_REGIONS = {"ko": ("KR",), "ja": ("JP", "EN", "NA"), "en": ("EN", "NA")}
 
 
 def pick_booster(names, set_code, regions):
     """Yugipedia 파일 이름 중 `<code>-Booster<지역>.*`(`-Booster-EN-1E.*` 꼴 포함)을 앞 지역부터 고른다. 없으면 None."""
     for r in regions:
-        found = sorted((n for n in names if re.fullmatch(rf"{re.escape(set_code)}-Booster-?{r}(-1E)?\.\w+", n)), key=len)
+        found = sorted((n for n in names if re.fullmatch(rf"{re.escape(set_code)}-Booster-?{r}(-1E|-UE)?\.\w+", n)), key=len)
         if found:
             return found[0]
     return None
 
 
-def pack_image(set_code, lang):
-    """Yugipedia 의 그 언어 봉투 이미지를 폭 600px 썸네일로(원본이 더 작으면 원본). 없으면 None."""
+def cover_candidates(pack, lang):
+    """봉투 이미지를 찾을 (세트 코드, 지역) 순서 목록. 듀얼리스트 팩은 OCG 코드(+TCG 코드)로 언어별 대체 순서를 둔다."""
+    if pack["kind"] != "duelist":
+        return [(pack["setCode"], r) for r in PACK_REGIONS[lang]]
+    ocg, tcg, _ = DUELIST_PACKS[pack["pid"]]
+    if lang == "ko":
+        return [(ocg, "KR"), (ocg, "JP")]
+    if lang == "ja":
+        return [(ocg, "JP"), (ocg, "KR")]
+    return ([(tcg, "EN"), (tcg, "NA")] if tcg else []) + [(ocg, "JP"), (ocg, "KR")]
+
+
+def pack_image(candidates):
+    """Yugipedia 의 첫 후보 봉투 이미지를 폭 600px 썸네일로(원본이 더 작으면 원본). 없으면 None.
+    allimages 는 코드마다 처음 필요할 때 한 번만 받는다."""
     api = "https://yugipedia.com/api.php?format=json&action=query&"
-    found = json.loads(get(api + f"list=allimages&aiprefix={set_code}-Booster&ailimit=500"))["query"]["allimages"]
-    time.sleep(0.5)
-    name = pick_booster([i["name"] for i in found], set_code, PACK_REGIONS[lang])
-    if not name:
-        return None
-    pages = json.loads(get(api + f"prop=imageinfo&iiprop=url&iiurlwidth=600&titles=File:{urllib.parse.quote(name)}"))["query"]["pages"]
-    time.sleep(0.5)
-    info = next(iter(pages.values()))["imageinfo"][0]
-    return info.get("thumburl") or info["url"]
+    names_of = {}
+    for code, region in candidates:
+        if code not in names_of:
+            found = json.loads(get(api + f"list=allimages&aiprefix={code}-Booster&ailimit=500"))["query"]["allimages"]
+            time.sleep(0.5)
+            names_of[code] = [i["name"] for i in found]
+        name = pick_booster(names_of[code], code, (region,))
+        if name:
+            pages = json.loads(get(api + f"prop=imageinfo&iiprop=url&iiurlwidth=600&titles=File:{urllib.parse.quote(name)}"))["query"]["pages"]
+            time.sleep(0.5)
+            info = next(iter(pages.values()))["imageinfo"][0]
+            return info.get("thumburl") or info["url"]
+    return None
 
 
 def split_materials(cards):
@@ -939,7 +966,10 @@ def build_ko():
     sets = {s["set_name"]: s for s in json.loads(get("https://db.ygoprodeck.com/api/v7/cardsets.php"))}
     for p in packs:
         if p["kind"] == "duelist":
-            p["setCode"] = DUELIST_PACKS[p["pid"]][0]  # 이미지는 별도 작업에서 채운다
+            ocg, tcg, _ = DUELIST_PACKS[p["pid"]]
+            p["setCode"] = ocg
+            p["imageURL"] = pack_image(cover_candidates(p, "ko")) or (YGOPRODECK_SET.format(tcg) if tcg else None)
+            print(f"{p['name']} → ({ocg}) {p['imageURL']}")
             continue
         count = {}
         for c in p["cards"]:
@@ -948,7 +978,7 @@ def build_ko():
         best = max((s for s in count if sets.get(s, {}).get("set_image")),
                    key=lambda s: count[s] / max(len(p["cards"]), sets[s]["num_of_cards"]), default=None)
         p["setCode"] = sets[best]["set_code"] if best else None
-        p["imageURL"] = pack_image(p["setCode"], "ko") or sets[best]["set_image"] if best else None
+        p["imageURL"] = pack_image(cover_candidates(p, "ko")) or sets[best]["set_image"] if best else None
         print(f"{p['name']} → {best} ({p['setCode']}) {p['imageURL']}")
     missing = []
     for cid, info in infos.items():
@@ -983,7 +1013,7 @@ def build_lang(lang):
         override = PACK_NAME_OVERRIDES[lang].get(p["pid"])
         print(f"  팩 {p['name']} → {override or name} ({n}/{len(p['cards'])}){' [덮어씀]' if override else ''}")
         p["name"] = override or (short_pack_name(name) if name and lang == "ja" else name) or p["name"]
-        p["imageURL"] = pack_image(p["setCode"], lang) or YGOPRODECK_SET.format(p["setCode"])
+        p["imageURL"] = pack_image(cover_candidates(p, lang)) or YGOPRODECK_SET.format(p["setCode"])
     dump(out, out_path(lang))
     label = lambda cid: "KO" if fallback is None or cid in fallback_missing else "JP"
     print(f"{lang}: 대체 {len(missing)}장, 소재 줄 불일치 {len(mismatched)}장")
