@@ -122,7 +122,7 @@ struct PopoverView: View {
                 .panelCard()
             }
 
-            // 트랙패드 좌우 스와이프로 발매순 앞뒤 팩을 넘긴다. 사면 그 팩이 lastBoughtPack 이 되어 그대로 남는다
+            // 트랙패드 좌우 스와이프로 목록 순 앞뒤 팩을 넘긴다. 사면 그 팩이 lastBoughtPack 이 되어 그대로 남는다
             // LazyHStack 가로 스크롤은 높이를 내용에서 못 받아 0이 되므로, 숨긴 한 줄로 높이를 잡는다
             PackRow(index: game.lastBoughtPack).padding(12).hidden()
                 .overlay {

@@ -12,6 +12,8 @@ The 30 Duelist Packs released in Korea have joined the collection.
 
 **⚖️ Balance**
 - 26 cards whose rarity changed (up or down) now follow their actual rarity in the Duelist Packs (Red-Eyes Black Dragon is now SE).
+- The 11 cards that used to be inserted into regular booster packs now come from the Duelist Pack they originally appear in.
+  Armed Dragon Catapult Cannon is in LEGENDARY DUELISTS: ANCIENT MILLENNIUM, so you need to widen the Era range to VRAINS to see it.
 
 ## 0.6.5 — 2026-10-22
 **✨ New features**

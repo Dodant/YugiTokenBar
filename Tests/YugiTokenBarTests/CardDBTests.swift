@@ -86,7 +86,7 @@ import Testing
         #expect(db.packs.firstIndex { $0.cards.contains(CardDB.maskChange) } == 48 && db.cards[CardDB.maskChange]?.kind == .spell)
         #expect(db.packs.firstIndex { $0.cards.contains(21614) } == 119 && db.cards.values.filter { $0.mask == true }.count == 10)
         #expect(db.cards.values.filter { $0.hero == true }.count == 100 && db.fusionCIDs.count == 331)  // 듀얼리스트 팩 HERO 9종, 만들 수 있는 융합 24종 추가
-        // 조건이 섞인 융합의 101팩 밖 소재도 그 융합의 팩에 넣어서 이름만 남은 소재가 없다: 지천의 기사 가이아드레이크의 대지의 기사 가이아 나이트(폭풍의 스타스트라이크)
+        // 조건이 섞인 융합의 우리 팩 밖 소재도 그 융합의 팩에 넣어서 이름만 남은 소재가 없다: 지천의 기사 가이아드레이크의 대지의 기사 가이아 나이트(폭풍의 스타스트라이크)
         #expect(db.cards.values.allSatisfy { $0.materials?.allSatisfy { $0.name == nil } ?? true })
         #expect(db.cards[9116]?.materials?.first == Material(cid: 7697) && db.packs[46].cards.contains(7697))  // 듀얼리스트 팩 10개가 앞에 끼어 36 → 46
         #expect(fusions.allSatisfy { !$0.text.contains("＋") })
@@ -102,7 +102,7 @@ import Testing
         #expect(db.materialNeed[6390] == 3 && db.materialNeed[4007] == 3)  // 사이버 드래곤(사이버 엔드 드래곤), 푸른 눈의 백룡(궁극의 푸른 눈의 백룡)
         #expect(db.prefix(packs: 14).materialNeed[6390] == nil)  // DM 범위엔 사이버 드래곤을 쓰는 융합이 없다
         // 넣은 융합 5장(스팀 힐러 등)·소재 2장은 듀얼리스트 팩에 원래 있어 정규 부스터에 끼워 넣지 않는다
-        #expect(db.packs.filter { $0.cards.contains(6535) }.allSatisfy { $0.kind == .duelist })  // 엘리멘틀 히어로 스팀 힐러(주다이 편)
+        #expect(db.packs.filter { $0.cards.contains(6535) }.map(\.pid) == ["78802000"])  // 엘리멘틀 히어로 스팀 힐러: 주다이 편에만
         #expect(db.packs.filter { $0.cards.contains(4370) }.map(\.pid) == ["78804003", "78811002"])  // 카오스 솔저: 유희 편·배틀 시티 편만
         // 버블맨은 주다이 편에 원래 있어 팩 소재가 되고(절대원소의 힘·정의의 적에 더는 안 넣는다) 한 팩에만 있다
         #expect(db.packs.filter { $0.cards.contains(6393) }.count == 1)

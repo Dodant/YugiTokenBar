@@ -109,8 +109,9 @@ struct Pack: Codable, Sendable, Identifiable, Equatable {
     let date: String
     /// 수록 카드 cid (등급은 CardInfo.tier)
     var cards: [Int]
-    /// 정규 부스터는 발매일, 듀얼리스트 팩은 주인공 기준 시대. 둘 다 build-cards.py 가 쓴다
+    /// 정규 부스터 / 듀얼리스트 팩
     var kind: PackKind = .booster
+    /// 정규 부스터는 발매일, 듀얼리스트 팩은 주인공 기준 시대. 둘 다 build-cards.py 가 쓴다
     var era: String = "DM"
     /// 정규 부스터는 대응 TCG 코드(LOB 등), 듀얼리스트 팩은 OCG 코드(DP00~DP29)
     var setCode: String? = nil
@@ -232,7 +233,7 @@ struct CardDB: Sendable {
         let db = CardDB(packs: file.packs, cards: cards)
         // 시대 구간이 0 부터 끊김 없이 이어져야 한다 (시대 순이 아니면 거부)
         guard db.eras.reduce(0, { $0 == $1.packs.lowerBound ? $1.packs.upperBound : -1 }) == db.packs.count else {
-            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "packs are not in era order, or kind/era is missing"))
+            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "packs are not in era order"))
         }
         return db
     }
