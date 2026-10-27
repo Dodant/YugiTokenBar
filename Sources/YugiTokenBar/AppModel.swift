@@ -36,7 +36,7 @@ final class AppModel {
             case .weeklyUsage: (String(localized: "주간 사용량"), "17%")
             case .sessionWeeklyUsage: (String(localized: "세션·주간 사용량"), "74/17%")
             case .sessionReset: (String(localized: "세션 초기화까지"), "2h 53m")
-            case .collection: (String(localized: "컬렉션"), "2311/8306")
+            case .collection: (String(localized: "컬렉션"), "2311/8886")
             case .none: (String(localized: "없음"), "")
             }
             return example.isEmpty ? name : "\(name) - \(example)"

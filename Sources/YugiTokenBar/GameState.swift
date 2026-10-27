@@ -65,7 +65,7 @@ struct GameState: Codable, Sendable, Equatable {
     var autoSellDuplicates = false
     /// 설정: 카드 기울기·뒤집기·레어 연출·융합 연출을 끈다 (시스템 동작 줄이기와 같게)
     var animationsOff = false
-    /// 설정: 이 시대(`CardDB.eraNames` 이름)까지만 상점·컬렉션·무료 카드에 쓴다. 기본 GX(싱크로 이전 27팩)
+    /// 설정: 이 시대(`CardDB.eraNames` 이름)까지만 상점·컬렉션·무료 카드에 쓴다. 기본 GX(싱크로 이전 37팩)
     var eraLimit = "GX"
     /// 파트너 「날개 크리보」 해금. 한 번 가지면 팔아도 유지 (`Game.unlockPartnerIfOwned`)
     var partnerUnlocked = false
