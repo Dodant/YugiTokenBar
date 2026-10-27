@@ -3,7 +3,7 @@ import Testing
 
 @Suite struct EraLimitTests {
     // 팩 12개 → DM 0..<11, GX 11..<12. 팩마다 고유 카드 1장 (cid = 팩 번호 + 1)
-    let db = makeDB((0..<12).map { [($0 + 1, 1)] })
+    let db = makeDB((0..<12).map { [($0 + 1, 1)] }, era: { $0 < 11 ? "DM" : "GX" })
 
     #if os(macOS)
     /// 필드 배경 카드가 시대 범위 밖이면 없음처럼, 넓히면 돌아온다

@@ -72,7 +72,7 @@ struct Pull: Sendable, Equatable {
 }
 
 struct Game: Sendable {
-    /// 101팩 전체
+    /// 전체 팩
     let fullDB: CardDB
     var state: GameState
     /// 시대 이름 → 그 시대까지 자른 DB (미리 만들어 두고 고르기만 한다)
@@ -471,7 +471,7 @@ struct Game: Sendable {
         return open(pack: pack, using: &rng)
     }
 
-    /// 쌓인 무료 팩 1개를 연다. 정규 부스터 팩 중 하나를 진행도가 낮을수록 조금 더 잘 나오게 고른다(`pickFreePack`). 없으면 nil.
+    /// 쌓인 무료 팩 1개를 연다. 팩 중 하나를 진행도가 낮을수록 조금 더 잘 나오게 고른다(`pickFreePack`). 없으면 nil.
     mutating func openFreePack<R: RandomNumberGenerator>(using rng: inout R) -> (pack: Int, pulls: [Pull])? {
         guard state.freePacks > 0, !db.packs.isEmpty else { return nil }
         state.freePacks -= 1
