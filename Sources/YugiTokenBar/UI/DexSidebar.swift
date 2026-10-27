@@ -71,9 +71,15 @@ struct DexSidebar: View {
             if !workMode {  // 업무 모드면 봉투 자리 없이
                 PackImageView(pack: pack)
                     .frame(height: 36)
+                    .overlay(alignment: .topLeading) {
+                        if pack.kind == .duelist { DuelistBadge().padding(2) }
+                    }
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(pack.name).lineLimit(1)
+                HStack(spacing: 4) {
+                    if workMode && pack.kind == .duelist { DuelistBadge() }
+                    Text(pack.name).lineLimit(1)
+                }
                 HStack {
                     ProgressBar(owned: p.owned, total: p.total)
                     ProgressCount(owned: p.owned, total: p.total)
