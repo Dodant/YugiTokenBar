@@ -217,6 +217,13 @@ def test_short_pack_name():
     assert bc.short_pack_name("CHAOS ORIGINS") == "CHAOS ORIGINS"
 
 
+def test_duelist_name():
+    for raw in ["듀얼리스트 팩 － 유희 편 －", "듀얼리스트 팩 -유희 편-", "듀얼리스트 팩 - 유희 편"]:
+        assert bc.duelist_name(raw) == "듀얼리스트 팩 - 유희 편", raw
+    assert bc.duelist_name("듀얼리스트 팩 － 유마 편2 고고고&도도도 －") == "듀얼리스트 팩 - 유마 편2 고고고&도도도"
+    assert bc.duelist_name("듀얼리스트의 투혼") == "듀얼리스트의 투혼"
+
+
 def test_verify():
     jp, _, _ = bc.localize(KO, {10: rec(10, "カ")})
     assert bc.verify({"ko": KO, "ja": jp}) == []

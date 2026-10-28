@@ -920,8 +920,16 @@ def add_codes(cards):
             info["mask"] = True
 
 
+def duelist_name(name):
+    """KO 듀얼리스트 팩 이름을 `듀얼리스트 팩 - 유희 편` 으로 맞춘다(DB 는 `－ 유희 편 －`·`-유희 편-` 이 섞여 있다). 그 밖의 이름은 그대로."""
+    m = re.fullmatch(r"듀얼리스트 팩 [－-] ?(.+?) ?[－-]?", name)
+    return f"듀얼리스트 팩 - {m.group(1)}" if m else name
+
+
 def normalize_ko(out):
-    """KO 전용 후처리: 등급 이식·표지 SE·융합 소재 분리·코드 필드. 이미 한 것은 그대로(--reformat)."""
+    """KO 전용 후처리: 듀얼리스트 팩 이름·등급 이식·표지 SE·융합 소재 분리·코드 필드. 이미 한 것은 그대로(--reformat)."""
+    for p in out["packs"]:
+        p["name"] = duelist_name(p["name"])
     move_tiers(out)
     for cid in COVER_SE:
         out["cards"][str(cid)]["tier"] = 5

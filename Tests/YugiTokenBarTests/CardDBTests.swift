@@ -8,7 +8,7 @@ import Testing
         // 정규 부스터 101팩 + 듀얼리스트 팩 30팩, 시대 안에서 정규 부스터 뒤에 듀얼리스트 팩이라 마지막은 Modern 듀얼리스트 팩
         #expect(db.packs.count == 131)
         #expect(db.packs.first?.name == "푸른 눈의 백룡의 전설")
-        #expect(db.packs.last?.name == "듀얼리스트 팩 -휘광의 듀얼리스트 편-")
+        #expect(db.packs.last?.name == "듀얼리스트 팩 - 휘광의 듀얼리스트 편")  // DB 의 대시 표기는 build-cards.py 가 맞춘다
         #expect(!db.packs.contains { $0.name.contains("어시스트") || ($0.kind == .booster && $0.cards.count < 40) })  // 미니 팩은 뺀다(듀얼리스트 팩은 30장부터)
         #expect(db.packs.allSatisfy { $0.date < "2026-10-14" })
         // 정규 부스터끼리는 날짜순, 시대마다 그 시대 팩만 있고 정규 부스터 뒤에 듀얼리스트 팩
