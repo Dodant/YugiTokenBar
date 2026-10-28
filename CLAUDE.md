@@ -12,7 +12,7 @@ GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.
 Developer ID·공증 없이 ad-hoc 서명으로(스크립트에 `YTB_SIGN_IDENTITY`·`YTB_NOTARY_PROFILE` 선택 경로는 남아 있다), CI가 아니라 로컬에서 `scripts/package-release.sh --publish`로 게시한다(게시는 사용자 확인 후).
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준, 로컬 전용)
-- 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 25장·복사한 코드).
+- 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 26장·복사한 코드).
   이미지 출처를 바꾸면 같이 고친다.
 - 배포: `docs/distribution.md` (Sparkle 키·로컬 릴리스·Gatekeeper)
 - README: `README.md`(영어)·`README.ko.md`·`README.ja.md`.

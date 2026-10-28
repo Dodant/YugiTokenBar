@@ -21,7 +21,7 @@ Available in Korean, English, and Japanese.</p>
 - In Settings, pick how far the pools reach (DM … Modern, default GX).
 - You can collect any number of copies.\
   Extra cards sell for coins.
-- 25 cards have official over-frame art, where the illustration breaks out of the card frame.\
+- 26 cards have official over-frame art, where the illustration breaks out of the card frame.\
   Collect 3 copies of one to unlock its over-frame art; it stays unlocked even if you sell them.\
   Until then, its copies are never sold as duplicates or used as Fusion Materials, and the Dex shows a ✦ badge with your progress.
 - Once you own every card in a pack, cards you still need (locked over-frame cards, and Fusion Materials you are short on) come up 10 times as often as other cards of the same rarity.\

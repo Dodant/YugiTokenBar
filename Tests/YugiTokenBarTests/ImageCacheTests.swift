@@ -19,7 +19,7 @@ import Testing
     @MainActor @Test func overframeKeysAreBundledCards() throws {
         let db = try CardDB.load(from: CardDB.repoURL("ko"))
         let ids = Set(db.cards.values.compactMap(\.imageId))
-        #expect(ImageSource.overframe.count == 25)
+        #expect(ImageSource.overframe.count == 26)
         #expect(ImageSource.overframe.keys.filter { !ids.contains($0) }.isEmpty)
     }
 

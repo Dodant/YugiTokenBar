@@ -8,6 +8,7 @@ The 30 Duelist Packs released in Korea have joined the collection.
 - Added 30 Duelist Packs (from DUELIST PACK - JADEN YUKI - to Duelist Pack: Duelists of Brilliance) to the Shop and Dex.
   They come after the regular booster packs in each era group and carry a DP mark.
   Each pack's era follows its main character, so DUELIST PACK - YUGI -, DUELIST PACK - BATTLE CITY - and DUELIST PACK - RIVALS OF THE PHARAOH - are in DM.
+  Toon Dark Magician Girl from DUELIST PACK - BATTLE CITY - can unlock its official overframe artwork too.
 - 580 new cards bring the collection to 131 packs and 8,886 cards, with 331 cards you can make by Fusion.
 
 **⚖️ Balance**
