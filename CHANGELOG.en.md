@@ -1,6 +1,6 @@
 # Patch notes
 
-## 0.7.0 — 2026-10-27
+## 0.6.6 — 2026-10-27
 
 The 30 Duelist Packs released in Korea have joined the collection.
 
