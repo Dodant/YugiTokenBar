@@ -85,7 +85,7 @@ enum CardKind: String, CaseIterable, Sendable {
     }
 }
 
-/// 융합 소재 하나: cid 는 101팩의 카드, name 은 101팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
+/// 융합 소재 하나: cid 는 팩의 카드, name 은 팩에 없는 카드, rule 은 "전사족 몬스터" 같은 조건. count 는 "× N".
 struct Material: Codable, Sendable, Equatable {
     var cid: Int? = nil
     var name: String? = nil
@@ -101,20 +101,27 @@ struct Pick: Codable, Sendable, Equatable {
     var join: Bool? = nil
 }
 
+enum PackKind: String, Codable, Sendable { case booster, duelist }
+
 struct Pack: Codable, Sendable, Identifiable, Equatable {
     let pid: String
     let name: String
     let date: String
     /// 수록 카드 cid (등급은 CardInfo.tier)
     var cards: [Int]
-    /// 대응하는 TCG 팩 코드 (LOB 등)
+    /// 정규 부스터 / 듀얼리스트 팩
+    var kind: PackKind = .booster
+    /// 정규 부스터는 발매일, 듀얼리스트 팩은 주인공 기준 시대. 둘 다 build-cards.py 가 쓴다
+    var era: String = "DM"
+    /// 정규 부스터는 대응 TCG 코드(LOB 등), 듀얼리스트 팩은 OCG 코드(DP00~DP29)
     var setCode: String? = nil
-    /// 봉투 이미지: Yugipedia 의 그 언어판(일본어는 없으면 영문판), 없으면 YGOPRODeck 영문판
+    /// 봉투 이미지: Yugipedia 의 그 언어판(일본어는 없으면 영문판), 없으면 YGOPRODeck 영문판.
+    /// 듀얼리스트 팩은 ko KR→JP, ja JP→KR, en TCG EN→JP→KR
     var imageURL: String? = nil
     var id: String { pid }
 }
 
-/// cards_XX.json (tools/build-cards.py 산출물). packs 는 발매일 오름차순.
+/// cards_XX.json (tools/build-cards.py 산출물). packs 는 시대 순 → 정규 부스터 먼저 → 발매일 순 (build-cards.py).
 struct CardDB: Sendable {
     private(set) var packs: [Pack]
     let cards: [Int: CardInfo]
@@ -173,6 +180,9 @@ struct CardDB: Sendable {
         return (need, cond)
     }
 
+    /// pid 로 찾은 팩 인덱스 (없으면 nil)
+    func packIndex(_ pid: String) -> Int? { packs.firstIndex { $0.pid == pid } }
+
     /// 앞 n 팩만 쓰는 DB (설정의 "시대 범위"). cards 는 그대로 두어 범위 밖 보유·기록 카드도 이름·이미지를 찾는다.
     func prefix(packs n: Int) -> CardDB {
         var db = self
@@ -183,11 +193,7 @@ struct CardDB: Sendable {
         return db
     }
 
-    /// 시대별 첫 팩(발매순 인덱스): DM 푸른 눈의 백룡의 전설, GX 듀얼리스트의 투혼, 5D's 듀얼리스트의 태동(싱크로),
-    /// ZEXAL 리턴 오브 더 듀얼리스트(엑시즈), ARC-V 더 듀얼리스트 어드벤트(펜듈럼), VRAINS 코드 오브 더 듀얼리스트(링크),
-    /// Modern 라이즈 오브 더 듀얼리스트(VRAINS 이후).
-    // ponytail: 팩 목록이 고정(cards_XX.json)이라 인덱스로 나눈다. 팩을 더 넣으면 여기도 고친다.
-    static let eraStarts = [("DM", 0), ("GX", 11), ("5D's", 27), ("ZEXAL", 43), ("ARC-V", 51), ("VRAINS", 63), ("Modern", 75)]
+    static let eraNames = ["DM", "GX", "5D's", "ZEXAL", "ARC-V", "VRAINS", "Modern"]
     /// 「융합」 마법 카드 (푸른 눈의 백룡의 전설 SR). 1장 이상 있어야 융합할 수 있고 소비되지 않는다.
     static let fusionSpell = 4837
     /// 「마스크 체인지」(익스트림 빅토리에 넣은 프리미엄 팩 Vol.6 SE). 1장 이상 있어야 마스크드 히어로를 만들 수 있고 소비되지 않는다.
@@ -201,13 +207,12 @@ struct CardDB: Sendable {
     /// 시대를 대표하는 소환법 코드 (설정의 시대 범위 메뉴 표시용, 이름은 CardInfo.summonTitle)
     static let eraSummons = ["DM": "ritual", "GX": "fusion", "5D's": "synchro", "ZEXAL": "xyz", "ARC-V": "pendulum", "VRAINS": "link", "Modern": "support"]
 
-    /// (시대 이름, 팩 인덱스 범위). 테스트용 작은 DB 에선 빈 시대를 뺀다.
+    /// (시대 이름, 팩 인덱스 범위): 팩의 era 가 이어진 구간. 팩이 없는 시대는 뺀다.
     var eras: [(name: String, packs: Range<Int>)] {
-        Self.eraStarts.indices.map { i in
-            let start = min(Self.eraStarts[i].1, packs.count)
-            let end = i + 1 < Self.eraStarts.count ? min(Self.eraStarts[i + 1].1, packs.count) : packs.count
-            return (Self.eraStarts[i].0, start..<end)
-        }.filter { !$0.packs.isEmpty }
+        Self.eraNames.compactMap { name in
+            guard let start = packs.firstIndex(where: { $0.era == name }) else { return nil }
+            return (name, start..<(packs[start...].firstIndex { $0.era != name } ?? packs.count))
+        }
     }
 
     static func load(from url: URL) throws -> CardDB {
@@ -225,7 +230,12 @@ struct CardDB: Sendable {
         for (key, p) in picks {
             if let cid = Int(key) { cards[cid]?.picks = p }
         }
-        return CardDB(packs: file.packs, cards: cards)
+        let db = CardDB(packs: file.packs, cards: cards)
+        // 시대 구간이 0 부터 끊김 없이 이어져야 한다 (시대 순이 아니면 거부)
+        guard db.eras.reduce(0, { $0 == $1.packs.lowerBound ? $1.packs.upperBound : -1 }) == db.packs.count else {
+            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "packs are not in era order"))
+        }
+        return db
     }
 
     /// 언어별 카드 파일 이름(확장자 없음): ko → cards_KO, ja → cards_JP, 그 밖 → cards_EN

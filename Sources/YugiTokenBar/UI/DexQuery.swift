@@ -12,16 +12,16 @@ struct DexEntry: Identifiable {
 /// 사이드바 선택: 전체 · 즐겨찾기 · 최근 획득 · 팩 · 덱
 enum DexScope: Hashable {
     case all, favorites, recent
-    case pack(Int)
+    case pack(String)
     case deck(UUID)
 
-    /// UserDefaults 저장용: "all", "favorites", "recent", "pack:3", "deck:<UUID>"
+    /// UserDefaults 저장용: "all", "favorites", "recent", "pack:<pid>", "deck:<UUID>"
     var key: String {
         switch self {
         case .all: "all"
         case .favorites: "favorites"
         case .recent: "recent"
-        case .pack(let i): "pack:\(i)"
+        case .pack(let pid): "pack:\(pid)"
         case .deck(let id): "deck:\(id.uuidString)"
         }
     }
@@ -32,7 +32,7 @@ enum DexScope: Hashable {
         case ("all", 1): self = .all
         case ("favorites", 1): self = .favorites
         case ("recent", 1): self = .recent
-        case ("pack", 2): guard let i = Int(parts[1]) else { return nil }; self = .pack(i)
+        case ("pack", 2): self = .pack(parts[1])
         case ("deck", 2): guard let id = UUID(uuidString: parts[1]) else { return nil }; self = .deck(id)
         default: return nil
         }
@@ -85,7 +85,7 @@ struct DexQuery: Equatable {
         var seen = Set<Int>()
         let all = { db.packs.flatMap(\.cards).filter { seen.insert($0).inserted } }
         let cards: [Int] = switch scope {
-        case .pack(let i)? where db.packs.indices.contains(i): db.packs[i].cards
+        case .pack(let pid)?: db.packIndex(pid).map { db.packs[$0].cards } ?? all()
         case .favorites?: all().filter { game.state.favorites.contains($0) }
         // 최근 획득: 획득 기록(최근 50장) 최신순, 같은 카드는 한 번, 시대 범위 안만
         case .recent?:

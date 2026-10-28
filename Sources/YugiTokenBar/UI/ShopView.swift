@@ -117,7 +117,10 @@ private struct ShopRow: View {
         let p = game.progress(index)
         Hovering { hovered in
             VStack(alignment: .leading, spacing: 3) {
-                MarqueeText(text: pack.name, active: hovered).font(.callout)
+                HStack(spacing: 4) {
+                    if pack.kind == .duelist { DuelistBadge() }
+                    MarqueeText(text: pack.name, active: hovered).font(.callout)
+                }
                 HStack(spacing: 8) {
                     ProgressBar(owned: p.owned, total: p.total)
                         .alignmentGuide(.barBottom) { $0[.bottom] }
@@ -181,6 +184,9 @@ struct PackTile: View {
             }
             .overlay {
                 if p.cleared && !hover { PackStamp(complete: p.complete) }
+            }
+            .overlay(alignment: .topLeading) {
+                if pack.kind == .duelist { DuelistBadge().padding(4) }
             }
             .clipShape(.rect(cornerRadius: 10))
             .shadow(color: .black.opacity(0.2), radius: 3, y: 2)

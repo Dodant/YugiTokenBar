@@ -310,6 +310,19 @@ struct CardBack: View {
     }
 }
 
+/// 듀얼리스트 팩 표시. "DP"는 세 언어 공통 영어 표기라 번역 파일에 두지 않으려 `Text(verbatim:)`을 쓰고,
+/// 접근성 이름은 번역되는 "듀얼리스트 팩"이다.
+struct DuelistBadge: View {
+    var body: some View {
+        Text(verbatim: "DP")
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 4).padding(.vertical, 1)
+            .background(.thinMaterial, in: .capsule)
+            .foregroundStyle(.primary)
+            .accessibilityLabel("듀얼리스트 팩")
+    }
+}
+
 /// 팩 봉투 이미지. 없거나 로딩 중이면 그라데이션.
 struct PackImageView: View {
     let pack: Pack

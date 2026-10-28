@@ -153,7 +153,7 @@ def test_get_card_page_retries():
 
 
 KO = {
-    "packs": [{"pid": "1", "name": "한국팩", "date": "2004-01-01", "cards": [10, 11, 12]}],
+    "packs": [{"pid": "1", "name": "한국팩", "date": "2004-01-01", "kind": "booster", "era": "DM", "cards": [10, 11, 12]}],
     "cards": {
         "10": {"name": "가", "attr": "빛", "level": 4, "type": "전사족/일반", "atk": "1000", "def": "1000", "text": "설명", "imageId": 1, "tier": 1},
         "11": {"name": "나", "attr": "마법", "type": "일반", "text": "효과", "imageId": 2, "tier": 2, "kind": "spell"},
@@ -183,6 +183,10 @@ def test_localize_falls_back_whole_card():
     assert en["cards"]["12"]["name"] == "다"  # EN 없음 → JP(이것도 KO 대체)
     assert missing == ["12"]
     assert list(en["cards"]) == list(KO["cards"]) and en["packs"][0]["cards"] == [10, 11, 12]
+    # JP 파일이 옛것이라 새 카드가 없으면(KO 만 다시 받은 뒤) 그 카드는 KO 로 (KeyError 가 아니라)
+    stale_jp = json.loads(json.dumps(jp)); del stale_jp["cards"]["12"]
+    en, missing, _ = bc.localize(KO, en_recs, fallback=stale_jp)
+    assert en["cards"]["12"] == KO["cards"]["12"] and missing == ["12"]
 
 
 def test_split_lang_materials():
@@ -213,6 +217,13 @@ def test_short_pack_name():
     assert bc.short_pack_name("CHAOS ORIGINS") == "CHAOS ORIGINS"
 
 
+def test_duelist_name():
+    for raw in ["듀얼리스트 팩 － 유희 편 －", "듀얼리스트 팩 -유희 편-", "듀얼리스트 팩 - 유희 편"]:
+        assert bc.duelist_name(raw) == "듀얼리스트 팩 - 유희 편", raw
+    assert bc.duelist_name("듀얼리스트 팩 － 유마 편2 고고고&도도도 －") == "듀얼리스트 팩 - 유마 편2 고고고&도도도"
+    assert bc.duelist_name("듀얼리스트의 투혼") == "듀얼리스트의 투혼"
+
+
 def test_verify():
     jp, _, _ = bc.localize(KO, {10: rec(10, "カ")})
     assert bc.verify({"ko": KO, "ja": jp}) == []
@@ -221,6 +232,36 @@ def test_verify():
     del bad["cards"]["11"]
     problems = bc.verify({"ko": KO, "ja": bad})
     assert any("cid" in p for p in problems) and any("tier" in p for p in problems), problems
+    # 옛 형식(kind·era 없음)·모르는 시대·시대 순이 아닌 팩 목록은 세 언어가 같아도 거부한다
+    legacy = json.loads(json.dumps(KO)); del legacy["packs"][0]["kind"]
+    assert any("kind·era" in p for p in bc.verify({"ko": legacy, "ja": legacy})), bc.verify({"ko": legacy, "ja": legacy})
+    odd = json.loads(json.dumps(KO)); odd["packs"][0]["era"] = "GXX"
+    assert any("kind·era" in p for p in bc.verify({"ko": odd, "ja": odd}))
+    unsorted = json.loads(json.dumps(KO))
+    unsorted["packs"] = [{"pid": "d", "kind": "duelist", "era": "DM", "cards": []}, {"pid": "b", "kind": "booster", "era": "DM", "cards": []}]
+    assert any("순이 아님" in p for p in bc.verify({"ko": unsorted, "ja": unsorted}))
+    unsorted["packs"] = [{"pid": "g", "kind": "booster", "era": "GX", "cards": []}, {"pid": "b", "kind": "booster", "era": "DM", "cards": []}]  # 시대 역순
+    assert any("순이 아님" in p for p in bc.verify({"ko": unsorted, "ja": unsorted}))
+    assert bc.verify({"ko": KO, "ja": KO}) == []
+
+
+def test_sync_shared_rejects_different_pack_list():
+    ja = json.loads(json.dumps(KO))
+    ja["packs"].append({"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "kind": "booster", "era": "DM", "cards": []})
+    try:
+        bc.sync_shared(KO, ja)
+        assert False
+    except SystemExit as e:
+        assert "--lang" in str(e)
+    fewer = json.loads(json.dumps(KO)); del fewer["cards"]["12"]  # --extras 로 KO 에만 든 카드
+    try:
+        bc.sync_shared(KO, fewer)
+        assert False
+    except SystemExit:
+        pass
+    same = json.loads(json.dumps(KO)); same["packs"][0]["name"] = "日本パック"; same["packs"][0]["cards"] = []
+    bc.sync_shared(KO, same)
+    assert same["packs"][0]["name"] == "日本パック" and same["packs"][0]["cards"] == [10, 11, 12]  # 이름은 두고 공유 필드만 KO
 
 
 def test_materials_override():
@@ -265,8 +306,8 @@ def test_add_outside_fusions():
         out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "cards": [10, 12]},
                         {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "cards": [10, 11]}]
         bc.add_outside_fusions(out, {20: 99})
-    # 조건(22)·101팩 소재가 없는 것(24)·조건 없는 후보 융합이 소재(23)인 것은 빼고, 101팩 소재가 처음 나온 팩 중 늦은 팩(가 0, 나 1 → 1)에.
-    # 101팩 밖 소재는 이름으로 남기고(21), 한국 미발매 소재(27)면 빼고, 조건 융합 소재(26)는 그 융합(25)과 같은 팩에
+    # 조건(22)·정규 부스터 소재가 없는 것(24)·조건 없는 후보 융합이 소재(23)인 것은 빼고, 정규 부스터 소재가 처음 나온 팩 중 늦은 팩(가 0, 나 1 → 1)에.
+    # 정규 부스터 밖 소재는 이름으로 남기고(21), 한국 미발매 소재(27)면 빼고, 조건 융합 소재(26)는 그 융합(25)과 같은 팩에
     assert list(out["cards"]) == ["10", "11", "12", "20", "21", "25", "26"]
     assert out["cards"]["20"] == {"name": "마", "type": "악마족/융합", "text": "효과", "imageId": 99, "tier": 4,
                                   "materials": [{"cid": 10}, {"cid": 11}]}
@@ -286,12 +327,14 @@ def test_add_mask_change():
     with fake_net(lambda url: (printed("2005-01-01" if "cid=50" in url else "2004-06-01") if "ope=2" in url
                                else fusions if "page=1&" in url else spell if url.endswith(urllib.parse.quote("마스크 체인지")) else "")):
         out = json.loads(json.dumps(KO))
-        out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "cards": [10]},
-                        {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "cards": [11]}]
+        out["packs"] = [{"pid": "1", "name": "첫 팩", "date": "2004-01-01", "kind": "booster", "cards": [10]},
+                        {"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "kind": "booster", "cards": [11]},
+                        {"pid": "3", "name": "듀얼 팩", "date": "2004-12-01", "kind": "duelist", "cards": [12]}]
         bc.add_mask_change(out, {40: 7})
         bc.add_codes(out["cards"])
     # 첫 수록일 직전(같은 날 포함) 팩에: 마스크드 히어로(2004-06) → 첫 팩, 마스크 체인지(2005-01-01) → 둘째 팩
     assert out["packs"][0]["cards"] == [10, 40] and out["packs"][1]["cards"] == [11, 50]
+    assert out["packs"][2]["cards"] == [12]  # 듀얼리스트 팩은 마스크 체인지 대상에서 뺀다
     assert out["cards"]["40"]["mask"] and out["cards"]["40"]["hero"] and out["cards"]["40"]["tier"] == 3 and out["cards"]["40"]["imageId"] == 7
     assert out["cards"]["50"]["kind"] == "spell" and "hero" not in out["cards"]["50"] and "41" not in out["cards"]
 
@@ -360,6 +403,91 @@ def test_pick_booster():
     assert bc.pick_booster(names, "LODT", ("EN", "NA")) == "LODT-Booster-EN-1E.png"
     assert bc.pick_booster(names, "MFC", bc.PACK_REGIONS["ja"]) == "MFC-BoosterNA.png"
     assert bc.pick_booster(names, "MFC", ("KR",)) is None
+
+
+def product_row(date, cat, name, pid):
+    """상품 목록 한 줄 (parse_products 의 정규식이 보는 부분만)"""
+    return (f'<div class="time"> {date} </div><span class="ws_nowrap">{cat}</span>'
+            f'<p>{name}</p>\n<input type="hidden" class="link_value" value="card_search.action?pid={pid}">')
+
+
+def test_parse_products_duelist_selection_and_order():
+    page = (product_row("2005/11/04", "【정규 부스터 팩】", "듀얼리스트의 투혼", "71105001")
+            + product_row("2003/12/09", "【정규 부스터 팩】", "푸른 눈의 백룡의 전설", "71101000")
+            + product_row("2007/05/02", "【기타 부스터 팩】", "듀얼리스트 팩 － 주다이 편 －", "78802000")
+            + product_row("2009/09/29", "【기타 부스터 팩】", "듀얼리스트 팩 － 유희 편 －", "78804003")
+            + product_row("2017/06/01", "【기타 부스터 팩】", "컬렉터즈 팩 2017 듀얼리스트 편", "90000000")
+            + product_row("2026/12/01", "【기타 부스터 팩】", "듀얼리스트 팩 -미래 편-", "90000001")
+            + product_row("2007/06/01", "【정규 부스터 팩】", "＋1 어시스트 팩", "90000002"))
+    out = bc.parse_products(page)
+    # DM: 정규 → 듀얼리스트(유희 편, 2009 라도 DM 끝), GX: 정규 → 듀얼리스트. 컬렉터즈 팩·CUTOFF 뒤·미니 팩은 뺀다
+    assert [(p[2], p[3]) for p in out] == [("71101000", "booster"), ("78804003", "duelist"), ("71105001", "booster"), ("78802000", "duelist")], out
+    assert out[1] == ("2009/09/29", "듀얼리스트 팩 － 유희 편 －", "78804003", "duelist")
+
+
+def test_parse_products_unknown_duelist_exits():
+    page = product_row("2025/01/01", "【기타 부스터 팩】", "듀얼리스트 팩 -모르는 편-", "90000009")
+    try:
+        bc.parse_products(page)
+        assert False
+    except SystemExit as e:
+        assert "90000009" in str(e)
+
+
+def test_booster_era_and_pack_era():
+    assert [bc.booster_era(d) for d in ("2003/12/09", "2005/11/03", "2005/11/04", "2008-10-07", "2026/10/13")] == ["DM", "DM", "GX", "5D's", "Modern"]
+    assert bc.pack_era("2009/09/29", "78804003", "duelist") == "DM" and bc.pack_era("2009/09/29", "x", "booster") == "5D's"
+    assert len(bc.DUELIST_PACKS) == bc.DUELIST_COUNT == 30 and bc.BOOSTER_COUNT == 101
+    assert all(era in bc.ERA_NAMES for _, _, era in bc.DUELIST_PACKS.values())
+
+
+def test_pick_booster_unlimited_edition():
+    assert bc.pick_booster(["DPYG-BoosterEN-UE.png", "DPYG-BoosterFR.png"], "DPYG", ("EN", "NA")) == "DPYG-BoosterEN-UE.png"
+    assert bc.pick_booster(["SOVR-BoosterEN-UE.png", "SOVR-BoosterEN.jpg"], "SOVR", ("EN",)) == "SOVR-BoosterEN.jpg"  # 정식판이 있으면 그것
+
+
+def test_cover_candidates():
+    booster = {"pid": "71101000", "kind": "booster", "setCode": "LOB"}
+    assert bc.cover_candidates(booster, "ja") == [("LOB", "JP"), ("LOB", "EN"), ("LOB", "NA")]
+    yugi = {"pid": "78804003", "kind": "duelist", "setCode": "DP00"}   # TCG DPYG
+    yuma = {"pid": "78807000", "kind": "duelist", "setCode": "DP12"}   # TCG 없음
+    assert bc.cover_candidates(yugi, "ko") == [("DP00", "KR"), ("DP00", "JP")]
+    assert bc.cover_candidates(yugi, "ja") == [("DP00", "JP"), ("DP00", "KR")]
+    assert bc.cover_candidates(yugi, "en") == [("DPYG", "EN"), ("DPYG", "NA"), ("DP00", "JP"), ("DP00", "KR")]
+    assert bc.cover_candidates(yuma, "en") == [("DP12", "JP"), ("DP12", "KR")]
+
+
+def test_fallback_cover():
+    assert bc.fallback_cover({"pid": "71101000", "kind": "booster", "setCode": "LOB"}) == bc.YGOPRODECK_SET.format("LOB")
+    assert bc.fallback_cover({"pid": "78804003", "kind": "duelist", "setCode": "DP00"}) == bc.YGOPRODECK_SET.format("DPYG")  # OCG 코드가 아니라 TCG 코드
+    assert bc.fallback_cover({"pid": "78807000", "kind": "duelist", "setCode": "DP12"}) is None  # TCG 가 없으면 없는 URL 을 만들지 않는다
+
+
+def test_pack_image_falls_through_candidates():
+    files = {"DP2": ["DP2-BoosterEN.jpg", "DP2-BoosterJP.jpg"], "DPYG": ["DPYG-BoosterEN-UE.png"], "DP00": ["DP00-BoosterKR.jpg"]}
+    calls = []
+    def fake_get(url):
+        calls.append(url)
+        if "list=allimages" in url:
+            code = urllib.parse.unquote(url.split("aiprefix=")[1].split("-Booster")[0])
+            return json.dumps({"query": {"allimages": [{"name": n} for n in files.get(code, [])]}})
+        name = urllib.parse.unquote(url.split("titles=File:")[1])
+        return json.dumps({"query": {"pages": {"1": {"imageinfo": [{"url": f"https://x/{name}"}]}}}})
+    with fake_net(fake_get):
+        assert bc.pack_image([("DP2", "KR"), ("DP2", "JP")]) == "https://x/DP2-BoosterJP.jpg"       # ko 만죠메: KR 없음 → JP
+        assert bc.pack_image([("DPYG", "EN"), ("DPYG", "NA"), ("DP00", "JP"), ("DP00", "KR")]) == "https://x/DPYG-BoosterEN-UE.png"
+        assert bc.pack_image([("DP00", "JP"), ("DP00", "KR")]) == "https://x/DP00-BoosterKR.jpg"  # ja 유희: JP 없음 → KR
+        assert bc.pack_image([("ZZZ", "KR")]) is None
+    # allimages 는 호출마다 코드당 한 번: DP2 1 + DPYG 1(첫 후보에서 찾아 DP00 은 안 받는다) + DP00 1 + ZZZ 1
+    assert sum("list=allimages" in u for u in calls) == 4
+    assert not any("iiurlwidth" in u for u in calls)  # 썸네일 요청 없음
+
+
+def test_verify_checks_kind_and_era():
+    ko = {"packs": [{"pid": "1", "kind": "booster", "era": "DM", "cards": [10]}], "cards": {"10": KO["cards"]["10"]}}
+    assert bc.verify({"ko": ko, "ja": json.loads(json.dumps(ko))}) == []
+    ja = json.loads(json.dumps(ko)); ja["packs"][0]["era"] = "GX"
+    assert bc.verify({"ko": ko, "ja": ja}) != []
 
 
 if __name__ == "__main__":

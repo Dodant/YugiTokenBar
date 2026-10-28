@@ -1,5 +1,20 @@
 # Patch notes
 
+## 0.7.0 — 2026-10-27
+
+The 30 Duelist Packs released in Korea have joined the collection.
+
+**✨ New features**
+- Added 30 Duelist Packs (from DUELIST PACK - JADEN YUKI - to Duelist Pack: Duelists of Brilliance) to the Shop and Dex.
+  They come after the regular booster packs in each era group and carry a DP mark.
+  Each pack's era follows its main character, so DUELIST PACK - YUGI -, DUELIST PACK - BATTLE CITY - and DUELIST PACK - RIVALS OF THE PHARAOH - are in DM.
+- 580 new cards bring the collection to 131 packs and 8,886 cards, with 331 cards you can make by Fusion.
+
+**⚖️ Balance**
+- 26 cards whose rarity changed (up or down) now follow their actual rarity in the Duelist Packs (Red-Eyes Black Dragon is now SE).
+- The 11 cards that used to be inserted into regular booster packs now come from the Duelist Pack they originally appear in.
+  Armed Dragon Catapult Cannon is in LEGENDARY DUELISTS: ANCIENT MILLENNIUM, so you need to widen the Era range to VRAINS to see it.
+
 ## 0.6.5 — 2026-10-22
 **✨ New features**
 - Clicking the "Recently obtained & Quick buy" header in the menu now collapses and expands the recent cards, free cards, free packs and quick buy rows together.

@@ -524,3 +524,5 @@
 "이미 만든 카드예요. 더 모으려면 팩에서 뽑으세요" = "Already made. Pull it from packs to get more";
 /* PopoverView.swift:77 */
 "최근 획득 & 빠른 구매" = "Recently obtained & Quick buy";
+/* CardImageView.swift:322 */
+"듀얼리스트 팩" = "Duelist Pack";

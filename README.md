@@ -14,6 +14,7 @@ Available in Korean, English, and Japanese.</p>
 - 10,000 tokens = 1 coin.\
   1,000 coins (= 10M tokens) buy one booster pack with 5 cards.\
   Buy 10 packs and you get a random pack for free.
+- The collection has 101 regular booster packs and 30 Duelist Packs (marked DP), split by era.
 - Every 10M tokens you earn a free card, drawn from the whole pool by rarity odds.
 - Rarities are N / R / SR / UR / SE.\
   A reprinted card takes its highest rarity.
