@@ -128,6 +128,8 @@ import Testing
             }
         }
         #expect(Self.dbs["en"]!.packs.first { $0.pid == "1010001204000" }?.name == "Duelist Pack: Duelists of Pyroxene")
+        // 유희 편은 OCG 에 없어 ja·en 모두 TCG 공식 이름으로 덮어쓴다(PACK_NAME_OVERRIDES): 재록 모음집 이름이 뽑히지 않게
+        #expect(["ja", "en"].allSatisfy { Self.dbs[$0]!.packs.first { $0.pid == "78804003" }?.name == "DUELIST PACK - YUGI -" })
     }
 
     /// 대체 규칙 결과: 어느 언어든 모든 카드·팩에 이름이 있고, EN·JP 는 대부분 그 언어다

@@ -21,7 +21,7 @@
 | 무엇 | 출처 |
 |---|---|
 | 카드 이미지(`cards_small`·`cards`) | YGOPRODeck https://images.ygoprodeck.com/images/ |
-| 팩 봉투 | Yugipedia(고른 언어판. 정규 부스터의 일본어는 없으면 영문판, 듀얼리스트 팩은 위 순서로 다른 언어판), 없으면 YGOPRODeck `images/sets/<setCode>.jpg` |
+| 팩 봉투 | Yugipedia(고른 언어판. 정규 부스터의 일본어는 없으면 영문판, 듀얼리스트 팩은 위 순서로 다른 언어판), 없으면 YGOPRODeck `images/sets/<setCode>.jpg`(듀얼리스트 팩은 TCG 코드가 있을 때만) |
 | 오버프레임 25장 | 아래 표 |
 | 필드 배경 | 카드 이미지(`cards`)의 일러스트 칸을 잘라 씀(`ImageCache.fieldArt`) |
 

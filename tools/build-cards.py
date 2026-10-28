@@ -214,6 +214,11 @@ def pack_era(date, pid, kind):
     return DUELIST_PACKS[pid][2] if kind == "duelist" else booster_era(date)
 
 
+def pack_order(era, kind):
+    """팩 정렬 키의 앞부분: 시대 → 정규 부스터 먼저 (parse_products 의 정렬과 verify 의 순서 검사가 같이 쓴다)."""
+    return (ERA_NAMES.index(era), kind == "duelist")
+
+
 def parse_products(page):
     rows = re.findall(
         r'<div class="time">\s*(\d{4}/\d\d/\d\d)\s*</div>.*?<span class="ws_nowrap">(【[^】]*】)</span>'
@@ -231,7 +236,7 @@ def parse_products(page):
                 sys.exit(f"DUELIST_PACKS 에 없는 듀얼리스트 팩: {pid} {n}")
             packs.append((d, n, pid, "duelist"))
     # 시대 → 정규 부스터 먼저 → 발매일
-    return sorted(packs, key=lambda p: (ERA_NAMES.index(pack_era(p[0], p[2], p[3])), p[3] == "duelist", p[0], p[2]))
+    return sorted(packs, key=lambda p: (*pack_order(pack_era(p[0], p[2], p[3]), p[3]), p[0], p[2]))
 
 
 def parse_pack(page, need_rarity=True):
@@ -456,7 +461,8 @@ def localize(ko, recs, fallback=None, lang=None):
     for cid, base in ko["cards"].items():
         r = recs.get(int(cid))
         if not r or not r["info"].get("name"):
-            out["cards"][cid] = dict((fallback or ko)["cards"][cid])
+            # fallback(JP) 에 없는 카드(KO 만 다시 받은 뒤 새로 든 카드)는 KO
+            out["cards"][cid] = dict((fallback if fallback and cid in fallback["cards"] else ko)["cards"][cid])
             missing.append(cid)
             continue
         info = merge(base, r["info"])
@@ -489,6 +495,15 @@ def pack_names(ko, recs):
 def verify(files):
     """세 파일이 같은 팩·같은 카드·같은 공유 필드인지, 모든 카드에 이름이 있는지. 문제 문장 목록(비면 통과)."""
     ko, problems = files["ko"], []
+    # 앱의 CardDB.load(시대 구간이 이어져야 함)보다 한 단계 엄격하게: 팩마다 kind·era 가 있고 parse_products 의 정렬(시대 → 정규 부스터 → 듀얼리스트)대로여야 한다
+    # (옛 형식 파일은 --lang ko 로 다시 받는다)
+    for p in ko["packs"]:
+        if p.get("kind") not in ("booster", "duelist") or p.get("era") not in ERA_NAMES:
+            problems.append(f"ko: 팩 {p['pid']} 에 kind·era 가 없거나 모르는 값")
+    keys = [pack_order(p["era"], p["kind"]) for p in ko["packs"]
+            if p.get("era") in ERA_NAMES and p.get("kind") in ("booster", "duelist")]
+    if keys != sorted(keys):
+        problems.append("ko: 팩이 시대 → 정규 부스터 → 듀얼리스트 순이 아님")
     mat_ids = lambda c: [(m.get("cid"), m.get("count")) if "cid" in m else None for m in c.get("materials", [])]
     for lang, f in files.items():
         if [(p["pid"], p["cards"], p.get("kind"), p.get("era")) for p in f["packs"]] != [(p["pid"], p["cards"], p.get("kind"), p.get("era")) for p in ko["packs"]]:
@@ -512,6 +527,12 @@ def verify(files):
 YGOPRODECK_SET = "https://images.ygoprodeck.com/images/sets/{}.jpg"
 # 듀얼리스트 팩은 cover_candidates 가 언어별로 정한다: ko KR→JP, ja JP→KR, en TCG 코드 EN·NA→OCG 코드 JP→KR.
 PACK_REGIONS = {"ko": ("KR",), "ja": ("JP", "EN", "NA"), "en": ("EN", "NA")}
+
+
+def fallback_cover(p):
+    """Yugipedia 에 봉투가 없을 때의 YGOPRODeck 영문판. 듀얼리스트 팩은 TCG 코드가 있을 때만(OCG 코드 DP12 같은 파일은 없다), 없으면 None."""
+    code = DUELIST_PACKS[p["pid"]][1] if p["kind"] == "duelist" else p["setCode"]
+    return YGOPRODECK_SET.format(code) if code else None
 
 
 def pick_booster(names, set_code, regions):
@@ -968,10 +989,9 @@ def build_ko():
     sets = {s["set_name"]: s for s in json.loads(get("https://db.ygoprodeck.com/api/v7/cardsets.php"))}
     for p in packs:
         if p["kind"] == "duelist":
-            ocg, tcg, _ = DUELIST_PACKS[p["pid"]]
-            p["setCode"] = ocg
-            p["imageURL"] = pack_image(cover_candidates(p, "ko")) or (YGOPRODECK_SET.format(tcg) if tcg else None)
-            print(f"{p['name']} → ({ocg}) {p['imageURL']}")
+            p["setCode"] = DUELIST_PACKS[p["pid"]][0]
+            p["imageURL"] = pack_image(cover_candidates(p, "ko")) or fallback_cover(p)
+            print(f"{p['name']} → ({p['setCode']}) {p['imageURL']}")
             continue
         count = {}
         for c in p["cards"]:
@@ -1015,9 +1035,11 @@ def build_lang(lang):
         override = PACK_NAME_OVERRIDES[lang].get(p["pid"])
         print(f"  팩 {p['name']} → {override or name} ({n}/{len(p['cards'])}){' [덮어씀]' if override else ''}")
         p["name"] = override or (short_pack_name(name) if name and lang == "ja" else name) or p["name"]
-        p["imageURL"] = pack_image(cover_candidates(p, lang)) or YGOPRODECK_SET.format(p["setCode"])
+        p["imageURL"] = pack_image(cover_candidates(p, lang)) or fallback_cover(p)
+    if any(not p.get("imageURL") for p in out["packs"]):  # build_ko 와 같은 검사: 봉투 없는 팩을 조용히 쓰지 않는다
+        sys.exit(f"검증 실패: {lang} 봉투 이미지 없는 팩 " + ", ".join(p["name"] for p in out["packs"] if not p.get("imageURL")))
     dump(out, out_path(lang))
-    label = lambda cid: "KO" if fallback is None or cid in fallback_missing else "JP"
+    label = lambda cid: "KO" if fallback is None or cid in fallback_missing or cid not in fallback["cards"] else "JP"
     print(f"{lang}: 대체 {len(missing)}장, 소재 줄 불일치 {len(mismatched)}장")
     for cid in missing:
         print(f"  대체: {cid} {ko['cards'][cid]['name']} (→ {label(cid)})")
@@ -1040,7 +1062,9 @@ def reformat(langs):
 
 
 def sync_shared(ko, out):
-    """언어 파일의 팩(이름·봉투 이미지 빼고)과 카드 공유 필드를 KO 값으로 맞춘다."""
+    """언어 파일의 팩(이름·봉투 이미지 빼고)과 카드 공유 필드를 KO 값으로 맞춘다. 팩 목록이 다르면(KO 만 다시 받은 뒤) 자리로 맞추면 엉뚱한 팩이 되므로 중단."""
+    if [p["pid"] for p in out["packs"]] != [k["pid"] for k in ko["packs"]] or set(out["cards"]) != set(ko["cards"]):
+        sys.exit("팩·카드 목록이 KO 와 다름: --reformat 대신 --lang ja, en 으로 다시 받는다")
     for p, k in zip(out["packs"], ko["packs"]):
         p.update({f: v for f, v in k.items() if f not in ("name", "imageURL")})
     for cid, info in out["cards"].items():

@@ -153,7 +153,7 @@ def test_get_card_page_retries():
 
 
 KO = {
-    "packs": [{"pid": "1", "name": "한국팩", "date": "2004-01-01", "cards": [10, 11, 12]}],
+    "packs": [{"pid": "1", "name": "한국팩", "date": "2004-01-01", "kind": "booster", "era": "DM", "cards": [10, 11, 12]}],
     "cards": {
         "10": {"name": "가", "attr": "빛", "level": 4, "type": "전사족/일반", "atk": "1000", "def": "1000", "text": "설명", "imageId": 1, "tier": 1},
         "11": {"name": "나", "attr": "마법", "type": "일반", "text": "효과", "imageId": 2, "tier": 2, "kind": "spell"},
@@ -183,6 +183,10 @@ def test_localize_falls_back_whole_card():
     assert en["cards"]["12"]["name"] == "다"  # EN 없음 → JP(이것도 KO 대체)
     assert missing == ["12"]
     assert list(en["cards"]) == list(KO["cards"]) and en["packs"][0]["cards"] == [10, 11, 12]
+    # JP 파일이 옛것이라 새 카드가 없으면(KO 만 다시 받은 뒤) 그 카드는 KO 로 (KeyError 가 아니라)
+    stale_jp = json.loads(json.dumps(jp)); del stale_jp["cards"]["12"]
+    en, missing, _ = bc.localize(KO, en_recs, fallback=stale_jp)
+    assert en["cards"]["12"] == KO["cards"]["12"] and missing == ["12"]
 
 
 def test_split_lang_materials():
@@ -221,6 +225,36 @@ def test_verify():
     del bad["cards"]["11"]
     problems = bc.verify({"ko": KO, "ja": bad})
     assert any("cid" in p for p in problems) and any("tier" in p for p in problems), problems
+    # 옛 형식(kind·era 없음)·모르는 시대·시대 순이 아닌 팩 목록은 세 언어가 같아도 거부한다
+    legacy = json.loads(json.dumps(KO)); del legacy["packs"][0]["kind"]
+    assert any("kind·era" in p for p in bc.verify({"ko": legacy, "ja": legacy})), bc.verify({"ko": legacy, "ja": legacy})
+    odd = json.loads(json.dumps(KO)); odd["packs"][0]["era"] = "GXX"
+    assert any("kind·era" in p for p in bc.verify({"ko": odd, "ja": odd}))
+    unsorted = json.loads(json.dumps(KO))
+    unsorted["packs"] = [{"pid": "d", "kind": "duelist", "era": "DM", "cards": []}, {"pid": "b", "kind": "booster", "era": "DM", "cards": []}]
+    assert any("순이 아님" in p for p in bc.verify({"ko": unsorted, "ja": unsorted}))
+    unsorted["packs"] = [{"pid": "g", "kind": "booster", "era": "GX", "cards": []}, {"pid": "b", "kind": "booster", "era": "DM", "cards": []}]  # 시대 역순
+    assert any("순이 아님" in p for p in bc.verify({"ko": unsorted, "ja": unsorted}))
+    assert bc.verify({"ko": KO, "ja": KO}) == []
+
+
+def test_sync_shared_rejects_different_pack_list():
+    ja = json.loads(json.dumps(KO))
+    ja["packs"].append({"pid": "2", "name": "둘째 팩", "date": "2005-01-01", "kind": "booster", "era": "DM", "cards": []})
+    try:
+        bc.sync_shared(KO, ja)
+        assert False
+    except SystemExit as e:
+        assert "--lang" in str(e)
+    fewer = json.loads(json.dumps(KO)); del fewer["cards"]["12"]  # --extras 로 KO 에만 든 카드
+    try:
+        bc.sync_shared(KO, fewer)
+        assert False
+    except SystemExit:
+        pass
+    same = json.loads(json.dumps(KO)); same["packs"][0]["name"] = "日本パック"; same["packs"][0]["cards"] = []
+    bc.sync_shared(KO, same)
+    assert same["packs"][0]["name"] == "日本パック" and same["packs"][0]["cards"] == [10, 11, 12]  # 이름은 두고 공유 필드만 KO
 
 
 def test_materials_override():
@@ -414,6 +448,12 @@ def test_cover_candidates():
     assert bc.cover_candidates(yugi, "ja") == [("DP00", "JP"), ("DP00", "KR")]
     assert bc.cover_candidates(yugi, "en") == [("DPYG", "EN"), ("DPYG", "NA"), ("DP00", "JP"), ("DP00", "KR")]
     assert bc.cover_candidates(yuma, "en") == [("DP12", "JP"), ("DP12", "KR")]
+
+
+def test_fallback_cover():
+    assert bc.fallback_cover({"pid": "71101000", "kind": "booster", "setCode": "LOB"}) == bc.YGOPRODECK_SET.format("LOB")
+    assert bc.fallback_cover({"pid": "78804003", "kind": "duelist", "setCode": "DP00"}) == bc.YGOPRODECK_SET.format("DPYG")  # OCG 코드가 아니라 TCG 코드
+    assert bc.fallback_cover({"pid": "78807000", "kind": "duelist", "setCode": "DP12"}) is None  # TCG 가 없으면 없는 URL 을 만들지 않는다
 
 
 def test_pack_image_falls_through_candidates():
