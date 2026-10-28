@@ -79,6 +79,8 @@ Developer ID·공증 없이 ad-hoc 서명으로(스크립트에 `YTB_SIGN_IDENTI
 - 설정은 저장 위치를 나눈다.
   기기 설정(언어·업무 모드)은 UserDefaults, 게임 설정은 세이브(`GameState`)에 둔다.
   새 설정을 더할 때 어느 쪽인지 스펙 6절 설정 항목에 적는다.
+- 팝오버(`MenuBarExtra(.window)`) 높이를 바꾸는 값은 `@State`에 두고 `withAnimation(lessMotion ? nil : .panelResize)`로 바꾼다(`@AppStorage`·모델 값은 복사본을 거친다, 스펙 6절).
+  창은 루트 트랜잭션의 애니메이션으로만 높이를 따라오므로 `.animation(value:)`나 바깥 틀 측정으로는 창이 점프하거나 끊긴다.
 - 색은 시스템 색(`.primary`·`.secondary`·`.fill`·`accentColor`)을 먼저 쓰고, 고유한 색은 `CardImageView.swift`의 `Rarity`·`Palette`에만 라이트·다크 값을 같이 둔다(스펙 6절 외관).
   화면에서 `colorScheme`으로 분기하지 않는다.
 - **문서는 항상 코드와 동기화한다.**

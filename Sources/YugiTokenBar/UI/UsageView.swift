@@ -5,19 +5,21 @@ import SwiftUI
 /// 그 밖의 에이전트(Gemini·Grok·Pi·oh-my-pi·Cursor)는 오늘 쓴 것만 토큰·비용 한 줄로 보인다.
 struct UsageView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.lessMotion) private var lessMotion
     @State private var hover = false
+    /// 보이는 줄. 모델 값을 패널 애니메이션으로 따라가는 복사본 (줄이 생기면 패널이 점프하지 않게, PopoverView.freeRows 와 같은 이유)
+    @State private var shown: [Provider]?
 
     var body: some View {
         let loading = model.fetchingLimits
+        let visible = Self.agents.filter { model.meters(for: $0.id) != nil || (model.todayDetail[$0.id.rawValue]?.total ?? 0) > 0 }.map(\.id)
         // 메뉴 줄처럼 마우스를 올리면 배경이 생기고, 누르면 사용량 화면으로 넘어간다
         Button { model.screen = .usage } label: { VStack(alignment: .leading, spacing: 12) {
             WorkSummary()
-            ForEach(Self.agents, id: \.id) { p in
-                let today = model.todayDetail[p.id.rawValue] ?? .init(), meters = model.meters(for: p.id)
-                if meters != nil || today.total > 0 {
-                    ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: today.total, cost: today.cost,
-                                     reset: model.limitReset(for: p.id), meters: meters, loading: loading)
-                }
+            ForEach(Self.agents.filter { (shown ?? visible).contains($0.id) }, id: \.id) { p in
+                let today = model.todayDetail[p.id.rawValue] ?? .init()
+                ProviderUsageRow(name: p.name, symbol: p.symbol, tint: p.tint, tokens: today.total, cost: today.cost,
+                                 reset: model.limitReset(for: p.id), meters: model.meters(for: p.id), loading: loading)
             }
         }
         .padding(.horizontal, 10)
@@ -26,6 +28,7 @@ struct UsageView: View {
         .background(hover ? AnyShapeStyle(.fill.tertiary) : AnyShapeStyle(.clear), in: .rect(cornerRadius: 10)) }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
+        .onChange(of: visible, initial: true) { withAnimation(shown == nil || lessMotion ? nil : .panelResize) { shown = visible } }
         .accessibilityHint("눌러서 사용량을 자세히 봐요")
     }
 

@@ -1,5 +1,10 @@
 # Patch notes
 
+## 0.6.7 — 2026-10-28
+**🎨 Improvements**
+- The menu now grows and shrinks smoothly instead of jumping when rows appear or disappear and its height changes.
+  Collapsing and expanding "Recently obtained & Quick buy" now moves along the same, more natural curve.
+
 ## 0.6.6 — 2026-10-27
 
 The 30 Duelist Packs released in Korea have joined the collection.

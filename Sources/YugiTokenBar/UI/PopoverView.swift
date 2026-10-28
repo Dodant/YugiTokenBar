@@ -14,6 +14,11 @@ struct PopoverView: View {
     /// 최근 획득 줄이 보이는지 (업무 모드면 없음). freeRows 처럼 덮인 동안(설정에서 업무 모드를 끔) 다시 생기는 건 돌아왔을 때로 미룬다
     @State private var showRecent: Bool?
     @AppStorage("popover.recentExpanded") private var recentExpanded = true
+    /// 접힘 상태의 화면용 복사본. 창은 루트 트랜잭션에 실린 애니메이션으로만 높이를 따라오는데(.animation(value:) 로 안쪽만 움직이면 창은 점프)
+    /// @AppStorage 를 바꾸는 갱신엔 withAnimation 이 실리지 않는다 → @State 를 withAnimation 으로 바꾸고 저장만 따라 쓴다
+    @State private var expanded: Bool?
+    /// 저장 오류·복구 줄 (모델 값을 같은 애니메이션으로 따라가는 복사본, freeRows 와 같은 이유)
+    @State private var warnings: (save: String?, recovery: StateStore.Recovery?)?
 
     var body: some View {
         // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점·개봉·설정은 요약 크기 안에 겹쳐 그려 높이를 고정
@@ -37,11 +42,19 @@ struct PopoverView: View {
             .padding(16)
             .frame(width: 340)
             .background { FieldBackground(imageId: model.fieldBackground.flatMap { model.game.db.cards[$0]?.imageId }) }
+            // 줄이 생기고 사라질 때 높이가 점프하지 않게 같은 애니메이션으로 (처음 정할 때는 바로)
             .onChange(of: [covered, model.game.state.freePacks > 0, model.game.state.pendingFree > 0], initial: true) {
                 let now = (pack: model.game.state.freePacks > 0, card: model.game.state.pendingFree > 0)
-                freeRows = covered ? (now.pack && freeRows?.pack ?? false, now.card && freeRows?.card ?? false) : now
+                withAnimation(freeRows == nil || lessMotion ? nil : .panelResize) {
+                    freeRows = covered ? (now.pack && freeRows?.pack ?? false, now.card && freeRows?.card ?? false) : now
+                }
             }
-            .onChange(of: [covered, workMode], initial: true) { showRecent = !workMode && (!covered || showRecent ?? true) }
+            .onChange(of: [covered, workMode], initial: true) {
+                withAnimation(showRecent == nil || lessMotion ? nil : .panelResize) { showRecent = !workMode && (!covered || showRecent ?? true) }
+            }
+            .onChange(of: [model.saveError, model.loadRecovery.map { "\($0)" }], initial: true) {
+                withAnimation(warnings == nil || lessMotion ? nil : .panelResize) { warnings = (model.saveError, model.loadRecovery) }
+            }
     }
 
     // 패널 자체가 Liquid Glass 라서 내용에는 유리를 겹치지 않는다(겹치면 뒤 배경 색이 번져 탁해짐).
@@ -53,13 +66,13 @@ struct PopoverView: View {
             header(state)
 
             // ponytail: 덮인 화면(개봉·상점·설정) 중에 생기면 패널이 한 줄 늘어난다. 저장 실패는 드물어서 freeRows 처럼 미루지 않는다
-            if let error = model.saveError {
+            if let error = warnings?.save {
                 FreeRow(systemImage: "exclamationmark.triangle.fill", title: "진행 상황을 저장하지 못했어요",
                         hint: error, button: "폴더 열기") { NSWorkspace.shared.activateFileViewerSelecting([model.saveFolder]) }
                     .panelCard()
                     .tint(Palette.warning)
             }
-            if let recovery = model.loadRecovery {
+            if let recovery = warnings?.recovery {
                 FreeRow(systemImage: "exclamationmark.triangle.fill",
                         title: recovery == .backup ? "세이브가 손상되어 백업에서 복구했어요" : "세이브가 손상되어 새로 시작했어요",
                         hint: String(localized: "손상된 파일은 세이브 폴더에 남겨 두었어요."), button: "OK") { model.loadRecovery = nil }
@@ -68,21 +81,23 @@ struct PopoverView: View {
             }
 
             // 최근 획득 머리줄을 접으면 썸네일·무료 카드·무료 팩·바로 구매 줄을 같이 숨긴다 (업무 모드는 머리줄이 없어 늘 보임)
-            let recentCollapsed = (showRecent ?? !workMode) && !recentExpanded
+            let isExpanded = expanded ?? recentExpanded
+            let recentCollapsed = (showRecent ?? !workMode) && !isExpanded
             if showRecent ?? !workMode { VStack(alignment: .leading, spacing: 8) {
                 Button {
-                    withAnimation(lessMotion ? nil : .easeInOut(duration: 0.2)) { recentExpanded.toggle() }
+                    withAnimation(lessMotion ? nil : .panelResize) { expanded = !isExpanded }
+                    recentExpanded = !isExpanded
                 } label: {
                     HStack(spacing: 6) {
                         caption("최근 획득 & 빠른 구매")
                         Spacer()
-                        DisclosureChevron(expanded: recentExpanded)
+                        DisclosureChevron(expanded: isExpanded)
                     }
                     .foregroundStyle(.secondary)
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                if recentExpanded { HStack(spacing: 9) {
+                if isExpanded { HStack(spacing: 9) {
                     ForEach(Array(state.log.prefix(5).enumerated()), id: \.offset) { _, entry in
                         CardImageView(db: game.db, cid: entry.cid, overframe: game.showsOverframe(entry.cid))
                             .frame(width: 54)
@@ -211,6 +226,13 @@ struct PopoverView: View {
     }
 
     private func show(_ id: String) { StatusMenu.show(id, openWindow) }
+}
+
+extension Animation {
+    /// 패널 높이가 바뀌는 움직임 하나로 통일(접기·무료 줄·최근 획득 줄·사용량 줄·경고 줄).
+    /// MenuBarExtra 창은 루트 트랜잭션에 실린 애니메이션(@State 를 withAnimation 으로)으로만 높이를 프레임마다 따라온다.
+    /// .animation(value:) 로 안쪽만 움직이면 창은 점프하고, 바깥 틀을 따로 재서 맞추면 한두 프레임 늦어 끝에서 끊긴다
+    static let panelResize = Animation.smooth(duration: 0.3)
 }
 
 /// 패널 안 화면(상점·설정·개봉) 머리말: 뒤로(esc) · 제목 · 오른쪽 내용.
