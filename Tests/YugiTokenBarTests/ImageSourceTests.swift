@@ -16,7 +16,7 @@ import Testing
     }
 
     @Test func overframeMatrixSharesBothSizes() {
-        #expect(ImageSource.overframe.count == 25)
+        #expect(ImageSource.overframe.count == 26)
         for (passcode, source) in ImageSource.overframe {
             for size in [ImageSize.small, .full] {
                 let request = ImageSource.card(imageID: passcode, size: size, overframe: true)

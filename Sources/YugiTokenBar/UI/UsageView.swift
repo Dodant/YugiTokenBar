@@ -6,14 +6,12 @@ import SwiftUI
 struct UsageView: View {
     @Environment(AppModel.self) private var model
     @State private var hover = false
-    /// 업무 모드면 카드 줄(최근 획득)이 빠진 자리에 합계 요약을 더 보인다
-    @Environment(\.workMode) private var workMode
 
     var body: some View {
         let loading = model.fetchingLimits
         // 메뉴 줄처럼 마우스를 올리면 배경이 생기고, 누르면 사용량 화면으로 넘어간다
         Button { model.screen = .usage } label: { VStack(alignment: .leading, spacing: 12) {
-            if workMode { WorkSummary() }
+            WorkSummary()
             ForEach(Self.agents, id: \.id) { p in
                 let today = model.todayDetail[p.id.rawValue] ?? .init(), meters = model.meters(for: p.id)
                 if meters != nil || today.total > 0 {
@@ -23,7 +21,7 @@ struct UsageView: View {
             }
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 4)
+        .padding(.vertical, 10)
         .contentShape(Rectangle())
         .background(hover ? AnyShapeStyle(.fill.tertiary) : AnyShapeStyle(.clear), in: .rect(cornerRadius: 10)) }
         .buttonStyle(.plain)
@@ -152,7 +150,7 @@ struct MeterView: View {
     }
 }
 
-/// 업무 모드 사용량 칸 맨 위: 오늘·이번 주·이번 달 합계와 최근 14일 막대 (모든 에이전트 합, 오늘은 강조색).
+/// 사용량 칸 맨 위: 오늘·이번 주·이번 달 합계와 최근 14일 막대 (모든 에이전트 합, 오늘은 강조색).
 /// 지난 날짜는 사용량 화면과 같은 것(`AppModel.pastUsage`, 디스크 캐시)을 읽는다.
 private struct WorkSummary: View {
     @Environment(AppModel.self) private var model
@@ -164,7 +162,7 @@ private struct WorkSummary: View {
         let (today, week, month) = TodayUsageReader.periods(usage, now: now)
         let days = UsageDetailView.days(usage, now: now, count: 14)
         let peak = days.map(\.tokens).max() ?? 0
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("오늘").font(.caption).foregroundStyle(.secondary)
                 Text(shortTokens(today.tokens)).font(.title3.weight(.semibold))

@@ -139,6 +139,14 @@ import Testing
         #expect(game.state.log.allSatisfy { $0.source == "free" })
     }
 
+    @Test func openFreeAllDrawsEverything() {
+        var game = Game(db: makeDB([(1...10).map { ($0, 1) }]), state: GameState())
+        var rng = SeededRNG(seed: 1)
+        game.credit(40 * Balance.tokensPerFreeCard)
+        #expect(game.openFree(limit: .max, using: &rng).count == 40)
+        #expect(game.state.pendingFree == 0)
+    }
+
     @Test func openFreeHasNoCopyCap() {
         var game = Game(db: db, state: GameState())  // 2종뿐
         var rng = SeededRNG(seed: 1)

@@ -591,3 +591,7 @@
 "코인" = "Coins";
 /* LinuxSnapshot.swift:56 */
 "%@ 사용량" = "%@ usage";
+/* PopoverView.swift:77 */
+"최근 획득 & 빠른 구매" = "Recently obtained & Quick buy";
+/* CardImageView.swift:322 */
+"듀얼리스트 팩" = "Duelist Pack";

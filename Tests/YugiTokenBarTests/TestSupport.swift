@@ -31,7 +31,7 @@ func oneBoxDB(_ cards: [Int: CardInfo]) -> CardDB {
 }
 
 /// 팩마다 (cid, tier) 목록으로 작은 카드 DB를 만든다. 여러 팩에 있는 카드는 build-cards.py 처럼 가장 높은 tier.
-func makeDB(_ packs: [[(cid: Int, tier: Int)]]) -> CardDB {
+func makeDB(_ packs: [[(cid: Int, tier: Int)]], era: (Int) -> String = { _ in "DM" }, kind: (Int) -> PackKind = { _ in .booster }) -> CardDB {
     var cards: [Int: CardInfo] = [:]
     var built: [Pack] = []
     for (i, list) in packs.enumerated() {
@@ -39,7 +39,7 @@ func makeDB(_ packs: [[(cid: Int, tier: Int)]]) -> CardDB {
             cards[c.cid] = card("카드\(c.cid)", tier: max(cards[c.cid]?.tier ?? 1, c.tier))
         }
         built.append(Pack(pid: "p\(i)", name: "팩\(i)", date: "2004-01-01",
-                          cards: list.map(\.cid)))
+                          cards: list.map(\.cid), kind: kind(i), era: era(i)))
     }
     return CardDB(packs: built, cards: cards)
 }

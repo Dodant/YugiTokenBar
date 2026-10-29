@@ -19,6 +19,8 @@ enum Balance {
     static let logLimit = 50
     /// 무료 카드를 한 번에 여는 최대 장 수 (4장은 2장씩·6장은 3장씩 두 줄)
     static let freeOpenBatch = 6
+    /// 쌓인 무료 카드가 이보다 많으면 [All]로 한 번에 연다 (개봉 화면은 스크롤 그리드, 뒤집기 없이 공개)
+    static let freeOpenAllMin = 30
     /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
     static let monstersPerPack = 2
     /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 215 < packPrice 라 사고팔기로 코인이 늘지 않는다.
@@ -29,6 +31,8 @@ enum Balance {
     static let wantedWeight = 10.0
     /// 다 모은 팩에 아직 필요한 카드가 남았으면 5번째 장이 이 확률로 등급과 상관없이 그중 하나가 된다 (높은 등급 소재도 구할 수 있게)
     static let wantedSlotChance = 0.30
+    /// 무료 팩 고르기: 팩 가중치 = 1 + 이 값 × (그 팩에서 아직 받을 수 있는 카드 비율). 하나도 없는 팩이 다 모은 팩의 2배
+    static let freePackMissingBoost = 1.0
     /// 덱에 같은 카드를 넣을 수 있는 최대 장 수 (유희왕 규칙)
     static let maxCopiesInDeck = 3
     /// 같은 카드를 이만큼 모으면 공식 오버프레임 그림이 해금된다 (판이 있는 카드만, 팔아도 유지). 해금 전엔 이만큼 자동 판매·중복 판매에서 남긴다.
@@ -68,7 +72,7 @@ struct Pull: Sendable, Equatable {
 }
 
 struct Game: Sendable {
-    /// 101팩 전체
+    /// 전체 팩
     let fullDB: CardDB
     var state: GameState
     /// 시대 이름 → 그 시대까지 자른 DB (미리 만들어 두고 고르기만 한다)
@@ -137,10 +141,10 @@ struct Game: Sendable {
         return n
     }
 
-    /// 쌓인 무료 카드를 최대 `freeOpenBatch`장 연다.
-    mutating func openFree<R: RandomNumberGenerator>(using rng: inout R) -> [Pull] {
+    /// 쌓인 무료 카드를 최대 `limit`장 연다.
+    mutating func openFree<R: RandomNumberGenerator>(limit: Int = Balance.freeOpenBatch, using rng: inout R) -> [Pull] {
         var pulls: [Pull] = []
-        while state.pendingFree > 0, pulls.count < Balance.freeOpenBatch {
+        while state.pendingFree > 0, pulls.count < limit {
             state.pendingFree -= 1
             guard let cid = drawFree(using: &rng) else { state.pendingFree = 0; break }
             pulls.append(pull(cid, source: LogEntry.free))
@@ -467,12 +471,26 @@ struct Game: Sendable {
         return open(pack: pack, using: &rng)
     }
 
-    /// 쌓인 무료 팩 1개를 연다. 정규 부스터 팩 중 하나를 무작위로 고른다. 없으면 nil.
+    /// 쌓인 무료 팩 1개를 연다. 팩 중 하나를 진행도가 낮을수록 조금 더 잘 나오게 고른다(`pickFreePack`). 없으면 nil.
     mutating func openFreePack<R: RandomNumberGenerator>(using rng: inout R) -> (pack: Int, pulls: [Pull])? {
         guard state.freePacks > 0, !db.packs.isEmpty else { return nil }
         state.freePacks -= 1
-        let pack = Int.random(in: db.packs.indices, using: &rng)
+        let pack = pickFreePack(using: &rng)
         return (pack, open(pack: pack, using: &rng))
+    }
+
+    /// 무료 팩으로 열 팩: 아직 받을 수 있는 카드(융합 전용 제외) 비율만큼 `freePackMissingBoost`로 가중
+    func pickFreePack<R: RandomNumberGenerator>(using rng: inout R) -> Int {
+        let weights = db.packs.indices.map { i in
+            let p = progress(i)
+            return 1 + Balance.freePackMissingBoost * Double(p.total - p.owned - p.fusionLeft) / Double(max(p.total, 1))
+        }
+        var r = Double.random(in: 0..<weights.reduce(0, +), using: &rng)
+        for (i, w) in weights.enumerated() {
+            if r < w { return i }
+            r -= w
+        }
+        return weights.count - 1
     }
 
     /// 봉투 하나 열기: 노멀 3 + 슬롯4(노멀, `slot4RareChance`로 레어) + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
@@ -562,9 +580,9 @@ struct Game: Sendable {
 
     /// 마지막으로 코인으로 산 팩 (팝오버 바로 구매용). 산 적이 없거나 시대 범위 밖이면 첫 팩. 필드가 없는 옛 세이브는 로그에서 찾는다.
     var lastBoughtPack: Int {
-        if let pid = state.lastBoughtPid { return db.packs.firstIndex { $0.pid == pid } ?? 0 }
+        if let pid = state.lastBoughtPid { return db.packIndex(pid) ?? 0 }
         for entry in state.log {
-            if let i = db.packs.firstIndex(where: { $0.pid == entry.source }) { return i }
+            if let i = db.packIndex(entry.source) { return i }
         }
         return 0
     }

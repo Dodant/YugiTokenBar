@@ -71,9 +71,15 @@ struct DexSidebar: View {
             if !workMode {  // 업무 모드면 봉투 자리 없이
                 PackImageView(pack: pack)
                     .frame(height: 36)
+                    .overlay(alignment: .topLeading) {
+                        if pack.kind == .duelist { DuelistBadge().padding(2) }
+                    }
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text(pack.name).lineLimit(1)
+                HStack(spacing: 4) {
+                    if workMode && pack.kind == .duelist { DuelistBadge() }
+                    Text(pack.name).lineLimit(1)
+                }
                 HStack {
                     ProgressBar(owned: p.owned, total: p.total)
                     ProgressCount(owned: p.owned, total: p.total)
@@ -184,7 +190,7 @@ private struct DexEraSection<Item: View>: View {
         // ponytail: 기본 사이드바 꺾쇠는 마우스를 올려야 보여서, 상점처럼 항상 보이는 꺾쇠를 직접 그린다
         Section {
             if expanded {
-                ForEach(packs, id: \.self) { i in item(i).tag(DexScope.pack(i)) }
+                ForEach(packs, id: \.self) { i in item(i).tag(DexScope.pack(game.db.packs[i].pid)) }
             }
         } header: {
             Button {

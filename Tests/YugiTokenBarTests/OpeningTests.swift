@@ -36,5 +36,15 @@ import Testing
         #expect(model.buy(pack: 0))
         #expect(!model.opening.freePack)
     }
+
+    /// 무료 팩 [All] 은 남은 무료 팩을 다 연다
+    @MainActor @Test func openAllFreePacksOpensEveryPack() throws {
+        let (model, _) = try makeModel(makeDB([(1...10).map { ($0, 1) }])) { $0.freePacks = 3 }
+
+        #expect(model.openAllFreePacks())
+        #expect(model.game.state.freePacks == 0)
+        #expect(model.opening.pulls.count == 15 && model.opening.freePack && model.opening.pack == nil)
+        #expect(!model.openAllFreePacks())
+    }
 }
 #endif

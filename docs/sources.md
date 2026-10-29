@@ -10,18 +10,19 @@
 
 | 무엇 | 출처 |
 |---|---|
-| 팩 목록·수록 카드·한국어 이름·텍스트·레어도 | Konami 공식 카드 DB 한국어판 https://www.db.yugioh-card.com/yugiohdb/ `request_locale=ko` (1초 간격) |
-| 일본어·영어 이름·텍스트·원판 팩 이름 (`cards_JP.json`·`cards_EN.json`) | 같은 DB의 카드 상세 페이지 `card_search.action?ope=2&cid=<cid>&request_locale=ja` · `request_locale=en` (1초 간격). 영어가 없는 카드는 일본어, 일본어도 없으면 한국어. 재록 모음집이 뽑힌 팩명은 Yugipedia 세트 문서(일본 팩 합본 여부·`ja_name`)로 확인해 덮어씀 |
-| 이미지 ID(passcode)·영문 세트 코드 | YGOPRODeck API https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes · https://db.ygoprodeck.com/api/v7/cardsets.php |
-| 팩 표지 몬스터(`cover_card`)·언어별 봉투 이미지(`<setCode>-Booster{KR,JP,EN,NA}.*`) | Yugipedia API https://yugipedia.com/api.php |
+| 팩 목록·수록 카드·한국어 이름·텍스트·레어도 | Konami 공식 카드 DB 한국어판 https://www.db.yugioh-card.com/yugiohdb/ `request_locale=ko` (1초 간격). 【정규 부스터 팩】 101개와 【기타 부스터 팩】의 듀얼리스트 팩 30개 포함 |
+| 일본어·영어 이름·텍스트·원판 팩 이름 (`cards_JP.json`·`cards_EN.json`) | 같은 DB의 카드 상세 페이지 `card_search.action?ope=2&cid=<cid>&request_locale=ja` · `request_locale=en` (1초 간격). 영어가 없는 카드는 일본어, 일본어도 없으면 한국어. 재록 모음집이 뽑힌 팩명과 TCG에 없는 듀얼리스트 팩의 영어 이름은 Yugipedia 세트 문서(일본 팩 합본 여부·`ja_name`·영문 제목)로 확인해 덮어씀 |
+| 이미지 ID(passcode)·정규 부스터의 영문 세트 코드 | YGOPRODeck API https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes · https://db.ygoprodeck.com/api/v7/cardsets.php |
+| 듀얼리스트 팩의 OCG·TCG 세트 코드 | Yugipedia 세트 문서 `prefix`·`kr_prefix`·`jp_prefix` (2026-10-27) |
+| 팩 표지 몬스터(`cover_card`)·언어별 봉투 이미지(`<setCode>-Booster{KR,JP,EN,NA}.*`, `-1E`·`-UE` 접미 포함, 원본 파일) | Yugipedia API https://yugipedia.com/api.php. 듀얼리스트 팩은 언어별 순서로 찾는다: ko KR→JP, ja JP→KR, en TCG 코드 EN·NA→OCG 코드 JP→KR |
 
 ## 런타임 이미지 (`ImageSource.swift`·`ImageTransport.swift`·macOS `ImageCache.swift`)
 
 | 무엇 | 출처 |
 |---|---|
 | 카드 이미지(`cards_small`·`cards`) | YGOPRODeck https://images.ygoprodeck.com/images/ |
-| 팩 봉투 | Yugipedia(고른 언어판. 일본어는 없으면 영문판), 없으면 YGOPRODeck `images/sets/<setCode>.jpg` |
-| 오버프레임 25장 | 아래 표 |
+| 팩 봉투 | Yugipedia(고른 언어판. 정규 부스터의 일본어는 없으면 영문판, 듀얼리스트 팩은 위 순서로 다른 언어판), 없으면 YGOPRODeck `images/sets/<setCode>.jpg`(듀얼리스트 팩은 TCG 코드가 있을 때만) |
+| 오버프레임 26장 | 아래 표 |
 | 필드 배경 | 카드 이미지(`cards`)의 일러스트 칸을 잘라 씀(`ImageCache.fieldArt`) |
 
 ### 오버프레임 (`ImageSource.overframe`)
@@ -29,10 +30,11 @@
 오버프레임(Over-Frame, TCG 이름 Extended art)은 일러스트가 카드 테두리 밖으로 뻗어 나오는 공식 카드 처리다.
 앱은 같은 카드를 3장 모아 해금한 뒤에만 이 그림을 쓴다(`Balance.overframeCopies`, 팔아도 유지).
 OCG에서는 LIMIT OVER COLLECTION(2026)에 처음 나왔다.
-대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(약 100종)을 passcode로 `cards_KO.json`과 맞춰 뽑았고, 101팩 안에 든 25종 전부를 넣었다(2026-10-19 기준).
+대상 카드는 Yugipedia [Extended art](https://yugipedia.com/wiki/Extended_art) 목록(107종)을 passcode로 `cards_KO.json`과 맞춰 뽑았고, 131팩(정규 부스터 101 + 듀얼리스트 팩 30) 안에 든 26종 전부를 넣었다(2026-10-28 기준).
+듀얼리스트 팩 카드 중에는 툰 블랙 매지션 걸(배틀 시티 편) 하나뿐이다.
 
 이미지는 SAMPLE 워터마크가 없는 것만 쓴다.
-Yugipedia 이미지를 먼저 쓰고(영문 RA05·BETB UR, 일본판 LOSP·BETB PScR, CF02 공식 이미지), Yugipedia에 워터마크 판이나 이름 없는 마스터 듀얼 렌더만 있거나 이미지가 없는 9장은 일본 카드숍 상품 스캔을 쓴다(사용자 제공).
+Yugipedia 이미지를 먼저 쓰고(영문 RA05·BETB UR, 일본판 LOSP·BETB PScR·RV01 ScR, CF02 공식 이미지), Yugipedia에 워터마크 판이나 이름 없는 마스터 듀얼 렌더만 있거나 이미지가 없는 9장은 일본 카드숍 상품 스캔을 쓴다(사용자 제공).
 
 | 카드 | passcode | 수록 | 출처 | 이미지 |
 |---|---|---|---|---|
@@ -52,6 +54,7 @@ Yugipedia 이미지를 먼저 쓰고(영문 RA05·BETB UR, 일본판 LOSP·BETB 
 | 엘리멘틀 사가 드리야드 | 50208444 | BETB | Yugipedia | https://ms.yugipedia.com//8/80/ElementalSagaDoriado-BETB-JP-PScR.png |
 | 붉은 눈의 초월흑룡 | 17242022 | BETB | Yugipedia | https://ms.yugipedia.com//8/82/RedEyesBlackDragonExceed-BETB-EN-UR-1E-EA.png |
 | CX 기망황룡 카오스 바리언 드래곤 | 79791695 | BETB | Yugipedia | https://ms.yugipedia.com//b/b7/CXyzHopeChaosBarianDragon-BETB-EN-UR-1E-EA.png |
+| 툰 블랙 매지션 걸 | 90960358 | RV01-JP013 | Yugipedia | https://ms.yugipedia.com//e/e9/ToonDarkMagicianGirl-RV01-JP-ScR.png |
 | 시작의 신 파라 | 82344137 | CORI-JP022 | 카드러시 | https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_1.jpg |
 | 검은 혼돈의 마술사 블랙 카오스 | 44001993 | CORI-JP027 | 카드러시 | https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_2.jpg |
 | 빛과 어둠의 전사 카오스 솔저 | 70405001 | CORI-JP028 | 카드러시 | https://www.cardrush.jp/data/cardrush/product/CORI_OF_260424_3.jpg |

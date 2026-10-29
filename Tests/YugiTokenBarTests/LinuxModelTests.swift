@@ -173,7 +173,7 @@ private actor ControlledLinuxReader {
     @Test func dexSelectionValidatesAndFollowsEraLimit() {
         let reader = ControlledLinuxReader()
         // 12 packs: DM 0..<11, GX 11..<12; each pack holds cid = index + 1.
-        let (model, _) = makeLinuxModel(db: makeDB((0..<12).map { [($0 + 1, 1)] }), reader: reader)
+        let (model, _) = makeLinuxModel(db: makeDB((0..<12).map { [($0 + 1, 1)] }, era: { $0 < 11 ? "DM" : "GX" }), reader: reader)
         model.selectDexPack(99); #expect(model.snapshot.dexPack == nil)
         model.selectDexPack(0); model.selectDexCard(2)
         #expect(model.snapshot.dexPack == 0); #expect(model.snapshot.dexCard == nil) // cid 2 is not in pack 0

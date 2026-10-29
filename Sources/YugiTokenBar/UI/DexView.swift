@@ -113,7 +113,7 @@ struct DexView: View {
             }
             .onAppear { restoreScope() }
             // 설정에서 시대 범위를 줄여 보던 팩이 사라지면 "전체"로
-            .onChange(of: model.db.packs.count) { if case .pack(let i)? = scope, i >= model.db.packs.count { scope = .all } }
+            .onChange(of: model.db.packs.count) { if case .pack(let pid)? = scope, model.db.packIndex(pid) == nil { scope = .all } }
             .navigationTitle(title)
             .navigationSubtitle(subtitle(tiered))
             .searchable(text: $search, placement: .toolbar, prompt: "카드 이름")
@@ -216,7 +216,7 @@ struct DexView: View {
         switch scope {
         case .favorites?: String(localized: "즐겨찾기")
         case .recent?: String(localized: "최근 획득")
-        case .pack(let i)? where model.db.packs.indices.contains(i): model.db.packs[i].name
+        case .pack(let pid)?: model.db.packIndex(pid).map { model.db.packs[$0].name } ?? String(localized: "전체")
         case .deck(let id)?: model.game.deck(id)?.title ?? String(localized: "덱")
         default: String(localized: "전체")
         }
@@ -253,7 +253,7 @@ struct DexView: View {
         let restored: DexScope? = sameDay ? DexScope(key: savedScope) : nil
         savedDay = Date().timeIntervalSince1970
         switch restored {
-        case .pack(let i)? where model.db.packs.indices.contains(i): scope = restored
+        case .pack(let pid)? where model.db.packIndex(pid) != nil: scope = restored
         case .deck(let id)? where model.game.deck(id) != nil: scope = restored
         case .favorites?, .recent?: scope = restored
         default: scope = .all

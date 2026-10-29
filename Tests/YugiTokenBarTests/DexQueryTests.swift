@@ -27,7 +27,8 @@ import Testing
         let rare = DexQuery(tier: 2).entries(in: game).visible
         #expect(rare.map(\.cid) == [2] && rare.map(\.number) == [3])
         #expect(DexQuery(search: "카드3").entries(in: game).visible.map(\.cid) == [3])
-        #expect(DexQuery(scope: .pack(1)).entries(in: game).visible.map(\.cid) == [1, 2])
+        #expect(DexQuery(scope: .pack("p1")).entries(in: game).visible.map(\.cid) == [1, 2])
+        #expect(DexQuery(scope: .pack("3")).entries(in: game).visible.map(\.cid) == [3, 1, 2])  // 옛 인덱스 키 → 전체
     }
 
     @Test func searchIgnoresSpacesAndMiddleDot() {
@@ -61,7 +62,7 @@ import Testing
         let deck = game.addDeck()
         _ = game.addToDeck(deck.id, 2)
         _ = game.addToDeck(deck.id, 1)
-        for scope in [DexScope?.none, .pack(1), .deck(deck.id)] {
+        for scope in [DexScope?.none, .pack("p1"), .deck(deck.id)] {
             let ids = DexQuery(scope: scope).entries(in: game).visible.map(\.id)
             #expect(ids == DexQuery(scope: scope).entries(in: game).visible.map(\.cid))
             #expect(Set(ids).count == ids.count)

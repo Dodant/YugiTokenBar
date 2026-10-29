@@ -13,6 +13,7 @@ struct PopoverView: View {
     @Environment(\.workMode) private var workMode
     /// 최근 획득 줄이 보이는지 (업무 모드면 없음). freeRows 처럼 덮인 동안(설정에서 업무 모드를 끔) 다시 생기는 건 돌아왔을 때로 미룬다
     @State private var showRecent: Bool?
+    @AppStorage("popover.recentExpanded") private var recentExpanded = true
 
     var body: some View {
         // ponytail: MenuBarExtra(.window) 패널은 내용 높이가 바뀌면 다시 그리지 못해 깨진다 → 상점·개봉·설정은 요약 크기 안에 겹쳐 그려 높이를 고정
@@ -66,9 +67,22 @@ struct PopoverView: View {
                     .tint(Palette.warning)
             }
 
+            // 최근 획득 머리줄을 접으면 썸네일·무료 카드·무료 팩·바로 구매 줄을 같이 숨긴다 (업무 모드는 머리줄이 없어 늘 보임)
+            let recentCollapsed = (showRecent ?? !workMode) && !recentExpanded
             if showRecent ?? !workMode { VStack(alignment: .leading, spacing: 8) {
-                caption("최근 획득")
-                HStack(spacing: 9) {
+                Button {
+                    withAnimation(lessMotion ? nil : .easeInOut(duration: 0.2)) { recentExpanded.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        caption("최근 획득 & 빠른 구매")
+                        Spacer()
+                        DisclosureChevron(expanded: recentExpanded)
+                    }
+                    .foregroundStyle(.secondary)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                if recentExpanded { HStack(spacing: 9) {
                     ForEach(Array(state.log.prefix(5).enumerated()), id: \.offset) { _, entry in
                         CardImageView(db: game.db, cid: entry.cid, overframe: game.showsOverframe(entry.cid))
                             .frame(width: 54)
@@ -84,22 +98,31 @@ struct PopoverView: View {
                         Text("토큰을 쓰면 코인이 쌓여요 · \(coinText(Balance.packPrice)) = 1팩").font(.callout).foregroundStyle(.secondary)
                     }
                 }
-                .frame(height: 79)
+                .frame(height: 79) }
             } }
 
-            if freeRows?.pack ?? (state.freePacks > 0) {
-                FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",
-                        hint: String(localized: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩"), button: "열기") { model.openFreePack() }
-                    .panelCard()
+            // 무료 카드(위)·무료 팩(아래)은 둘 다 있으면 한 칸에 구분선으로 나눠 설명 없이 한 줄씩 둔다
+            let showPack = freeRows?.pack ?? (state.freePacks > 0)
+            let showCard = freeRows?.card ?? (state.pendingFree > 0)
+            if (showPack || showCard) && !recentCollapsed {
+                let compact = showPack && showCard
+                VStack(spacing: 8) {
+                    if showCard {
+                        FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: String(localized: "토큰으로 모은 카드예요"),
+                                button: state.pendingFree > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기",
+                                openAll: state.pendingFree > Balance.freeOpenAllMin ? { model.openFree(all: true) } : nil, compact: compact) { model.openFree() }
+                    }
+                    if showPack && showCard { Divider() }
+                    if showPack {
+                        FreeRow(systemImage: "shippingbox.fill", title: "무료 팩 \(state.freePacks)개",
+                                hint: String(localized: "\(Balance.packsPerFreePack)팩마다 랜덤 부스터 1팩"), button: "열기",
+                                openAll: state.freePacks > 1 ? { model.openAllFreePacks() } : nil, compact: compact) { model.openFreePack() }
+                    }
+                }
+                .panelCard()
             }
 
-            if freeRows?.card ?? (state.pendingFree > 0) {
-                FreeRow(systemImage: "gift.fill", title: "무료 카드 \(state.pendingFree)장", hint: String(localized: "토큰으로 모은 카드예요"),
-                        button: state.pendingFree > Balance.freeOpenBatch ? "\(Balance.freeOpenBatch)장 열기" : "열기") { model.openFree() }
-                    .panelCard()
-            }
-
-            // 트랙패드 좌우 스와이프로 발매순 앞뒤 팩을 넘긴다. 사면 그 팩이 lastBoughtPack 이 되어 그대로 남는다
+            // 트랙패드 좌우 스와이프로 목록 순 앞뒤 팩을 넘긴다. 사면 그 팩이 lastBoughtPack 이 되어 그대로 남는다
             // LazyHStack 가로 스크롤은 높이를 내용에서 못 받아 0이 되므로, 숨긴 한 줄로 높이를 잡는다
             PackRow(index: game.lastBoughtPack).padding(12).hidden()
                 .overlay {
@@ -132,6 +155,12 @@ struct PopoverView: View {
                 }
                 .onChange(of: game.lastBoughtPack, initial: true) { shownPack = game.lastBoughtPack }
             .clipShape(.rect(cornerRadius: 16))
+            // 접을 때 빼지 않고 높이만 0으로: 다시 만들면 가로 스크롤이 0번 팩에서 시작해 shownPack 앞뒤만 채운 칸이 비어 보인다
+            .frame(height: recentCollapsed ? 0 : nil, alignment: .top)
+            .clipped()
+            .opacity(recentCollapsed ? 0 : 1)
+            .allowsHitTesting(!recentCollapsed)
+            .accessibilityHidden(recentCollapsed)
 
             VStack(spacing: 2) {
                 MenuRow(title: "상점", systemImage: "bag", trailing: nil, chevron: true) { model.screen = .shop }
@@ -140,11 +169,15 @@ struct PopoverView: View {
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
                 UsageView()
                 Divider().padding(.horizontal, 10).padding(.vertical, 4)
-                MenuRow(title: "설정", systemImage: "gearshape", trailing: nil, chevron: true) { model.screen = .settings }
-                MenuRow(title: "종료", systemImage: "power", trailing: "⌘Q", chevron: false) { NSApp.terminate(nil) }
-                    .keyboardShortcut("q")
+                HStack(spacing: 2) {
+                    MenuRow(title: "설정", systemImage: "gearshape", trailing: nil, chevron: true) { model.screen = .settings }
+                    MenuRow(title: "종료", systemImage: "power", trailing: "⌘Q", chevron: false) { NSApp.terminate(nil) }
+                        .keyboardShortcut("q")
+                }
             }
             .padding(.horizontal, -8)
+            // ponytail: 높이 0인 바로 구매 줄 앞뒤 VStack 간격(16×2)을 메뉴 쪽 음수 여백으로 줄인다(높이 0 뷰엔 음수 여백이 안 먹는다). 간격을 바꾸면 같이 바꾼다
+            .padding(.top, recentCollapsed ? -20 : 0)
         }
     }
 
@@ -177,17 +210,7 @@ struct PopoverView: View {
         Text(text).font(.caption.weight(.medium)).foregroundStyle(.secondary)
     }
 
-    private func show(_ id: String) {
-        openWindow(id: id)
-        // activate 는 다른 앱 뒤에 창을 둘 수 있어서 창을 직접 앞으로 꺼낸다
-        NSApp.activate()
-        // 컬렉션은 navigationTitle 로 제목이 팩 이름으로 바뀌므로 제목 대신 Scene id(NSWindow.identifier)로 찾는다
-        DispatchQueue.main.async {
-            guard let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix(id) == true }) else { return }
-            window.orderFrontRegardless()
-            window.makeKey()
-        }
-    }
+    private func show(_ id: String) { StatusMenu.show(id, openWindow) }
 }
 
 /// 패널 안 화면(상점·설정·개봉) 머리말: 뒤로(esc) · 제목 · 오른쪽 내용.
@@ -224,21 +247,55 @@ private struct FreeRow: View {
     /// 저장 오류 메시지(데이터)도 받으므로 String
     let hint: String
     let button: LocalizedStringKey
+    /// 있으면 [All]를 뒤에 둔다
+    var openAll: (() -> Void)?
+    /// 무료 카드·팩이 한 칸에 같이 있을 때: 설명을 빼고 아이콘을 줄인다
+    var compact = false
     let action: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: compact ? 8 : 12) {
             // 강조색(파랑)은 유리 배경 위에서 잘 안 보여 글자색으로
-            Image(systemName: systemImage).font(.title2).foregroundStyle(.primary).symbolRenderingMode(.hierarchical).frame(width: 36)
+            Image(systemName: systemImage).font(compact ? .title3 : .title2).foregroundStyle(.primary).symbolRenderingMode(.hierarchical).frame(width: compact ? 24 : 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.callout.weight(.medium)).monospacedDigit()
-                Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                if !compact { Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
             }
             Spacer(minLength: 4)
-            Button(button, action: action)
-                .buttonStyle(.glassProminent)
-                .buttonBorderShape(.capsule)
+            if let openAll {
+                // 컨테이너 간격 0: 기본 간격이면 유리끼리 붙어 사이가 안 보인다. 줄이 좁아도 글자가 잘리지 않게 fixedSize
+                GlassEffectContainer(spacing: 0) { HStack(spacing: 3) {
+                    Button(button, action: action).buttonStyle(JoinedButtonStyle(side: .leading, prominent: true))
+                    Button("All") { openAll() }.buttonStyle(JoinedButtonStyle(side: .trailing))
+                } }
+                .fixedSize()
+            } else {
+                Button(button, action: action)
+                    .buttonStyle(.glassProminent)
+                    .buttonBorderShape(.capsule)
+            }
         }
+    }
+}
+
+/// 붙여 놓은 두 유리 버튼의 한쪽 (한 캡슐을 둘로 나눈 모양): 바깥쪽만 둥글고 맞닿는 쪽은 직선
+struct JoinedButtonStyle: ButtonStyle {
+    let side: HorizontalEdge
+    var prominent = false
+    @Environment(\.controlSize) private var controlSize
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let height: CGFloat = controlSize == .large ? 28 : 24  // 시스템 유리 버튼 높이 (스크린샷으로 맞춤)
+        let r = side == .leading ? (height / 2, 0.0) : (0.0, height / 2)
+        let shape = UnevenRoundedRectangle(topLeadingRadius: r.0, bottomLeadingRadius: r.0, bottomTrailingRadius: r.1, topTrailingRadius: r.1)
+        configuration.label
+            .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+            .padding(.horizontal, height / 2)
+            .frame(height: height)
+            .contentShape(shape)
+            .glassEffect(prominent ? .regular.tint(.accentColor).interactive() : .regular.interactive(), in: shape)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.5)
     }
 }
 

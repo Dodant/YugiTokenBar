@@ -5,48 +5,75 @@ import SwiftUI
 struct OpeningView: View {
     @Environment(AppModel.self) private var model
     @State private var flipped: Set<Int> = []
-    @State private var width: CGFloat = 300
+    @State private var size = CGSize(width: 300, height: 400)
     @Environment(\.lessMotion) private var lessMotion
     @Environment(\.workMode) private var workMode
 
     var body: some View {
         let pulls = model.opening.pulls
-        let allFlipped = flipped.count == pulls.count
+        let allFlipped = bulk || flipped.count == pulls.count
         VStack(spacing: 12) {
             PanelHeader(title: model.opening.title) { model.closeOpening() }
-            // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채우고, 4장은 3열 크기로 2장씩 두 줄(6장은 3장씩 두 줄)
+            // 팩은 위 4장 + 레어 1장(3열 칸의 1.75배, 패널이 낮으면 남은 높이에 맞춰 줄어든다. 위 줄과 아래 버튼 사이 세로 가운데). 무료 카드는 3열, 1~2장이면 그 수만큼 열을 줘서 폭을 채우고, 4장은 2장씩 두 줄(두 줄이 높이에 들어가게 줄인다. 6장은 3장씩 두 줄)
             let packLayout = model.opening.pack != nil && pulls.count == 5
-            let cols = packLayout ? 4 : min(max(pulls.count, 1), 3)
-            let perRow = !packLayout && pulls.count == 4 ? 2 : cols
-            let cellW = (width - 10 * CGFloat(cols - 1)) / CGFloat(cols)
+            let cols = packLayout ? 4 : pulls.count == 4 ? 2 : min(max(pulls.count, 1), 3)
+            let width = size.width
+            // 4장 두 줄: 칸 높이 = 카드 + 이름 한 줄(18)
+            let fitW = pulls.count == 4 && !packLayout ? ((size.height - 10) / 2 - 18) * CardShape.ratio : .infinity
+            let cellW = min((width - 10 * CGFloat(cols - 1)) / CGFloat(cols), fitW)
             let rareW = (width - 20) / 3 * 1.75
-            if workMode {
+            if bulk {
+                // [All]: 수십 장이라 뒤집기 없이 공개하고 스크롤한다
+                ScrollView {
+                    if workMode {
+                        LazyVStack(spacing: 6) { ForEach(pulls.indices, id: \.self) { i in row(pulls[i], i) } }
+                    } else {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                            ForEach(pulls.indices, id: \.self) { i in cell(pulls[i], i) }
+                        }
+                    }
+                }
+                // 막대는 카드를 덮지 않게 패널 여백으로 뺀다(그리드 폭은 그대로). 첫 두 줄만 보여 한 팩만 열린 줄 알기 쉬워 늘 보인다
+                .contentMargins(.trailing, 10, for: .scrollContent)
+                .padding(.trailing, -10)
+                .scrollIndicators(.visible)
+            } else if workMode {
                 VStack(spacing: 6) {
                     ForEach(pulls.indices, id: \.self) { i in row(pulls[i], i) }
                 }
                 Spacer(minLength: 0)
             } else {
                 VStack(spacing: 10) {
-                    ForEach(Array(stride(from: 0, to: pulls.count, by: perRow)), id: \.self) { start in
+                    ForEach(Array(stride(from: 0, to: pulls.count, by: cols)), id: \.self) { start in
                         HStack(alignment: .bottom, spacing: 10) {
-                            ForEach(start..<min(start + perRow, pulls.count), id: \.self) { i in
+                            ForEach(start..<min(start + cols, pulls.count), id: \.self) { i in
                                 cell(pulls[i], i).frame(width: isRare(i) ? nil : cellW).frame(maxWidth: isRare(i) ? rareW : nil)
                             }
                         }
                         .frame(maxHeight: isRare(start) ? .infinity : nil)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-                if !packLayout { Spacer(minLength: 0) }
+                // 팩이 아니면 남은 높이를 다 받아(위 정렬) 4장 두 줄이 들어갈 크기를 잰다
+                .frame(maxWidth: .infinity, maxHeight: packLayout ? nil : .infinity, alignment: .top)
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
             }
             // 나란한 유리 버튼은 한 컨테이너에서 같이 그린다
             GlassEffectContainer { HStack(spacing: 8) {
                 if allFlipped, let again {
                     Button("확인") { model.closeOpening() }.buttonStyle(.glass)
-                    Button(again.title, action: again.action)
-                        .disabled(!again.enabled)
-                        .keyboardShortcut(.defaultAction)
+                    if let openAll {
+                        GlassEffectContainer(spacing: 0) { HStack(spacing: 3) {
+                            Button(again.title, action: again.action)
+                                .keyboardShortcut(.defaultAction)
+                                .buttonStyle(JoinedButtonStyle(side: .leading, prominent: true))
+                            Button("All", action: openAll).buttonStyle(JoinedButtonStyle(side: .trailing))
+                        } }
+                        .fixedSize()
+                    } else {
+                        Button(again.title, action: again.action)
+                            .disabled(!again.enabled)
+                            .keyboardShortcut(.defaultAction)
+                    }
                 } else {
                     Button(allFlipped ? "확인" : "모두 뒤집기") {
                         if allFlipped { model.closeOpening() }
@@ -61,18 +88,29 @@ struct OpeningView: View {
         }
     }
 
+    /// 한 번 더 옆 [All]: 무료 팩이 2개 이상 남았으면 무료 팩 전부, 무료 카드가 `freeOpenAllMin`보다 많으면 무료 카드 전부
+    private var openAll: (() -> Void)? {
+        let state = model.game.state
+        if model.opening.freePack { return state.freePacks > 1 ? { model.openAllFreePacks() } : nil }
+        return model.opening.pack == nil && state.pendingFree > Balance.freeOpenAllMin ? { model.openFree(all: true) } : nil
+    }
+
+    /// [All]로 연 화면: 처음부터 다 뒤집혀 있다
+    private var bulk: Bool { model.opening.pulls.count > Balance.freeOpenBatch }
+    private func isFlipped(_ i: Int) -> Bool { bulk || flipped.contains(i) }
+
     /// 팩의 마지막 칸은 R 이상 확정 레어 슬롯이라 조금 크게 둔다
     private func isRare(_ i: Int) -> Bool { model.opening.pack != nil && i == model.opening.pulls.count - 1 }
 
     private func cell(_ pull: Pull, _ i: Int) -> some View {
         Hovering { hovered in VStack(spacing: 4) {
-            flippable(FlipCard(pull: pull, db: model.db, overframe: pull.overframe, flipped: flipped.contains(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }, pull, i)
+            flippable(FlipCard(pull: pull, db: model.db, overframe: pull.overframe, flipped: isFlipped(i), canUnsell: model.game.state.coins >= (pull.soldFor ?? 0)) { model.keepSold(at: i) }, pull, i)
             // 상점 팩 칸처럼 아래 이름 한 줄(넘치면 마우스를 올린 동안 흘러간다). 뒤집기 전엔 자리만 잡아 둔다(줄 높이 고정)
-            MarqueeText(text: model.db.cards[pull.cid]?.name ?? " ", active: hovered && flipped.contains(i))
+            MarqueeText(text: model.db.cards[pull.cid]?.name ?? " ", active: hovered && isFlipped(i))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
-                .opacity(flipped.contains(i) ? 1 : 0)
+                .opacity(isFlipped(i) ? 1 : 0)
                 .accessibilityHidden(true)  // 위 카드가 이름을 읽는다 (뒤집기 전에 이름이 새지 않게)
         } }
     }
@@ -81,7 +119,7 @@ struct OpeningView: View {
     private func row(_ pull: Pull, _ i: Int) -> some View {
         let card = model.db.cards[pull.cid]
         return flippable(HStack(spacing: 8) {
-            if flipped.contains(i) {
+            if isFlipped(i) {
                 // 배지가 없는 줄(새 카드도 판매도 아님)도 칸을 비워 둔다. PullBadge 가 비면 frame 이 사라져 이름이 왼쪽으로 당겨진다
                 Color.clear.frame(width: Self.badgeWidth, height: 1)
                     .overlay(alignment: .trailing) {  // 등급 바로 옆에 붙인다
@@ -118,10 +156,10 @@ struct OpeningView: View {
             .onTapGesture { flip(i) }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityLabel(pull, i))
-            .accessibilityAddTraits(flipped.contains(i) ? [] : .isButton)
+            .accessibilityAddTraits(isFlipped(i) ? [] : .isButton)
             .accessibilityAction { flip(i) }
             .accessibilityActions {
-                if flipped.contains(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
+                if isFlipped(i), pull.soldFor != nil { Button("판매 취소") { model.keepSold(at: i) } }
             }
     }
 
@@ -132,7 +170,7 @@ struct OpeningView: View {
 
     /// 뒤집기 전 "카드 3, 뒤집기 전", 뒤집은 뒤 "푸른 눈의 백룡, UR, 새 카드" (자동 판매면 "+ⓒ 10 자동 판매")
     private func accessibilityLabel(_ pull: Pull, _ i: Int) -> String {
-        guard flipped.contains(i) else { return String(localized: "카드 \(i + 1), 뒤집기 전") }
+        guard isFlipped(i) else { return String(localized: "카드 \(i + 1), 뒤집기 전") }
         var parts = [model.db.cards[pull.cid]?.name ?? "", pull.label]
         if pull.isNew { parts.append(String(localized: "새 카드")) }
         if pull.filledCards > 0 { parts.append(String(localized: "엑조디아! 팩을 모두 채웠어요")) }
@@ -165,6 +203,7 @@ struct OpeningView: View {
         if let pack = model.opening.pack {
             return (String(localized: "한 팩 더 · \(coinText(Balance.packPrice))"), model.game.canAffordPack, { model.buy(pack: pack) })
         }
+        if model.opening.freePack { return nil }  // 무료 팩 [All] 개봉(팩 없음)이 아래 무료 카드로 넘어가지 않게
         let left = model.game.state.pendingFree
         return left > 0 ? (String(localized: "다음 \(min(left, Balance.freeOpenBatch))장 열기"), true, { model.openFree() }) : nil
     }

@@ -3,18 +3,18 @@
 Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션을 채우는 macOS 메뉴바 앱.
 코어(게임·세이브·사용량)는 Linux에서도 빌드·테스트되고, Linux에는 Shop·Dex·Usage·Setting을 한 창에 담은 GTK/libadwaita 창을 Flatpak 베타로 배포한다(`scripts/linux-build.sh`, `docs/distribution.md`).
 Linux 창에는 메뉴바·팝오버·파트너·업무 모드가 없고 Shop 개봉은 그리드에서 카드를 눌러 뒤집는다(GTK CSS 연출).
-- 컬렉션: 정규 부스터 101팩, 8,306종.
+- 컬렉션: 정규 부스터 101팩 + 듀얼리스트 팩 30팩 = 131팩, 8,886종.
   - 어시스트 팩 같은 미니 팩 제외.
-  - 101팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에 넣음.
-  - 101팩 소재가 있는 조건 없는 101팩 밖 융합은 그 소재의 가장 늦은 팩에 넣음.
-  - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 팩에 넣음.
+  - 팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에 넣음.
+  - 팩 소재가 있는 조건 없는 팩 밖 융합은 그 소재의 가장 늦은 팩에 넣음.
+  - 마스크 체인지·마스크드 히어로는 첫 수록일 직전 정규 부스터에 넣음.
 
 GitHub Releases의 ZIP으로 배포하고, 앱은 Sparkle로 Release의 appcast.xml을 읽어 업데이트한다.
 Developer ID·공증 없이 ad-hoc 서명으로(스크립트에 `YTB_SIGN_IDENTITY`·`YTB_NOTARY_PROFILE` 선택 경로는 남아 있다), CI가 아니라 로컬에서 `scripts/package-release.sh --publish`로 게시한다(게시는 사용자 확인 후).
 Linux Flatpak(x86_64·aarch64)도 같은 스크립트가 Docker로 만들어 같은 Release에 올린다.
 
 - 스펙: `docs/superpowers/specs/2026-10-01-yugitokenbar-design.md` (결정 사항의 기준, 로컬 전용)
-- 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 25장·복사한 코드).
+- 출처: `docs/sources.md` (카드 데이터·이미지·오버프레임 26장·복사한 코드).
   이미지 출처를 바꾸면 같이 고친다.
 - 배포: `docs/distribution.md` (Sparkle 키·로컬 릴리스·Gatekeeper)
 - README: `README.md`(영어)·`README.ko.md`·`README.ja.md`.
@@ -77,7 +77,7 @@ Linux Flatpak(x86_64·aarch64)도 같은 스크립트가 Docker로 만들어 같
   JP·EN은 언어당 5~9시간 걸린다.
 - UI 문구는 ko/en/ja 현지화, 기준 언어는 한국어.
   메뉴·섹션·단순 확인·개봉 버튼의 공통 영어 표기(Shop·Dex·Setting·Cards·Decks·Partner·OK·Open), 사용량(메뉴 사용량 칸·사용량 화면) 문구는 세 언어 `Localizable.strings`에서 같은 영어 값으로 지정한다.
-  설정 > 정보 & 지원의 GitHub Repo 줄·크레딧·출처 줄(Inspired by PokeTokenBar·License·Card data & images·Unofficial fan project와 힌트), 설정 맨 아래 Made with Love and Claude, 라이선스 창 제목처럼 세 언어가 같은 영어 문구는 코드에 영어 키를 그대로 쓴다(번역 파일에 항목을 두지 않는다).
+  설정 > 정보 & 지원의 GitHub Repo 줄·크레딧·출처 줄(Inspired by PokeTokenBar·License·Card data & images·Unofficial fan project와 힌트), 설정 맨 아래 Made with Love and Claude, 라이선스 창 제목, 무료 카드 [All] 버튼처럼 세 언어가 같은 영어 문구는 코드에 영어 키를 그대로 쓴다(번역 파일에 항목을 두지 않는다).
   한국어 파일에는 이 영어 표기만 넣고, 다른 문구는 코드의 한국어 키를 그대로 쓴다.
   코드에는 한국어 문장을 그대로 쓰고, `python3 tools/sync-strings.py`로 en/ja `Resources/*.lproj/Localizable.strings`에 키를 덧붙여 번역한다.
   - SwiftUI 리터럴은 자동.

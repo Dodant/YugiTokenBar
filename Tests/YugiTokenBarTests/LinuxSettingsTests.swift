@@ -99,7 +99,7 @@ import Testing
         defer { try? FileManager.default.removeItem(at: root) }
         let store = StateStore(url: root.appendingPathComponent("state.json"))
         let service = LinuxUsageService(read: { _, _ in .init(date: "2026-10-19") }, history: { _ in [:] })
-        let model = LinuxModel(game: Game(db: makeDB((0..<12).map { [($0 + 1, 1)] }), state: GameState()), store: store, service: service)
+        let model = LinuxModel(game: Game(db: makeDB((0..<12).map { [($0 + 1, 1)] }, era: { $0 < 11 ? "DM" : "GX" }), state: GameState()), store: store, service: service)
         model.usageHistoryFile = nil
         model.scanRootsDebounce = .milliseconds(10)
         model.latestVersionFetcher = { "99.0.0" } // no test may reach GitHub

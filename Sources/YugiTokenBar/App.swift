@@ -25,6 +25,7 @@ struct YugiTokenBarApp: App {
         let model = AppModel(db: db, store: store)
         _model = State(initialValue: model)
         model.start()
+        StatusMenu.install(model)
         _ = Updater.controller  // Sparkle 자동 확인 일정 시작 (공개 키 없는 빌드는 nil)
         // swift run 바이너리엔 Info.plist(LSUIElement)가 없어 창이 키보드 입력을 못 받는다 → .app 과 같은 정책을 직접 건다
         NSApplication.shared.setActivationPolicy(.accessory)
@@ -75,7 +76,7 @@ struct YugiTokenBarApp: App {
             // 메뉴바 칸을 아끼려고 소수점 없이
             let today = model.todayDetail.values, tokens = Double(today.map(\.total).reduce(0, +))
             let short = tokens >= 1e6 ? String(format: "%.0fM", tokens / 1e6) : tokens >= 1e3 ? String(format: "%.0fK", tokens / 1e3) : String(Int(tokens))
-            return "\(short) · \(String(format: "$%.0f", today.map(\.cost).reduce(0, +)))"
+            return "\(short) · \("$" + shortCoins(Int(today.map(\.cost).reduce(0, +).rounded()), from: 1_000))"
         case .collection: return "\(model.game.ownedDistinct)/\(model.game.db.allCIDs.count)"
         case .sessionUsage, .weeklyUsage, .sessionWeeklyUsage, .sessionReset, .none: return ""
         }
@@ -116,14 +117,18 @@ private struct MenuBarLabel: View {
     let saveFailed: Bool
     /// 메뉴바 글자색이 따르는 외관. 컬러 이미지 안 아이콘이 메뉴바 글자와 같은 색이 되게 넘긴다
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        if !usage.isEmpty, let image = usageImage {
-            Image(nsImage: image)
-        } else {
-            Label { Text(verbatim: title) } icon: { iconImage }
-                .labelStyle(.titleAndIcon)
+        Group {
+            if !usage.isEmpty, let image = usageImage {
+                Image(nsImage: image)
+            } else {
+                Label { Text(verbatim: title) } icon: { iconImage }
+                    .labelStyle(.titleAndIcon)
+            }
         }
+        .onAppear { StatusMenu.openWindow = openWindow }  // 오른쪽 클릭 메뉴가 창을 열게
     }
 
     private var iconImage: Image {
