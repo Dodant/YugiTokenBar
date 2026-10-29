@@ -186,6 +186,16 @@ import Foundation
         snapshot.opening = LinuxOpening(pulls: result.pulls, title: game.db.packs[result.pack].name, pack: result.pack, freePack: true)
         persist(); publish(); return true
     }
+    func flip(_ index: Int) {
+        guard var opening = snapshot.opening, opening.pulls.indices.contains(index), !opening.flipped.contains(index) else { return }
+        opening.flipped.insert(index); snapshot.opening = opening; publish()
+    }
+    /// The pack's last card is its rare slot, turned last like on macOS (the delay itself is CSS).
+    func flipAll() {
+        guard var opening = snapshot.opening, !opening.allFlipped else { return }
+        if opening.pack != nil, let rare = opening.pulls.indices.last, !opening.flipped.contains(rare) { opening.lateFlip = rare }
+        opening.flipped = Set(opening.pulls.indices); snapshot.opening = opening; publish()
+    }
     func closeOpening() {
         guard snapshot.opening != nil else { return }; snapshot.opening = nil; publish()
     }

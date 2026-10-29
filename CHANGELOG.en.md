@@ -8,6 +8,8 @@ The first beta that also runs on Linux.
   Linux has no menu bar, popover, partner or work mode, and it does not read the official Claude and Codex limits or Cursor dashboard usage.
 - You can now export and import your save in Setting > Backup & transfer to move your collection between Mac and Linux.
   Your current save is backed up first.
+- On Linux, opened cards now start face down and turn over when you click them, and SR or better appear with a glow.
+  With [Flip all], the rare card turns a moment after the rest.
 - On Linux the language follows the system or the one you pick in Setting, and applies after you reopen the app.
 
 ## 0.6.3 — 2026-10-20

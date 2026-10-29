@@ -155,6 +155,21 @@ private actor ControlledLinuxReader {
         #expect(!model.buy(pack: 0)); #expect(model.sell(1)); #expect(model.game.showsOverframe(1))
     }
 
+    @Test func flipTurnsCardsAndLeavesThePackRareSlotLast() throws {
+        var state = GameState(); state.coins = 3000; state.pendingFree = 2
+        let (model, _) = makeLinuxModel(state: state, reader: ControlledLinuxReader())
+        model.flip(0); model.flipAll()  // nothing open: no-ops
+        #expect(model.buy(pack: 0))
+        let last = try #require(model.snapshot.opening?.pulls.indices.last)
+        model.flip(1); model.flip(99)
+        #expect(model.snapshot.opening?.flipped == [1]); #expect(model.snapshot.opening?.lateFlip == nil)
+        model.flipAll()
+        #expect(model.snapshot.opening?.allFlipped == true); #expect(model.snapshot.opening?.lateFlip == last)
+        model.closeOpening(); #expect(model.openFree())
+        model.flipAll()
+        #expect(model.snapshot.opening?.allFlipped == true); #expect(model.snapshot.opening?.lateFlip == nil)  // free cards: no rare slot
+    }
+
     @Test func dexSelectionValidatesAndFollowsEraLimit() {
         let reader = ControlledLinuxReader()
         // 12 packs: DM 0..<11, GX 11..<12; each pack holds cid = index + 1.

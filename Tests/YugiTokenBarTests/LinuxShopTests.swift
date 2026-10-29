@@ -69,6 +69,13 @@ import Testing
         if ProcessInfo.processInfo.environment["YTB_SMOKE_NO_IMAGES"] == "0" {
             #expect(FileManager.default.fileExists(atPath: ImageSource.cacheDirectory.appendingPathComponent("cards-89631139.jpg").path))
         }
+        #expect(find("opening-flip-all", in: window) != nil)
+        try activate("opening-card-0"); await pump()
+        #expect(model.snapshot.opening?.flipped == [0])
+        try activate("opening-flip-all"); await pump()
+        #expect(model.snapshot.opening?.allFlipped == true)
+        #expect(find("opening-flip-all", in: window) == nil)
+        for _ in 0..<10 { await pump() }  // let the reveal settle
         await screenshot("paid-opening")
         try activate("sidebar-shop"); await pump() // Same selected Shop closes opening too.
         #expect(model.snapshot.opening == nil)

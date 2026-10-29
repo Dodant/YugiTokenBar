@@ -51,6 +51,10 @@ import Foundation
             ready("dex")
         case "open":
             act("shop-buy-0"); until("opening shown") { model.snapshot.opening != nil }
+            steps.append(Step(name: "flip", run: {
+                say("SMOKE_FLIP tiers=\(model.snapshot.opening?.pulls.map(\.tier) ?? [])"); return true
+            }))
+            act("opening-flip-all"); until("flip settled") { waitTicks(30) }
             ready("open")
         case "usage":
             act("sidebar-usage")

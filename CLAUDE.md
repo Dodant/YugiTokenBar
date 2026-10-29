@@ -2,7 +2,7 @@
 
 Claude Code·Codex·Gemini·Grok·Pi·oh-my-pi·Cursor 토큰 사용량으로 한국 정발 유희왕 카드 컬렉션을 채우는 macOS 메뉴바 앱.
 코어(게임·세이브·사용량)는 Linux에서도 빌드·테스트되고, Linux에는 Shop·Dex·Usage·Setting을 한 창에 담은 GTK/libadwaita 창을 Flatpak 베타로 배포한다(`scripts/linux-build.sh`, `docs/distribution.md`).
-Linux 창에는 메뉴바·팝오버·파트너·업무 모드가 없고 Shop은 연출 없는 개봉 그리드를 쓴다.
+Linux 창에는 메뉴바·팝오버·파트너·업무 모드가 없고 Shop 개봉은 그리드에서 카드를 눌러 뒤집는다(GTK CSS 연출).
 - 컬렉션: 정규 부스터 101팩, 8,306종.
   - 어시스트 팩 같은 미니 팩 제외.
   - 101팩에 없는 융합 소재(조건 융합은 조건을 읽을 수 있을 때만)는 그 융합의 팩에 넣음.
@@ -104,6 +104,8 @@ Linux Flatpak(x86_64·aarch64)도 같은 스크립트가 Docker로 만들어 같
   미보유 융합만 남으면 FUSION ONLY를 표시하고 막되 더 필요한 오버프레임·융합 소재가 있으면 구매할 수 있다.
   개봉 중 구매·무료 카드·무료 팩 명령을 거절하고 닫기 또는 사이드바 Shop 재선택으로 목록에 돌아간다.
   무료 카드는 `Balance.freeOpenBatch`(현재 6장)만큼 열며 무료 팩은 기존 무작위 팩 규칙을 쓴다.
+  개봉 카드는 뒷면으로 시작해 `LinuxModel.flip`·`flipAll`로 `LinuxOpening.flipped`에 들어가며, 팩의 마지막 레어 칸은 `lateFlip`으로 늦게 뒤집힌다.
+  뒤집기와 SR 이상 연출은 `LinuxOpeningStyle`의 GTK CSS(2D 변형만, cairo 렌더러에서도 그린다)이며 GNOME 애니메이션 끄기면 최종 상태만 보인다.
 - Linux 상태 변경·저장은 `@MainActor LinuxModel`에서 직렬화하고 백그라운드 사용량 결과는 Sendable 값으로 `LinuxInbox`에만 넣는다.
   GTK 루프가 `drainEvents()`를 호출하며 request ID·state generation·lifecycle epoch로 오래된 결과를 버린다.
   읽는 동안 들어온 갱신 요청은 겹치지 않는 후속 읽기 한 번으로 모으고 결과를 현재 게임에 적립한다.
@@ -119,6 +121,7 @@ Linux Flatpak(x86_64·aarch64)도 같은 스크립트가 Docker로 만들어 같
   사이드바의 provider 합계는 sampled day를 함께 표시해 자정 뒤 이전 사용량을 오늘 값으로 바꾸지 않는다.
 - 색은 시스템 색(`.primary`·`.secondary`·`.fill`·`accentColor`)을 먼저 쓰고, 고유한 색은 `CardImageView.swift`의 `Rarity`·`Palette`에만 라이트·다크 값을 같이 둔다(스펙 6절 외관).
   화면에서 `colorScheme`으로 분기하지 않는다.
+  Linux 개봉 CSS(`LinuxOpeningStyle`)는 SwiftUI 색을 쓸 수 없어 `Rarity.colors`·`pillColors` 값을 hex로 옮겨 두므로 등급 색을 바꾸면 같이 고친다.
 - **문서는 항상 코드와 동기화한다.**
   동작·구조·명령이 바뀌면 같은 커밋에서 스펙(해당 절), `Usage/NOTICE.md`, 이 파일을 함께 고친다.
 - 문서(.md)는 한 줄에 한 문장으로 쓴다.

@@ -14,6 +14,10 @@ struct LinuxOpening: Identifiable, Sendable, Equatable {
     var title: String
     var pack: Int? = nil
     var freePack = false
+    /// Face-up cards. lateFlip is the pack's rare slot when "flip all" turned it, so it follows the others.
+    var flipped: Set<Int> = []
+    var lateFlip: Int? = nil
+    var allFlipped: Bool { flipped.count == pulls.count }
 }
 
 struct LinuxPendingImport: Sendable, Equatable {
