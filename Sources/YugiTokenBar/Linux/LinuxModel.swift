@@ -174,11 +174,21 @@ import Foundation
         snapshot.opening = LinuxOpening(pulls: pulls, title: game.db.packs[pack].name, pack: pack)
         persist(); publish(); return true
     }
-    @discardableResult func openFree() -> Bool {
+    /// `all` opens every pending free card face up, like the macOS [All].
+    @discardableResult func openFree(all: Bool = false) -> Bool {
         guard snapshot.opening == nil else { return false }
-        let pulls = snapshot.game.openFree(using: &rng)
+        let pulls = snapshot.game.openFree(limit: all ? .max : Balance.freeOpenBatch, using: &rng)
         guard !pulls.isEmpty else { return false }
-        snapshot.opening = LinuxOpening(pulls: pulls, title: L("무료 카드"))
+        snapshot.opening = LinuxOpening(pulls: pulls, title: L("무료 카드"), flipped: all ? Set(pulls.indices) : [])
+        persist(); publish(); return true
+    }
+    /// Opens every free pack, including ones won on the way, face up in one grid.
+    @discardableResult func openAllFreePacks() -> Bool {
+        guard snapshot.opening == nil else { return false }
+        var pulls: [Pull] = [], opened = 0
+        while let (_, p) = snapshot.game.openFreePack(using: &rng) { pulls += p; opened += 1 }
+        guard opened > 0 else { return false }
+        snapshot.opening = LinuxOpening(pulls: pulls, title: L("무료 팩 %lld개", .int(opened)), flipped: Set(pulls.indices))
         persist(); publish(); return true
     }
     @discardableResult func openFreePack() -> Bool {

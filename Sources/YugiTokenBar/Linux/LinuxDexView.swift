@@ -68,6 +68,7 @@ import Foundation
                                 VStack(spacing: 6) {
                                     Text("\(index + 1). \(pack.name)").ellipsize().halign(.start)
                                     HStack(spacing: 10) {
+                                        if pack.kind == .duelist { Text("DP").style("caption-heading") }
                                         Text("\(progress.owned) / \(progress.total)")
                                         if progress.cleared { Text(progress.complete ? "COMPLETE" : "FUSION ONLY").style("dim-label") }
                                     }.halign(.start)

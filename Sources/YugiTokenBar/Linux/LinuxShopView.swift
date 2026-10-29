@@ -17,9 +17,15 @@ import Foundation
                         Button(L("무료 카드 %lld", .int(snapshot.game.state.pendingFree))) { model.openFree() }
                             .linuxSmokeID("shop-free-cards")
                             .insensitive(snapshot.game.state.pendingFree == 0)
+                        if snapshot.game.state.pendingFree > Balance.freeOpenAllMin {
+                            Button("All") { model.openFree(all: true) }.linuxSmokeID("shop-free-cards-all")
+                        }
                         Button(L("무료 팩 %lld", .int(snapshot.game.state.freePacks))) { model.openFreePack() }
                             .linuxSmokeID("shop-free-pack")
                             .insensitive(snapshot.game.state.freePacks == 0)
+                        if snapshot.game.state.freePacks > 1 {
+                            Button("All") { model.openAllFreePacks() }.linuxSmokeID("shop-free-packs-all")
+                        }
                     }.padding()
                     ForEach(snapshot.game.db.eras, id: \.name) { era in
                         VStack(spacing: 10) {
@@ -48,6 +54,7 @@ import Foundation
             VStack(spacing: 10) {
                 Text("\(index + 1). \(pack.name)").ellipsize().halign(.start)
                 HStack(spacing: 10) {
+                    if pack.kind == .duelist { Text("DP").style("caption-heading") }
                     Text("\(progress.owned) / \(progress.total)")
                     if progress.cleared { Text(progress.complete ? "COMPLETE" : "FUSION ONLY").style("dim-label") }
                     if progress.fusionLeft > 0 { Text(L("융합 %lld장 남음", .int(progress.fusionLeft))) }

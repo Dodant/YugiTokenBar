@@ -103,7 +103,9 @@ Linux Flatpak(x86_64·aarch64)도 같은 스크립트가 Docker로 만들어 같
   잔액 부족·개봉 중·범위 밖은 거절하고 `cleared` 팩은 `wanted && !isFusionOnly`인 실제 뽑을 수 있는 필요 카드가 있어야 구매할 수 있다.
   미보유 융합만 남으면 FUSION ONLY를 표시하고 막되 더 필요한 오버프레임·융합 소재가 있으면 구매할 수 있다.
   개봉 중 구매·무료 카드·무료 팩 명령을 거절하고 닫기 또는 사이드바 Shop 재선택으로 목록에 돌아간다.
-  무료 카드는 `Balance.freeOpenBatch`(현재 6장)만큼 열며 무료 팩은 기존 무작위 팩 규칙을 쓴다.
+  무료 카드는 `Balance.freeOpenBatch`(현재 6장)만큼 열며 무료 팩은 `Game.openFreePack`의 팩 고르기를 쓴다.
+  macOS처럼 무료 카드가 `Balance.freeOpenAllMin`보다 많거나 무료 팩이 2개 이상이면 [All](`openFree(all:)`·`openAllFreePacks`)이 모두 앞면으로 연다.
+  듀얼리스트 팩 줄에는 상점·Dex 모두 DP를 붙인다.
   개봉 카드는 뒷면으로 시작해 `LinuxModel.flip`·`flipAll`로 `LinuxOpening.flipped`에 들어가며, 팩의 마지막 레어 칸은 `lateFlip`으로 늦게 뒤집힌다.
   뒤집기와 SR 이상 연출은 `LinuxOpeningStyle`의 GTK CSS(2D 변형만, cairo 렌더러에서도 그린다)이며 GNOME 애니메이션 끄기면 최종 상태만 보인다.
 - Linux 상태 변경·저장은 `@MainActor LinuxModel`에서 직렬화하고 백그라운드 사용량 결과는 Sendable 값으로 `LinuxInbox`에만 넣는다.
