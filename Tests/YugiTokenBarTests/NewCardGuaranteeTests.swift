@@ -2,7 +2,7 @@ import Testing
 @testable import YugiTokenBar
 
 @Suite struct NewCardGuaranteeTests {
-    /// 팩에 미보유 카드가 남아 있는 동안은 봉투마다 새 카드가 1장 이상, 다 모은 뒤엔 그냥 5장.
+    /// 팩에 미보유 카드가 남아 있는 동안은 봉투마다 새 카드가 1장 이상, 다 모은 뒤엔 그냥 `cardsPerPack` 장.
     @Test func everyPackHasANewCardUntilComplete() {
         let list = (1...12).map { ($0, 1) } + (13...16).map { ($0, 2) } + [(17, 3), (18, 4), (19, 5)]
         let db = makeDB([list.map { (cid: $0.0, tier: $0.1) }])
@@ -12,7 +12,7 @@ import Testing
             let complete = db.packs[0].cards.allSatisfy { game.copies($0) > 0 }
             game.state.coins = Balance.packPrice
             let pulls = game.buy(pack: 0, using: &rng)
-            #expect(pulls.count == 5)
+            #expect(pulls.count == Balance.cardsPerPack)
             if !complete { #expect(pulls.contains { $0.isNew }) }
         }
         #expect(db.packs[0].cards.allSatisfy { game.copies($0) > 0 })

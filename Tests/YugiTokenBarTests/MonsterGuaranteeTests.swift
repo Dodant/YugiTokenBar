@@ -14,7 +14,7 @@ import Testing
             var game = Game(db: db, state: GameState())
             game.state.coins = Balance.packPrice
             let pulls = game.buy(pack: 0, using: &rng)
-            #expect(pulls.count == 5)
+            #expect(pulls.count == Balance.cardsPerPack)
             #expect(pulls.filter { db.cards[$0.cid]?.kind == .monster }.count >= Balance.monstersPerPack)
         }
     }

@@ -12,7 +12,7 @@ Available in Korean, English, and Japanese.</p>
 - It reads today's tokens from your local Claude Code, Codex, Gemini, Grok, Pi, oh-my-pi, and Cursor logs.\
   On first launch it also credits the last 14 days of usage; anything older is not counted.
 - 10,000 tokens = 1 coin.\
-  1,000 coins (= 10M tokens) buy one booster pack with 5 cards.\
+  1,000 coins (= 10M tokens) buy one booster pack with 8 cards.\
   Buy 10 packs and you get a random pack for free.
 - The collection has 101 regular booster packs and 30 Duelist Packs (marked DP), split by era.
 - Every 10M tokens you earn a free card, drawn from the whole pool by rarity odds.

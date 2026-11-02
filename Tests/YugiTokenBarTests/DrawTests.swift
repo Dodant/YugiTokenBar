@@ -3,9 +3,9 @@ import Testing
 @testable import YugiTokenBar
 
 @Suite struct DrawTests {
-    /// 팩0: 노멀 4 + 레어 1 + 울트라 1, 팩1: 노멀 4, 팩2: 노멀 2
+    /// 팩0: 노멀 7 + 레어 1 + 울트라 1 (노멀 칸 6 + 끝에서 둘째 칸이 노멀이어도 채운다), 팩1: 노멀 4, 팩2: 노멀 2
     let db = makeDB([
-        [(1, 1), (2, 1), (3, 1), (4, 1), (5, 2), (6, 4)],
+        [(1, 1), (2, 1), (3, 1), (4, 1), (7, 1), (8, 1), (9, 1), (5, 2), (6, 4)],
         [(11, 1), (12, 1), (13, 1), (14, 1)],
         [(21, 1), (22, 1)],
     ])
@@ -23,7 +23,7 @@ import Testing
         for _ in 0..<50 { _ = game.buy(pack: 0, using: &rng) }
         #expect(game.state.owned.values.contains { $0 > 2 })  // 상한 없음
         #expect(game.progress(0).complete)
-        #expect(game.buy(pack: 0, using: &rng).count == 5)  // 완료 팩도 계속 산다
+        #expect(game.buy(pack: 0, using: &rng).count == Balance.cardsPerPack)  // 완료 팩도 계속 산다
     }
 
     @Test func emptyTierFallsDownThenUp() {
@@ -31,24 +31,26 @@ import Testing
         // 팩0에 SR(3) 없음 → 아래로 내려가 레어
         #expect(rich().draw(pack: 0, tier: 3, using: &rng) == 5)
         // 노멀·레어가 이미 봉투에 나왔으면 → 위로 올라가 울트라
-        #expect(rich().draw(pack: 0, tier: 2, excluding: [1, 2, 3, 4, 5], using: &rng) == 6)
+        #expect(rich().draw(pack: 0, tier: 2, excluding: [1, 2, 3, 4, 5, 7, 8, 9], using: &rng) == 6)
         // SE 가 없는 팩이면 아래(UR)로
         #expect(rich().draw(pack: 0, tier: 5, using: &rng) == 6)
     }
 
-    @Test func packHasThreeNormalsSlot4MaybeRareAndOneRareSlot() {
-        var game = rich()
+    @Test func packHasNormalsThenMaybeRareThenOneRareSlot() {
+        // 노멀 10 + 레어 2 + 울트라 1: 끝에서 둘째 칸이 레어를 가져가도 마지막 칸에 레어가 남는다
+        var game = Game(db: makeDB([(1...10).map { ($0, 1) } + [(11, 2), (12, 2), (13, 4)]]), state: GameState())
+        game.state.coins = 1_000_000
         var rng = SeededRNG(seed: 11)
         let opened = game.buy(pack: 0, using: &rng)
-        #expect(opened.count == 5)
-        #expect(opened.prefix(3).allSatisfy { $0.tier == 1 })
-        #expect(opened[4].tier >= 2)
+        #expect(opened.count == Balance.cardsPerPack)
+        #expect(opened.prefix(Balance.cardsPerPack - 2).allSatisfy { $0.tier == 1 })
+        #expect(opened[Balance.cardsPerPack - 1].tier >= 2)
         #expect(game.state.coins == 1_000_000 - Balance.packPrice)
         #expect(opened.filter(\.isNew).count == Set(opened.map(\.cid)).count)
-        // 4번째 장은 30% 로 레어 (기대 600 / 2,000)
+        // 끝에서 둘째 장은 50% 로 레어 (기대 1,000 / 2,000)
         game.state.coins = 10_000_000
-        let rares = (0..<2_000).filter { _ in game.buy(pack: 0, using: &rng)[3].tier == 2 }.count
-        #expect((500...700).contains(rares))
+        let rares = (0..<2_000).filter { _ in game.buy(pack: 0, using: &rng)[Balance.cardsPerPack - 2].tier == 2 }.count
+        #expect((900...1_100).contains(rares))
     }
 
     @Test func noDuplicateCardWithinOnePack() {
@@ -200,10 +202,10 @@ import Testing
     }
 
     @Test func packResaleValueIsBelowPackPrice() {
-        let w = Balance.slot5Weights.reduce(0.0) { $0 + $1.weight * Double(Balance.sellPrice[$1.tier]!) }
-        let slot4 = (1 - Balance.slot4RareChance) * Double(Balance.sellPrice[1]!) + Balance.slot4RareChance * Double(Balance.sellPrice[2]!)
+        let w = Balance.rareSlotWeights.reduce(0.0) { $0 + $1.weight * Double(Balance.sellPrice[$1.tier]!) }
+        let semi = (1 - Balance.semiRareChance) * Double(Balance.sellPrice[1]!) + Balance.semiRareChance * Double(Balance.sellPrice[2]!)
         let m = Double(Balance.clearedSellMultiplier)  // 다 모은 팩의 판매가 배수까지 넣어도
-        #expect(m * (3.0 * Double(Balance.sellPrice[1]!) + slot4 + w) < Double(Balance.packPrice))
+        #expect(m * (Double(Balance.cardsPerPack - 2) * Double(Balance.sellPrice[1]!) + semi + w) < Double(Balance.packPrice))
     }
 
     @Test func autoSellDuplicatesSellsRepeatsOnly() {

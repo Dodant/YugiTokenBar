@@ -61,8 +61,8 @@ import Testing
         #expect(game.progress(0).done)
     }
 
-    /// 다 모은 팩의 5번째 장은 `wantedSlotChance`로 등급과 상관없이 필요한 카드가 된다 (UR 소재도 구할 수 있게)
-    @Test func clearedPackSlotFiveFavorsWantedCard() {
+    /// 다 모은 팩의 마지막 장은 `wantedSlotChance`로 등급과 상관없이 필요한 카드가 된다 (UR 소재도 구할 수 있게)
+    @Test func clearedPackLastSlotFavorsWantedCard() {
         var cards: [Int: CardInfo] = [1: CardInfo(name: "UR", attr: nil, level: nil, type: nil, atk: nil, def: nil, text: "",
                                                   imageId: ImageSource.overframe.keys.sorted()[0], tier: 4, kindCode: nil)]
         for cid in 2...11 { cards[cid] = card("카드\(cid)") }
@@ -73,7 +73,7 @@ import Testing
             game.state.coins = Balance.packPrice
             return game.buy(pack: 0, using: &rng).contains { $0.cid == 1 }
         }.count
-        #expect(hits > 320)  // 기대값 0.30 + 0.70 × 0.12(UR·SE 칸) ≈ 384, 보장이 없으면 120
+        #expect(hits > 320)  // 기대값 0.30 + 0.70 × 0.14(UR·SE 칸) ≈ 398, 보장이 없으면 140
     }
 
     @MainActor @Test func unlocksOwnedCardsOnLaunch() throws {

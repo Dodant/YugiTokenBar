@@ -43,7 +43,7 @@ import Testing
 
         #expect(model.openAllFreePacks())
         #expect(model.game.state.freePacks == 0)
-        #expect(model.opening.pulls.count == 15 && model.opening.freePack && model.opening.pack == nil)
+        #expect(model.opening.pulls.count == 3 * Balance.cardsPerPack && model.opening.freePack && model.opening.pack == nil)
         #expect(!model.openAllFreePacks())
     }
 }

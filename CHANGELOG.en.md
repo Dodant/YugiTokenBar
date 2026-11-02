@@ -1,5 +1,14 @@
 # Patch notes
 
+## 0.6.8 — 2026-11-02
+**⚖️ Balance**
+- A booster pack now holds 8 cards instead of 5.
+  Six are Commons, the 7th is a Rare 50% of the time, and the last one is R 60% · SR 26% · UR 12% · SE 2%.
+
+**🎨 Improvements**
+- The pack opening screen now shows the cards in two rows of three plus a last row of two, and the Work mode list scrolls when it does not fit.
+- Settings now uses the same grouped form as System Settings, so pickers show the chosen value next to a round button.
+
 ## 0.6.7 — 2026-10-28
 **🎨 Improvements**
 - The menu now grows and shrinks smoothly instead of jumping when rows appear or disappear and its height changes.

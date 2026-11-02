@@ -10,10 +10,12 @@ enum Balance {
     static let tokensPerFreeCard = 10_000_000
     /// 첫 실행에 적립하는 지난 일수. 그 전 사용량은 적립하지 않는다 (catchUpDays 30 안)
     static let firstRunCreditDays = 14
-    /// 팩 4번째 장이 노멀 대신 레어(R)가 될 확률
-    static let slot4RareChance = 0.30
-    /// 팩 5번째 장의 티어 확률 (R / SR / UR / SE). 그 티어가 없는 팩은 아래 → 위 티어 순으로 찾는다.
-    static let slot5Weights: [(tier: Int, weight: Double)] = [(2, 0.70), (3, 0.18), (4, 0.10), (5, 0.02)]
+    /// 팩 1봉투의 장 수. 앞 `cardsPerPack - 2`장은 노멀, 끝에서 둘째 장은 `semiRareChance`로 레어, 마지막 장은 `rareSlotWeights`.
+    static let cardsPerPack = 8
+    /// 팩 끝에서 둘째 장이 노멀 대신 레어(R)가 될 확률
+    static let semiRareChance = 0.50
+    /// 팩 마지막 장의 티어 확률 (R / SR / UR / SE). 그 티어가 없는 팩은 아래 → 위 티어 순으로 찾는다.
+    static let rareSlotWeights: [(tier: Int, weight: Double)] = [(2, 0.60), (3, 0.26), (4, 0.12), (5, 0.02)]
     /// 무료 카드의 티어 확률 (N / R / SR / UR / SE). 티어 안에서는 균등.
     static let freeWeights: [(tier: Int, weight: Double)] = [(1, 0.70), (2, 0.23), (3, 0.05), (4, 0.015), (5, 0.005)]
     static let logLimit = 50
@@ -23,13 +25,13 @@ enum Balance {
     static let freeOpenAllMin = 30
     /// 팩 1봉투에서 몬스터를 보장하는 장 수. 노멀 슬롯 앞에서부터 이만큼은 몬스터만 뽑는다 (모든 팩에 노멀 몬스터 13장 이상).
     static let monstersPerPack = 2
-    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 215 < packPrice 라 사고팔기로 코인이 늘지 않는다.
+    /// 카드 1장 판매가 (티어 → 코인). 팩 기대 판매가 ≈ 296 < packPrice 라 사고팔기로 코인이 늘지 않는다.
     static let sellPrice: [Int: Int] = [1: 20, 2: 50, 3: 150, 4: 400, 5: 1_200]
-    /// 종류를 다 모은 팩(`PackProgress.cleared`)에 든 카드의 판매가 배수. 그래도 팩 기대 판매가 ≈ 645 < packPrice
+    /// 종류를 다 모은 팩(`PackProgress.cleared`)에 든 카드의 판매가 배수. 그래도 팩 기대 판매가 ≈ 888 < packPrice
     static let clearedSellMultiplier = 3
     /// 다 모은 팩에서 아직 필요한 카드(`Game.wanted`)가 같은 등급의 다른 카드보다 이만큼 잘 나온다
     static let wantedWeight = 10.0
-    /// 다 모은 팩에 아직 필요한 카드가 남았으면 5번째 장이 이 확률로 등급과 상관없이 그중 하나가 된다 (높은 등급 소재도 구할 수 있게)
+    /// 다 모은 팩에 아직 필요한 카드가 남았으면 마지막 장이 이 확률로 등급과 상관없이 그중 하나가 된다 (높은 등급 소재도 구할 수 있게)
     static let wantedSlotChance = 0.30
     /// 무료 팩 고르기: 팩 가중치 = 1 + 이 값 × (그 팩에서 아직 받을 수 있는 카드 비율). 하나도 없는 팩이 다 모은 팩의 2배
     static let freePackMissingBoost = 1.0
@@ -493,13 +495,13 @@ struct Game: Sendable {
         return weights.count - 1
     }
 
-    /// 봉투 하나 열기: 노멀 3 + 슬롯4(노멀, `slot4RareChance`로 레어) + 슬롯5. 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
+    /// 봉투 하나 열기(`cardsPerPack` 장): 노멀 + 끝에서 둘째 장(노멀, `semiRareChance`로 레어) + 마지막 장(`rareSlotWeights`). 앞 `monstersPerPack` 장은 몬스터만 뽑아 마법·함정만 나오는 봉투가 없게 한다.
     /// 팩에 아직 없는 카드가 남아 있으면 1장 이상은 새 카드다(`ensureNew`).
-    /// 다 모은 팩은 5번째 장이 `wantedSlotChance`로 아직 필요한 카드(`wanted`) 중 하나다.
+    /// 다 모은 팩은 마지막 장이 `wantedSlotChance`로 아직 필요한 카드(`wanted`) 중 하나다.
     private mutating func open<R: RandomNumberGenerator>(pack: Int, using rng: inout R) -> [Pull] {
         let boost = progress(pack).cleared
-        let slot4 = Double.random(in: 0..<1, using: &rng) < Balance.slot4RareChance ? 2 : 1
-        let tiers = [1, 1, 1, slot4, pickTier(Balance.slot5Weights, using: &rng)]
+        let semi = Double.random(in: 0..<1, using: &rng) < Balance.semiRareChance ? 2 : 1
+        let tiers = Array(repeating: 1, count: Balance.cardsPerPack - 2) + [semi, pickTier(Balance.rareSlotWeights, using: &rng)]
         var slots: [(tier: Int, kind: CardKind?, cid: Int)] = []
         for (i, tier) in tiers.enumerated() {
             let kind: CardKind? = i < Balance.monstersPerPack ? .monster : nil

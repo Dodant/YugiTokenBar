@@ -32,71 +32,52 @@ struct SettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             PanelHeader(title: String(localized: "설정")) { model.screen = .summary }
-            ScrollView {
-                // 유리 버튼이 여럿이라 한 컨테이너에서 같이 그린다
-                GlassEffectContainer { VStack(alignment: .leading, spacing: 16) {
-                    generalSection
-                    scanSection
-                    cardSection
-                    partnerSection
-                    transferSection
-                    aboutSection
-                    Text("Made with Love and Claude")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity)
-                } }
-                .buttonStyle(.glass)
-                .buttonBorderShape(.capsule)
+            // PokeTokenBar 처럼 팝오버 안의 그룹 Form: 고르기(고른 값 + 동그라미 ⌃⌄)·스위치·구분선이 시스템 설정과 같은 네이티브 모양이다.
+            // Form 고유 배경은 숨겨 섹션 카드만 팝오버 재질 위에 얹고, 팝오버 여백(16)은 빼서 Form 안쪽 여백만 남긴다
+            Form {
+                generalSection
+                scanSection
+                cardSection
+                partnerSection
+                transferSection
+                aboutSection
             }
+            .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .contentMargins(.top, 0, for: .scrollContent)
             .scrollIndicators(.never)
-            .frame(maxHeight: .infinity)
+            .padding(.horizontal, -16)
             .panelScrollBottom()
         }
     }
 
     // MARK: 섹션
 
-    /// 설정의 선택 메뉴 폭. 다 같게 맞추고(항목이 짧아도 `buttonSizing(.flexible)`로 폭을 채워 오른쪽 끝을 맞춘다), 넘치는 항목은 말줄임
-    private static let pickerWidth: CGFloat = 150
-
     private var generalSection: some View {
         // swift run 바이너리는 .app 이 아니라 로그인 항목으로 등록할 수 없다
         let installed = AppInfo.bundleVersion != nil
-        return section("일반") {
+        return Section("일반") {
             toggleRow("로그인 시 자동 실행", hint: installed ? "로그인하면 메뉴바에 표시해요" : "설치한 앱에서 켤 수 있어요",
                       isOn: $launchAtLogin)
                 .disabled(!installed)
                 .onChange(of: launchAtLogin) { setLaunchAtLogin() }
                 .onAppear { launchAtLogin = Self.isRegistered(SMAppService.mainApp) }
-            row {
+            Picker(selection: $language) {
+                ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
+            } label: {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("언어")
                     if language != AppLanguage.launchChoice {
                         Button("다시 열어 적용") { relaunch() }.buttonStyle(.link).font(.caption2)
                     }
                 }
-                Spacer()
-                Picker("언어", selection: $language) {
-                    ForEach(AppLanguage.allCases) { Text($0.title).tag($0) }
-                }
-                .labelsHidden()
-                .controlSize(.small)
-                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)
-                .onChange(of: language) { AppLanguage.store(language) }
             }
+            .onChange(of: language) { AppLanguage.store(language) }
             toggleRow("업무 모드", hint: "카드 이미지와 파트너를 숨겨요", isOn: Bindable(model).workMode)
             toggleRow("동작 줄이기", hint: "카드 연출과 화면 전환 애니메이션을 줄여요",
                       isOn: Bindable(model).animationsOff)
-            row {
-                Text("메뉴바 표시")
-                Spacer()
-                Picker("메뉴바 표시", selection: Bindable(model).menuBarInfo) {
-                    ForEach(AppModel.MenuBarInfo.allCases) { Text(verbatim: $0.title).tag($0) }
-                }
-                .labelsHidden()
-                .controlSize(.small)
-                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)  // fixedSize 면 가장 긴 항목 폭이 되어 영어 이름이 세 줄로 접힌다
+            Picker("메뉴바 표시", selection: Bindable(model).menuBarInfo) {
+                ForEach(AppModel.MenuBarInfo.allCases) { Text(verbatim: $0.title).tag($0) }
             }
         }
     }
@@ -105,19 +86,14 @@ struct SettingsView: View {
     // 정식 해결은 원격에서 사용량을 보내 주는 쪽(원격 에이전트·서버)이다.
     /// 기본 위치 밖 로그 폴더. 읽는 쪽은 PokeTokenBar `CustomScanRoots`가 이미 이 키를 읽는다
     private var scanSection: some View {
-        section("추가 스캔 폴더") {
-            row {
+        Section("추가 스캔 폴더") {
+            Picker(selection: $scanProvider) {
+                ForEach(UsageView.agents.filter { $0.id != .cursor }, id: \.id) { Text(verbatim: $0.name).tag($0.id) }
+            } label: {
                 labeled("프로바이더", hint: "원격 머신 로그를 이 Mac에 복사해 온 폴더 등",
                         detail: "기본 위치 밖 로그만 넣어요. 콤마·줄바꿈으로 구분하고 * 와일드카드를 써요. Claude는 projects 폴더, Codex는 sessions 폴더를 넣어요.")
-                Spacer()
-                Picker("프로바이더", selection: $scanProvider) {
-                    ForEach(UsageView.agents.filter { $0.id != .cursor }, id: \.id) { Text(verbatim: $0.name).tag($0.id) }
-                }
-                .labelsHidden()
-                .controlSize(.small)
-                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)
-                .onChange(of: scanProvider) { scanRoots = CustomScanRoots.storedValue(for: scanProvider.rawValue) ?? "" }
             }
+            .onChange(of: scanProvider) { scanRoots = CustomScanRoots.storedValue(for: scanProvider.rawValue) ?? "" }
             VStack(alignment: .leading, spacing: 4) {
                 TextField(text: $scanRoots, prompt: Text(verbatim: "~/remote-logs/*/claude/projects"), axis: .vertical) { Text("추가 스캔 폴더") }
                     .lineLimit(1...4)
@@ -130,48 +106,43 @@ struct SettingsView: View {
                     Text("찾은 폴더: \(CustomScanRoots.expand(scanRoots).count)").font(.caption2).foregroundStyle(.secondary)
                 }
             }
-            .padding(.horizontal, 12).padding(.bottom, 8)
         }
     }
 
     private var partnerSection: some View {
         let unlocked = model.game.state.partnerUnlocked
-        return section("파트너", beta: true) {
+        return Section {
             toggleRow("바탕화면 파트너", hint: unlocked ? "날개 크리보를 바탕화면에 표시해요"
                                                  : "「날개 크리보」를 얻으면 켤 수 있어요",
                       detail: unlocked ? "끌어서 옮기고, 우클릭으로 숨겨요" : nil,
                       isOn: Bindable(model).partnerEnabled)
                 .disabled(!unlocked)
-            row {
-                Text("크기")
+            LabeledContent("크기") {
                 Slider(value: Bindable(model).partnerSize, in: PartnerTuning.sizes, step: PartnerTuning.sizeStep)
                     .controlSize(.small)
                     .disabled(!unlocked || !model.partnerEnabled)
             }
-        }
+        } header: { sectionHeader("파트너", beta: true) }
     }
 
     private var cardSection: some View {
-        section("카드") {
+        let db = model.game.db  // 시대 범위 안만
+        let fields = db.allCIDs.filter { db.cards[$0]?.field == true && model.game.copies($0) > 0 }
+        let full = model.game.fullDB
+        return Section("카드") {
             toggleRow("중복 카드 자동 판매", hint: "새로 나온 중복 카드를 코인으로 바꿔요",
                       detail: "이미 모은 카드는 그대로예요. 오버프레임 그림이 있는 카드는 해금하는 \(Balance.overframeCopies)장까지 남기고, 융합에 필요한 소재도 남겨요.",
                       isOn: Bindable(model).autoSellDuplicates)
-            row {
-                let db = model.game.db  // 시대 범위 안만
-                let fields = db.allCIDs.filter { db.cards[$0]?.field == true && model.game.copies($0) > 0 }
+            Picker(selection: Bindable(model).fieldBackground) {
+                Text("없음").tag(Int?.none)
+                ForEach(fields, id: \.self) { Text(verbatim: db.cards[$0]?.name ?? "").tag(Int?.some($0)) }
+            } label: {
                 labeled("필드 배경", hint: fields.isEmpty ? "필드 마법 카드를 얻으면 고를 수 있어요" : "필드 마법 카드의 그림을 배경으로 써요")
-                Spacer()
-                Picker("필드 배경", selection: Bindable(model).fieldBackground) {
-                    Text("없음").tag(Int?.none)
-                    ForEach(fields, id: \.self) { Text(verbatim: db.cards[$0]?.name ?? "").tag(Int?.some($0)) }
-                }
-                .labelsHidden()
-                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)  // 긴 카드 이름은 말줄임 (fixedSize 면 이름·설명이 폭 0으로 눌린다)
-                .controlSize(.small)
-                .disabled(fields.isEmpty)
             }
-            row {
-                let db = model.game.fullDB
+            .disabled(fields.isEmpty)
+            Picker(selection: Bindable(model).eraLimit) {
+                ForEach(full.eras, id: \.name) { era in eraTitle(era.name).tag(era.name) }
+            } label: {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 4) {
                         Text("시대 범위")
@@ -181,102 +152,57 @@ struct SettingsView: View {
                     }
                     Text("\(model.db.packs.count)팩 · \(model.db.allCIDs.count.formatted())장").font(.caption2).foregroundStyle(.secondary)
                 }
-                Spacer()
-                Picker("시대 범위", selection: Bindable(model).eraLimit) {
-                    ForEach(db.eras, id: \.name) { era in Text("\(era.name)(\(CardInfo.summonTitle(CardDB.eraSummons[era.name] ?? "")))까지").tag(era.name) }
-                }
-                .labelsHidden()
-                .buttonSizing(.flexible).frame(width: Self.pickerWidth, alignment: .trailing)
-                .controlSize(.small)
             }
         }
     }
 
     private var transferSection: some View {
-        section("백업 & 이전") {
-            row {
-                labeled("세이브 내보내기", hint: "다른 Mac으로 옮기거나 보관할 파일")
-                Spacer()
-                Button("내보내기") { exportSave() }.controlSize(.small)
-            }
-            Divider()
-            row {
-                labeled("세이브 가져오기", hint: "지금 세이브는 먼저 자동 백업돼요")
-                Spacer()
-                Button("가져오기") { importSave() }.controlSize(.small)
-            }
-            Divider()
-            row {
+        Section("백업 & 이전") {
+            buttonRow("내보내기", action: exportSave) { labeled("세이브 내보내기", hint: "다른 Mac으로 옮기거나 보관할 파일") }
+            buttonRow("가져오기", action: importSave) { labeled("세이브 가져오기", hint: "지금 세이브는 먼저 자동 백업돼요") }
+            buttonRow("Finder", action: { NSWorkspace.shared.activateFileViewerSelecting([model.saveFolder]) }) {
                 labeled("세이브 폴더", hint: "자동 백업도 여기 있어요")
-                Spacer()
-                Button("Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.saveFolder]) }.controlSize(.small)
             }
         }
     }
 
     private var aboutSection: some View {
-        section("정보 & 지원") {
-            row {
-                Text("버전")
-                Spacer()
-                Text(AppInfo.versionText).foregroundStyle(.secondary).monospacedDigit()
-                // 개발 빌드는 버전이 정해져 있지 않으니 "(최신)"을 붙이지 않는다
-                if AppInfo.bundleVersion != nil, case .found(let latest) = update,
-                   !AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
-                    Text("(최신)").font(.caption).foregroundStyle(.secondary)
-                }
-                if case .checking = update {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Button("업데이트 확인") { checkUpdate() }.controlSize(.small)
+        Section {
+            LabeledContent("버전") {
+                HStack(spacing: 10) {
+                    Text(AppInfo.versionText).foregroundStyle(.secondary).monospacedDigit()
+                    // 개발 빌드는 버전이 정해져 있지 않으니 "(최신)"을 붙이지 않는다
+                    if AppInfo.bundleVersion != nil, case .found(let latest) = update,
+                       !AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
+                        Text("(최신)").font(.caption).foregroundStyle(.secondary)
+                    }
+                    if case .checking = update {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        glassButton("업데이트 확인") { checkUpdate() }
+                    }
                 }
             }
             if case .found(let latest) = update,
                AppInfo.isNewer(latest, than: AppInfo.currentVersion) {
-                Divider()
-                row {
+                HStack {
                     Text("새 버전 v\(latest)이 있어요").font(.callout).foregroundStyle(Palette.warning)
                     Spacer()
                     Link("GitHub에서 받기", destination: AppInfo.releasesURL).font(.subheadline)
                 }
             } else if case .failed = update {
-                Divider()
-                row { Text("확인하지 못했어요. 네트워크를 확인해 주세요.").font(.callout).foregroundStyle(.secondary); Spacer() }
+                Text("확인하지 못했어요. 네트워크를 확인해 주세요.").font(.callout).foregroundStyle(.secondary)
             }
-            Divider()
-            row {
-                Text("패치노트")
-                Spacer()
-                Button("보기") { open("changelog") }.controlSize(.small)
-            }
-            Divider()
-            row {
-                Text("GitHub Repo")
-                Spacer()
-                Button("Dodant/YugiTokenBar") { NSWorkspace.shared.open(AppInfo.repoURL) }.controlSize(.small)
-            }
-            Divider()
-            row {
-                Text("버그 신고하기")
-                Spacer()
-                Button("메일 쓰기") { NSWorkspace.shared.open(AppInfo.bugReportURL) }.controlSize(.small)
-            }
-            Divider()
-            row {
+            buttonRow("보기", action: { open("changelog") }) { Text("패치노트") }
+            buttonRow("Dodant/YugiTokenBar", action: { NSWorkspace.shared.open(AppInfo.repoURL) }) { Text("GitHub Repo") }
+            buttonRow("메일 쓰기", action: { NSWorkspace.shared.open(AppInfo.bugReportURL) }) { Text("버그 신고하기") }
+            buttonRow("License", action: { open("license") }) {
                 labeled("Inspired by [PokeTokenBar](https://github.com/chattymin/PokeTokenBar)", hint: "Usage reading code · © 2026 chattymin · MIT")
-                Spacer()
-                Button("License") { open("license") }.controlSize(.small)
             }
-            Divider()
-            row {
-                labeled("Card data & images", hint: "[Konami Card Database](https://www.db.yugioh-card.com/yugiohdb/) · [YGOPRODeck](https://ygoprodeck.com/) · [Yugipedia](https://yugipedia.com/)")
-                Spacer()
-            }
-            Divider()
-            row {
-                labeled("Unofficial fan project", hint: "Not affiliated with Konami\nCard names, text and images © Konami")
-                Spacer()
-            }
+            labeled("Card data & images", hint: "[Konami Card Database](https://www.db.yugioh-card.com/yugiohdb/) · [YGOPRODeck](https://ygoprodeck.com/) · [Yugipedia](https://yugipedia.com/)")
+            labeled("Unofficial fan project", hint: "Not affiliated with Konami\nCard names, text and images © Konami")
+        } header: { Text("정보 & 지원") } footer: {
+            Text("Made with Love and Claude").font(.caption2).foregroundStyle(.tertiary).frame(maxWidth: .infinity)
         }
     }
 
@@ -374,42 +300,40 @@ struct SettingsView: View {
 
     // MARK: 공용
 
-    private func section<Content: View>(_ title: LocalizedStringKey, beta: Bool = false, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(title).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                if beta {
-                    Text(verbatim: "β")
-                        .font(.caption2.italic())
-                        .foregroundStyle(.tertiary)
-                        .hoverHint("베타 기능")  // 메뉴바 패널이라 .help 대신
-                        .accessibilityLabel("베타 기능")
-                }
+    /// 섹션 제목 (β 표시 선택). 글꼴은 Form 이 입힌다
+    private func sectionHeader(_ title: LocalizedStringKey, beta: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(title)
+            if beta {
+                Text(verbatim: "β")
+                    .font(.caption2.italic())
+                    .foregroundStyle(.tertiary)
+                    .hoverHint("베타 기능")  // 메뉴바 패널이라 .help 대신
+                    .accessibilityLabel("베타 기능")
             }
-            .padding(.leading, 4)
-            VStack(spacing: 0) { content() }
-                .background(.fill.quinary, in: .rect(cornerRadius: 16))  // 팝오버 요약의 카드(panelCard)와 같은 바탕
         }
-    }
-
-    private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        HStack(spacing: 10) { content() }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .frame(minHeight: 36)
     }
 
     /// 이름·설명 + 오른쪽 스위치 한 줄. VoiceOver 는 스위치에서 설명까지 읽는다
     private func toggleRow(_ title: LocalizedStringKey, hint: LocalizedStringKey, detail: LocalizedStringKey? = nil, isOn: Binding<Bool>) -> some View {
-        row {
-            labeled(title, hint: hint, detail: detail)
-            Spacer()
-            Toggle(title, isOn: isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.small)
-                .accessibilityHint(detail ?? hint)
-        }
+        Toggle(isOn: isOn) { labeled(title, hint: hint, detail: detail) }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .accessibilityHint(detail ?? hint)
     }
+
+    /// 이름(·설명) + 오른쪽 작은 유리 버튼 한 줄
+    private func buttonRow<Label: View>(_ button: LocalizedStringKey, action: @escaping () -> Void, @ViewBuilder label: () -> Label) -> some View {
+        LabeledContent(content: { glassButton(button, action: action) }, label: label)
+    }
+
+    /// 팝오버의 다른 유리 버튼과 같은 작은 캡슐. Form 전체에 걸면 고르기 동그라미에도 미칠 수 있어 버튼마다 건다
+    private func glassButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(title, action: action).buttonStyle(.glass).buttonBorderShape(.capsule).controlSize(.small)
+    }
+
+    /// 시대 범위 항목 "GX(융합)까지"
+    private func eraTitle(_ name: String) -> Text { Text("\(name)(\(CardInfo.summonTitle(CardDB.eraSummons[name] ?? "")))까지") }
 
     private func labeled(_ title: LocalizedStringKey, hint: LocalizedStringKey, detail: LocalizedStringKey? = nil) -> some View {
         VStack(alignment: .leading, spacing: 1) {
