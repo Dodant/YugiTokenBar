@@ -412,9 +412,8 @@ enum LocalUsageReader {
         return String(model[..<cut])
     }
 
-    static func parseClaudeCostStateLine(_ line: String) -> ClaudeCostState? {
-        guard let data = line.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+    static func parseClaudeCostStateLine(_ data: Data) -> ClaudeCostState? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               (obj["type"] as? String) == "cost-state",
               let usage = obj["modelUsage"] as? [String: Any] else { return nil }
         var state = ClaudeCostState()
@@ -458,32 +457,75 @@ enum LocalUsageReader {
         return out
     }
 
-    /// Claude 파일 하나를 파싱(파일 내 dedup). 캐시가 파일 단위로 호출.
-    static func parseClaudeFile(_ url: URL, fmt: DateFormatter) -> [Entry] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
-        let session = claudeSessionID(forTranscript: url)
-        var out: [Entry] = []
-        var costState: ClaudeCostState?
-        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
-            // Cumulative ledger: the last record in the file wins.
-            if line.contains("\"cost-state\"") {
-                autoreleasepool {
-                    if let s = parseClaudeCostStateLine(String(line)) { costState = s }
-                }
-                continue
+    struct ClaudeScan: Sendable {
+        var entries: [Entry] = []
+        var costState: ClaudeCostState? = nil
+    }
+
+    /// `data`를 `\n` 바이트로 나눠 빈 줄을 뺀 각 줄의 바이트 구간을 `body`에 준다 (복사 없음, `Data`의 startIndex와 무관).
+    /// 줄바꿈 없는 마지막 줄도 한 줄이다. `lineContains`로 걸러 맞는 줄만 `lineData`로 떠서 JSON 파싱한다.
+    static func forEachLine(in data: Data, _ body: (UnsafeRawBufferPointer) -> Void) {
+        data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+            guard let base = raw.baseAddress else { return }
+            var pos = 0
+            while pos < raw.count {
+                let len = memchr(base + pos, 0x0A, raw.count - pos).map { UnsafeRawPointer($0) - (base + pos) } ?? (raw.count - pos)
+                if len > 0 { body(UnsafeRawBufferPointer(start: base + pos, count: len)) }
+                pos += len + 1
             }
-            guard line.contains("\"usage\""), line.contains("\"assistant\"") else { continue }
-            // 라인마다 autoreleasepool — JSONSerialization 이 만드는 autoreleased NSDictionary/NSString 가
-            // 수천 파일·수만 라인에 걸쳐 배출 없이 누적돼 콜드 파싱 피크를 키우던 것을 즉시 배출.
-            autoreleasepool {
-                if var e = parseClaudeLine(String(line), fmt: fmt) {
-                    e.sessionID = session
-                    out.append(e)
+        }
+    }
+
+    /// 줄 바이트 구간에 `pattern`(UTF-8)이 있는지. memchr로 첫 바이트를 찾고 memcmp로 맞춰 본다.
+    static func lineContains(_ line: UnsafeRawBufferPointer, _ pattern: StaticString) -> Bool {
+        let n = pattern.utf8CodeUnitCount
+        guard let base = line.baseAddress, n <= line.count else { return false }
+        let first = Int32(pattern.utf8Start.pointee)
+        var p = base, left = line.count
+        while left >= n, let hit = memchr(p, first, left - n + 1) {
+            if memcmp(hit, pattern.utf8Start, n) == 0 { return true }
+            let step = UnsafeRawPointer(hit) - p + 1
+            p += step
+            left -= step
+        }
+        return false
+    }
+
+    /// 줄 바이트 구간의 복사본 (JSONSerialization에 넘길 때만 만든다)
+    static func lineData(_ line: UnsafeRawBufferPointer) -> Data {
+        guard let base = line.baseAddress else { return Data() }
+        return Data(bytes: base, count: line.count)
+    }
+
+    /// Claude 세션 줄을 훑어 cost-state(마지막 것)와 usage 기록(assistant 줄)만 JSON 파싱한다 (전체 바이트의 ~12%). dedup은 호출자가 한다.
+    static func scanClaudeLines(_ data: Data, session: String?, fmt: DateFormatter) -> ClaudeScan {
+        var scan = ClaudeScan()
+        forEachLine(in: data) { line in
+            // 원장 줄이 먼저다 (Cumulative ledger: the last record in the file wins). "cost-state" 문자열이 본문에 든
+            // assistant 줄은 원장 파싱이 실패하므로 usage 줄로 다시 본다.
+            if lineContains(line, "\"cost-state\""),
+               let s = autoreleasepool(invoking: { parseClaudeCostStateLine(lineData(line)) }) {
+                scan.costState = s
+            } else if lineContains(line, "\"usage\""), lineContains(line, "\"assistant\"") {
+                // 라인마다 autoreleasepool — JSONSerialization 이 만드는 autoreleased NSDictionary/NSString 가
+                // 수천 파일·수만 라인에 걸쳐 배출 없이 누적돼 콜드 파싱 피크를 키우던 것을 즉시 배출.
+                autoreleasepool {
+                    if var e = parseClaudeLine(lineData(line), fmt: fmt) {
+                        e.sessionID = session
+                        scan.entries.append(e)
+                    }
                 }
             }
         }
-        let deduped = dedupKeepMax(out)
-        guard let costState else { return deduped }
+        return scan
+    }
+
+    /// Claude 파일 하나를 파싱(파일 내 dedup). 캐시가 파일 단위로 호출.
+    static func parseClaudeFile(_ url: URL, fmt: DateFormatter) -> [Entry] {
+        guard let data = try? Data(contentsOf: url) else { return [] }
+        let scan = scanClaudeLines(data, session: claudeSessionID(forTranscript: url), fmt: fmt)
+        let deduped = dedupKeepMax(scan.entries)
+        guard let costState = scan.costState else { return deduped }
         return applyReportedCost(deduped, costState)
     }
 
@@ -515,9 +557,8 @@ enum LocalUsageReader {
         return dedupKeepMax(all)
     }
 
-    static func parseClaudeLine(_ line: String, fmt: DateFormatter) -> Entry? {
-        guard let data = line.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+    static func parseClaudeLine(_ data: Data, fmt: DateFormatter) -> Entry? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               (obj["type"] as? String) == "assistant",
               let msg = obj["message"] as? [String: Any],
               let usage = msg["usage"] as? [String: Any],
@@ -534,13 +575,12 @@ enum LocalUsageReader {
     }
 
     static func parsePiFile(_ url: URL, fmt: DateFormatter) -> [Entry]? {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        guard let data = try? Data(contentsOf: url) else { return nil }
         var out: [Entry] = []
-        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
-            guard line.contains("\"usage\"") else { continue }
+        forEachLine(in: data) { line in
+            guard lineContains(line, "\"usage\"") else { return }
             autoreleasepool {
-                guard let data = String(line).data(using: .utf8),
-                      let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                guard let envelope = try? JSONSerialization.jsonObject(with: lineData(line)) as? [String: Any],
                       let id = envelope["id"] as? String, !id.isEmpty,
                       let type = envelope["type"] as? String else { return }
 
@@ -1390,13 +1430,11 @@ enum LocalUsageReader {
         }
 
         if url.pathExtension == "jsonl" {
-            guard let text = String(data: data, encoding: .utf8) else { return [] }
             var lastTimestamp: Date?
-            for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
+            forEachLine(in: data) { line in
                 autoreleasepool {   // JSONSerialization 의 autoreleased 객체를 라인마다 배출(콜드 파싱 피크 억제)
-                    guard line.contains("\"tokens\"") || line.contains("\"timestamp\"") else { return }
-                    guard let d = String(line).data(using: .utf8),
-                          let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any] else { return }
+                    guard lineContains(line, "\"tokens\"") || lineContains(line, "\"timestamp\"") else { return }
+                    guard let obj = try? JSONSerialization.jsonObject(with: lineData(line)) as? [String: Any] else { return }
                     if let ts = (obj["timestamp"] as? String).flatMap({ ISO8601Parser.date(from: $0) }) {
                         lastTimestamp = ts
                     }
@@ -1461,14 +1499,14 @@ enum LocalUsageReader {
     /// - `output = outputTokens` (reasoning 은 output 에 포함), `cacheWrite = 0`
     ///   (Grok 은 캐시 쓰기를 prompt 토큰에 접어 넣는다).
     static func parseGrokFile(_ url: URL, fmt: DateFormatter) -> [Entry] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        guard let data = try? Data(contentsOf: url) else { return [] }
         var out: [Entry] = []
-        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
+        forEachLine(in: data) { line in
             // updates.jsonl 은 스트리밍 청크까지 전부 라인으로 남는다(세션당 수만 라인) →
-            // JSON 파싱 전에 문자열로 걸러낸다.
-            guard line.contains("turn_completed") else { continue }
+            // JSON 파싱 전에 바이트로 걸러낸다.
+            guard lineContains(line, "turn_completed") else { return }
             autoreleasepool {   // JSONSerialization 의 autoreleased 객체를 라인마다 배출
-                if let e = parseGrokLine(String(line), fmt: fmt) { out.append(e) }
+                if let e = parseGrokLine(lineData(line), fmt: fmt) { out.append(e) }
             }
         }
         return dedupKeepMax(out)
@@ -1519,12 +1557,11 @@ enum LocalUsageReader {
         return kind.hasPrefix("subagent")
     }
 
-    private static func parseGrokLine(_ line: String, fmt: DateFormatter) -> Entry? {
+    private static func parseGrokLine(_ data: Data, fmt: DateFormatter) -> Entry? {
         // 디스크 라인은 봉투 → 알림 → 업데이트 세 겹이다:
         //   {timestamp:<초>, method:"_x.ai/session/update", params:{sessionId, update:{sessionUpdate,…}, _meta}}
         // `method` 없는 구형 라인은 알림 그 자체(봉투 없음)라 한 겹으로 받는다.
-        guard let data = line.data(using: .utf8),
-              let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        guard let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         let notification = (envelope["params"] as? [String: Any]) ?? envelope
         guard let update = notification["update"] as? [String: Any],
               (update["sessionUpdate"] as? String) == "turn_completed",
@@ -1649,14 +1686,14 @@ enum LocalUsageReader {
     /// own files, so the recursive scan intentionally includes them (Grok's fold-in exclusion
     /// would double-count here).
     static func parseOmpFile(_ url: URL, fmt: DateFormatter) -> [Entry]? {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        guard let data = try? Data(contentsOf: url) else { return nil }
         let file = url.lastPathComponent
         var out: [Entry] = []
-        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
-            // user/toolResult/custom lines carry no usage → filter by string before JSON parsing.
-            guard line.contains("\"usage\"") else { continue }
+        forEachLine(in: data) { line in
+            // user/toolResult/custom lines carry no usage → filter by bytes before JSON parsing.
+            guard lineContains(line, "\"usage\"") else { return }
             autoreleasepool {   // drain JSONSerialization's autoreleased objects per line
-                if let e = parseOmpLine(String(line), file: file, fmt: fmt) { out.append(e) }
+                if let e = parseOmpLine(lineData(line), file: file, fmt: fmt) { out.append(e) }
             }
         }
         return dedupKeepMax(out)
@@ -1683,9 +1720,8 @@ enum LocalUsageReader {
         return dedupKeepMax(all)
     }
 
-    private static func parseOmpLine(_ line: String, file: String, fmt: DateFormatter) -> Entry? {
-        guard let data = line.data(using: .utf8),
-              let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+    private static func parseOmpLine(_ data: Data, file: String, fmt: DateFormatter) -> Entry? {
+        guard let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let type = envelope["type"] as? String else { return nil }
         let usage: [String: Any]
         let date: Date?

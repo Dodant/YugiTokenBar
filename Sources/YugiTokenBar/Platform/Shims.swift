@@ -1,7 +1,7 @@
 import Foundation
 
 #if !canImport(ObjectiveC)
-/// Darwin 의 autoreleasepool 자리. Linux 에는 오토릴리스 풀이 없어 본문만 실행한다 (Usage/ 12곳·TodayUsageReader 1곳)
+/// Darwin 의 autoreleasepool 자리. Linux 에는 오토릴리스 풀이 없어 본문만 실행한다 (Usage/ 12곳)
 @discardableResult
 func autoreleasepool<Result>(invoking body: () throws -> Result) rethrows -> Result { try body() }
 #endif

@@ -10,6 +10,14 @@ struct TokenSum: Codable, Equatable, Sendable {
     init(_ b: LocalUsageReader.Bucket) {
         input = b.input; output = b.output; cacheWrite = b.cacheWrite; cacheRead = b.cacheRead; cost = b.cost
     }
+    /// 필드별로 큰 쪽. 저장된 합계와 다시 센 합계를 합칠 때 어느 쪽도 잃지 않는다
+    static func max(_ a: TokenSum, _ b: TokenSum) -> TokenSum {
+        var m = TokenSum()
+        m.input = Swift.max(a.input, b.input); m.output = Swift.max(a.output, b.output)
+        m.cacheWrite = Swift.max(a.cacheWrite, b.cacheWrite); m.cacheRead = Swift.max(a.cacheRead, b.cacheRead)
+        m.cost = Swift.max(a.cost, b.cost)
+        return m
+    }
 }
 
 /// 날짜(`localDay`, yyyy-MM-dd) → provider rawValue → 그날 합계. 사용량 화면의 30일 막대·이번 주·이번 달.
@@ -136,11 +144,6 @@ actor TodayUsageReader {
     }
 
     /// 지난 날짜(`pastDays`)용: Claude·Cursor 는 받은 것, 나머지는 `otherLogs` 로 읽은 provider별 기록
-    private func others(since start: Date, claude: [LocalUsageReader.Entry], cursor: [LocalUsageReader.Entry])
-        -> [(Provider, [LocalUsageReader.Entry])] {
-        [(.claude, claude)] + otherLogs(start) + [(.cursor, cursor)]
-    }
-
     /// Codex·Gemini·Grok·Pi·oh-my-pi 로그를 이 Mac 의 기본 위치에서 바로 읽는다
     static func localOtherLogs(since start: Date) -> [(Provider, [LocalUsageReader.Entry])] {
         [
@@ -154,6 +157,10 @@ actor TodayUsageReader {
 
     /// 사용량 화면이 읽는 지난 날짜 수. 31일이면 오늘이 31일이어도 이번 달 전체가 들어간다.
     static let historyDays = 31
+    /// `historyFile` 형식 버전. 파서가 더 많은 기록을 읽게 되면 올린다 — 저장된 날도 로그에서 다시 세되, 로그가 사라진 날의 합계는 둔다.
+    /// v1: 바이트 줄 반복기(`LocalUsageReader.forEachLine`)가 String 파서가 비워 두던 파일을 읽는다 (버전 없는 옛 파일은 0으로 읽는다).
+    static let historyVersion = 1
+    private struct History: Codable { var version: Int; var days: UsageByDay }
     /// 오늘보다 앞 날짜는 다시 바뀌지 않으므로 날이 바뀔 때까지 한 번 읽은 것을 쓴다
     private var past: (today: String, days: UsageByDay)?
 
@@ -161,27 +168,58 @@ actor TodayUsageReader {
     /// 지난 날은 바뀌지 않으므로 `historyFile`에 두고, 파일에 없는 날만 로그에서 읽는다
     /// (31일 치 Claude 로그는 수백 MB라 처음 한 번은 수십 초 걸린다. 그 뒤로는 하루에 하루치만).
     /// Claude 는 파일 캐시를 쓰지 않고 따로 읽는다(캐시는 오늘 읽는 범위만 들고 있어야 매분 읽기가 가볍다).
+    /// 파서가 바뀐 provider 만 저장된 날을 다시 센다 (Codex 는 그대로, Cursor 는 API 값과 로컬 DB 값이 섞일 수 있다)
+    private static let recountedProviders = Set([Provider.claude, .gemini, .grok, .pi, .omp].map(\.rawValue))
+    /// 진행 중인 재계산. 사용량 화면 두 곳이 같이 열려도 한 번만 돈다
+    private var pastTask: Task<UsageByDay, Never>?
+
     func pastDays(now: Date = Date()) async -> UsageByDay {
-        let fmt = LocalUsageReader.localDayFormatter(), cal = Calendar.current
-        let today = fmt.string(from: now)
+        let today = LocalUsageReader.localDayFormatter().string(from: now)
         if let past, past.today == today { return past.days }
+        if let pastTask { return await pastTask.value }
+        let task = Task { await self.loadPastDays(now: now, today: today) }
+        pastTask = task
+        let days = await task.value
+        pastTask = nil
+        return days
+    }
+
+    private func loadPastDays(now: Date, today: String) async -> UsageByDay {
+        let fmt = LocalUsageReader.localDayFormatter(), cal = Calendar.current
         let wanted = (1...Self.historyDays).compactMap {
             cal.date(byAdding: .day, value: -$0, to: cal.startOfDay(for: now)).map(fmt.string)
         }
-        let saved = historyFile.flatMap { try? JSONDecoder().decode(UsageByDay.self, from: Data(contentsOf: $0)) } ?? [:]
-        var days = saved.filter { wanted.contains($0.key) }
+        let saved: History = historyFile.flatMap { url -> History? in
+            guard let data = try? Data(contentsOf: url) else { return nil }
+            return (try? JSONDecoder().decode(History.self, from: data))
+                ?? (try? JSONDecoder().decode(UsageByDay.self, from: data)).map { History(version: 0, days: $0) }
+        } ?? History(version: Self.historyVersion, days: [:])
+        var days = saved.days.filter { wanted.contains($0.key) }
+        // 파일에 없는 날은 로그에서 읽는다. 파서가 넓어졌으면(버전 차이) 저장된 날도 다시 세어 필드별로 큰 값만 받는다
+        let stale = saved.version == Self.historyVersion ? Set<String>() : Set(days.keys)
         let missing = Set(wanted.filter { days[$0] == nil })
-        if let oldest = missing.min(), let start = fmt.date(from: oldest) {
-            let claude = LocalUsageReader.claudeEntries(modifiedSince: start, roots: claudeRoots ?? LocalUsageReader.claudeProjectRoots)
+        let recount = missing.union(stale)
+        if let oldest = recount.min(), let start = fmt.date(from: oldest) {
+            // 로그 읽기는 actor 밖에서 돌려 그동안 매분 `read` 가 막히지 않게 한다
+            let roots = claudeRoots ?? LocalUsageReader.claudeProjectRoots, otherLogs = self.otherLogs
+            let logs = Task.detached(priority: .utility) {
+                [(Provider.claude, LocalUsageReader.claudeEntries(modifiedSince: start, roots: roots))] + otherLogs(start)
+            }
             let cursor = await cursorEntries(modifiedSince: start, now: now)
             var found: [String: [String: LocalUsageReader.Bucket]] = [:]
-            for (provider, entries) in others(since: start, claude: claude, cursor: cursor) {
-                for e in entries where missing.contains(e.localDay) { found[e.localDay, default: [:]][provider.rawValue, default: .init()].add(e) }
+            for (provider, entries) in await logs.value + [(.cursor, cursor)] {
+                for e in entries where recount.contains(e.localDay) { found[e.localDay, default: [:]][provider.rawValue, default: .init()].add(e) }
             }
             for day in missing { days[day] = found[day]?.mapValues(TokenSum.init) ?? [:] }
+            // 저장된 날은 파서가 바뀐 provider 만 필드별로 큰 값으로 합친다 (로그가 사라진 날의 합계는 그대로)
+            for day in stale {
+                for (provider, bucket) in found[day] ?? [:] where Self.recountedProviders.contains(provider) {
+                    days[day, default: [:]][provider] = TokenSum.max(days[day]?[provider] ?? TokenSum(), TokenSum(bucket))
+                }
+            }
             if let historyFile {
                 try? FileManager.default.createDirectory(at: historyFile.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try? JSONEncoder().encode(days).write(to: historyFile, options: .atomic)
+                try? JSONEncoder().encode(History(version: Self.historyVersion, days: days)).write(to: historyFile, options: .atomic)
             }
         }
         past = (today, days)
@@ -265,7 +303,7 @@ actor TodayUsageReader {
         return LocalUsageReader.dedupKeepMax(cold + hot)
     }
 
-    /// `tail.offset` 뒤에 붙은 완성된 줄만 `LocalUsageReader.parseClaudeFile`과 같은 규칙으로 읽어 더한다.
+    /// `tail.offset` 뒤에 붙은 완성된 줄만 `LocalUsageReader.parseClaudeFile`과 같은 스캐너(`scanClaudeLines`)로 읽어 더한다.
     /// 파일이 줄었으면(새로 씀) 처음부터. 줄바꿈이 없는 마지막 줄은 아직 쓰는 중이라 다음에 읽는다.
     static func readTail(_ url: URL, into tail: inout ClaudeTail) {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return }
@@ -275,19 +313,9 @@ actor TodayUsageReader {
         guard (try? handle.seek(toOffset: UInt64(tail.offset))) != nil, let data = try? handle.readToEnd(),
               let cut = data.lastIndex(of: UInt8(ascii: "\n")) else { return }
         tail.offset += cut - data.startIndex + 1
-        let fmt = LocalUsageReader.localDayFormatter(), session = LocalUsageReader.claudeSessionID(forTranscript: url)
-        var new: [LocalUsageReader.Entry] = []
-        for line in String(decoding: data[..<cut], as: UTF8.self).split(separator: "\n") {
-            autoreleasepool {
-                if line.contains("\"cost-state\"") {
-                    if let s = LocalUsageReader.parseClaudeCostStateLine(String(line)) { tail.costState = s }
-                } else if line.contains("\"usage\""), line.contains("\"assistant\""),
-                          var e = LocalUsageReader.parseClaudeLine(String(line), fmt: fmt) {
-                    e.sessionID = session
-                    new.append(e)
-                }
-            }
-        }
-        if !new.isEmpty { tail.entries = LocalUsageReader.dedupKeepMax(tail.entries + new) }
+        let scan = LocalUsageReader.scanClaudeLines(data[..<cut], session: LocalUsageReader.claudeSessionID(forTranscript: url),
+                                                    fmt: LocalUsageReader.localDayFormatter())
+        if let s = scan.costState { tail.costState = s }
+        if !scan.entries.isEmpty { tail.entries = LocalUsageReader.dedupKeepMax(tail.entries + scan.entries) }
     }
 }

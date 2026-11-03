@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """UI 문구 키를 컴파일러로 뽑아(swiftc -emit-localized-strings → .stringsdata) Resources/{en,ja}.lproj/Localizable.strings 와 맞춘다.
-키는 코드의 한국어 문장이고 보간은 컴파일러가 실제 타입으로 바꾼 형식(%lld·%@)이다. Usage/(PokeTokenBar 복사본)는 뺀다.
+키는 코드의 한국어 문장이고 보간은 컴파일러가 실제 타입으로 바꾼 형식(%lld·%@)이다. Usage/(PokeTokenBar에서 가져온 사용량 코드, UI 문구 없음)는 뺀다.
 
 사용: python3 tools/sync-strings.py                 # 없는 키를 번역 안 된 채(값 = 키) 덧붙인다
       python3 tools/sync-strings.py --check         # 없는 키·번역 안 된 키·안 쓰는 키·키에 없는 한글 리터럴,
