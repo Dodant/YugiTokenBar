@@ -262,13 +262,13 @@ import Testing
     }
 
     @Test func scanSkipsUserLineMentioningAssistant() {
-        let text = Self.usageLine(id: "c", type: "user", extra: #","note":"the \"assistant\" said"#) + "\n"
+        let text = Self.usageLine(id: "c", type: "user", extra: #","role":"assistant""#) + "\n"
         #expect(LocalUsageReader.scanClaudeLines(Data(text.utf8), session: nil, fmt: Self.fmt).entries.isEmpty)
     }
 
     @Test func scanTreatsCostStateBeforeUsage() {
         // A cost-state record that also mentions "usage" and "assistant" is a ledger line, never an entry.
-        let text = #"{"type":"cost-state","note":"\"usage\" \"assistant\"","modelUsage":{"m":{"costUSD":0.5}}}"# + "\n"
+        let text = #"{"type":"cost-state","usage":{},"assistant":1,"modelUsage":{"m":{"costUSD":0.5}}}"# + "\n"
         let scan = LocalUsageReader.scanClaudeLines(Data(text.utf8), session: nil, fmt: Self.fmt)
         #expect(scan.entries.isEmpty)
         #expect(scan.costState != nil)
