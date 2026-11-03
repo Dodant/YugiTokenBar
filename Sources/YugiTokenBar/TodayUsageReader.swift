@@ -265,7 +265,7 @@ actor TodayUsageReader {
         return LocalUsageReader.dedupKeepMax(cold + hot)
     }
 
-    /// `tail.offset` 뒤에 붙은 완성된 줄만 `LocalUsageReader.parseClaudeFile`과 같은 규칙으로 읽어 더한다.
+    /// `tail.offset` 뒤에 붙은 완성된 줄만 `LocalUsageReader.parseClaudeFile`과 같은 스캐너(`scanClaudeLines`)로 읽어 더한다.
     /// 파일이 줄었으면(새로 씀) 처음부터. 줄바꿈이 없는 마지막 줄은 아직 쓰는 중이라 다음에 읽는다.
     static func readTail(_ url: URL, into tail: inout ClaudeTail) {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return }
@@ -275,19 +275,9 @@ actor TodayUsageReader {
         guard (try? handle.seek(toOffset: UInt64(tail.offset))) != nil, let data = try? handle.readToEnd(),
               let cut = data.lastIndex(of: UInt8(ascii: "\n")) else { return }
         tail.offset += cut - data.startIndex + 1
-        let fmt = LocalUsageReader.localDayFormatter(), session = LocalUsageReader.claudeSessionID(forTranscript: url)
-        var new: [LocalUsageReader.Entry] = []
-        for line in String(decoding: data[..<cut], as: UTF8.self).split(separator: "\n") {
-            autoreleasepool {
-                if line.contains("\"cost-state\"") {
-                    if let s = LocalUsageReader.parseClaudeCostStateLine(String(line)) { tail.costState = s }
-                } else if line.contains("\"usage\""), line.contains("\"assistant\""),
-                          var e = LocalUsageReader.parseClaudeLine(String(line), fmt: fmt) {
-                    e.sessionID = session
-                    new.append(e)
-                }
-            }
-        }
-        if !new.isEmpty { tail.entries = LocalUsageReader.dedupKeepMax(tail.entries + new) }
+        let scan = LocalUsageReader.scanClaudeLines(data[..<cut], session: LocalUsageReader.claudeSessionID(forTranscript: url),
+                                                    fmt: LocalUsageReader.localDayFormatter())
+        if let s = scan.costState { tail.costState = s }
+        if !scan.entries.isEmpty { tail.entries = LocalUsageReader.dedupKeepMax(tail.entries + scan.entries) }
     }
 }

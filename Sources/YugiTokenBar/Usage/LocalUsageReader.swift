@@ -516,30 +516,10 @@ enum LocalUsageReader {
 
     /// Claude 파일 하나를 파싱(파일 내 dedup). 캐시가 파일 단위로 호출.
     static func parseClaudeFile(_ url: URL, fmt: DateFormatter) -> [Entry] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
-        let session = claudeSessionID(forTranscript: url)
-        var out: [Entry] = []
-        var costState: ClaudeCostState?
-        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
-            // Cumulative ledger: the last record in the file wins.
-            if line.contains("\"cost-state\"") {
-                autoreleasepool {
-                    if let s = parseClaudeCostStateLine(String(line)) { costState = s }
-                }
-                continue
-            }
-            guard line.contains("\"usage\""), line.contains("\"assistant\"") else { continue }
-            // 라인마다 autoreleasepool — JSONSerialization 이 만드는 autoreleased NSDictionary/NSString 가
-            // 수천 파일·수만 라인에 걸쳐 배출 없이 누적돼 콜드 파싱 피크를 키우던 것을 즉시 배출.
-            autoreleasepool {
-                if var e = parseClaudeLine(String(line), fmt: fmt) {
-                    e.sessionID = session
-                    out.append(e)
-                }
-            }
-        }
-        let deduped = dedupKeepMax(out)
-        guard let costState else { return deduped }
+        guard let data = try? Data(contentsOf: url) else { return [] }
+        let scan = scanClaudeLines(data, session: claudeSessionID(forTranscript: url), fmt: fmt)
+        let deduped = dedupKeepMax(scan.entries)
+        guard let costState = scan.costState else { return deduped }
         return applyReportedCost(deduped, costState)
     }
 
