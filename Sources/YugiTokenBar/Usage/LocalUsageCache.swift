@@ -38,13 +38,14 @@ actor LocalUsageCache {
         var grokParserVersion: Int
         var piParserVersion: Int
         var ompParserVersion: Int
+        var geminiParserVersion: Int
 
         init(claude: [String: Blob], codex: [String: CodexBlob],
              codexSessionIDs: [String: CodexSessionProbe], gemini: [String: Blob],
              grok: [String: Blob], pi: [String: Blob], omp: [String: Blob], claudeParserVersion: Int,
              codexParserVersion: Int,
              codexSessionIndexVersion: Int, grokParserVersion: Int, piParserVersion: Int,
-             ompParserVersion: Int) {
+             ompParserVersion: Int, geminiParserVersion: Int) {
             self.claude = claude
             self.codex = codex
             self.codexSessionIDs = codexSessionIDs
@@ -58,6 +59,7 @@ actor LocalUsageCache {
             self.grokParserVersion = grokParserVersion
             self.piParserVersion = piParserVersion
             self.ompParserVersion = ompParserVersion
+            self.geminiParserVersion = geminiParserVersion
         }
 
         // Backward compat: older snapshots without the gemini/grok/omp/codexSessionIDs keys still load (no cold-start recurrence).
@@ -78,13 +80,15 @@ actor LocalUsageCache {
             grokParserVersion = try c.decodeIfPresent(Int.self, forKey: .grokParserVersion) ?? 0
             piParserVersion = try c.decodeIfPresent(Int.self, forKey: .piParserVersion) ?? 0
             ompParserVersion = try c.decodeIfPresent(Int.self, forKey: .ompParserVersion) ?? 0
+            geminiParserVersion = try c.decodeIfPresent(Int.self, forKey: .geminiParserVersion) ?? 0
         }
     }
 
     /// Claude entry→cost mapping. Bump when the assistant-line buckets or the `cost-state`
     /// attribution change, so blobs parsed by the previous rule are not trusted.
     /// v1: adopt the source-reported `cost-state` ledger over price-table estimates.
-    private static let claudeParserVersion = 1
+    /// v2: 바이트 스캐너가 String 파서가 통째로 버리던 파일(잘못된 UTF-8·CRLF)도 읽으므로 v1의 빈 blob은 믿지 않는다.
+    private static let claudeParserVersion = 2
     /// fork replay 및 동일 상태 재기록 처리 변경 시 Codex blob만 재파싱한다.
     /// v6: retain total-only pricing uncertainty; v5 added total-only token accounting (#278).
     private static let codexParserVersion = 6
@@ -94,11 +98,17 @@ actor LocalUsageCache {
     /// v2: 읽기 실패를 "세션 id 없음"으로 저장하던 v1 항목을 버린다(구분이 불가능해 신뢰할 수 없음).
     private static let codexSessionIndexVersion = 2
     /// Grok 토큰 매핑(캐시분 분리·비용 신뢰 조건) 변경 시 Grok blob만 재파싱한다.
-    private static let grokParserVersion = 2
+    /// v3: 바이트 줄 반복기(`forEachLine`)가 String 파서가 비워 두던 파일(잘못된 UTF-8·CRLF)도 읽는다.
+    private static let grokParserVersion = 3
     /// Pi usage mapping/dedup semantics. Bump when the direct usage paths or bucket mapping changes.
-    private static let piParserVersion = 3
+    /// v4: 바이트 줄 반복기(`forEachLine`), 위 Grok v3과 같은 이유.
+    private static let piParserVersion = 4
     /// Omp usage mapping/dedup semantics. Bump when the direct usage paths, bridge exclusion, or bucket mapping changes.
-    private static let ompParserVersion = 2
+    /// v3: 바이트 줄 반복기(`forEachLine`), 위 Grok v3과 같은 이유.
+    private static let ompParserVersion = 3
+    /// Gemini blob 재파싱 기준. 버전 없이 저장된 옛 스냅샷은 0으로 읽혀 한 번 다시 파싱한다.
+    /// v1: 바이트 줄 반복기(`forEachLine`), 위 Grok v3과 같은 이유.
+    private static let geminiParserVersion = 1
 
     private var claudeCache: [String: Blob] = [:]
     private var codexCache: [String: CodexBlob] = [:]
@@ -471,6 +481,10 @@ actor LocalUsageCache {
             ompCache = [:]
             dirty = true
         }
+        if snap.geminiParserVersion != Self.geminiParserVersion {
+            geminiCache = [:]
+            dirty = true
+        }
     }
 
     /// 어떤 조회 윈도우(오늘/주/월)에도 들지 않는 오래된 파일 blob 을 제거해 캐시 무한 증가를 막는다.
@@ -505,7 +519,8 @@ actor LocalUsageCache {
             codexSessionIndexVersion: Self.codexSessionIndexVersion,
             grokParserVersion: Self.grokParserVersion,
             piParserVersion: Self.piParserVersion,
-            ompParserVersion: Self.ompParserVersion)
+            ompParserVersion: Self.ompParserVersion,
+            geminiParserVersion: Self.geminiParserVersion)
         if let data = try? JSONEncoder().encode(snap) {
             // JSON 은 zlib 로 크게 압축됨(수 MB → 수백 KB). 실패 시 평문 저장(로드가 양쪽 다 처리).
             #if canImport(Darwin)

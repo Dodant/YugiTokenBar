@@ -215,6 +215,53 @@ import Testing
         #expect(second.count == TodayUsageReader.historyDays)
     }
 
+    /// 파서가 더 읽게 되어 `historyVersion`이 오르면 저장된 날도 로그에서 다시 세되, 로그가 사라진 날의 합계는 그대로 둔다
+    @Test func pastDaysRecountSavedDaysWhenHistoryVersionChanges() async throws {
+        let root = tempDir(), project = root.appendingPathComponent("proj")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let fmt = LocalUsageReader.localDayFormatter()
+        let twoDaysAgo = Date().addingTimeInterval(-2 * 86_400), threeDaysAgo = Date().addingTimeInterval(-3 * 86_400)
+        let day2 = fmt.string(from: twoDaysAgo), day3 = fmt.string(from: threeDaysAgo)
+        let line = #"{"type":"assistant","timestamp":"\#(ISO8601DateFormatter().string(from: twoDaysAgo))","requestId":"r1","message":{"id":"m1","model":"claude-opus-5-5","usage":{"input_tokens":70,"output_tokens":5}}}"#
+        try (line + "\n").write(to: project.appendingPathComponent("s.jsonl"), atomically: true, encoding: .utf8)
+        // 버전 없는 옛 파일: 로그가 있는 day2 는 빈 결과로, 로그가 없는 day3 는 40 으로 저장돼 있다
+        var kept = TokenSum(); kept.input = 40
+        let file = tempDir().appendingPathComponent("days.json")
+        try JSONEncoder().encode([day2: [:], day3: ["claude_code": kept]] as UsageByDay).write(to: file)
+        let days = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil, otherLogs: { _ in [] }).pastDays()
+        #expect(days[day2]?["claude_code"]?.total == 75)
+        #expect(days[day3]?["claude_code"]?.total == 40)
+    }
+
+    /// 재계산은 필드별로 큰 값만 받고(로그가 일부만 남으면 저장값·비용이 남는다) 파서가 바뀌지 않은 provider 는 건드리지 않으며,
+    /// 파일은 현재 버전으로 다시 써져 다음 리더는 재계산하지 않는다
+    @Test func pastDaysKeepsLargerSavedFieldsAndStampsVersion() async throws {
+        let root = tempDir(), project = root.appendingPathComponent("proj")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let fmt = LocalUsageReader.localDayFormatter()
+        let t = Date().addingTimeInterval(-2 * 86_400), day = fmt.string(from: t)
+        let line = #"{"type":"assistant","timestamp":"\#(ISO8601DateFormatter().string(from: t))","requestId":"r1","message":{"id":"m1","model":"claude-opus-5-5","usage":{"input_tokens":70,"output_tokens":5}}}"#
+        let log = project.appendingPathComponent("s.jsonl")
+        try (line + "\n").write(to: log, atomically: true, encoding: .utf8)
+        var saved = TokenSum(); saved.input = 500; saved.cost = 2.0
+        var codex = TokenSum(); codex.input = 10
+        let file = tempDir().appendingPathComponent("days.json")
+        try JSONEncoder().encode([day: ["claude_code": saved, "codex": codex]] as UsageByDay).write(to: file)
+        let codexLog: @Sendable (Date) -> [(Provider, [LocalUsageReader.Entry])] = { _ in
+            [(.codex, [LocalUsageReader.Entry(id: "c1", date: t, localDay: day, model: "gpt", input: 999, output: 0, cacheWrite: 0, cacheRead: 0)])]
+        }
+        let days = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil, otherLogs: codexLog).pastDays()
+        #expect(days[day]?["claude_code"]?.input == 500)
+        #expect(days[day]?["claude_code"]?.output == 5)
+        #expect(days[day]?["claude_code"]?.cost == 2.0)
+        #expect(days[day]?["codex"]?.input == 10)
+        let written = try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+        #expect(written?["version"] as? Int == TodayUsageReader.historyVersion)
+        try FileManager.default.removeItem(at: log)
+        let again = await TodayUsageReader(claudeRoots: [root], historyFile: file, liveCursor: nil, otherLogs: codexLog).pastDays()
+        #expect(again[day]?["claude_code"]?.input == 500 && again[day]?["claude_code"]?.output == 5)
+    }
+
     /// 개발 실행(테스트 포함)은 지난 날짜 파일을 실앱의 캐시 폴더가 아니라 세이브 폴더에 둔다
     @Test func devHistoryFileStaysInStateDir() {
         let file = TodayUsageReader.defaultHistoryFile
@@ -280,5 +327,26 @@ import Testing
         data.append(contentsOf: [0xFF, 0xFE, 0x0A])
         data.append(Data(Self.usageLine(id: "e").utf8))
         #expect(LocalUsageReader.scanClaudeLines(data, session: nil, fmt: Self.fmt).entries.map(\.id) == ["d|r-d", "e|r-e"])
+    }
+
+    @Test func scanHandlesSliceWithNonZeroStartIndex() {
+        // readTail passes `data[..<cut]`; the scanner must not assume the slice starts at 0.
+        let junk = Data("XXXXXXXX\n".utf8)
+        let slice = (junk + Data((Self.usageLine(id: "f") + "\n").utf8))[junk.count...]
+        #expect(slice.startIndex != 0)
+        #expect(LocalUsageReader.scanClaudeLines(slice, session: nil, fmt: Self.fmt).entries.map(\.id) == ["f|r-f"])
+    }
+
+    @Test func scanCountsAssistantLineMentioningCostState() {
+        // tool_use 입력에 "cost-state" 문자열이 그대로 들어간 assistant 줄은 원장이 아니라 usage 줄이다
+        let text = Self.usageLine(id: "i", extra: #","content":[{"type":"tool_use","input":{"pattern":"cost-state"}}]"#) + "\n"
+        let scan = LocalUsageReader.scanClaudeLines(Data(text.utf8), session: nil, fmt: Self.fmt)
+        #expect(scan.entries.map(\.id) == ["i|r-i"])
+        #expect(scan.costState == nil)
+    }
+
+    @Test func scanReadsCRLFLines() {
+        let text = Self.usageLine(id: "g") + "\r\n" + Self.usageLine(id: "h") + "\r\n"
+        #expect(LocalUsageReader.scanClaudeLines(Data(text.utf8), session: nil, fmt: Self.fmt).entries.map(\.id) == ["g|r-g", "h|r-h"])
     }
 }

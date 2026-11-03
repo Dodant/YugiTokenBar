@@ -4,6 +4,9 @@
 **⚡ Performance**
 - Reading Claude Code session history for the first time, or again after restarting the app, is now much faster.
 
+**🐛 Bug fixes**
+- Session records that were left out of the totals because of unusual line endings or corrupted characters are now counted.
+
 ## 0.6.8 — 2026-11-02
 **⚖️ Balance**
 - A booster pack now holds 8 cards instead of 5.

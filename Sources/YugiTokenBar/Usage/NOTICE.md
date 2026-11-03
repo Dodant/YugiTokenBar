@@ -31,6 +31,13 @@ LocalUsageCache는 파일별 사용량 캐시다.
 18. `LocalUsageReader.swift`·`TodayUsageReader.swift`: Claude 세션 파일을 `String`으로 바꾸지 않고 `scanClaudeLines`가 바이트로 줄을 나눠 `"cost-state"`·`"usage"`·`"assistant"`가 있는 줄만 JSON 파싱한다.
   콜드 파싱(`parseClaudeFile`)과 붙은 줄 읽기(`readTail`)가 같은 함수를 쓴다.
   잘못된 UTF-8이 한 줄에 있어도 파일 전체가 아니라 그 줄만 건너뛴다.
+  `\r\n`으로 끝나는 줄도 줄마다 읽는다(옛 파서는 `\r\n`을 한 글자로 봐 파일 전체를 한 줄로 다뤘다).
+  Pi·Gemini·Grok·OMP 파일 파서도 같은 줄 반복기 `forEachLine`·`lineContains`를 쓴다(잘못된 UTF-8·`\r\n` 처리도 같다).
+  본문에 `"cost-state"` 문자열이 든 assistant 줄은 원장 파싱이 실패하면 usage 줄로 다시 본다(옛 파서는 버렸다).
+19. `LocalUsageCache.swift`: Claude·Grok·Pi·OMP 파서 버전을 올리고 Gemini에도 파서 버전을 두어, 옛 파서가 빈 결과로 저장해 둔 blob을 업데이트 뒤 한 번 다시 파싱한다.
+20. `TodayUsageReader.swift`(`Usage/` 밖): 날짜별 합계 파일에 `historyVersion`을 두어, 파서가 넓어지면 저장된 날을 로그에서 다시 세어 파서가 바뀐 provider(Claude·Gemini·Grok·Pi·OMP)만 필드별로 큰 값으로 합친다(로그가 사라진 날의 합계는 그대로).
+  재계산은 한 번에 하나만 돌고 로그 읽기는 actor 밖에서 한다.
+  한계: 시간대를 바꾼 뒤에는 자정 근처 기록이 두 날에 들 수 있고, 로그 루트를 잠시 못 읽은 날은 버전만 올라 다시 세지 않으며, 옛 빌드는 이 파일을 읽지 못해 로그가 사라진 날의 합계를 잃는다(Sparkle은 내리지 않는다).
 
 ## MIT License
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated

@@ -58,4 +58,61 @@ import Testing
         #expect(await LocalUsageCache(claudeRoots: [root], fileURL: file).claudeEntries(modifiedSince: since).map(\.total) == [100])
         #expect(await LocalUsageCache(claudeRoots: [root]).claudeEntries(modifiedSince: since).map(\.total) == [200])
     }
+
+    /// 파서 의미가 바뀌어 `claudeParserVersion`이 오르면, 예전 버전이 저장한 blob(여기서는 "빈 파일")은 믿지 않고 다시 파싱한다
+    @Test func usageCacheDropsClaudeBlobsFromOlderParserVersion() async throws {
+        let root = tempDir(), project = root.appendingPathComponent("proj")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let ts = ISO8601DateFormatter().string(from: Date())
+        let log = project.appendingPathComponent("s.jsonl")
+        try (#"{"type":"assistant","timestamp":"\#(ts)","requestId":"r1","message":{"id":"m1","model":"claude-opus-5-5","usage":{"input_tokens":100,"output_tokens":0}}}"# + "\n")
+            .write(to: log, atomically: true, encoding: .utf8)
+        let mtime = Date(timeIntervalSinceReferenceDate: Date().timeIntervalSinceReferenceDate.rounded(.down) - 10)
+        try FileManager.default.setAttributes([.modificationDate: mtime], ofItemAtPath: log.path)
+        let file = tempDir().appendingPathComponent("usage-cache.json"), since = Date().addingTimeInterval(-3600)
+        #expect(await LocalUsageCache(claudeRoots: [root], fileURL: file).claudeEntries(modifiedSince: since).map(\.total) == [100])
+
+        // 저장된 스냅샷을 "버전 1 파서가 이 파일을 빈 결과로 캐시한" 모양으로 고쳐 쓴다 (키·수정 시각은 실제 저장값 그대로)
+        let raw = try Data(contentsOf: file)
+        #if canImport(Darwin)
+        let json = (try? (raw as NSData).decompressed(using: .zlib) as Data) ?? raw
+        #else
+        let json = raw
+        #endif
+        var snap = try #require(JSONSerialization.jsonObject(with: json) as? [String: Any])
+        var claude = try #require(snap["claude"] as? [String: Any])
+        #expect(claude.count == 1)
+        for (key, blob) in claude { var blob = blob as! [String: Any]; blob["entries"] = []; claude[key] = blob }
+        snap["claude"] = claude
+        snap["claudeParserVersion"] = 1
+        try JSONSerialization.data(withJSONObject: snap).write(to: file)
+        #expect(await LocalUsageCache(claudeRoots: [root], fileURL: file).claudeEntries(modifiedSince: since).map(\.total) == [100])
+    }
+
+    /// Gemini blob 에는 원래 버전이 없었다: 버전 키가 없는 옛 스냅샷의 blob 은 한 번 다시 파싱한다
+    @Test func usageCacheDropsGeminiBlobsFromUnversionedSnapshot() async throws {
+        let root = tempDir(), chats = root.appendingPathComponent("h/chats")
+        try FileManager.default.createDirectory(at: chats, withIntermediateDirectories: true)
+        let ts = ISO8601DateFormatter().string(from: Date())
+        let log = chats.appendingPathComponent("session.jsonl")
+        try (#"{"type":"gemini","id":"m2","timestamp":"\#(ts)","model":"gemini-2.5-pro","tokens":{"input":100,"output":10,"cached":0,"thoughts":0,"tool":0,"total":110}}"# + "\n")
+            .write(to: log, atomically: true, encoding: .utf8)
+        let mtime = Date(timeIntervalSinceReferenceDate: Date().timeIntervalSinceReferenceDate.rounded(.down) - 10)
+        try FileManager.default.setAttributes([.modificationDate: mtime], ofItemAtPath: log.path)
+        let file = tempDir().appendingPathComponent("usage-cache.json"), since = Date().addingTimeInterval(-3600)
+        #expect(await LocalUsageCache(geminiRoots: [root], fileURL: file).geminiEntries(modifiedSince: since).map(\.total) == [110])
+        let raw = try Data(contentsOf: file)
+        #if canImport(Darwin)
+        let json = (try? (raw as NSData).decompressed(using: .zlib) as Data) ?? raw
+        #else
+        let json = raw
+        #endif
+        var snap = try #require(JSONSerialization.jsonObject(with: json) as? [String: Any])
+        var gemini = try #require(snap["gemini"] as? [String: Any])
+        for (key, blob) in gemini { var blob = blob as! [String: Any]; blob["entries"] = []; gemini[key] = blob }
+        snap["gemini"] = gemini
+        snap["geminiParserVersion"] = nil
+        try JSONSerialization.data(withJSONObject: snap).write(to: file)
+        #expect(await LocalUsageCache(geminiRoots: [root], fileURL: file).geminiEntries(modifiedSince: since).map(\.total) == [110])
+    }
 }

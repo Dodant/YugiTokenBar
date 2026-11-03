@@ -46,7 +46,7 @@ Developer ID·공증 없이 ad-hoc 서명으로(스크립트에 `YTB_SIGN_IDENTI
 - `Sources/YugiTokenBar/Usage/`는 PokeTokenBar(MIT) 커밋 `de617e3`에서 가져온 뒤 2026-11-03부터 독자적으로 고치는 코드다.
   직접 고치고, 원본과 달라진 점은 `Usage/NOTICE.md`의 변경점에 적는다(출처 고지와 MIT 라이선스는 그대로 둔다).
   파일별 캐시는 `LocalUsageCache`, 쓰는 중인 Claude 파일의 붙은 줄만 읽기·provider 묶기·Cursor 증분·백오프는 `Usage/` 밖 `TodayUsageReader.swift`에서 한다.
-  Claude 세션 줄은 `LocalUsageReader.scanClaudeLines`가 바이트로 훑고(콜드 파싱·붙은 줄 공용), 콜드 파싱 속도는 `YTB_STATE_DIR=$PWD/qa-state YTB_BENCH_CLAUDE_ROOT=~/.claude/projects swift test --filter UsageBenchTests`로 잰다.
+  Claude 세션 줄은 `LocalUsageReader.scanClaudeLines`가 바이트로 훑고(콜드 파싱·붙은 줄 공용, Pi·Gemini·Grok·OMP 파서도 같은 줄 반복기 `forEachLine`), 콜드 파싱 속도는 `YTB_STATE_DIR=$PWD/qa-state YTB_BENCH_CLAUDE_ROOT=~/.claude/projects swift test --filter UsageBenchTests`로 잰다.
 - 버전과 패치노트는 `CHANGELOG.md` 맨 위에 `## x.y.z — 날짜` 항목을 추가하는 것으로만 올린다.
   `build-app.sh`(Info.plist)는 이 파일을 읽고, 앱의 업데이트 확인은 GitHub의 최신 정식 Release를 읽는다.
   같은 항목을 `CHANGELOG.en.md`·`CHANGELOG.ja.md`에도 같은 `## x.y.z — 날짜` 제목으로 번역해 넣는다(앱은 언어별 파일을 보여 주고, 테스트가 세 파일의 제목을 맞춰 본다).
