@@ -413,8 +413,11 @@ enum LocalUsageReader {
     }
 
     static func parseClaudeCostStateLine(_ line: String) -> ClaudeCostState? {
-        guard let data = line.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        line.data(using: .utf8).flatMap { parseClaudeCostStateLine($0) }
+    }
+
+    static func parseClaudeCostStateLine(_ data: Data) -> ClaudeCostState? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               (obj["type"] as? String) == "cost-state",
               let usage = obj["modelUsage"] as? [String: Any] else { return nil }
         var state = ClaudeCostState()
@@ -456,6 +459,59 @@ enum LocalUsageReader {
             }
         }
         return out
+    }
+
+    struct ClaudeScan: Sendable {
+        var entries: [Entry] = []
+        var costState: ClaudeCostState? = nil
+    }
+
+    /// Splits `data` on `\n` at the byte level and only builds `Data`/JSON for lines that carry a
+    /// cost-state or usage record (~12% of bytes). Correct for any `Data` startIndex. No dedup here.
+    static func scanClaudeLines(_ data: Data, session: String?, fmt: DateFormatter) -> ClaudeScan {
+        var scan = ClaudeScan()
+        data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+            guard let base = raw.baseAddress else { return }
+            let count = raw.count
+            func contains(_ pattern: StaticString, _ start: Int, _ len: Int) -> Bool {
+                let n = pattern.utf8CodeUnitCount
+                guard n <= len else { return false }
+                let first = Int32(pattern.utf8Start.pointee)
+                var p = base + start
+                var left = len
+                while left >= n, let hit = memchr(p, first, left - n + 1) {
+                    if memcmp(hit, pattern.utf8Start, n) == 0 { return true }
+                    let step = UnsafeRawPointer(hit) - p + 1
+                    p += step
+                    left -= step
+                }
+                return false
+            }
+            var pos = 0
+            while pos < count {
+                let len: Int
+                if let nl = memchr(base + pos, 0x0A, count - pos) { len = UnsafeRawPointer(nl) - (base + pos) } else { len = count - pos }
+                defer { pos += len + 1 }
+                if len == 0 { continue }
+                if contains("\"cost-state\"", pos, len) {
+                    // Cumulative ledger: the last record in the file wins.
+                    autoreleasepool {
+                        let line = Data(bytes: base + pos, count: len)
+                        if let s = parseClaudeCostStateLine(line) { scan.costState = s }
+                    }
+                } else if contains("\"usage\"", pos, len), contains("\"assistant\"", pos, len) {
+                    // 라인마다 autoreleasepool — JSONSerialization 이 만드는 autoreleased NSDictionary/NSString 가
+                    // 수천 파일·수만 라인에 걸쳐 배출 없이 누적돼 콜드 파싱 피크를 키우던 것을 즉시 배출.
+                    autoreleasepool {
+                        if var e = parseClaudeLine(Data(bytes: base + pos, count: len), fmt: fmt) {
+                            e.sessionID = session
+                            scan.entries.append(e)
+                        }
+                    }
+                }
+            }
+        }
+        return scan
     }
 
     /// Claude 파일 하나를 파싱(파일 내 dedup). 캐시가 파일 단위로 호출.
@@ -516,8 +572,11 @@ enum LocalUsageReader {
     }
 
     static func parseClaudeLine(_ line: String, fmt: DateFormatter) -> Entry? {
-        guard let data = line.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        line.data(using: .utf8).flatMap { parseClaudeLine($0, fmt: fmt) }
+    }
+
+    static func parseClaudeLine(_ data: Data, fmt: DateFormatter) -> Entry? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               (obj["type"] as? String) == "assistant",
               let msg = obj["message"] as? [String: Any],
               let usage = msg["usage"] as? [String: Any],

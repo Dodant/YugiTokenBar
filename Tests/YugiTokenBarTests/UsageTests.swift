@@ -231,4 +231,54 @@ import Testing
         #expect(order == [.codex, .claude, .gemini])
     }
     #endif
+
+    private static let fmt = LocalUsageReader.localDayFormatter()
+    private static let ts = ISO8601DateFormatter().string(from: Date())
+    private static func usageLine(id: String, type: String = "assistant", extra: String = "") -> String {
+        #"{"type":"\#(type)","timestamp":"\#(ts)","requestId":"r-\#(id)","message":{"id":"\#(id)","model":"claude-opus-5-5","usage":{"input_tokens":10,"output_tokens":2,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}}\#(extra)}"#
+    }
+
+    @Test func scanFindsUsageAndLastCostState() {
+        let text = [
+            #"{"type":"user","message":{"content":"hello"}}"#,
+            Self.usageLine(id: "a"),
+            #"{"type":"cost-state","modelUsage":{"claude-opus-5-5":{"costUSD":1.5}}}"#,
+            #"{"type":"assistant","message":{"content":"no usage here"}}"#,
+            #"{"type":"cost-state","modelUsage":{"claude-opus-5-5":{"costUSD":2.5}}}"#,
+            "", "",
+        ].joined(separator: "\n")
+        let scan = LocalUsageReader.scanClaudeLines(Data(text.utf8), session: "s1", fmt: Self.fmt)
+        #expect(scan.entries.map(\.id) == ["a|r-a"])
+        #expect(scan.entries.first?.sessionID == "s1")
+        #expect(scan.costState?.costByModel.values.first == 2.5)
+    }
+
+    @Test func scanKeepsLastLineWithoutNewline() {
+        let text = #"{"type":"user","message":{}}"# + "\n" + Self.usageLine(id: "b")
+        let scan = LocalUsageReader.scanClaudeLines(Data(text.utf8), session: nil, fmt: Self.fmt)
+        #expect(scan.entries.count == 1)
+        #expect(LocalUsageReader.scanClaudeLines(Data(), session: nil, fmt: Self.fmt).entries.isEmpty)
+        #expect(LocalUsageReader.scanClaudeLines(Data("\n\n".utf8), session: nil, fmt: Self.fmt).entries.isEmpty)
+    }
+
+    @Test func scanSkipsUserLineMentioningAssistant() {
+        let text = Self.usageLine(id: "c", type: "user", extra: #","note":"the \"assistant\" said"#) + "\n"
+        #expect(LocalUsageReader.scanClaudeLines(Data(text.utf8), session: nil, fmt: Self.fmt).entries.isEmpty)
+    }
+
+    @Test func scanTreatsCostStateBeforeUsage() {
+        // A cost-state record that also mentions "usage" and "assistant" is a ledger line, never an entry.
+        let text = #"{"type":"cost-state","note":"\"usage\" \"assistant\"","modelUsage":{"m":{"costUSD":0.5}}}"# + "\n"
+        let scan = LocalUsageReader.scanClaudeLines(Data(text.utf8), session: nil, fmt: Self.fmt)
+        #expect(scan.entries.isEmpty)
+        #expect(scan.costState != nil)
+    }
+
+    @Test func scanSurvivesInvalidUTF8Line() {
+        var data = Data(Self.usageLine(id: "d").utf8)
+        data.append(0x0A)
+        data.append(contentsOf: [0xFF, 0xFE, 0x0A])
+        data.append(Data(Self.usageLine(id: "e").utf8))
+        #expect(LocalUsageReader.scanClaudeLines(data, session: nil, fmt: Self.fmt).entries.map(\.id) == ["d|r-d", "e|r-e"])
+    }
 }
