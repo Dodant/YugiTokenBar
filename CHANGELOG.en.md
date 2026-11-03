@@ -1,5 +1,9 @@
 # Patch notes
 
+## 0.6.9 — 2026-11-03
+**⚡ Performance**
+- Reading Claude Code session history for the first time, or again after restarting the app, is now much faster.
+
 ## 0.6.8 — 2026-11-02
 **⚖️ Balance**
 - A booster pack now holds 8 cards instead of 5.

@@ -1,6 +1,6 @@
 # Usage/ 출처
 
-이 폴더의 다음 파일은 [PokeTokenBar](https://github.com/chattymin/PokeTokenBar) (MIT License, Copyright (c) 2026 chattymin) 로컬 브랜치 `graduation-carryover` 커밋 `de617e3`의 `Sources/PokeTokenBar/Core/`에서 `tools/import-usage.sh`로 복사했다.
+이 폴더의 다음 파일은 [PokeTokenBar](https://github.com/chattymin/PokeTokenBar) (MIT License, Copyright (c) 2026 chattymin) 로컬 브랜치 `graduation-carryover` 커밋 `de617e3`의 `Sources/PokeTokenBar/Core/`에서 (지금은 지운) `tools/import-usage.sh`로 복사했고, 2026-11-03부터 이 저장소에서 독자적으로 고친다.
 
 LocalUsageReader, AppLog, AppEnv, BinaryLocator, ClaudeAccountRoots, CustomScanRoots, Models, ModelPricing, UsageEnvironment, LogRepeatSuppressor, UsageCost, OAuthLimitsProvider, KeychainAccess, ProcessRunner, CodexRateLimitsProvider, UsageProvider, LocalAdditionalUsageProvider, LocalAsideUsageReader, LocalAntigravityUsageReader, CursorUsageAPI, AppStatePaths, LocalUsageCache
 
@@ -26,6 +26,11 @@ LocalUsageCache는 파일별 사용량 캐시다.
 15. `AppLog.swift`: Linux 로그를 `AppStatePaths.directory()` 아래에 둔다.
 16. `AppEnv.swift`: Linux에서 실행 파일의 `/.build` 포함 여부로 설치 실행을 판별한다(`isInstalledRun`).
 17. `BinaryLocator.swift`: 셸 stdout을 throwing API `readToEnd()`로 읽어 타임아웃으로 핸들을 닫을 때 발생하는 읽기 오류를 빈 데이터로 처리한다.
+
+## 독자 변경 (2026-11-03부터)
+18. `LocalUsageReader.swift`·`TodayUsageReader.swift`: Claude 세션 파일을 `String`으로 바꾸지 않고 `scanClaudeLines`가 바이트로 줄을 나눠 `"cost-state"`·`"usage"`·`"assistant"`가 있는 줄만 JSON 파싱한다.
+  콜드 파싱(`parseClaudeFile`)과 붙은 줄 읽기(`readTail`)가 같은 함수를 쓴다.
+  잘못된 UTF-8이 한 줄에 있어도 파일 전체가 아니라 그 줄만 건너뛴다.
 
 ## MIT License
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
