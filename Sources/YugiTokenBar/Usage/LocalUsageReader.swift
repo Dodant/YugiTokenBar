@@ -412,10 +412,6 @@ enum LocalUsageReader {
         return String(model[..<cut])
     }
 
-    static func parseClaudeCostStateLine(_ line: String) -> ClaudeCostState? {
-        line.data(using: .utf8).flatMap { parseClaudeCostStateLine($0) }
-    }
-
     static func parseClaudeCostStateLine(_ data: Data) -> ClaudeCostState? {
         guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               (obj["type"] as? String) == "cost-state",
@@ -549,10 +545,6 @@ enum LocalUsageReader {
             }
         }
         return dedupKeepMax(all)
-    }
-
-    static func parseClaudeLine(_ line: String, fmt: DateFormatter) -> Entry? {
-        line.data(using: .utf8).flatMap { parseClaudeLine($0, fmt: fmt) }
     }
 
     static func parseClaudeLine(_ data: Data, fmt: DateFormatter) -> Entry? {
