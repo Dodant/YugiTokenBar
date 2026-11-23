@@ -197,7 +197,7 @@ struct PopoverView: View {
     }
 
     private func header(_ state: GameState) -> some View {
-        let left = Balance.tokensPerFreeCard - state.dropProgress
+        let left = max(0, Balance.tokensPerFreeCard - state.dropProgress)  // 기준을 낮춘 뒤 옛 세이브는 다음 적립 전까지 넘칠 수 있다
         return HStack(alignment: .center, spacing: 10) {
             Text(coinText(state.coins))
                 .font(.system(size: 30, weight: .semibold, design: .rounded))

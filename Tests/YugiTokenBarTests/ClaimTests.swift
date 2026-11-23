@@ -12,10 +12,10 @@ import Testing
             "2026-10-01": ["claude_code": 20_000_000],
             "2026-10-10": ["codex": 5_000_000],
         ])
-        #expect(game.state.coins == 7_500)
-        #expect(got == 7)
-        #expect(game.state.pendingFree == 7)
-        #expect(game.state.dropProgress == 5_000_000)
+        #expect(game.state.coins == 10_000)
+        #expect(got == 10)
+        #expect(game.state.pendingFree == 10)
+        #expect(game.state.dropProgress == 0)
         #expect(game.state.claimedDate == "2026-10-15")
         #expect(game.state.claimedByProvider == ["claude_code": 50_000_000])
     }
@@ -54,7 +54,7 @@ import Testing
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 0])
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 25_000, "codex": 5_000])
         _ = game.claim(today: "2026-10-01", byProvider: ["claude_code": 25_000, "codex": 5_000])
-        #expect(game.state.coins == 3)
+        #expect(game.state.coins == 4)
         #expect(game.state.dropProgress == 30_000)
     }
 
@@ -94,21 +94,21 @@ import Testing
 
     @Test func coinsAndFreeCardsCarryRemainders() {
         var game = Game(db: db, state: GameState())
-        let got = game.credit(10_005_000)
+        let got = game.credit(7_505_000)
         #expect(game.state.coins == 1_000)
         #expect(game.state.coinRemainder == 5_000)
         #expect(got == 1)
         #expect(game.state.dropProgress == 5_000)
         #expect(game.state.pendingFree == 1)
         #expect(game.state.owned.isEmpty)  // 직접 열기 전에는 뽑지 않는다
-        _ = game.credit(5_000)
+        _ = game.credit(2_500)
         #expect(game.state.coins == 1_001)
         #expect(game.state.coinRemainder == 0)
     }
 
     @Test func hugeCreditJustStacksFreeCards() {
         var game = Game(db: db, state: GameState())
-        let got = game.credit(5_000_000_000)  // 무료 카드 500장분
+        let got = game.credit(3_750_000_000)  // 무료 카드 500장분
         #expect(got == 500)
         #expect(game.state.pendingFree == 500)
         #expect(game.state.dropProgress == 0)

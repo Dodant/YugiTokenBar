@@ -1,5 +1,9 @@
 # Patch notes
 
+## 0.6.10 — 2026-11-23
+**⚖️ Balance**
+- Coins and free cards now build up at the old pace even though the same work takes fewer tokens: 1 coin now costs 7,500 tokens instead of 10,000, and a free card 7.5M tokens instead of 10M.
+
 ## 0.6.9 — 2026-11-03
 **⚡ Performance**
 - Reading Claude Code session history for the first time, or again after restarting the app, is now much faster.
